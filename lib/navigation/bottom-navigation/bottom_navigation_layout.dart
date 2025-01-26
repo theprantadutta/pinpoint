@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 
 import '../../constants/selectors.dart';
 import 'awesome_bottom_bar/top_level_page_view.dart';
-import 'bottom_destinations.dart';
 import 'top_level_pages.dart';
 
 class BottomNavigationLayout extends StatefulWidget {
@@ -143,34 +143,61 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
             ),
           ),
         ),
-        extendBody: false,
-        bottomNavigationBar: NavigationBarTheme(
-          data: NavigationBarThemeData(
-            labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>(
-              (Set<WidgetState> states) => states.contains(WidgetState.selected)
-                  ? TextStyle(
-                      color: kPrimaryColor,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                    )
-                  : const TextStyle(
-                      fontSize: 13,
-                    ),
-            ),
-            iconTheme: WidgetStateProperty.resolveWith<IconThemeData>(
-              (Set<WidgetState> states) => states.contains(WidgetState.selected)
-                  ? const IconThemeData(
-                      color: Colors.white,
-                    )
-                  : const IconThemeData(),
-            ),
+        extendBody: true,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: FloatingActionButton(
+          shape: const CircleBorder(),
+          onPressed: () {
+            // setState(() {
+            //   heart = !heart;
+            // });
+          },
+          backgroundColor: kPrimaryColor.withValues(alpha: 0.9),
+          child: Icon(
+            Icons.add,
+            color: Colors.white,
           ),
-          child: NavigationBar(
-            onDestinationSelected: _updateCurrentPageIndex,
-            indicatorColor: kPrimaryColor.withValues(alpha: 0.9),
-            surfaceTintColor: kPrimaryColor,
-            selectedIndex: selectedIndex,
-            destinations: kBottomDestinations,
+        ),
+        bottomNavigationBar: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.085,
+          child: StylishBottomBar(
+            backgroundColor:
+                isDarkTheme ? Colors.grey.shade900 : Colors.grey.shade200,
+            notchStyle: NotchStyle.circle,
+            option: DotBarOptions(
+              dotStyle: DotStyle.circle,
+            ),
+            items: [
+              BottomBarItem(
+                icon: const Icon(Icons.home),
+                title: const Text('Home'),
+                selectedColor: kPrimaryColor,
+              ),
+              BottomBarItem(
+                icon: const Icon(Icons.folder_copy_outlined),
+                title: const Text('Folder'),
+                selectedColor: kPrimaryColor,
+              ),
+              BottomBarItem(
+                icon: const Icon(Icons.check_box_outlined),
+                title: const Text('Todo'),
+                selectedColor: kPrimaryColor,
+              ),
+              BottomBarItem(
+                icon: const Icon(Icons.person_2_outlined),
+                title: const Text('Account'),
+                selectedColor: kPrimaryColor,
+              ),
+            ],
+            fabLocation: StylishBarFabLocation.center,
+            hasNotch: true,
+            currentIndex: selectedIndex,
+            onTap: (index) {
+              setState(() {
+                selectedIndex = index;
+                pageController.jumpToPage(index);
+              });
+            },
           ),
         ),
       ),
