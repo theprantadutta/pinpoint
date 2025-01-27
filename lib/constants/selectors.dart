@@ -19,3 +19,17 @@ SystemUiOverlayStyle getDefaultSystemUiStyle(bool isDarkTheme) {
         : Brightness.light, // For iOS (dark icons)
   );
 }
+
+BoxDecoration getBackgroundDecoration(Color kPrimaryColor) {
+  return BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        kPrimaryColor.withValues(alpha: 0.12), // Soft start
+        kPrimaryColor.withValues(alpha: 0.06), // Lighter end
+      ],
+      stops: const [0.0, 1.0],
+    ),
+  );
+}

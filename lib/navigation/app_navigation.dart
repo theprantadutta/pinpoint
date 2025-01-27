@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../screens/account_screen.dart';
-import '../screens/folder_screen.dart';
+import '../screens/create_note_screen.dart';
 import '../screens/home_screen.dart';
+import '../screens/notes_screen.dart';
 import '../screens/todo_screen.dart';
 import 'bottom-navigation/bottom_navigation_layout.dart';
 
@@ -76,11 +77,11 @@ class AppNavigation {
             navigatorKey: _shellNavigatorFolder,
             routes: <RouteBase>[
               GoRoute(
-                path: FolderScreen.kRouteName,
-                name: "Folder",
+                path: NotesScreen.kRouteName,
+                name: "Notes",
                 pageBuilder: (context, state) => reusableTransitionPage(
                   state: state,
-                  child: const FolderScreen(),
+                  child: const NotesScreen(),
                 ),
               ),
             ],
@@ -116,15 +117,15 @@ class AppNavigation {
         ],
       ),
 
-      // /// View Quote of the Day Screen
-      // GoRoute(
-      //   parentNavigatorKey: rootNavigatorKey,
-      //   path: QuoteOfTheDayScreen.kRouteName,
-      //   name: "Quote of the Day",
-      //   builder: (context, state) => QuoteOfTheDayScreen(
-      //     key: state.pageKey,
-      //   ),
-      // ),
+      /// Create Note Screen
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: CreateNoteScreen.kRouteName,
+        name: "Create Note",
+        builder: (context, state) => CreateNoteScreen(
+          key: state.pageKey,
+        ),
+      ),
     ],
   );
 
