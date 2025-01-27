@@ -20,6 +20,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                 'My Folders',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
               ),
               Icon(Symbols.add),
@@ -50,6 +51,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                         'Homework',
                         style: TextStyle(
                           fontSize: 13,
+                          fontWeight: FontWeight.w200,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

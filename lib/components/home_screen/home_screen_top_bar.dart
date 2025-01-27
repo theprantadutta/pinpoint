@@ -6,6 +6,7 @@ class HomeScreenTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(
         vertical: 8.0,
@@ -21,6 +22,8 @@ class HomeScreenTopBar extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
+              letterSpacing: 1.3,
+              color: isDarkTheme ? Colors.grey.shade300 : Colors.grey.shade600,
             ),
           ),
           Icon(Symbols.more_vert),

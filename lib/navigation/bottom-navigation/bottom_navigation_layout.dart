@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 
 import '../../constants/selectors.dart';
+import '../../screens/create_note_screen.dart';
 import 'awesome_bottom_bar/top_level_page_view.dart';
 import 'top_level_pages.dart';
 
@@ -126,17 +127,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
         body: AnnotatedRegion(
           value: getDefaultSystemUiStyle(isDarkTheme),
           child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  kPrimaryColor.withValues(alpha: 0.12), // Soft start
-                  kPrimaryColor.withValues(alpha: 0.06), // Lighter end
-                ],
-                stops: const [0.0, 1.0],
-              ),
-            ),
+            decoration: getBackgroundDecoration(kPrimaryColor),
             child: TopLevelPageView(
               pageController: pageController,
               onPageChanged: _handlePageViewChanged,
@@ -146,12 +137,11 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
         extendBody: true,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
+          heroTag: 'navigation-bar-floating-action',
           shape: const CircleBorder(),
-          onPressed: () {
-            // setState(() {
-            //   heart = !heart;
-            // });
-          },
+          onPressed: () => context.push(
+            CreateNoteScreen.kRouteName,
+          ),
           backgroundColor: kPrimaryColor.withValues(alpha: 0.9),
           child: Icon(
             Icons.add,
@@ -174,8 +164,8 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
                 selectedColor: kPrimaryColor,
               ),
               BottomBarItem(
-                icon: const Icon(Icons.folder_copy_outlined),
-                title: const Text('Folder'),
+                icon: const Icon(Icons.notes_outlined),
+                title: const Text('Notes'),
                 selectedColor: kPrimaryColor,
               ),
               BottomBarItem(
