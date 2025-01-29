@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pinpoint/constants/constants.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 
 import '../../constants/selectors.dart';
@@ -140,7 +141,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
           heroTag: 'navigation-bar-floating-action',
           shape: const CircleBorder(),
           onPressed: () => context.push(
-            CreateNoteScreen.kRouteName,
+            '${CreateNoteScreen.kRouteName}/${kNoteTypes[0]}',
           ),
           backgroundColor: kPrimaryColor.withValues(alpha: 0.9),
           child: Icon(
@@ -182,12 +183,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
             fabLocation: StylishBarFabLocation.center,
             hasNotch: true,
             currentIndex: selectedIndex,
-            onTap: (index) {
-              setState(() {
-                selectedIndex = index;
-                pageController.jumpToPage(index);
-              });
-            },
+            onTap: _updateCurrentPageIndex,
           ),
         ),
       ),
