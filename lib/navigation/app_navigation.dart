@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pinpoint/constants/constants.dart';
 
 import '../screens/account_screen.dart';
 import '../screens/create_note_screen.dart';
@@ -120,11 +121,15 @@ class AppNavigation {
       /// Create Note Screen
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
-        path: CreateNoteScreen.kRouteName,
+        path: '${CreateNoteScreen.kRouteName}/:noticeType',
         name: "Create Note",
-        builder: (context, state) => CreateNoteScreen(
-          key: state.pageKey,
-        ),
+        builder: (context, state) {
+          final noticeType = state.pathParameters["noticeId"] ?? kNoteTypes[0];
+          return CreateNoteScreen(
+            key: state.pageKey,
+            noticeType: noticeType,
+          );
+        },
       ),
     ],
   );

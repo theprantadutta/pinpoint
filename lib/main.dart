@@ -1,16 +1,28 @@
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'package:fquery/fquery.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constants/selectors.dart';
 import 'constants/shared_preference_keys.dart';
 import 'navigation/app_navigation.dart';
+import 'service_locators/init_service_locators.dart';
+
+final queryClient = QueryClient(
+  defaultQueryOptions: DefaultQueryOptions(),
+);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await dotenv.load();
-  runApp(MyApp());
+  initServiceLocator();
+  runApp(
+    QueryClientProvider(
+      queryClient: queryClient,
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {

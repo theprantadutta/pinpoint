@@ -33,7 +33,7 @@ class MainLayout extends StatelessWidget {
     return BackButtonListener(
       onBackButtonPressed: () => _onBackButtonPressed(context),
       child: Scaffold(
-        resizeToAvoidBottomInset: true,
+        resizeToAvoidBottomInset: false,
         body: AnnotatedRegion(
           value: SystemUiOverlayStyle(
             // Status bar color
