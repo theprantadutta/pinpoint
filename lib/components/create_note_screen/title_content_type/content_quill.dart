@@ -29,27 +29,27 @@ class _ContentQuillState extends State<ContentQuill> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(height: 8),
+        SizedBox(height: 3),
         Container(
           height: MediaQuery.sizeOf(context).height * 0.06,
           margin: EdgeInsets.symmetric(vertical: 5),
-          decoration: BoxDecoration(
-              // color: kPrimaryColor.withValues(alpha: 0.5),
-              ),
           child: QuillToolbar.simple(
             controller: _controller,
             configurations: QuillSimpleToolbarConfigurations(
               multiRowsDisplay: false,
-              color: kPrimaryColor.withValues(alpha: 0.05),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: kPrimaryColor.withValues(alpha: 0.05),
+              ),
               sharedConfigurations: QuillSharedConfigurations(
                 locale: Locale('en'),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 10),
+        // const SizedBox(height: 5),
         Container(
-          height: MediaQuery.sizeOf(context).height * 0.65,
+          height: MediaQuery.sizeOf(context).height * 0.61,
           padding: EdgeInsets.symmetric(
             horizontal: 15,
             vertical: 10,
@@ -62,6 +62,9 @@ class _ContentQuillState extends State<ContentQuill> {
             controller: _controller,
             configurations: QuillEditorConfigurations(
               placeholder: 'Enter Content...',
+              onTapOutside: (_, __) {
+                FocusManager.instance.primaryFocus?.unfocus();
+              },
               sharedConfigurations: QuillSharedConfigurations(
                 locale: Locale('en'),
               ),

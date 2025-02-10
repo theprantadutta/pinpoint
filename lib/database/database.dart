@@ -1,11 +1,13 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../entities/note.dart';
 import '../entities/note_folder.dart';
+import '../entities/note_folder_relations.dart';
 
 part '../generated/database/database.g.dart';
 
-@DriftDatabase(tables: [NoteFolders])
+@DriftDatabase(tables: [Notes, NoteFolders, NoteFolderRelations])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
   // and a constructor telling drift where the database should be stored.

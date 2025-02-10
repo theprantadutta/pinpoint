@@ -21,7 +21,10 @@ class CreateNoteCategories extends StatelessWidget {
     return SliverToBoxAdapter(
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10.0),
-        margin: EdgeInsets.symmetric(vertical: 5),
+        margin: EdgeInsets.only(
+          top: 8,
+          // bottom: 8,
+        ),
         height: MediaQuery.sizeOf(context).height * 0.045,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
