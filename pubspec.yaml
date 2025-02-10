@@ -51,6 +51,7 @@ dependencies:
   flutter_hooks: ^0.20.5
   skeletonizer: ^1.4.3
   flutter_quill: ^10.8.5
+  choice: ^2.3.2
 
 dev_dependencies:
   flutter_test:

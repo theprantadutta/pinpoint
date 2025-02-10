@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pinpoint/constants/constants.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 
+import '../../constants/hero_tags.dart';
 import '../../constants/selectors.dart';
 import '../../screens/create_note_screen.dart';
 import 'awesome_bottom_bar/top_level_page_view.dart';
@@ -138,7 +139,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
         extendBody: true,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
-          heroTag: 'navigation-bar-floating-action',
+          heroTag: kAddNewNote,
           shape: const CircleBorder(),
           onPressed: () => context.push(
             '${CreateNoteScreen.kRouteName}/${kNoteTypes[0]}',
