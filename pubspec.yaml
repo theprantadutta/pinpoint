@@ -40,7 +40,7 @@ dependencies:
   google_fonts: ^6.2.1
   shared_preferences: ^2.3.5
   go_router: ^14.6.3
-  animate_do: ^3.3.4
+  animate_do: ^4.0.1
   material_symbols_icons: ^4.2801.1
   stylish_bottom_bar: ^1.1.0
   flutter_staggered_grid_view: ^0.7.0
@@ -50,8 +50,15 @@ dependencies:
   fquery: ^1.5.0-beta.1
   flutter_hooks: ^0.20.5
   skeletonizer: ^1.4.3
-  flutter_quill: ^10.8.5
+  flutter_quill: ^11.0.0
   choice: ^2.3.2
+  record: ^5.2.0
+  audioplayers: ^6.1.2
+  path_provider: ^2.1.5
+  avatar_glow: ^3.0.1
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
