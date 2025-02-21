@@ -90,24 +90,27 @@ class TodoListTypeContent extends HookWidget {
         child: Stack(
           children: [
             if (todos.value.isEmpty)
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.hourglass_empty,
-                      size: 80,
-                    ),
-                    SizedBox(height: 5),
-                    Text(
-                      'Nothing Yet!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+              SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.5,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.hourglass_empty,
+                        size: 80,
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 5),
+                      Text(
+                        'Nothing Yet!',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             Container(
