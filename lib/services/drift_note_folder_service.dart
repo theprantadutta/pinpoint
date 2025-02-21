@@ -8,7 +8,17 @@ import '../service_locators/init_service_locators.dart';
 class DriftNoteFolderService {
   DriftNoteFolderService._();
 
-  static final _noteFolders = ['HomeWork', 'Workout', 'Office', 'Sports'];
+  static final _noteFolders = [
+    'Random',
+    'HomeWork',
+    'Workout',
+    'Office',
+    'Sports',
+  ];
+
+  static get firstNoteFolder {
+    return _noteFolders.first;
+  }
 
   static List<NoteFolder> getPrepopulatedNoteFolders() {
     final now = DateTime.now();

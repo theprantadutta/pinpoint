@@ -33,7 +33,7 @@ class CreateNoteFolderSelect extends HookWidget {
       );
     }
     final noteFolderData = noteFolders.data!;
-
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     return SliverToBoxAdapter(
       child: GestureDetector(
         onTap: () => _showFolderSelectionSheet(context, noteFolderData),
@@ -65,13 +65,16 @@ class CreateNoteFolderSelect extends HookWidget {
                   maxLines: 1,
                 ),
               ),
+              SizedBox(width: 10),
               Row(
                 children: [
                   Text(
-                    'Change',
+                    'Change Folder',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.shade600,
+                      color: isDarkTheme
+                          ? Colors.grey.shade300
+                          : Colors.grey.shade600,
                       fontWeight: FontWeight.w200,
                     ),
                   ),
@@ -114,8 +117,10 @@ class CreateNoteFolderSelect extends HookWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
+        final kPrimaryColor = Theme.of(context).primaryColor;
+        final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
         return SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.5,
+          height: MediaQuery.sizeOf(context).height * 0.62,
           child: StatefulBuilder(
             builder: (context, setState) {
               return Padding(
@@ -130,25 +135,67 @@ class CreateNoteFolderSelect extends HookWidget {
                     ),
                     const SizedBox(height: 10),
                     Expanded(
-                      child: ListView.builder(
-                        shrinkWrap: true,
+                      child: ListView.separated(
+                        padding: EdgeInsets.symmetric(vertical: 10),
                         itemCount: noteFolderData.length,
+                        separatorBuilder: (_, __) =>
+                            SizedBox(height: 8), // Add spacing between items
                         itemBuilder: (context, i) {
                           final title = noteFolderData[i].title;
                           final isSelected =
                               tempSelectedFolders.contains(title);
-                          return CheckboxListTile(
-                            title: Text(title),
-                            value: isSelected,
-                            onChanged: (bool? value) {
-                              setState(() {
-                                if (value == true) {
-                                  tempSelectedFolders.add(title);
-                                } else {
-                                  tempSelectedFolders.remove(title);
-                                }
-                              });
-                            },
+                          final kPrimaryColor = Theme.of(context).primaryColor;
+                          return AnimatedContainer(
+                            duration: Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? kPrimaryColor.withValues(alpha: 0.05)
+                                  : isDarkTheme
+                                      ? Colors.grey.shade900
+                                      : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected
+                                    ? kPrimaryColor.withValues(alpha: 0.3)
+                                    : isDarkTheme
+                                        ? Colors.grey.shade700
+                                        : Colors.grey.shade300,
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withValues(alpha: 0.2),
+                                  blurRadius: 5,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: CheckboxListTile(
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              title: Text(
+                                title,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  color: isSelected ? kPrimaryColor : null,
+                                ),
+                              ),
+                              value: isSelected,
+                              activeColor: kPrimaryColor,
+                              checkColor: Colors.white,
+                              controlAffinity: ListTileControlAffinity.leading,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  if (value == true) {
+                                    tempSelectedFolders.add(title);
+                                  } else {
+                                    tempSelectedFolders.remove(title);
+                                  }
+                                });
+                              },
+                            ),
                           );
                         },
                       ),
@@ -161,7 +208,7 @@ class CreateNoteFolderSelect extends HookWidget {
                           Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
+                          backgroundColor: kPrimaryColor,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                           padding: EdgeInsets.symmetric(

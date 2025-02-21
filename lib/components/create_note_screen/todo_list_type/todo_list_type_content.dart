@@ -92,48 +92,92 @@ class TodoListTypeContent extends HookWidget {
         ),
         child: Stack(
           children: [
-            AnimatedList(
-              key: ValueKey(todos.value.length),
-              initialItemCount: todos.value.length,
-              itemBuilder: (context, index, animation) {
-                final todo = todos.value[index];
-                return SizeTransition(
-                  sizeFactor: animation,
-                  child: ListTile(
-                    title: Text(
-                      todo.title,
+            if (todos.value.isEmpty)
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.hourglass_empty,
+                      size: 80,
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      'Nothing Yet!',
                       style: TextStyle(
-                        decoration:
-                            todo.isDone ? TextDecoration.lineThrough : null,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    leading: Checkbox(
-                      value: todo.isDone,
-                      onChanged: (value) {
-                        todos.value = [
-                          for (var t in todos.value)
-                            if (t == todo)
-                              t.copyWith(isDone: value ?? false)
-                            else
-                              t
-                        ];
-                      },
+                  ],
+                ),
+              ),
+            SizedBox(
+              height: MediaQuery.sizeOf(context).height * 0.5,
+              child: AnimatedList(
+                key: ValueKey(todos.value.length),
+                initialItemCount: todos.value.length,
+                itemBuilder: (context, index, animation) {
+                  final todo = todos.value[index];
+                  return SizeTransition(
+                    sizeFactor: animation,
+                    child: ListTile(
+                      title: Text(
+                        todo.title,
+                        style: TextStyle(
+                          decoration:
+                              todo.isDone ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                      leading: Checkbox(
+                        value: todo.isDone,
+                        onChanged: (value) {
+                          todos.value = [
+                            for (var t in todos.value)
+                              if (t == todo)
+                                t.copyWith(isDone: value ?? false)
+                              else
+                                t
+                          ];
+                        },
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => deleteTodo(todo),
+                      ),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => deleteTodo(todo),
-                    ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
             Positioned(
               bottom: 5,
               right: 5,
-              child: FloatingActionButton(
-                onPressed: addTodo,
-                backgroundColor: kPrimaryColor,
-                child: const Icon(Icons.add, color: Colors.white),
+              child: SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.055,
+                child: FloatingActionButton.extended(
+                  heroTag: UniqueKey(),
+                  onPressed: addTodo,
+                  backgroundColor: kPrimaryColor,
+                  label: Text(
+                    'Add Todo',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                  icon: Icon(
+                    Icons.add_outlined,
+                    color: Colors.white,
+                  ),
+                  // child: Row(
+                  //   children: [
+                  //     Icon(Icons.add, color: Colors.white),
+                  //     Text('Add Todo'),
+                  //   ],
+                  // ),
+                ),
               ),
             ),
           ],
