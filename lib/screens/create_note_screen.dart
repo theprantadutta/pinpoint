@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:pinpoint/components/create_note_screen/create_note_folder_select.dart';
 import 'package:pinpoint/components/create_note_screen/record_audio_type/record_type_content.dart';
 import 'package:pinpoint/components/create_note_screen/todo_list_type/todo_list_type_content.dart';
+import 'package:pinpoint/services/drift_note_folder_service.dart';
 
 import '../components/create_note_screen/create_note_categories.dart';
 import '../components/create_note_screen/reminder_type/reminder_type_content.dart';
@@ -29,7 +30,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   late TextEditingController _titleEditingController;
 
-  List<String> selectedFolders = [];
+  List<String> selectedFolders = [DriftNoteFolderService.firstNoteFolder];
 
   setSingleSelected(List<String> value) {
     setState(() => selectedFolders = value);

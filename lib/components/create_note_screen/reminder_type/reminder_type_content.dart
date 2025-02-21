@@ -46,6 +46,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
   @override
   Widget build(BuildContext context) {
     final kPrimaryColor = Theme.of(context).primaryColor;
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     return SliverToBoxAdapter(
       child: Container(
         height: MediaQuery.sizeOf(context).height * 0.59,
@@ -84,12 +85,13 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
             GestureDetector(
               onTap: _pickDateTime,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  border:
-                      Border.all(color: kPrimaryColor.withValues(alpha: 0.3)),
+                  color:
+                      kPrimaryColor.withValues(alpha: isDarkTheme ? 0.1 : 0.05),
+                  border: Border.all(
+                    color: kPrimaryColor.withValues(alpha: 0.3),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -100,9 +102,28 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                           ? "Select Reminder Time"
                           : DateFormat("d MMM, yy 'at' hh:mm a")
                               .format(_selectedDateTime!),
-                      style: TextStyle(fontSize: 16, color: Colors.black87),
+                      style: TextStyle(fontSize: 16),
                     ),
                     Icon(Icons.calendar_today, color: kPrimaryColor),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 10),
+            Padding(
+              padding: EdgeInsets.all(8.0),
+              child: SizedBox(
+                width: MediaQuery.sizeOf(context).height * 0.7,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Reminder Details:',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 4),
+                    Text(
+                        '• A reminder will be sent at the selected time and date.'),
+                    Text('• Ensure notifications are enabled to receive it.'),
+                    Text('• You can edit or delete this reminder anytime.'),
                   ],
                 ),
               ),

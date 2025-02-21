@@ -58,7 +58,7 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
     final kPrimaryColor = Theme.of(context).primaryColor;
     return SliverToBoxAdapter(
       child: Container(
-        height: MediaQuery.sizeOf(context).height * 0.59,
+        height: MediaQuery.sizeOf(context).height * 0.585,
         padding: EdgeInsets.all(20),
         margin: EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         decoration: BoxDecoration(
