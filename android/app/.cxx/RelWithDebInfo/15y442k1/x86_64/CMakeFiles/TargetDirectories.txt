@@ -1,0 +1,2 @@
+F:/MyProjects/pinpoint/android/app/.cxx/RelWithDebInfo/15y442k1/x86_64/CMakeFiles/edit_cache.dir
+F:/MyProjects/pinpoint/android/app/.cxx/RelWithDebInfo/15y442k1/x86_64/CMakeFiles/rebuild_cache.dir
