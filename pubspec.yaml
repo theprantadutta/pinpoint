@@ -59,6 +59,9 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.19.0
+  toastification: ^3.0.0
+  flutter_quill_extensions: ^11.0.0
+  keyboard_avoider: ^0.2.0
 
 dev_dependencies:
   flutter_test:

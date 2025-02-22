@@ -1,6 +1,13 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'dart:convert';
+
+import 'package:drift/drift.dart' as drift;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:toastification/toastification.dart';
 
 import '../components/create_note_screen/create_note_categories.dart';
 import '../components/create_note_screen/create_note_folder_select.dart';
@@ -11,7 +18,9 @@ import '../components/create_note_screen/title_content_type/note_input_field.dar
 import '../components/create_note_screen/todo_list_type/todo_list_type_content.dart';
 import '../components/layouts/main_layout.dart';
 import '../constants/constants.dart';
+import '../database/database.dart';
 import '../services/drift_note_folder_service.dart';
+import '../services/drift_note_service.dart';
 
 class CreateNoteScreen extends StatefulWidget {
   static const String kRouteName = '/create-note';
@@ -54,10 +63,37 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     super.dispose();
   }
 
-  saveNoteToLocalDb() {
-    debugPrint('title: ${_titleEditingController.text}');
-    debugPrint('quill: ${_quillController.document.toDelta()}');
-    debugPrint('quill: ${_quillController.document.toPlainText()}');
+  Future<void> saveNoteToLocalDb() async {
+    try {
+      final title = _titleEditingController.text;
+      final quillContent =
+          jsonEncode(_quillController.document.toDelta().toJson());
+
+      final now = drift.Value(DateTime.now());
+      await DriftNoteService.addANewTitleContentNote(
+        NotesCompanion(
+          title: drift.Value(title),
+          isPinned: drift.Value(false),
+          noteType: drift.Value(kNoteTypes[0]),
+          createdAt: now,
+          updatedAt: now,
+        ),
+        quillContent,
+      );
+      toastification.show(
+        context: context,
+        title: Text('Note Saved Successfully!'),
+        description: Text('Your note successfully saved!'),
+        style: ToastificationStyle.flat,
+        type: ToastificationType.success,
+        autoCloseDuration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+        print('Failed to insert note');
+      }
+    }
   }
 
   @override
@@ -95,9 +131,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                     CreateNoteCategories(
                       selectedType: selectedNoteType,
                       onSelectedTypeChanged: (text) {
-                        setState(() {
-                          selectedNoteType = text;
-                        });
+                        setState(() => selectedNoteType = text);
                       },
                     ),
                     NoteInputField(
@@ -117,12 +151,11 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 ),
               ),
               GestureDetector(
-                onTap: saveNoteToLocalDb(),
+                onTap: saveNoteToLocalDb,
                 child: Container(
                   height: MediaQuery.sizeOf(context).height * 0.07,
                   width: double.infinity,
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: kPrimaryColor.withValues(
                         alpha: isDarkTheme ? 0.6 : 0.9),

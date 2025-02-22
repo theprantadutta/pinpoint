@@ -1,5 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:keyboard_avoider/keyboard_avoider.dart';
+
+import 'quill_toolbar.dart';
 
 class MakeTitleContentNote extends StatelessWidget {
   final QuillController quillController;
@@ -10,7 +15,6 @@ class MakeTitleContentNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final kPrimaryColor = Theme.of(context).primaryColor;
     return SliverToBoxAdapter(
       child: Padding(
         padding: EdgeInsets.only(
@@ -21,21 +25,10 @@ class MakeTitleContentNote extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(height: 3),
-            Container(
-              height: MediaQuery.sizeOf(context).height * 0.06,
-              margin: EdgeInsets.symmetric(vertical: 5),
-              child: QuillSimpleToolbar(
-                controller: quillController,
-                config: QuillSimpleToolbarConfig(
-                  multiRowsDisplay: false,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: kPrimaryColor.withValues(alpha: 0.05),
-                  ),
-                ),
-              ),
+            QuillToolbar(
+              quillController: quillController,
             ),
-            // const SizedBox(height: 5),
+            const SizedBox(height: 5),
             Container(
               height: MediaQuery.sizeOf(context).height * 0.53,
               padding: EdgeInsets.symmetric(
@@ -46,13 +39,21 @@ class MakeTitleContentNote extends StatelessWidget {
                 color: Colors.blueGrey.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: QuillEditor.basic(
-                controller: quillController,
-                config: QuillEditorConfig(
-                  placeholder: 'Enter Content...',
-                  onTapOutside: (_, __) {
-                    FocusManager.instance.primaryFocus?.unfocus();
-                  },
+              child: KeyboardAvoider(
+                child: QuillEditor.basic(
+                  controller: quillController,
+                  config: QuillEditorConfig(
+                    expands: true,
+                    embedBuilders: kIsWeb
+                        ? FlutterQuillEmbeds.editorWebBuilders()
+                        : FlutterQuillEmbeds.editorBuilders(),
+                    placeholder: 'Enter Content...',
+                    scrollable: true,
+                    onTapOutside: (_, __) {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                    },
+                    padding: EdgeInsets.only(bottom: 50),
+                  ),
                 ),
               ),
             ),
