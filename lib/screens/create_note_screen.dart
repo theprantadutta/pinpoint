@@ -74,11 +74,11 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
         NotesCompanion(
           title: drift.Value(title),
           isPinned: drift.Value(false),
-          noteType: drift.Value(kNoteTypes[0]),
+          noteTypes: drift.Value(kNoteTypes[0]),
+          content: drift.Value(quillContent),
           createdAt: now,
           updatedAt: now,
         ),
-        quillContent,
       );
       toastification.show(
         context: context,
