@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pinpoint/database/database.dart';
 
@@ -28,22 +27,32 @@ class DriftNoteService {
   //       .get();
   // }
 
+  static Future<Note?> getSingleNote(int noteId) {
+    final database = getIt<AppDatabase>();
+    return (database.select(database.notes)..where((x) => x.id.equals(noteId)))
+        .getSingleOrNull();
+  }
+
   static Future<bool> addANewTitleContentNote(
-    NotesCompanion notes,
-    String content,
+    NotesCompanion note,
   ) async {
     try {
       final database = getIt<AppDatabase>();
 
-      final noteId = await database.into(database.notes).insert(notes);
+      final existingNote = await getSingleNote(note.id.value);
+      if (existingNote == null) {
+        await database.into(database.notes).insert(note);
+      } else {
+        await database.update(database.notes).replace(note);
+      }
 
       // Insert into TitleContentType table
-      await database.into(database.noteTitleContentTypes).insert(
-            NoteTitleContentTypesCompanion(
-              id: Value(noteId),
-              content: Value(content),
-            ),
-          );
+      // await database.into(database.noteTitleContentTypes).insert(
+      //       NoteTitleContentTypesCompanion(
+      //         id: Value(noteId),
+      //         content: Value(content),
+      //       ),
+      //     );
       return true;
     } catch (e) {
       if (kDebugMode) {
