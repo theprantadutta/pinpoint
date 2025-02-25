@@ -3,7 +3,6 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart' as drift;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
@@ -25,10 +24,12 @@ import '../services/drift_note_service.dart';
 class CreateNoteScreen extends StatefulWidget {
   static const String kRouteName = '/create-note';
   final String noticeType;
+  final int? existingNoteId;
 
   const CreateNoteScreen({
     super.key,
     required this.noticeType,
+    this.existingNoteId,
   });
 
   @override
@@ -44,6 +45,14 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   List<String> selectedFolders = [DriftNoteFolderService.firstNoteFolder];
 
+  String? audioPath;
+  int? audioDuration;
+
+  List<TodoItem> todos = [];
+
+  late TextEditingController _reminderDescription;
+  DateTime? reminderDateTime;
+
   setSingleSelected(List<String> value) {
     setState(() => selectedFolders = value);
   }
@@ -52,6 +61,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   void initState() {
     _quillController = QuillController.basic();
     _titleEditingController = TextEditingController(text: '');
+    _reminderDescription = TextEditingController(text: '');
     selectedNoteType = widget.noticeType;
     super.initState();
   }
@@ -64,36 +74,48 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   }
 
   Future<void> saveNoteToLocalDb() async {
-    try {
-      final title = _titleEditingController.text;
-      final quillContent =
-          jsonEncode(_quillController.document.toDelta().toJson());
+    final title = _titleEditingController.text;
+    final quillContent =
+        jsonEncode(_quillController.document.toDelta().toJson());
 
-      final now = drift.Value(DateTime.now());
-      await DriftNoteService.addANewTitleContentNote(
-        NotesCompanion(
-          title: drift.Value(title),
-          isPinned: drift.Value(false),
-          noteTypes: drift.Value(kNoteTypes[0]),
-          content: drift.Value(quillContent),
-          createdAt: now,
-          updatedAt: now,
-        ),
-      );
+    final now = DateTime.now();
+    final noteCompanion = NotesCompanion.insert(
+      title: drift.Value(title),
+      isPinned: drift.Value(false),
+      defaultNoteType: selectedNoteType,
+      content: drift.Value(quillContent),
+      audioDuration: drift.Value(audioDuration),
+      audioFilePath: drift.Value(audioPath),
+      reminderDescription: drift.Value(_reminderDescription.text),
+      reminderTime: drift.Value(reminderDateTime),
+      createdAt: now,
+      updatedAt: now,
+    );
+    debugPrint('note: ${noteCompanion.toString()}');
+    final result = await DriftNoteService.upsertANewTitleContentNote(
+      noteCompanion,
+      widget.existingNoteId,
+    );
+    if (result == false) {
       toastification.show(
         context: context,
-        title: Text('Note Saved Successfully!'),
-        description: Text('Your note successfully saved!'),
+        title: Text('Failed to save Note!'),
+        description: Text('Something Went Wrong when saving note'),
         style: ToastificationStyle.flat,
-        type: ToastificationType.success,
-        autoCloseDuration: const Duration(seconds: 2),
+        type: ToastificationType.error,
+        autoCloseDuration: Duration(seconds: 2),
       );
-    } catch (e) {
-      if (kDebugMode) {
-        print(e);
-        print('Failed to insert note');
-      }
+      return;
     }
+    toastification.show(
+      context: context,
+      title: Text('Note Saved Successfully!'),
+      description: Text('Your note successfully saved!'),
+      style: ToastificationStyle.flat,
+      type: ToastificationType.success,
+      autoCloseDuration: Duration(seconds: 2),
+    );
+    Navigator.of(context).pop();
   }
 
   @override
@@ -142,11 +164,33 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                       MakeTitleContentNote(
                         quillController: _quillController,
                       ),
-                    if (selectedNoteType == kNoteTypes[1]) RecordTypeContent(),
+                    if (selectedNoteType == kNoteTypes[1])
+                      RecordTypeContent(
+                        audioPath: audioPath,
+                        onAudioPathChanged: (audioPathValue) =>
+                            audioPath = audioPathValue,
+                        audioDuration: audioDuration,
+                        onAudioDurationChanged: (audioDurationValue) =>
+                            setState(
+                          () => audioDuration == audioDurationValue,
+                        ),
+                      ),
                     if (selectedNoteType == kNoteTypes[2])
-                      TodoListTypeContent(),
+                      TodoListTypeContent(
+                        todos: todos,
+                        onTodoChanged: (newTodoItems) => setState(
+                          () => todos = newTodoItems,
+                        ),
+                      ),
                     if (selectedNoteType == kNoteTypes[3])
-                      ReminderTypeContent(),
+                      ReminderTypeContent(
+                        descriptionController: _reminderDescription,
+                        selectedDateTime: reminderDateTime,
+                        onReminderDateTimeChanged: (selectedDateTime) =>
+                            setState(
+                          () => reminderDateTime = selectedDateTime,
+                        ),
+                      ),
                   ],
                 ),
               ),

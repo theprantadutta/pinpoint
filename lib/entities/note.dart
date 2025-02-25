@@ -3,19 +3,19 @@ import 'package:drift/drift.dart';
 class Notes extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get title => text().nullable()();
-  TextColumn get noteTypes => text()();
+  TextColumn get defaultNoteType => text()();
 
   // Note Content
   TextColumn get content => text().nullable()();
 
   // Record Audio
-  TextColumn get filePath => text().nullable()();
-  IntColumn get duration => integer().nullable()();
+  TextColumn get audioFilePath => text().nullable()();
+  IntColumn get audioDuration => integer().nullable()();
 
   // Todo List Types
 
   // Reminder Type
-  TextColumn get description => text().nullable()();
+  TextColumn get reminderDescription => text().nullable()();
   DateTimeColumn get reminderTime => dateTime().nullable()();
 
   BoolColumn get isPinned => boolean().withDefault(Constant(false))();

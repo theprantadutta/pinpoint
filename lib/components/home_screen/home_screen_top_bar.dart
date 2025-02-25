@@ -1,5 +1,9 @@
+import 'package:drift_db_viewer/drift_db_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+
+import '../../database/database.dart';
+import '../../service_locators/init_service_locators.dart';
 
 class HomeScreenTopBar extends StatelessWidget {
   const HomeScreenTopBar({super.key});
@@ -16,7 +20,16 @@ class HomeScreenTopBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(Symbols.menu),
+          GestureDetector(
+            onTap: () {
+              final database = getIt<AppDatabase>();
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => DriftDbViewer(database)));
+            },
+            child: Icon(
+              Symbols.menu,
+            ),
+          ),
           Text(
             'PinPoint',
             style: TextStyle(

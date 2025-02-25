@@ -62,6 +62,7 @@ dependencies:
   toastification: ^3.0.0
   flutter_quill_extensions: ^11.0.0
   keyboard_avoider: ^0.2.0
+  drift_db_viewer: ^2.1.0
 
 dev_dependencies:
   flutter_test:

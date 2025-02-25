@@ -4,16 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class ReminderTypeContent extends StatefulWidget {
-  const ReminderTypeContent({super.key});
+  final TextEditingController descriptionController;
+  final DateTime? selectedDateTime;
+  final Function(DateTime selectedDateTime) onReminderDateTimeChanged;
+
+  const ReminderTypeContent({
+    super.key,
+    required this.descriptionController,
+    required this.selectedDateTime,
+    required this.onReminderDateTimeChanged,
+  });
 
   @override
   State<ReminderTypeContent> createState() => _ReminderTypeContentState();
 }
 
 class _ReminderTypeContentState extends State<ReminderTypeContent> {
-  final TextEditingController _descriptionController = TextEditingController();
-  DateTime? _selectedDateTime;
-
   Future<void> _pickDateTime() async {
     DateTime now = DateTime.now();
     DateTime? pickedDate = await showDatePicker(
@@ -30,15 +36,13 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
       );
 
       if (pickedTime != null) {
-        setState(() {
-          _selectedDateTime = DateTime(
-            pickedDate.year,
-            pickedDate.month,
-            pickedDate.day,
-            pickedTime.hour,
-            pickedTime.minute,
-          );
-        });
+        widget.onReminderDateTimeChanged(DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        ));
       }
     }
   }
@@ -72,7 +76,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
             ),
             const SizedBox(height: 10),
             TextField(
-              controller: _descriptionController,
+              controller: widget.descriptionController,
               maxLines: 2,
               decoration: InputDecoration(
                 hintText: "Enter a brief description...",
@@ -98,10 +102,10 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _selectedDateTime == null
+                      widget.selectedDateTime == null
                           ? "Select Reminder Time"
                           : DateFormat("d MMM, yy 'at' hh:mm a")
-                              .format(_selectedDateTime!),
+                              .format(widget.selectedDateTime!),
                       style: TextStyle(fontSize: 16),
                     ),
                     Icon(Icons.calendar_today, color: kPrimaryColor),

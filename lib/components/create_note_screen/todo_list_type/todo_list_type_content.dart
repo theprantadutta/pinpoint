@@ -1,79 +1,90 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 
 import '../../../services/dialog_service.dart';
 
-class TodoListTypeContent extends HookWidget {
-  const TodoListTypeContent({super.key});
+class TodoListTypeContent extends StatefulWidget {
+  final List<TodoItem> todos;
+  final Function(List<TodoItem> newTodoItems) onTodoChanged;
+
+  const TodoListTypeContent({
+    super.key,
+    required this.todos,
+    required this.onTodoChanged,
+  });
+
+  @override
+  State<TodoListTypeContent> createState() => _TodoListTypeContentState();
+}
+
+class _TodoListTypeContentState extends State<TodoListTypeContent> {
+  void addTodo() {
+    final TextEditingController controller = TextEditingController();
+    DialogService.addSomethingDialog(
+      context: context,
+      controller: controller,
+      title: 'Add Todo',
+      hintText: 'Enter todo',
+      onAddPressed: () {
+        final id = widget.todos.length + 1;
+        debugPrint('Unique ID: $id');
+        if (controller.text.isNotEmpty) {
+          widget.onTodoChanged([
+            ...widget.todos,
+            TodoItem(
+              id: id,
+              title: controller.text,
+            ),
+          ]);
+          Navigator.pop(context);
+        }
+      },
+    );
+  }
+
+  void markAllAsDone() {
+    widget
+        .onTodoChanged([for (var t in widget.todos) t.copyWith(isDone: true)]);
+  }
+
+  void deleteTodo(TodoItem todo) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm Delete'),
+        content: Text('Are you sure you want to delete "${todo.title}"?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              widget
+                  .onTodoChanged(widget.todos.where((t) => t != todo).toList());
+              Navigator.pop(context);
+            },
+            child: Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void updateTodo(TodoItem todo) {
+    widget.onTodoChanged([
+      for (var t in widget.todos)
+        if (t.id == todo.id) t.copyWith(title: todo.title) else t
+    ]);
+  }
+
+  void markTodo(TodoItem todo, bool? value) {
+    widget.onTodoChanged([
+      for (var t in widget.todos)
+        if (t.id == todo.id) t.copyWith(isDone: value ?? false) else t
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
     final kPrimaryColor = Theme.of(context).primaryColor;
-    final todos = useState<List<TodoItem>>([]);
-
-    void addTodo() {
-      final TextEditingController controller = TextEditingController();
-      DialogService.addSomethingDialog(
-        context: context,
-        controller: controller,
-        title: 'Add Todo',
-        hintText: 'Enter todo',
-        onAddPressed: () {
-          final id = todos.value.length + 1;
-          debugPrint('Unique ID: $id');
-          if (controller.text.isNotEmpty) {
-            todos.value = [
-              ...todos.value,
-              TodoItem(
-                id: id,
-                title: controller.text,
-              ),
-            ];
-            Navigator.pop(context);
-          }
-        },
-      );
-    }
-
-    void markAllAsDone() {
-      todos.value = [for (var t in todos.value) t.copyWith(isDone: true)];
-    }
-
-    void deleteTodo(TodoItem todo) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete "${todo.title}"?'),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel')),
-            TextButton(
-              onPressed: () {
-                todos.value = todos.value.where((t) => t != todo).toList();
-                Navigator.pop(context);
-              },
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        ),
-      );
-    }
-
-    void updateTodo(TodoItem todo) {
-      todos.value = [
-        for (var t in todos.value)
-          if (t.id == todo.id) t.copyWith(title: todo.title) else t
-      ];
-    }
-
-    void markTodo(TodoItem todo, bool? value) {
-      todos.value = [
-        for (var t in todos.value)
-          if (t.id == todo.id) t.copyWith(isDone: value ?? false) else t
-      ];
-    }
 
     return SliverToBoxAdapter(
       child: Container(
@@ -89,7 +100,7 @@ class TodoListTypeContent extends HookWidget {
         ),
         child: Stack(
           children: [
-            if (todos.value.isEmpty)
+            if (widget.todos.isEmpty)
               SizedBox(
                 height: MediaQuery.sizeOf(context).height * 0.5,
                 child: Center(
@@ -117,10 +128,10 @@ class TodoListTypeContent extends HookWidget {
               margin: EdgeInsets.symmetric(vertical: 5),
               height: MediaQuery.sizeOf(context).height * 0.5,
               child: AnimatedList(
-                key: ValueKey(todos.value.length),
-                initialItemCount: todos.value.length,
+                key: ValueKey(widget.todos.length),
+                initialItemCount: widget.todos.length,
                 itemBuilder: (context, index, animation) {
-                  final todo = todos.value[index];
+                  final todo = widget.todos[index];
                   final isDarkTheme =
                       Theme.of(context).brightness == Brightness.dark;
 
