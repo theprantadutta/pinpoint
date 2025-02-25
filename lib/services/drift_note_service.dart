@@ -33,26 +33,23 @@ class DriftNoteService {
         .getSingleOrNull();
   }
 
-  static Future<bool> addANewTitleContentNote(
+  static Future<bool> upsertANewTitleContentNote(
     NotesCompanion note,
+    int? previousNoteId,
   ) async {
     try {
       final database = getIt<AppDatabase>();
 
-      final existingNote = await getSingleNote(note.id.value);
-      if (existingNote == null) {
-        await database.into(database.notes).insert(note);
-      } else {
-        await database.update(database.notes).replace(note);
+      if (previousNoteId != null) {
+        final existingNote = await getSingleNote(previousNoteId);
+        if (existingNote != null) {
+          debugPrint('Existing Note Exists. Updating...');
+          await database.update(database.notes).replace(note);
+        }
       }
 
-      // Insert into TitleContentType table
-      // await database.into(database.noteTitleContentTypes).insert(
-      //       NoteTitleContentTypesCompanion(
-      //         id: Value(noteId),
-      //         content: Value(content),
-      //       ),
-      //     );
+      debugPrint('Existing Note Does not exist. Adding...');
+      await database.into(database.notes).insert(note);
       return true;
     } catch (e) {
       if (kDebugMode) {

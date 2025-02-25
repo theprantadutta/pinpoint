@@ -7,7 +7,18 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
 class RecordTypeContent extends StatefulWidget {
-  const RecordTypeContent({super.key});
+  final String? audioPath;
+  final Function(String? audioPath) onAudioPathChanged;
+  final int? audioDuration;
+  final Function(int audioDuration) onAudioDurationChanged;
+
+  const RecordTypeContent({
+    super.key,
+    required this.audioPath,
+    required this.onAudioPathChanged,
+    required this.audioDuration,
+    required this.onAudioDurationChanged,
+  });
 
   @override
   State<RecordTypeContent> createState() => _RecordTypeContentState();
@@ -18,15 +29,18 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
   final AudioPlayer _player = AudioPlayer();
   bool _isRecording = false;
   bool _isPlaying = false;
-  String? _audioPath;
 
   Future<void> _startRecording() async {
     if (await _recorder.hasPermission()) {
       final dir = await getApplicationDocumentsDirectory();
-      _audioPath = '${dir.path}/my_audio.m4a';
+      final currentAudioPath = '${dir.path}/my_audio.m4a';
 
-      await _recorder.start(RecordConfig(), path: _audioPath!);
-      setState(() => _isRecording = true);
+      await _recorder.start(RecordConfig(), path: currentAudioPath);
+
+      setState(() {
+        _isRecording = true;
+        widget.onAudioPathChanged(currentAudioPath);
+      });
     }
   }
 
@@ -36,8 +50,8 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
   }
 
   Future<void> _playAudio() async {
-    if (_audioPath != null && File(_audioPath!).existsSync()) {
-      await _player.play(DeviceFileSource(_audioPath!));
+    if (widget.audioPath != null && File(widget.audioPath!).existsSync()) {
+      await _player.play(DeviceFileSource(widget.audioPath!));
       setState(() => _isPlaying = true);
 
       _player.onPlayerComplete.listen((_) {
@@ -125,7 +139,8 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
               ),
             ),
             const SizedBox(height: 30),
-            if (_audioPath != null && File(_audioPath!).existsSync())
+            if (widget.audioPath != null &&
+                File(widget.audioPath!).existsSync())
               GestureDetector(
                 onTap: _playAudio,
                 child: AnimatedContainer(
