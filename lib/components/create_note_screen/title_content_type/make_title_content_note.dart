@@ -30,7 +30,7 @@ class MakeTitleContentNote extends StatelessWidget {
             ),
             const SizedBox(height: 5),
             Container(
-              height: MediaQuery.sizeOf(context).height * 0.53,
+              height: MediaQuery.sizeOf(context).height * 0.49,
               padding: EdgeInsets.symmetric(
                 horizontal: 15,
                 vertical: 10,
