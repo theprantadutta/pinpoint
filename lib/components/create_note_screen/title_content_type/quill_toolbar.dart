@@ -45,7 +45,7 @@ class _QuillToolbarState extends State<QuillToolbar> {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: kPrimaryColor.withValues(alpha: 0.3),
+                    color: kPrimaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Center(

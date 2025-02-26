@@ -6,7 +6,6 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
-import 'package:toastification/toastification.dart';
 
 import '../components/create_note_screen/create_note_categories.dart';
 import '../components/create_note_screen/create_note_folder_select.dart';
@@ -18,8 +17,10 @@ import '../components/create_note_screen/todo_list_type/todo_list_type_content.d
 import '../components/layouts/main_layout.dart';
 import '../constants/constants.dart';
 import '../database/database.dart';
+import '../dtos/note_attachment_dto.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/drift_note_service.dart';
+import '../util/show_a_toast.dart';
 
 class CreateNoteScreen extends StatefulWidget {
   static const String kRouteName = '/create-note';
@@ -52,6 +53,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   late TextEditingController _reminderDescription;
   DateTime? reminderDateTime;
+  List<NoteAttachmentDto> noteAttachments = [];
 
   setSingleSelected(List<String> value) {
     setState(() => selectedFolders = value);
@@ -78,6 +80,22 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     final quillContent =
         jsonEncode(_quillController.document.toDelta().toJson());
 
+    String normalizedQuillContent =
+        quillContent.trim().replaceAll('\r', '').replaceAll('\n', '');
+    String expected = '[{"insert":"\n"}]';
+
+    final quillContentCheck = normalizedQuillContent == expected;
+    print('quillContent check: $quillContentCheck');
+
+    if (title.isEmpty && (quillContent.isEmpty || !quillContentCheck)) {
+      showErrorToast(
+        context: context,
+        title: 'Failed to save Note!',
+        description: 'Please Provide atleast a title or content',
+      );
+      return;
+    }
+
     final now = DateTime.now();
     final noteCompanion = NotesCompanion.insert(
       title: drift.Value(title),
@@ -97,23 +115,17 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       widget.existingNoteId,
     );
     if (result == false) {
-      toastification.show(
+      showSuccessToast(
         context: context,
-        title: Text('Failed to save Note!'),
-        description: Text('Something Went Wrong when saving note'),
-        style: ToastificationStyle.flat,
-        type: ToastificationType.error,
-        autoCloseDuration: Duration(seconds: 2),
+        title: 'Failed to save Note!',
+        description: 'Something Went Wrong when saving note',
       );
       return;
     }
-    toastification.show(
+    showSuccessToast(
       context: context,
-      title: Text('Note Saved Successfully!'),
-      description: Text('Your note successfully saved!'),
-      style: ToastificationStyle.flat,
-      type: ToastificationType.success,
-      autoCloseDuration: Duration(seconds: 2),
+      title: 'Note Saved Successfully!',
+      description: 'Your note successfully saved!',
     );
     Navigator.of(context).pop();
   }
@@ -159,6 +171,10 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                     NoteInputField(
                       title: 'Title',
                       textEditingController: _titleEditingController,
+                      noteAttachments: noteAttachments,
+                      onNoteAttachChanged: (value) => setState(
+                        () => noteAttachments = value,
+                      ),
                     ),
                     if (selectedNoteType == kNoteTypes[0])
                       MakeTitleContentNote(
