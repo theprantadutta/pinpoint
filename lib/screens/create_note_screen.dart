@@ -19,19 +19,22 @@ import '../components/layouts/main_layout.dart';
 import '../constants/constants.dart';
 import '../database/database.dart';
 import '../dtos/note_attachment_dto.dart';
+import '../dtos/note_folder_dto.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/drift_note_service.dart';
 import '../util/show_a_toast.dart';
 
 class CreateNoteScreen extends StatefulWidget {
   static const String kRouteName = '/create-note';
+  final Note? existingNote;
+  final List<NoteAttachment> noteAttachments;
   final String noticeType;
-  final int? existingNoteId;
 
   const CreateNoteScreen({
     super.key,
+    this.existingNote,
+    this.noteAttachments = const [],
     required this.noticeType,
-    this.existingNoteId,
   });
 
   @override
@@ -45,7 +48,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   late TextEditingController _titleEditingController;
 
-  List<String> selectedFolders = [DriftNoteFolderService.firstNoteFolder];
+  List<NoteFolderDto> selectedFolders = [
+    DriftNoteFolderService.firstNoteFolder
+  ];
 
   String? audioPath;
   int? audioDuration;
@@ -56,7 +61,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   DateTime? reminderDateTime;
   List<NoteAttachmentDto> noteAttachments = [];
 
-  setSingleSelected(List<String> value) {
+  setSingleSelected(List<NoteFolderDto> value) {
     setState(() => selectedFolders = value);
   }
 
@@ -65,7 +70,14 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     _quillController = QuillController.basic();
     _titleEditingController = TextEditingController(text: '');
     _reminderDescription = TextEditingController(text: '');
-    selectedNoteType = widget.noticeType;
+    if (widget.existingNote != null) {
+      final existingNote = widget.existingNote!;
+      selectedNoteType = existingNote.defaultNoteType;
+      _titleEditingController.text = existingNote.title ?? '';
+      _quillController.document =
+          Document.fromJson(jsonDecode(existingNote.content ?? ''));
+      // selectedFolders = existingNote.
+    }
     super.initState();
   }
 
@@ -92,7 +104,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     final noteCompanion =
         _createNoteCompanion(title, quillContent, quillPlainText, now);
     final noteId = await DriftNoteService.upsertANewTitleContentNote(
-        noteCompanion, widget.existingNoteId);
+        noteCompanion, widget.existingNote?.id);
 
     if (noteId == 0) {
       _showErrorToast(

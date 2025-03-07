@@ -110,4 +110,22 @@ class DriftNoteService {
 
     return true;
   }
+
+  static Stream<List<NotesViewData>> getNoteViewData() {
+    final database = getIt<AppDatabase>();
+
+    return (database.select(database.notesView)
+          ..orderBy([
+            (x) =>
+                OrderingTerm(expression: x.updatedAt, mode: OrderingMode.desc)
+          ]))
+        .watch();
+  }
+
+  static Future<NotesViewData?> getSingleNoteView(int noteId) async {
+    final database = getIt<AppDatabase>();
+    return (database.select(database.notesView)
+          ..where((x) => x.id.equals(noteId)))
+        .getSingleOrNull();
+  }
 }

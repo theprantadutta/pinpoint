@@ -26,49 +26,9 @@ class HomeScreenRecentNotes extends StatelessWidget {
                 ),
               ],
             ),
-            // StreamBuilder(
-            //   stream: () => DriftNoteService.watchRecentNotes(),
-            //   builder: (context, snapshot) {
-            //     if (snapshot.connectionState == ConnectionState.waiting) {
-            //       return Expanded(
-            //           child: Center(
-            //         child: CircularProgressIndicator(),
-            //       ));
-            //     }
-            //     if (snapshot.hasError) {
-            //       return Expanded(child: Text('Something Went wrong'));
-            //     }
-            //     return Expanded(
-            //       child: Padding(
-            //         padding: const EdgeInsets.symmetric(vertical: 8.0),
-            //         child: MasonryGridView.builder(
-            //           gridDelegate:
-            //               const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-            //             crossAxisCount: 2,
-            //           ),
-            //           crossAxisSpacing: 10,
-            //           mainAxisSpacing: 10,
-            //           itemCount: 25,
-            //           itemBuilder: (context, index) {
-            //             switch (index) {
-            //               case 0:
-            //                 return VoiceRecorderType();
-            //               case 1:
-            //                 return TitleContentType();
-            //               case 2:
-            //                 return TodoListType();
-            //               default:
-            //                 return SizedBox.shrink();
-            //             }
-            //           },
-            //         ),
-            //       ),
-            //     );
-            //   },
-            // ),
             Expanded(
-              child: StreamBuilder<List<Note>>(
-                stream: DriftNoteService.watchRecentNotes(),
+              child: StreamBuilder<List<NotesViewData>>(
+                stream: DriftNoteService.getNoteViewData(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
