@@ -3,7 +3,8 @@ import 'package:pinpoint/components/home_screen/note_types/note_attachments.dart
 import 'package:pinpoint/database/database.dart';
 
 class TitleContentType extends StatelessWidget {
-  final Note note;
+  final NotesViewData note;
+
   const TitleContentType({
     super.key,
     required this.note,

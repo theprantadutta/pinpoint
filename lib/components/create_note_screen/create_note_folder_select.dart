@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:fquery/fquery.dart';
+import 'package:pinpoint/util/show_a_toast.dart';
 
 import '../../constants/fquery_keys.dart';
 import '../../database/database.dart';
+import '../../dtos/note_folder_dto.dart';
+import '../../services/dialog_service.dart';
 import '../../services/drift_note_folder_service.dart';
 
 class CreateNoteFolderSelect extends HookWidget {
-  final List<String> selectedFolders;
-  final Function(List<String>) setSelectedFolders;
+  final List<NoteFolderDto> selectedFolders;
+  final Function(List<NoteFolderDto>) setSelectedFolders;
 
   const CreateNoteFolderSelect({
     super.key,
@@ -34,6 +37,7 @@ class CreateNoteFolderSelect extends HookWidget {
     }
     final noteFolderData = noteFolders.data!;
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+    final selectedFolderString = selectedFolders.map((x) => x.title).join(', ');
     return SliverToBoxAdapter(
       child: GestureDetector(
         onTap: () => _showFolderSelectionSheet(context, noteFolderData),
@@ -52,9 +56,10 @@ class CreateNoteFolderSelect extends HookWidget {
             children: [
               Expanded(
                 child: Text(
-                  selectedFolders.isEmpty
-                      ? 'Select Folder'
-                      : selectedFolders.join(', '),
+                  // selectedFolders.isEmpty
+                  //     ? 'Select Folder'
+                  //     : selectedFolders.join(', '),
+                  selectedFolderString,
                   style: TextStyle(
                     color: kPrimaryColor,
                     fontWeight: FontWeight.bold,
@@ -108,7 +113,7 @@ class CreateNoteFolderSelect extends HookWidget {
 
   void _showFolderSelectionSheet(
       BuildContext context, List<NoteFolder> noteFolderData) {
-    List<String> tempSelectedFolders = List.from(selectedFolders);
+    List<NoteFolderDto> tempSelectedFolders = List.from(selectedFolders);
 
     showModalBottomSheet(
       context: context,
@@ -128,12 +133,63 @@ class CreateNoteFolderSelect extends HookWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'Select Folders',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Select Folders',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            final TextEditingController controller =
+                                TextEditingController();
+                            DialogService.addSomethingDialog(
+                              context: context,
+                              controller: controller,
+                              title: 'Add Folder',
+                              hintText: 'Enter title',
+                              onAddPressed: () async {
+                                final text = controller.text;
+                                if (text.isNotEmpty) {
+                                  if (noteFolderData.any((x) =>
+                                      x.title.toLowerCase() ==
+                                      text.toLowerCase())) {
+                                    showErrorToast(
+                                      context: context,
+                                      title: 'Please Provide Unique Name',
+                                      description:
+                                          'That folder name already exists',
+                                    );
+                                    return;
+                                  }
+                                  final noteFolder =
+                                      await DriftNoteFolderService
+                                          .insertNoteFolder(text);
+                                  setState(() {
+                                    tempSelectedFolders.add(noteFolder);
+                                  });
+                                  Navigator.pop(context);
+                                }
+                              },
+                            );
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: kPrimaryColor.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text('Add'),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     Expanded(
                       child: ListView.separated(
                         padding: EdgeInsets.symmetric(vertical: 10),
@@ -141,9 +197,10 @@ class CreateNoteFolderSelect extends HookWidget {
                         separatorBuilder: (_, __) =>
                             SizedBox(height: 8), // Add spacing between items
                         itemBuilder: (context, i) {
-                          final title = noteFolderData[i].title;
+                          final currentFolder = noteFolderData[i];
+                          final title = currentFolder.title;
                           final isSelected =
-                              tempSelectedFolders.contains(title);
+                              tempSelectedFolders.any((x) => x.title == title);
                           final kPrimaryColor = Theme.of(context).primaryColor;
                           return AnimatedContainer(
                             duration: Duration(milliseconds: 300),
@@ -189,9 +246,16 @@ class CreateNoteFolderSelect extends HookWidget {
                               onChanged: (bool? value) {
                                 setState(() {
                                   if (value == true) {
-                                    tempSelectedFolders.add(title);
+                                    tempSelectedFolders.add(
+                                      NoteFolderDto(
+                                        id: currentFolder.id,
+                                        title: currentFolder.title,
+                                      ),
+                                    );
                                   } else {
-                                    tempSelectedFolders.remove(title);
+                                    tempSelectedFolders.removeWhere(
+                                      (x) => x.title == title,
+                                    );
                                   }
                                 });
                               },
@@ -204,6 +268,13 @@ class CreateNoteFolderSelect extends HookWidget {
                       width: MediaQuery.sizeOf(context).width,
                       child: ElevatedButton(
                         onPressed: () {
+                          if (selectedFolders.isEmpty) {
+                            showErrorToast(
+                                context: context,
+                                title: 'Please Select One',
+                                description: '');
+                            return;
+                          }
                           setSelectedFolders(List.from(tempSelectedFolders));
                           Navigator.pop(context);
                         },
