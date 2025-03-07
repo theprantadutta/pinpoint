@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../dtos/note_attachment_dto.dart';
 
@@ -21,16 +25,57 @@ class NoteInputField extends StatelessWidget {
 
   Future<void> uploadFiles() async {
     final ImagePicker picker = ImagePicker();
-    // Pick multiple images and videos.
-    final List<XFile> medias = await picker.pickMultipleMedia();
-    for (var media in medias) {
-      noteAttachments.add(NoteAttachmentDto(
-        name: media.name,
-        path: media.path,
-        mimeType: media.mimeType,
-      ));
+
+    // Request storage permission (only needed on Android)
+    if (await _requestStoragePermission()) {
+      // Pick multiple images and videos.
+      final List<XFile> medias = await picker.pickMultipleMedia();
+      final Directory appDir =
+          await getApplicationDocumentsDirectory(); // Safe storage location
+
+      for (var media in medias) {
+        final File originalFile = File(media.path);
+        final String newPath = '${appDir.path}/${media.name}';
+
+        // Copy file to a safe location
+        await originalFile.copy(newPath);
+
+        noteAttachments.add(NoteAttachmentDto(
+          name: media.name,
+          path: newPath, // Use the new safe path
+          mimeType: media.mimeType,
+        ));
+      }
+
+      onNoteAttachChanged(noteAttachments);
     }
-    onNoteAttachChanged(noteAttachments);
+  }
+
+  Future<bool> _requestStoragePermission() async {
+    if (await Permission.storage.isGranted) {
+      return true; // Already granted
+    }
+
+    // Check Android version
+    if (await Permission.photos.isDenied || await Permission.videos.isDenied) {
+      await Permission.photos.request();
+      await Permission.videos.request();
+    }
+
+    if (await Permission.photos.isPermanentlyDenied ||
+        await Permission.videos.isPermanentlyDenied) {
+      print("Storage permission permanently denied, opening app settings...");
+      await openAppSettings();
+      return false;
+    }
+
+    if (await Permission.photos.isGranted ||
+        await Permission.videos.isGranted) {
+      return true;
+    }
+
+    print("Storage permission denied");
+    return false;
   }
 
   @override

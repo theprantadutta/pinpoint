@@ -69,10 +69,23 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
   }
 
   void updateTodo(TodoItem todo) {
-    widget.onTodoChanged([
-      for (var t in widget.todos)
-        if (t.id == todo.id) t.copyWith(title: todo.title) else t
-    ]);
+    final TextEditingController controller =
+        TextEditingController(text: todo.title);
+    DialogService.addSomethingDialog(
+      context: context,
+      controller: controller,
+      title: 'Update Todo',
+      hintText: 'Enter todo',
+      onAddPressed: () {
+        if (controller.text.isNotEmpty) {
+          widget.onTodoChanged([
+            for (var t in widget.todos)
+              if (t.id == todo.id) t.copyWith(title: controller.text) else t
+          ]);
+          Navigator.pop(context);
+        }
+      },
+    );
   }
 
   void markTodo(TodoItem todo, bool? value) {

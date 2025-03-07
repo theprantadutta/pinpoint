@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
-import 'package:pinpoint/components/home_screen/home_screen_folder_list.dart';
+
+import '../../components/home_screen/home_screen_folder_list.dart';
 
 class HomeScreenMyFolders extends StatelessWidget {
   const HomeScreenMyFolders({super.key});

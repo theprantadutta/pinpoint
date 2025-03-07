@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:pinpoint/components/home_screen/note_types/note_attachments.dart';
+import 'package:pinpoint/database/database.dart';
 
 class TitleContentType extends StatelessWidget {
-  static const kDefaultHeight = 150;
-  const TitleContentType({super.key});
+  final Note note;
+  const TitleContentType({
+    super.key,
+    required this.note,
+  });
 
   @override
   Widget build(BuildContext context) {
     final kPrimaryColor = Theme.of(context).primaryColor;
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+    // print('path: ${note.}');
     return Container(
       decoration: BoxDecoration(
         color: kPrimaryColor.withValues(alpha: 0.05),
@@ -15,16 +21,7 @@ class TitleContentType extends StatelessWidget {
       ),
       child: Column(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: Image.network(
-              'https://images.pexels.com/photos/1629212/pexels-photo-1629212.jpeg',
-              height: kDefaultHeight.toDouble(),
-              width: double.infinity,
-              cacheHeight: kDefaultHeight,
-              fit: BoxFit.cover,
-            ),
-          ),
+          NoteAttachments(noteId: note.id),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 5,
@@ -33,23 +30,25 @@ class TitleContentType extends StatelessWidget {
             child: Column(
               spacing: 5,
               children: [
-                Text(
-                  'Some Title',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+                if (note.title != null)
+                  Text(
+                    note.title!,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Text(
-                  'Some Really Long Description about some title, I do not know what else to write here',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDarkTheme
-                        ? Colors.grey.shade200
-                        : Colors.grey.shade700,
+                if (note.contentPlainText != null)
+                  Text(
+                    note.contentPlainText!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDarkTheme
+                          ? Colors.grey.shade200
+                          : Colors.grey.shade700,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

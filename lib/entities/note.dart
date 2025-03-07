@@ -7,6 +7,7 @@ class Notes extends Table {
 
   // Note Content
   TextColumn get content => text().nullable()();
+  TextColumn get contentPlainText => text().nullable()();
 
   // Record Audio
   TextColumn get audioFilePath => text().nullable()();

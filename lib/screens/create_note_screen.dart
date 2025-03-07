@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import '../components/create_note_screen/create_note_categories.dart';
@@ -76,32 +77,57 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   }
 
   Future<void> saveNoteToLocalDb() async {
-    final title = _titleEditingController.text;
+    final title = _titleEditingController.text.trim();
     final quillContent =
         jsonEncode(_quillController.document.toDelta().toJson());
+    final quillPlainText = _quillController.document.toPlainText().trim();
 
-    String normalizedQuillContent =
-        quillContent.trim().replaceAll('\r', '').replaceAll('\n', '');
-    String expected = '[{"insert":"\n"}]';
-
-    final quillContentCheck = normalizedQuillContent == expected;
-    print('quillContent check: $quillContentCheck');
-
-    if (title.isEmpty && (quillContent.isEmpty || !quillContentCheck)) {
-      showErrorToast(
-        context: context,
-        title: 'Failed to save Note!',
-        description: 'Please Provide atleast a title or content',
-      );
+    if (_isNoteEmpty(title, quillContent)) {
+      _showErrorToast(
+          'Failed to save Note!', 'Please provide at least a title or content');
       return;
     }
 
     final now = DateTime.now();
-    final noteCompanion = NotesCompanion.insert(
+    final noteCompanion =
+        _createNoteCompanion(title, quillContent, quillPlainText, now);
+    final noteId = await DriftNoteService.upsertANewTitleContentNote(
+        noteCompanion, widget.existingNoteId);
+
+    if (noteId == 0) {
+      _showErrorToast(
+          'Failed to save Note!', 'Something went wrong while saving the note');
+      return;
+    }
+
+    final attachmentsUpdated =
+        await DriftNoteService.upsertNoteAttachments(noteAttachments, noteId);
+    if (!attachmentsUpdated) {
+      _showErrorToast('Failed to save Attachments!',
+          'Some attachments may not have been saved.');
+    }
+
+    _showSuccessToast(
+        'Note Saved Successfully!', 'Your note was successfully saved!');
+    Navigator.of(context).pop();
+  }
+
+  bool _isNoteEmpty(String title, String quillContent) {
+    const String emptyQuillContent = '[{"insert":"\n"}]';
+    return title.isEmpty &&
+        (quillContent.isEmpty ||
+            quillContent.trim().replaceAll('\r', '').replaceAll('\n', '') ==
+                emptyQuillContent);
+  }
+
+  NotesCompanion _createNoteCompanion(
+      String title, String content, String plainText, DateTime now) {
+    return NotesCompanion.insert(
       title: drift.Value(title),
       isPinned: drift.Value(false),
       defaultNoteType: selectedNoteType,
-      content: drift.Value(quillContent),
+      content: drift.Value(content),
+      contentPlainText: drift.Value(plainText),
       audioDuration: drift.Value(audioDuration),
       audioFilePath: drift.Value(audioPath),
       reminderDescription: drift.Value(_reminderDescription.text),
@@ -109,25 +135,14 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       createdAt: now,
       updatedAt: now,
     );
-    debugPrint('note: ${noteCompanion.toString()}');
-    final result = await DriftNoteService.upsertANewTitleContentNote(
-      noteCompanion,
-      widget.existingNoteId,
-    );
-    if (result == false) {
-      showSuccessToast(
-        context: context,
-        title: 'Failed to save Note!',
-        description: 'Something Went Wrong when saving note',
-      );
-      return;
-    }
-    showSuccessToast(
-      context: context,
-      title: 'Note Saved Successfully!',
-      description: 'Your note successfully saved!',
-    );
-    Navigator.of(context).pop();
+  }
+
+  void _showErrorToast(String title, String description) {
+    showErrorToast(context: context, title: title, description: description);
+  }
+
+  void _showSuccessToast(String title, String description) {
+    showSuccessToast(context: context, title: title, description: description);
   }
 
   @override
@@ -150,92 +165,136 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
           color: darkerColor,
         ),
       ],
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Column(
-            children: [
-              SizedBox(
-                height: MediaQuery.sizeOf(context).height * 0.81,
-                child: CustomScrollView(
-                  slivers: [
-                    CreateNoteFolderSelect(
-                      selectedFolders: selectedFolders,
-                      setSelectedFolders: setSingleSelected,
+      body: BackButtonListener(
+        onBackButtonPressed: () async {
+          if (_titleEditingController.text.isNotEmpty ||
+              _quillController.document.toPlainText().isNotEmpty ||
+              (audioPath != null && audioPath!.isNotEmpty) ||
+              (todos.isNotEmpty) ||
+              _reminderDescription.text.isNotEmpty ||
+              reminderDateTime != null) {
+            showDialog(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: Text('Please Confirm!'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'You have unsaved changes. Do you wish to discard?',
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('No'),
                     ),
-                    CreateNoteCategories(
-                      selectedType: selectedNoteType,
-                      onSelectedTypeChanged: (text) {
-                        setState(() => selectedNoteType = text);
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context
+                            .pop(); // Ensure GoRouter is handling navigation properly
                       },
+                      child: Text('Yes'),
                     ),
-                    NoteInputField(
-                      title: 'Title',
-                      textEditingController: _titleEditingController,
-                      noteAttachments: noteAttachments,
-                      onNoteAttachChanged: (value) => setState(
-                        () => noteAttachments = value,
-                      ),
-                    ),
-                    if (selectedNoteType == kNoteTypes[0])
-                      MakeTitleContentNote(
-                        quillController: _quillController,
-                      ),
-                    if (selectedNoteType == kNoteTypes[1])
-                      RecordTypeContent(
-                        audioPath: audioPath,
-                        onAudioPathChanged: (audioPathValue) =>
-                            audioPath = audioPathValue,
-                        audioDuration: audioDuration,
-                        onAudioDurationChanged: (audioDurationValue) =>
-                            setState(
-                          () => audioDuration == audioDurationValue,
-                        ),
-                      ),
-                    if (selectedNoteType == kNoteTypes[2])
-                      TodoListTypeContent(
-                        todos: todos,
-                        onTodoChanged: (newTodoItems) => setState(
-                          () => todos = newTodoItems,
-                        ),
-                      ),
-                    if (selectedNoteType == kNoteTypes[3])
-                      ReminderTypeContent(
-                        descriptionController: _reminderDescription,
-                        selectedDateTime: reminderDateTime,
-                        onReminderDateTimeChanged: (selectedDateTime) =>
-                            setState(
-                          () => reminderDateTime = selectedDateTime,
-                        ),
-                      ),
                   ],
-                ),
-              ),
-              GestureDetector(
-                onTap: saveNoteToLocalDb,
-                child: Container(
-                  height: MediaQuery.sizeOf(context).height * 0.07,
-                  width: double.infinity,
-                  margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: kPrimaryColor.withValues(
-                        alpha: isDarkTheme ? 0.6 : 0.9),
-                    borderRadius: BorderRadius.circular(12),
+                );
+              },
+            );
+            return true;
+          }
+          return false;
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+              children: [
+                SizedBox(
+                  height: MediaQuery.sizeOf(context).height * 0.8,
+                  child: CustomScrollView(
+                    slivers: [
+                      CreateNoteFolderSelect(
+                        selectedFolders: selectedFolders,
+                        setSelectedFolders: setSingleSelected,
+                      ),
+                      CreateNoteCategories(
+                        selectedType: selectedNoteType,
+                        onSelectedTypeChanged: (text) {
+                          setState(() => selectedNoteType = text);
+                        },
+                      ),
+                      NoteInputField(
+                        title: 'Title',
+                        textEditingController: _titleEditingController,
+                        noteAttachments: noteAttachments,
+                        onNoteAttachChanged: (value) => setState(
+                          () => noteAttachments = value,
+                        ),
+                      ),
+                      if (selectedNoteType == kNoteTypes[0])
+                        MakeTitleContentNote(
+                          quillController: _quillController,
+                        ),
+                      if (selectedNoteType == kNoteTypes[1])
+                        RecordTypeContent(
+                          audioPath: audioPath,
+                          onAudioPathChanged: (audioPathValue) =>
+                              audioPath = audioPathValue,
+                          audioDuration: audioDuration,
+                          onAudioDurationChanged: (audioDurationValue) =>
+                              setState(
+                            () => audioDuration == audioDurationValue,
+                          ),
+                        ),
+                      if (selectedNoteType == kNoteTypes[2])
+                        TodoListTypeContent(
+                          todos: todos,
+                          onTodoChanged: (newTodoItems) => setState(
+                            () => todos = newTodoItems,
+                          ),
+                        ),
+                      if (selectedNoteType == kNoteTypes[3])
+                        ReminderTypeContent(
+                          descriptionController: _reminderDescription,
+                          selectedDateTime: reminderDateTime,
+                          onReminderDateTimeChanged: (selectedDateTime) =>
+                              setState(
+                            () => reminderDateTime = selectedDateTime,
+                          ),
+                        ),
+                    ],
                   ),
-                  child: Center(
-                    child: Text(
-                      "Save Note",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                ),
+                GestureDetector(
+                  onTap: saveNoteToLocalDb,
+                  child: Container(
+                    height: MediaQuery.sizeOf(context).height * 0.07,
+                    width: double.infinity,
+                    margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: kPrimaryColor.withValues(
+                          alpha: isDarkTheme ? 0.6 : 0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Save Note",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
