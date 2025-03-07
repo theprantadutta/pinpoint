@@ -49,9 +49,9 @@ class MakeTitleContentNote extends StatelessWidget {
                         : FlutterQuillEmbeds.editorBuilders(),
                     placeholder: 'Enter Content...',
                     scrollable: true,
-                    onTapOutside: (_, __) {
-                      FocusManager.instance.primaryFocus?.unfocus();
-                    },
+                    // onTapOutside: (_, focusNode) {
+                    //   FocusManager.instance.primaryFocus?.unfocus();
+                    // },
                     padding: EdgeInsets.only(bottom: 50),
                   ),
                 ),

@@ -7,7 +7,12 @@
     <!-- Optional: Add this permission if you want to use bluetooth telephony device like headset/earbuds -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Optional: Add this permission if you want to save your recordings in public folders -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
     <application
         android:label="pinpoint"
         android:name="${applicationName}"
