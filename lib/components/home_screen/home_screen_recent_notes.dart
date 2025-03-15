@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../components/home_screen/note_types/title_content_type.dart';
-import '../../database/database.dart';
+import '../../models/note_with_details.dart';
 import '../../services/drift_note_service.dart';
 
 class HomeScreenRecentNotes extends StatelessWidget {
@@ -27,43 +27,45 @@ class HomeScreenRecentNotes extends StatelessWidget {
               ],
             ),
             Expanded(
-              child: StreamBuilder<List<NotesViewData>>(
-                stream: DriftNoteService.getNoteViewData(),
+              child: StreamBuilder<List<NoteWithDetails>>(
+                // stream: DriftNoteService.getNoteViewData(),
+                stream: DriftNoteService.watchNotesWithDetails(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
+                    print(snapshot.error);
                     return Center(child: Text('Something went wrong'));
                   }
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     return Center(child: Text('No notes found'));
                   }
-
+                  final data = snapshot.data!;
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
                     child: MasonryGridView.builder(
                       gridDelegate:
-                          const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                          SliverSimpleGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                       ),
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
-                      itemCount: snapshot.data!.length,
+                      itemCount: data.length,
                       itemBuilder: (context, index) {
-                        final note = snapshot.data![index];
-                        switch (note.defaultNoteType) {
-                          case 'Title Content':
-                            return TitleContentType(
-                              note: note,
-                            );
-                          // case 1:
-                          //   return VoiceRecorderType ();
-                          // case 2:
-                          //   return TodoListType();
-                          default:
-                            return SizedBox.shrink();
-                        }
+                        final noteWithDetails = data[index];
+                        // switch (note.defaultNoteType) {
+                        //   case 'Title Content':
+                        return TitleContentType(
+                          noteWithDetails: noteWithDetails,
+                        );
+                        // case 1:
+                        //   return VoiceRecorderType ();
+                        // case 2:
+                        //   return TodoListType();
+                        // default:
+                        //   return SizedBox.shrink();
+                        // }
                       },
                     ),
                   );

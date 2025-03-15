@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 
 import '../components/create_note_screen/create_note_categories.dart';
 import '../components/create_note_screen/create_note_folder_select.dart';
@@ -26,15 +27,11 @@ import '../util/show_a_toast.dart';
 
 class CreateNoteScreen extends StatefulWidget {
   static const String kRouteName = '/create-note';
-  final Note? existingNote;
-  final List<NoteAttachment> noteAttachments;
-  final String noticeType;
+  final CreateNoteScreenArguments? args;
 
   const CreateNoteScreen({
     super.key,
-    this.existingNote,
-    this.noteAttachments = const [],
-    required this.noticeType,
+    required this.args,
   });
 
   @override
@@ -70,12 +67,13 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     _quillController = QuillController.basic();
     _titleEditingController = TextEditingController(text: '');
     _reminderDescription = TextEditingController(text: '');
-    if (widget.existingNote != null) {
-      final existingNote = widget.existingNote!;
-      selectedNoteType = existingNote.defaultNoteType;
-      _titleEditingController.text = existingNote.title ?? '';
-      _quillController.document =
-          Document.fromJson(jsonDecode(existingNote.content ?? ''));
+    if (widget.args?.existingNote != null) {
+      print(widget.args?.existingNote.toString());
+      // final existingNote = widget.args!.existingNote!;
+      // selectedNoteType = existingNote.defaultNoteType;
+      // _titleEditingController.text = existingNote.noteTitle ?? '';
+      // _quillController.document =
+      //     Document.fromJson(jsonDecode(existingNote.content ?? ''));
       // selectedFolders = existingNote.
     }
     super.initState();
@@ -104,12 +102,23 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     final noteCompanion =
         _createNoteCompanion(title, quillContent, quillPlainText, now);
     final noteId = await DriftNoteService.upsertANewTitleContentNote(
-        noteCompanion, widget.existingNote?.id);
+        noteCompanion, widget.args?.existingNote?.note.id);
 
     if (noteId == 0) {
       _showErrorToast(
           'Failed to save Note!', 'Something went wrong while saving the note');
       return;
+    }
+
+    // Add Folders
+    final result = await DriftNoteFolderService.insertNoteFoldersWithNote(
+      selectedFolders,
+      noteId,
+    );
+
+    if (!result) {
+      _showErrorToast(
+          'Failed to save folders!', 'Some folders may not have been saved.');
     }
 
     final attachmentsUpdated =
@@ -135,7 +144,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   NotesCompanion _createNoteCompanion(
       String title, String content, String plainText, DateTime now) {
     return NotesCompanion.insert(
-      title: drift.Value(title),
+      noteTitle: drift.Value(title),
       isPinned: drift.Value(false),
       defaultNoteType: selectedNoteType,
       content: drift.Value(content),

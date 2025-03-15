@@ -25,44 +25,39 @@ class DriftNoteFolderService {
     );
   }
 
-  // static Future<List<NoteFolder>> getPrepopulatedNoteFolders() async {
-  //   final now = Value(DateTime.now());
+  static Stream<List<NoteFolder>> getPrepopulatedNoteFoldersStream() async* {
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final didPopulateBefore =
+        sharedPreferences.getBool(kDidPopulatedNoteFolder) ?? false;
 
-  //   final database = getIt<AppDatabase>();
-  //   await database.transaction(() async {
-  //     for (final noteFolder in _noteFolders) {
-  //       await database.into(database.noteFolders).insert(NoteFoldersCompanion(
-  //             title: Value(noteFolder),
-  //             createdAt: now,
-  //             updatedAt: now,
-  //           ));
-  //     }
-  //   });
-  //   return database.select(database.noteFolders).get();
-  // }
+    if (didPopulateBefore) {
+      yield [];
+      return;
+    }
 
-  static Future<List<NoteFolder>> getPrepopulatedNoteFolders() async {
     final now = Value(DateTime.now());
     final database = getIt<AppDatabase>();
 
-    await database.batch((batch) {
-      batch.insertAll(
-        database.noteFolders,
-        _noteFolders.map((folder) => NoteFoldersCompanion(
-              title: Value(folder),
+    await database.batch(
+      (batch) {
+        batch.insertAll(
+          database.noteFolders,
+          _noteFolders.map(
+            (folder) => NoteFoldersCompanion(
+              noteFolderTitle: Value(folder),
               createdAt: now,
               updatedAt: now,
-            )),
-      );
-    });
+            ),
+          ),
+        );
+      },
+    );
 
-    // Check if the note folders were populated before using shared preferences.
-    final sharedPreferences = await SharedPreferences.getInstance();
     await sharedPreferences.setBool(kDidPopulatedNoteFolder, true);
-    return database.select(database.noteFolders).get();
+    yield await database.select(database.noteFolders).get();
   }
 
-  static Future<List<NoteFolder>> getAllNoteFolders() async {
+  static Stream<List<NoteFolder>> watchAllNoteFoldersStream() async* {
     try {
       final database = getIt<AppDatabase>();
 
@@ -71,7 +66,8 @@ class DriftNoteFolderService {
           await database.select(database.noteFolders).get();
 
       if (existingNoteFolders.isNotEmpty) {
-        return existingNoteFolders;
+        yield existingNoteFolders;
+        return;
       }
 
       // Check if the note folders were populated before using shared preferences.
@@ -80,10 +76,12 @@ class DriftNoteFolderService {
           sharedPreferences.getBool(kDidPopulatedNoteFolder) ?? false;
 
       if (didPopulateBefore) {
-        return [];
+        yield [];
+        return;
       }
-      // If not populated, return prepopulated note folders.
-      return await getPrepopulatedNoteFolders();
+
+      // If not populated, yield prepopulated note folders.
+      yield* getPrepopulatedNoteFoldersStream();
     } catch (e) {
       // Log the error if in debug mode.
       if (kDebugMode) {
@@ -99,7 +97,7 @@ class DriftNoteFolderService {
 
     final now = Value(DateTime.now());
     final noteFolder = NoteFoldersCompanion(
-      title: Value(text),
+      noteFolderTitle: Value(text),
       createdAt: now,
       updatedAt: now,
     );
@@ -108,20 +106,28 @@ class DriftNoteFolderService {
     return NoteFolderDto(id: id, title: text);
   }
 
-  // static Future<List<int>> insertNoteFolders(List<String> folders) async {
-  //   List<int> folderIds = [];
-  //   final database = getIt<AppDatabase>();
+  static Future<bool> insertNoteFoldersWithNote(
+      List<NoteFolderDto> folders, int noteId) async {
+    try {
+      final database = getIt<AppDatabase>();
 
-  //   for (var folder in folders) {
-  //     final existingFolder = await (database.select(database.noteFolders)
-  //           ..where((x) => x.title.equals(folder)))
-  //         .getSingleOrNull();
-  //     if (existingFolder == null) {
-  //       throw Exception("Something Went Wrong");
-  //     }
-
-  //   }
-
-  //   return folderIds;
-  // }
+      await database.batch((batch) {
+        batch.insertAll(
+          database.noteFolderRelations,
+          folders
+              .map((folder) => NoteFolderRelationsCompanion.insert(
+                    noteId: noteId,
+                    noteFolderId: folder.id,
+                  ))
+              .toList(),
+        );
+      });
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Something went wrong when inserting note folders: $e');
+      }
+      return false;
+    }
+  }
 }

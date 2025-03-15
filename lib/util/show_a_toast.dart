@@ -22,7 +22,7 @@ showSuccessToast({
       context: context,
       title: Text(title),
       description: Text(description),
-      style: ToastificationStyle.flat,
+      style: ToastificationStyle.flatColored,
       type: ToastificationType.success,
       autoCloseDuration: Duration(seconds: 4),
     );
@@ -36,7 +36,7 @@ showWarningToast({
       context: context,
       title: Text(title),
       description: Text(description),
-      style: ToastificationStyle.flat,
+      style: ToastificationStyle.flatColored,
       type: ToastificationType.warning,
       autoCloseDuration: Duration(seconds: 4),
     );
@@ -50,7 +50,7 @@ showErrorToast({
       context: context,
       title: Text(title),
       description: Text(description),
-      style: ToastificationStyle.flat,
+      style: ToastificationStyle.flatColored,
       type: ToastificationType.error,
       autoCloseDuration: Duration(seconds: 4),
     );

@@ -6,7 +6,6 @@ import '../entities/note_attachments.dart';
 import '../entities/note_folder.dart';
 import '../entities/note_folder_relations.dart';
 import '../entities/note_todo_item.dart';
-import '../views/notes_view.dart';
 
 part '../generated/database/database.g.dart';
 
@@ -16,8 +15,6 @@ part '../generated/database/database.g.dart';
   NoteTodoItems,
   Notes,
   NoteAttachments,
-], views: [
-  NotesView
 ])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter

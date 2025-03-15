@@ -33,7 +33,7 @@ class NoteAttachments extends StatelessWidget {
           return SizedBox.shrink();
         }
 
-        final file = File(data[0].path);
+        final file = File(data[0].attachmentPath);
         return file.existsSync()
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(15),
