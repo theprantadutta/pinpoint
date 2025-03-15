@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 
 class Notes extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get title => text().nullable()();
+  TextColumn get noteTitle => text().nullable()();
   TextColumn get defaultNoteType => text()();
 
   // Note Content

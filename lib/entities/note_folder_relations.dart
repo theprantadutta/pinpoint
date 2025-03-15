@@ -7,10 +7,10 @@ import 'note_folder.dart';
 class NoteFolderRelations extends Table {
   IntColumn get noteId =>
       integer().references(Notes, #id, onDelete: KeyAction.cascade)();
-  IntColumn get folderId =>
-      integer().references(NoteFolders, #id, onDelete: KeyAction.cascade)();
+  IntColumn get noteFolderId => integer()
+      .references(NoteFolders, #noteFolderId, onDelete: KeyAction.cascade)();
 
   @override
   Set<Column> get primaryKey =>
-      {noteId, folderId}; // Composite primary key to ensure uniqueness
+      {noteId, noteFolderId}; // Composite primary key to ensure uniqueness
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pinpoint/constants/constants.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 
 import '../../constants/hero_tags.dart';
@@ -142,7 +141,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
           heroTag: kAddNewNote,
           shape: const CircleBorder(),
           onPressed: () => context.push(
-            '${CreateNoteScreen.kRouteName}/${kNoteTypes[0]}',
+            CreateNoteScreen.kRouteName,
           ),
           backgroundColor: kPrimaryColor.withValues(alpha: 0.9),
           child: Icon(

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pinpoint/components/home_screen/home_screen_my_folders.dart';
-import 'package:pinpoint/components/home_screen/home_screen_recent_notes.dart';
-import 'package:pinpoint/components/home_screen/home_screen_top_bar.dart';
+
+import '../components/home_screen/home_screen_my_folders.dart';
+import '../components/home_screen/home_screen_recent_notes.dart';
+import '../components/home_screen/home_screen_top_bar.dart';
 
 class HomeScreen extends StatelessWidget {
   static const String kRouteName = '/home';
