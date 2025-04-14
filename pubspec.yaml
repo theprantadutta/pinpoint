@@ -26,11 +26,11 @@ dependencies:
   drift_flutter: ^0.2.4
   get_it: ^8.0.3
   fquery: ^1.5.0-beta.1
-  flutter_hooks: ^0.20.5
+  flutter_hooks: ^0.21.2
   skeletonizer: ^1.4.3
   flutter_quill: ^11.0.0
   choice: ^2.3.2
-  record: ^5.2.0
+  record: ^6.0.0
   audioplayers: ^6.1.2
   path_provider: ^2.1.5
   avatar_glow: ^3.0.1
@@ -42,7 +42,7 @@ dependencies:
   keyboard_avoider: ^0.2.0
   drift_db_viewer: ^2.1.0
   image_picker: ^1.1.2
-  permission_handler: ^11.4.0
+  permission_handler: ^12.0.0+1
   delightful_toast: ^1.1.0
 
 dev_dependencies:
