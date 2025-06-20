@@ -68,13 +68,13 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     _titleEditingController = TextEditingController(text: '');
     _reminderDescription = TextEditingController(text: '');
     if (widget.args?.existingNote != null) {
-      print(widget.args?.existingNote.toString());
-      // final existingNote = widget.args!.existingNote!;
-      // selectedNoteType = existingNote.defaultNoteType;
-      // _titleEditingController.text = existingNote.noteTitle ?? '';
-      // _quillController.document =
-      //     Document.fromJson(jsonDecode(existingNote.content ?? ''));
-      // selectedFolders = existingNote.
+      // print(widget.args?.existingNote.toString());
+      final existingNote = widget.args!.existingNote!;
+      selectedNoteType = existingNote.note.defaultNoteType;
+      _titleEditingController.text = existingNote.note.noteTitle ?? '';
+      _quillController.document =
+          Document.fromJson(jsonDecode(existingNote.note.content ?? ''));
+      selectedFolders = existingNote.folders;
     }
     super.initState();
   }
@@ -111,7 +111,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     }
 
     // Add Folders
-    final result = await DriftNoteFolderService.insertNoteFoldersWithNote(
+    final result = await DriftNoteFolderService.upsertNoteFoldersWithNote(
       selectedFolders,
       noteId,
     );
@@ -234,7 +234,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
             return Column(
               children: [
                 SizedBox(
-                  height: MediaQuery.sizeOf(context).height * 0.8,
+                  height: MediaQuery.sizeOf(context).height * 0.78,
                   child: CustomScrollView(
                     slivers: [
                       CreateNoteFolderSelect(

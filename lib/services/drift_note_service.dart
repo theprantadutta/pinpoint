@@ -30,7 +30,9 @@ class DriftNoteService {
   }
 
   static Future<int> upsertANewTitleContentNote(
-      NotesCompanion note, int? previousNoteId) async {
+    NotesCompanion note,
+    int? previousNoteId,
+  ) async {
     try {
       final database = getIt<AppDatabase>();
 
