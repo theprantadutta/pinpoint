@@ -106,26 +106,75 @@ class DriftNoteFolderService {
     return NoteFolderDto(id: id, title: text);
   }
 
-  static Future<bool> insertNoteFoldersWithNote(
+  // static Future<bool> insertNoteFoldersWithNote(
+  //     List<NoteFolderDto> folders, int noteId) async {
+  //   try {
+  //     final database = getIt<AppDatabase>();
+
+  //     await database.batch((batch) {
+  //       batch.insertAll(
+  //         database.noteFolderRelations,
+  //         folders
+  //             .map((folder) => NoteFolderRelationsCompanion.insert(
+  //                   noteId: noteId,
+  //                   noteFolderId: folder.id,
+  //                 ))
+  //             .toList(),
+  //       );
+  //     });
+  //     return true;
+  //   } catch (e) {
+  //     if (kDebugMode) {
+  //       print('Something went wrong when inserting note folders: $e');
+  //     }
+  //     return false;
+  //   }
+  // }
+
+  static Future<bool> upsertNoteFoldersWithNote(
       List<NoteFolderDto> folders, int noteId) async {
     try {
       final database = getIt<AppDatabase>();
 
+      // Get current relations
+      final existingRelations =
+          await (database.select(database.noteFolderRelations)
+                ..where((tbl) => tbl.noteId.equals(noteId)))
+              .get();
+
+      final existingFolderIds =
+          existingRelations.map((r) => r.noteFolderId).toSet();
+      final newFolderIds = folders.map((f) => f.id).toSet();
+
       await database.batch((batch) {
-        batch.insertAll(
-          database.noteFolderRelations,
-          folders
-              .map((folder) => NoteFolderRelationsCompanion.insert(
-                    noteId: noteId,
-                    noteFolderId: folder.id,
-                  ))
-              .toList(),
-        );
+        // Delete relations that are no longer needed
+        final toDelete = existingRelations
+            .where((r) => !newFolderIds.contains(r.noteFolderId));
+
+        for (final relation in toDelete) {
+          batch.deleteWhere(
+            database.noteFolderRelations,
+            (tbl) =>
+                tbl.noteId.equals(noteId) &
+                tbl.noteFolderId.equals(relation.noteFolderId),
+          );
+        }
+
+        // Insert only new relations that don't exist
+        final toInsert = folders
+            .where((f) => !existingFolderIds.contains(f.id))
+            .map((folder) => NoteFolderRelationsCompanion.insert(
+                  noteId: noteId,
+                  noteFolderId: folder.id,
+                ));
+
+        batch.insertAll(database.noteFolderRelations, toInsert);
       });
+
       return true;
     } catch (e) {
       if (kDebugMode) {
-        print('Something went wrong when inserting note folders: $e');
+        print('Failed to upsert note folders: $e');
       }
       return false;
     }

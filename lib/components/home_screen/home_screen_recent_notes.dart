@@ -28,7 +28,6 @@ class HomeScreenRecentNotes extends StatelessWidget {
             ),
             Expanded(
               child: StreamBuilder<List<NoteWithDetails>>(
-                // stream: DriftNoteService.getNoteViewData(),
                 stream: DriftNoteService.watchNotesWithDetails(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
