@@ -131,6 +131,25 @@ class DriftNoteFolderService {
   //   }
   // }
 
+  static Future<void> renameFolder(int folderId, String newTitle) async {
+    final database = getIt<AppDatabase>();
+    await (database.update(database.noteFolders)
+          ..where((tbl) => tbl.noteFolderId.equals(folderId)))
+        .write(NoteFoldersCompanion(noteFolderTitle: Value(newTitle)));
+  }
+
+  static Future<void> deleteFolder(int folderId) async {
+    final database = getIt<AppDatabase>();
+    await database.transaction(() async {
+      await (database.delete(database.noteFolderRelations)
+            ..where((tbl) => tbl.noteFolderId.equals(folderId)))
+          .go();
+      await (database.delete(database.noteFolders)
+            ..where((tbl) => tbl.noteFolderId.equals(folderId)))
+          .go();
+    });
+  }
+
   static Future<bool> upsertNoteFoldersWithNote(
       List<NoteFolderDto> folders, int noteId) async {
     try {

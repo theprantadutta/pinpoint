@@ -10,6 +10,8 @@ import 'constants/selectors.dart';
 import 'constants/shared_preference_keys.dart';
 import 'navigation/app_navigation.dart';
 import 'service_locators/init_service_locators.dart';
+import 'services/notification_service.dart';
+import 'services/auth_service.dart';
 
 final queryClient = QueryClient(
   defaultQueryOptions: DefaultQueryOptions(),
@@ -19,6 +21,20 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await dotenv.load();
   initServiceLocator();
+  await NotificationService.init(); // Initialize notification service
+
+  final sharedPreferences = await SharedPreferences.getInstance();
+  final isBiometricEnabled = sharedPreferences.getBool(kBiometricKey) ?? false;
+
+  if (isBiometricEnabled) {
+    bool authenticated = await AuthService.authenticate();
+    if (!authenticated) {
+      // If authentication fails, exit the app
+      // This is a simple exit, in a real app you might show an error screen or retry
+      return;
+    }
+  }
+
   runApp(
     QueryClientProvider(
       queryClient: queryClient,

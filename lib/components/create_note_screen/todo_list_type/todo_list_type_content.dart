@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:pinpoint/entities/note_todo_item.dart';
+import 'package:pinpoint/services/drift_note_service.dart';
 
 import '../../../services/dialog_service.dart';
 
 class TodoListTypeContent extends StatefulWidget {
-  final List<TodoItem> todos;
-  final Function(List<TodoItem> newTodoItems) onTodoChanged;
+  final List<NoteTodoItem> todos;
+  final Function(List<NoteTodoItem> newTodoItems) onTodoChanged;
 
   const TodoListTypeContent({
     super.key,
@@ -24,16 +26,15 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
       controller: controller,
       title: 'Add Todo',
       hintText: 'Enter todo',
-      onAddPressed: () {
-        final id = widget.todos.length + 1;
-        debugPrint('Unique ID: $id');
+      onAddPressed: () async {
         if (controller.text.isNotEmpty) {
+          final newTodo = await DriftNoteService.insertTodoItem(
+            noteId: widget.todos.first.noteId, // Assuming all todos belong to the same note
+            title: controller.text,
+          );
           widget.onTodoChanged([
             ...widget.todos,
-            TodoItem(
-              id: id,
-              title: controller.text,
-            ),
+            newTodo,
           ]);
           Navigator.pop(context);
         }
@@ -41,24 +42,30 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
     );
   }
 
-  void markAllAsDone() {
-    widget
-        .onTodoChanged([for (var t in widget.todos) t.copyWith(isDone: true)]);
+  void markAllAsDone() async {
+    final updatedTodos = [
+      for (var t in widget.todos) t.copyWith(isDone: true)
+    ];
+    for (var todo in updatedTodos) {
+      await DriftNoteService.updateTodoItemStatus(todo.id, true);
+    }
+    widget.onTodoChanged(updatedTodos);
   }
 
-  void deleteTodo(TodoItem todo) {
+  void deleteTodo(NoteTodoItem todo) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete "${todo.title}"?'),
+        content: Text('Are you sure you want to delete "${todo.todoTitle}"?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context), child: Text('Cancel')),
           TextButton(
-            onPressed: () {
-              widget
-                  .onTodoChanged(widget.todos.where((t) => t != todo).toList());
+            onPressed: () async {
+              await DriftNoteService.deleteTodoItem(todo.id);
+              widget.onTodoChanged(
+                  widget.todos.where((t) => t.id != todo.id).toList());
               Navigator.pop(context);
             },
             child: Text('Delete', style: TextStyle(color: Colors.red)),
@@ -68,19 +75,20 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
     );
   }
 
-  void updateTodo(TodoItem todo) {
+  void updateTodo(NoteTodoItem todo) {
     final TextEditingController controller =
-        TextEditingController(text: todo.title);
+        TextEditingController(text: todo.todoTitle);
     DialogService.addSomethingDialog(
       context: context,
       controller: controller,
       title: 'Update Todo',
       hintText: 'Enter todo',
-      onAddPressed: () {
+      onAddPressed: () async {
         if (controller.text.isNotEmpty) {
+          await DriftNoteService.updateTodoItemTitle(todo.id, controller.text);
           widget.onTodoChanged([
             for (var t in widget.todos)
-              if (t.id == todo.id) t.copyWith(title: controller.text) else t
+              if (t.id == todo.id) t.copyWith(todoTitle: controller.text) else t
           ]);
           Navigator.pop(context);
         }
@@ -88,7 +96,8 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
     );
   }
 
-  void markTodo(TodoItem todo, bool? value) {
+  void markTodo(NoteTodoItem todo, bool? value) async {
+    await DriftNoteService.updateTodoItemStatus(todo.id, value ?? false);
     widget.onTodoChanged([
       for (var t in widget.todos)
         if (t.id == todo.id) t.copyWith(isDone: value ?? false) else t
@@ -289,18 +298,4 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
   }
 }
 
-class TodoItem {
-  final int id;
-  final String title;
-  final bool isDone;
 
-  TodoItem({required this.id, required this.title, this.isDone = false});
-
-  TodoItem copyWith({int? id, String? title, bool? isDone}) {
-    return TodoItem(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      isDone: isDone ?? this.isDone,
-    );
-  }
-}
