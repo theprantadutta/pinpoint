@@ -16,6 +16,7 @@ import '../components/create_note_screen/reminder_type/reminder_type_content.dar
 import '../components/create_note_screen/title_content_type/make_title_content_note.dart';
 import '../components/create_note_screen/title_content_type/note_input_field.dart';
 import '../components/create_note_screen/todo_list_type/todo_list_type_content.dart';
+import '../components/create_note_screen/create_note_tag_select.dart';
 import '../components/layouts/main_layout.dart';
 import '../constants/constants.dart';
 import '../database/database.dart';
@@ -52,7 +53,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   String? audioPath;
   int? audioDuration;
 
-  List<TodoItem> todos = [];
+  List<NoteTodoItem> todos = [];
+  List<NoteTag> selectedTags = [];
 
   late TextEditingController _reminderDescription;
   DateTime? reminderDateTime;
@@ -75,6 +77,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       _quillController.document =
           Document.fromJson(jsonDecode(existingNote.note.content ?? ''));
       selectedFolders = existingNote.folders;
+      todos = existingNote.todoItems;
+      selectedTags = existingNote.tags;
     }
     super.initState();
   }
@@ -127,6 +131,12 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       _showErrorToast('Failed to save Attachments!',
           'Some attachments may not have been saved.');
     }
+
+    // Add Tags
+    await DriftNoteService.upsertNoteTagsWithNote(
+      selectedTags.map((tag) => tag.id).toList(),
+      noteId,
+    );
 
     _showSuccessToast(
         'Note Saved Successfully!', 'Your note was successfully saved!');
@@ -269,6 +279,12 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                               setState(
                             () => audioDuration == audioDurationValue,
                           ),
+                          onTranscribedText: (transcribedText) {
+                            _quillController.document.insert(
+                              _quillController.document.length,
+                              '\n\n' + transcribedText,
+                            );
+                          },
                         ),
                       if (selectedNoteType == kNoteTypes[2])
                         TodoListTypeContent(
@@ -286,6 +302,12 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                             () => reminderDateTime = selectedDateTime,
                           ),
                         ),
+                      CreateNoteTagSelect(
+                        selectedTags: selectedTags,
+                        onSelectedTagsChanged: (newTags) => setState(
+                          () => selectedTags = newTags,
+                        ),
+                      ),
                     ],
                   ),
                 ),

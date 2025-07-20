@@ -5,12 +5,14 @@ import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:pinpoint/services/transcription_service.dart';
 
 class RecordTypeContent extends StatefulWidget {
   final String? audioPath;
   final Function(String? audioPath) onAudioPathChanged;
   final int? audioDuration;
   final Function(int audioDuration) onAudioDurationChanged;
+  final Function(String transcribedText) onTranscribedText;
 
   const RecordTypeContent({
     super.key,
@@ -18,6 +20,7 @@ class RecordTypeContent extends StatefulWidget {
     required this.onAudioPathChanged,
     required this.audioDuration,
     required this.onAudioDurationChanged,
+    required this.onTranscribedText,
   });
 
   @override
@@ -47,6 +50,33 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
   Future<void> _stopRecording() async {
     await _recorder.stop();
     setState(() => _isRecording = false);
+
+    if (widget.audioPath != null) {
+      final bool? doTranscribe = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Transcribe Audio?'),
+          content: const Text('Do you want to transcribe this audio recording?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Yes'),
+            ),
+          ],
+        ),
+      );
+
+      if (doTranscribe == true) {
+        final String transcribedText = await TranscriptionService.transcribeAudio(widget.audioPath!);
+        if (transcribedText.isNotEmpty) {
+          widget.onTranscribedText(transcribedText);
+        }
+      }
+    }
   }
 
   Future<void> _playAudio() async {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pinpoint/navigation/app_navigation.dart';
+
 import 'package:pinpoint/util/show_a_toast.dart';
 
 import '../../database/database.dart';
@@ -54,47 +54,42 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                 onTap: () {
                   final TextEditingController controller =
                       TextEditingController();
-                  DialogService.addSomethingDialog(
-                    context: context,
-                    controller: controller,
-                    title: 'Add Folder',
-                    hintText: 'Enter title',
-                    onAddPressed: () async {
-                      final text = controller.text;
-                      if (text.isNotEmpty) {
-                        if (widget.noteFolderData.any((x) =>
-                            x.noteFolderTitle.toLowerCase() ==
-                            text.toLowerCase())) {
-                          showErrorToast(
-                            context: context,
-                            title: 'Please Provide Unique Name',
-                            description: 'That folder name already exists',
-                          );
-                          return;
-                        }
+                  if (mounted) {
+                        DialogService.addSomethingDialog(
+                          context: context,
+                          controller: controller,
+                          title: 'Add Folder',
+                          hintText: 'Enter title',
+                          onAddPressed: () async {
+                            final text = controller.text;
+                            if (text.isNotEmpty) {
+                              if (widget.noteFolderData.any((x) =>
+                                  x.noteFolderTitle.toLowerCase() ==
+                                  text.toLowerCase())) {
+                                if (!mounted) return;
+                                showErrorToast(
+                                  context: context,
+                                  title: 'Please Provide Unique Name',
+                                  description:
+                                      'That folder name already exists',
+                                );
+                                return;
+                              }
 
-                        final noteFolder =
-                            await DriftNoteFolderService.insertNoteFolder(text);
+                              final noteFolder =
+                                  await DriftNoteFolderService.insertNoteFolder(
+                                      text);
 
-                        if (mounted) {
-                          setState(() {
-                            tempSelectedFolders.add(noteFolder);
-                          });
-                        }
-
-                        // Use the rootNavigatorKey to close the dialog.
-                        if (AppNavigation.rootNavigatorKey.currentState !=
-                            null) {
-                          AppNavigation.rootNavigatorKey.currentState!.pop();
-                        } else {
-                          // Fallback to the local context if rootNavigatorKey is not available.
-                          if (Navigator.canPop(context)) {
-                            Navigator.pop(context);
-                          }
-                        }
+                              if (mounted) {
+                                setState(() {
+                                  tempSelectedFolders.add(noteFolder);
+                                });
+                                Navigator.pop(context);
+                              }
+                            }
+                          },
+                        );
                       }
-                    },
-                  );
                 },
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
@@ -188,7 +183,8 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
             width: MediaQuery.sizeOf(context).width,
             child: ElevatedButton(
               onPressed: () {
-                if (widget.selectedFolders.isEmpty) {
+                if (tempSelectedFolders.isEmpty) {
+                  if (!mounted) return;
                   showErrorToast(
                     context: context,
                     title: 'Please Select One',

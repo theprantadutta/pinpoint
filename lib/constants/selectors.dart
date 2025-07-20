@@ -4,7 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 const kDefaultFlexTheme = FlexScheme.orangeM3;
-final kDefaultFontFamily = GoogleFonts.poppins().fontFamily;
+const kAnotherFlexTheme = FlexScheme.blueWhale;
+final kDefaultFontFamily = GoogleFonts.roboto().fontFamily;
 
 SystemUiOverlayStyle getDefaultSystemUiStyle(bool isDarkTheme) {
   return SystemUiOverlayStyle(

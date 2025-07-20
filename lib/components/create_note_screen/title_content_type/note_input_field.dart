@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:pinpoint/services/ocr_service.dart';
 
 import '../../../dtos/note_attachment_dto.dart';
 
@@ -45,6 +46,37 @@ class NoteInputField extends StatelessWidget {
           path: newPath, // Use the new safe path
           mimeType: media.mimeType,
         ));
+
+        // Offer OCR for images
+        if (media.mimeType?.startsWith('image/') == true) {
+          final bool? doOCR = await showDialog<bool>(
+            context: context, // Assuming context is available in StatelessWidget via a Builder or similar
+            builder: (BuildContext context) => AlertDialog(
+              title: const Text('Perform OCR?'),
+              content: const Text('Do you want to extract text from this image?'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('No'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Yes'),
+                ),
+              ],
+            ),
+          );
+
+          if (doOCR == true) {
+            final String recognizedText = await OCRService.recognizeText(newPath);
+            if (recognizedText.isNotEmpty) {
+              textEditingController.text += '\n\n' + recognizedText;
+              textEditingController.selection = TextSelection.fromPosition(
+                TextPosition(offset: textEditingController.text.length),
+              );
+            }
+          }
+        }
       }
 
       onNoteAttachChanged(noteAttachments);
@@ -62,20 +94,15 @@ class NoteInputField extends StatelessWidget {
       await Permission.videos.request();
     }
 
-    if (await Permission.photos.isPermanentlyDenied ||
-        await Permission.videos.isPermanentlyDenied) {
-      print("Storage permission permanently denied, opening app settings...");
-      await openAppSettings();
-      return false;
-    }
+    
 
     if (await Permission.photos.isGranted ||
         await Permission.videos.isGranted) {
       return true;
     }
-
-    print("Storage permission denied");
     return false;
+
+    
   }
 
   @override

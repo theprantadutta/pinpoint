@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
+import 'package:pinpoint/screens/archive_screen.dart';
+import 'package:pinpoint/screens/folder_screen.dart';
+import 'package:pinpoint/screens/trash_screen.dart';
 
+import '../screen_arguments/create_note_screen_arguments.dart';
 import '../screens/account_screen.dart';
 import '../screens/create_note_screen.dart';
 import '../screens/home_screen.dart';
@@ -130,6 +133,40 @@ class AppNavigation {
           return CreateNoteScreen(
             key: state.pageKey,
             args: args,
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: '${FolderScreen.kRouteName}/:folderId/:folderTitle',
+        name: "Folder Screen",
+        builder: (context, state) {
+          final folderId = int.parse(state.pathParameters['folderId']!);
+          final folderTitle = state.pathParameters['folderTitle']!;
+          return FolderScreen(
+            key: state.pageKey,
+            folderId: folderId,
+            folderTitle: folderTitle,
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: ArchiveScreen.kRouteName,
+        name: "Archive Screen",
+        builder: (context, state) {
+          return ArchiveScreen(
+            key: state.pageKey,
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: TrashScreen.kRouteName,
+        name: "Trash Screen",
+        builder: (context, state) {
+          return TrashScreen(
+            key: state.pageKey,
           );
         },
       ),

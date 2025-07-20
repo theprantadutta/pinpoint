@@ -6,6 +6,8 @@ import '../entities/note_attachments.dart';
 import '../entities/note_folder.dart';
 import '../entities/note_folder_relations.dart';
 import '../entities/note_todo_item.dart';
+import '../entities/note_tags.dart';
+import '../entities/note_tag_relations.dart';
 
 part '../generated/database/database.g.dart';
 
@@ -15,6 +17,8 @@ part '../generated/database/database.g.dart';
   NoteTodoItems,
   Notes,
   NoteAttachments,
+  NoteTags,
+  NoteTagRelations,
 ])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
@@ -23,7 +27,28 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 4;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (m) async {
+        await m.createAll();
+      },
+      onUpgrade: (m, from, to) async {
+        if (from == 1) {
+          await m.addColumn(notes, notes.isArchived);
+        }
+        if (from == 2) {
+          await m.addColumn(notes, notes.isDeleted);
+        }
+        if (from == 3) {
+          await m.createTable(noteTags);
+          await m.createTable(noteTagRelations);
+        }
+      },
+    );
+  }
 
   static QueryExecutor _openConnection() {
     return driftDatabase(

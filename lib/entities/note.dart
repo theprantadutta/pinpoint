@@ -20,6 +20,8 @@ class Notes extends Table {
   DateTimeColumn get reminderTime => dateTime().nullable()();
 
   BoolColumn get isPinned => boolean().withDefault(Constant(false))();
+  BoolColumn get isArchived => boolean().withDefault(Constant(false))();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 }
