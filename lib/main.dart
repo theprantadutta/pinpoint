@@ -1,4 +1,4 @@
-import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'design/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -140,18 +140,8 @@ class _MyAppState extends State<MyApp> {
       ],
       title: 'Pinpoint',
       routerConfig: AppNavigation.router,
-      theme: FlexThemeData.light(
-        scheme: _flexScheme,
-        useMaterial3: true,
-        fontFamily: kDefaultFontFamily,
-      ),
-      darkTheme: FlexThemeData.dark(
-        scheme: _flexScheme,
-        useMaterial3: true,
-        fontFamily: kDefaultFontFamily,
-      ).copyWith(
-        brightness: Brightness.dark,
-      ),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
       themeMode: _themeMode,
       debugShowCheckedModeBanner: false,
     );

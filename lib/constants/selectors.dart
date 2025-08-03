@@ -1,11 +1,9 @@
-import 'package:flex_color_scheme/flex_color_scheme.dart';
+// Flex color scheme removed in redesign
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-const kDefaultFlexTheme = FlexScheme.orangeM3;
-const kAnotherFlexTheme = FlexScheme.blueWhale;
-final kDefaultFontFamily = GoogleFonts.roboto().fontFamily;
+final kDefaultFontFamily = GoogleFonts.inter().fontFamily ?? 'Inter';
 
 SystemUiOverlayStyle getDefaultSystemUiStyle(bool isDarkTheme) {
   return SystemUiOverlayStyle(
