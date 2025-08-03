@@ -8,11 +8,13 @@ import 'package:pinpoint/services/drift_note_service.dart';
 class NoteGridItem extends StatelessWidget {
   final NoteWithDetails noteWithDetails;
   final bool isArchivedView;
+  final bool isTrashView;
 
   const NoteGridItem({
     super.key,
     required this.noteWithDetails,
     this.isArchivedView = false,
+    this.isTrashView = false,
   });
 
   @override
@@ -121,7 +123,29 @@ class NoteGridItem extends StatelessWidget {
                         IconButton(
                           icon: Icon(Icons.delete_forever, color: colorScheme.error),
                           onPressed: () {
-                            DriftNoteService.deleteNoteById(noteWithDetails.note.id);
+                            DriftNoteService.permanentlyDeleteNoteById(noteWithDetails.note.id);
+                          },
+                          tooltip: 'Delete permanently',
+                        ),
+                      ],
+                    )
+                  ],
+                  if (isTrashView) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.restore_from_trash, color: colorScheme.primary),
+                          onPressed: () {
+                            DriftNoteService.restoreNoteById(noteWithDetails.note.id);
+                          },
+                          tooltip: 'Restore',
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete_forever, color: colorScheme.error),
+                          onPressed: () {
+                            DriftNoteService.permanentlyDeleteNoteById(noteWithDetails.note.id);
                           },
                           tooltip: 'Delete permanently',
                         ),
@@ -141,6 +165,8 @@ class NoteGridItem extends StatelessWidget {
                       DriftNoteService.togglePinStatus(noteWithDetails.note.id, !isPinned);
                     } else if (value == 'archive') {
                       DriftNoteService.toggleArchiveStatus(noteWithDetails.note.id, true);
+                    } else if (value == 'trash') {
+                      DriftNoteService.softDeleteNoteById(noteWithDetails.note.id);
                     }
                   },
                   itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -151,6 +177,10 @@ class NoteGridItem extends StatelessWidget {
                     const PopupMenuItem<String>(
                       value: 'archive',
                       child: Text('Archive'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'trash',
+                      child: Text('Move to trash'),
                     ),
                   ],
                 ),

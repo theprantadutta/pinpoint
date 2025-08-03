@@ -22,7 +22,7 @@ class TranscriptionService {
   }
 
   static Future<bool> isAvailable() async {
-    return await _speechToText.isAvailable;
+    return _speechToText.isAvailable;
   }
 
   static void dispose() {

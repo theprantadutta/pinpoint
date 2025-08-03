@@ -5,6 +5,6 @@ import 'app_database_service.dart';
 
 final getIt = GetIt.instance;
 
-void initServiceLocator() {
+void initServiceLocators() {
   getIt.registerSingleton<AppDatabase>(AppDatabaseService.database);
 }

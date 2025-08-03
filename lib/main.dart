@@ -20,7 +20,7 @@ final queryClient = QueryClient(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await dotenv.load();
-  initServiceLocator();
+  initServiceLocators();
   await NotificationService.init(); // Initialize notification service
 
   final sharedPreferences = await SharedPreferences.getInstance();

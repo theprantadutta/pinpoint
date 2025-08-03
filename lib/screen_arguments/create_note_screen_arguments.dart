@@ -1,4 +1,4 @@
-import 'package:pinpoint/entities/note_tags.dart';
+import 'package:pinpoint/database/database.dart';
 
 import '../models/note_with_details.dart';
 

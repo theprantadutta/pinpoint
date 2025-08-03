@@ -24,7 +24,7 @@ class NoteInputField extends StatelessWidget {
     required this.onNoteAttachChanged,
   });
 
-  Future<void> uploadFiles() async {
+  Future<void> uploadFiles(BuildContext context) async {
     final ImagePicker picker = ImagePicker();
 
     // Request storage permission (only needed on Android)
@@ -50,7 +50,7 @@ class NoteInputField extends StatelessWidget {
         // Offer OCR for images
         if (media.mimeType?.startsWith('image/') == true) {
           final bool? doOCR = await showDialog<bool>(
-            context: context, // Assuming context is available in StatelessWidget via a Builder or similar
+            context: context,
             builder: (BuildContext context) => AlertDialog(
               title: const Text('Perform OCR?'),
               content: const Text('Do you want to extract text from this image?'),
@@ -70,7 +70,7 @@ class NoteInputField extends StatelessWidget {
           if (doOCR == true) {
             final String recognizedText = await OCRService.recognizeText(newPath);
             if (recognizedText.isNotEmpty) {
-              textEditingController.text += '\n\n' + recognizedText;
+              textEditingController.text += '\n\n$recognizedText';
               textEditingController.selection = TextSelection.fromPosition(
                 TextPosition(offset: textEditingController.text.length),
               );
@@ -175,7 +175,7 @@ class NoteInputField extends StatelessWidget {
             ),
             SizedBox(width: 3),
             GestureDetector(
-              onTap: uploadFiles,
+              onTap: () => uploadFiles(context),
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                 decoration: BoxDecoration(

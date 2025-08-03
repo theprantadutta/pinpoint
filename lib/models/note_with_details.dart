@@ -1,6 +1,4 @@
 import 'package:pinpoint/dtos/note_attachment_dto.dart';
-import 'package:pinpoint/entities/note_todo_item.dart';
-import 'package:pinpoint/entities/note_tags.dart';
 
 import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
@@ -17,6 +15,6 @@ class NoteWithDetails {
     required this.folders,
     required this.attachments,
     required this.todoItems,
-    required this.tags,
+    this.tags = const [],
   });
 }

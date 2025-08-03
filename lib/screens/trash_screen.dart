@@ -44,7 +44,7 @@ class TrashScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               return NoteGridItem(
                 noteWithDetails: notes[index],
-                isArchivedView: true, // Reusing for now, will adjust later if needed
+                isTrashView: true,
               );
             },
           );
