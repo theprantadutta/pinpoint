@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/dtos/note_attachment_dto.dart';
 
-import '../components/create_note_screen/todo_list_type/todo_list_type_content.dart';
 import '../dtos/note_folder_dto.dart';
 import '../models/note_with_details.dart';
 import '../service_locators/init_service_locators.dart';
@@ -58,14 +57,22 @@ class DriftNoteService {
               .update(database.notes)
               .replace(noteToSave.copyWith(id: Value(previousNoteId)));
           final updatedNoteId = existingNote.id;
-          _handleReminderNotification(updatedNoteId, note.reminderTime.value, note.noteTitle.value);
+          _handleReminderNotification(
+            updatedNoteId,
+            note.reminderTime.present ? note.reminderTime.value : null,
+            note.noteTitle.present ? note.noteTitle.value : null,
+          );
           return updatedNoteId;
         }
       }
 
       debugPrint('Adding new note...');
       final newNoteId = await database.into(database.notes).insert(noteToSave);
-      _handleReminderNotification(newNoteId, note.reminderTime.value, note.noteTitle.value);
+      _handleReminderNotification(
+        newNoteId,
+        note.reminderTime.present ? note.reminderTime.value : null,
+        note.noteTitle.present ? note.noteTitle.value : null,
+      );
       return newNoteId;
     } catch (e) {
       debugPrint('Failed to insert/update note: $e');
@@ -73,7 +80,8 @@ class DriftNoteService {
     }
   }
 
-  static void _handleReminderNotification(int noteId, DateTime? reminderTime, String? noteTitle) {
+  static void _handleReminderNotification(
+      int noteId, DateTime? reminderTime, String? noteTitle) {
     if (reminderTime != null && reminderTime.isAfter(DateTime.now())) {
       NotificationService.scheduleNotification(
         id: noteId,
@@ -142,31 +150,37 @@ class DriftNoteService {
       todoTitle: Value(title),
       isDone: Value(false),
     );
-    final id = await database.into(database.noteTodoItems).insert(todoCompanion);
-    return NoteTodoItem(id: id, noteId: noteId, todoTitle: title, isDone: false);
+    final id =
+        await database.into(database.noteTodoItems).insert(todoCompanion);
+    return NoteTodoItem(
+        id: id, noteId: noteId, todoTitle: title, isDone: false);
   }
 
   static Future<void> updateTodoItemStatus(int todoId, bool isDone) async {
     final database = getIt<AppDatabase>();
-    await (database.update(database.noteTodoItems)..where((tbl) => tbl.id.equals(todoId)))
+    await (database.update(database.noteTodoItems)
+          ..where((tbl) => tbl.id.equals(todoId)))
         .write(NoteTodoItemsCompanion(isDone: Value(isDone)));
   }
 
   static Future<void> updateTodoItemTitle(int todoId, String newTitle) async {
     final database = getIt<AppDatabase>();
-    await (database.update(database.noteTodoItems)..where((tbl) => tbl.id.equals(todoId)))
+    await (database.update(database.noteTodoItems)
+          ..where((tbl) => tbl.id.equals(todoId)))
         .write(NoteTodoItemsCompanion(todoTitle: Value(newTitle)));
   }
 
   static Future<void> deleteTodoItem(int todoId) async {
     final database = getIt<AppDatabase>();
-    await (database.delete(database.noteTodoItems)..where((tbl) => tbl.id.equals(todoId)))
+    await (database.delete(database.noteTodoItems)
+          ..where((tbl) => tbl.id.equals(todoId)))
         .go();
   }
 
   static Future<void> softDeleteNoteById(int noteId) async {
     final database = getIt<AppDatabase>();
-    await (database.update(database.notes)..where((tbl) => tbl.id.equals(noteId)))
+    await (database.update(database.notes)
+          ..where((tbl) => tbl.id.equals(noteId)))
         .write(NotesCompanion(isDeleted: Value(true)));
     NotificationService.cancelNotification(noteId);
     debugPrint("Note with ID $noteId soft-deleted successfully.");
@@ -174,7 +188,8 @@ class DriftNoteService {
 
   static Future<void> restoreNoteById(int noteId) async {
     final database = getIt<AppDatabase>();
-    await (database.update(database.notes)..where((tbl) => tbl.id.equals(noteId)))
+    await (database.update(database.notes)
+          ..where((tbl) => tbl.id.equals(noteId)))
         .write(NotesCompanion(isDeleted: Value(false)));
     debugPrint("Note with ID $noteId restored successfully.");
   }
@@ -196,14 +211,17 @@ class DriftNoteService {
 
   static Future<void> toggleArchiveStatus(int noteId, bool isArchived) async {
     final database = getIt<AppDatabase>();
-    await (database.update(database.notes)..where((tbl) => tbl.id.equals(noteId)))
+    await (database.update(database.notes)
+          ..where((tbl) => tbl.id.equals(noteId)))
         .write(NotesCompanion(isArchived: Value(isArchived)));
 
     if (isArchived) {
       NotificationService.cancelNotification(noteId);
     } else {
       final note = await getSingleNote(noteId);
-      if (note != null && note.reminderTime != null && note.reminderTime!.isAfter(DateTime.now())) {
+      if (note != null &&
+          note.reminderTime != null &&
+          note.reminderTime!.isAfter(DateTime.now())) {
         NotificationService.scheduleNotification(
           id: note.id,
           title: note.noteTitle ?? 'Reminder',
@@ -216,21 +234,26 @@ class DriftNoteService {
 
   static Future<void> togglePinStatus(int noteId, bool isPinned) async {
     final database = getIt<AppDatabase>();
-    await (database.update(database.notes)..where((tbl) => tbl.id.equals(noteId)))
+    await (database.update(database.notes)
+          ..where((tbl) => tbl.id.equals(noteId)))
         .write(NotesCompanion(isPinned: Value(isPinned)));
   }
 
   static Stream<List<NoteWithDetails>> watchArchivedNotes() {
     return (getIt<AppDatabase>().select(getIt<AppDatabase>().notes)
           ..where((tbl) => tbl.isArchived.equals(true))
-          ..orderBy([(t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)]))
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)
+          ]))
         .watch()
         .map((notes) => notes
             .map((note) => NoteWithDetails(
                   note: note,
-                  folders: [],
-                  attachments: [],
-                  todoItems: [],
+                  folders: const [],
+                  attachments: const [],
+                  todoItems: const [],
+                  tags: const [],
                 ))
             .toList());
   }
@@ -238,14 +261,18 @@ class DriftNoteService {
   static Stream<List<NoteWithDetails>> watchDeletedNotes() {
     return (getIt<AppDatabase>().select(getIt<AppDatabase>().notes)
           ..where((tbl) => tbl.isDeleted.equals(true))
-          ..orderBy([(t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)]))
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)
+          ]))
         .watch()
         .map((notes) => notes
             .map((note) => NoteWithDetails(
                   note: note,
-                  folders: [],
-                  attachments: [],
-                  todoItems: [],
+                  folders: const [],
+                  attachments: const [],
+                  todoItems: const [],
+                  tags: const [],
                 ))
             .toList());
   }
@@ -259,7 +286,8 @@ class DriftNoteService {
       updatedAt: now,
     );
     final id = await database.into(database.noteTags).insert(tagCompanion);
-    return NoteTag(id: id, tagTitle: title, createdAt: now.value!, updatedAt: now.value!);
+    return NoteTag(
+        id: id, tagTitle: title, createdAt: now.value!, updatedAt: now.value!);
   }
 
   static Future<void> deleteNoteTag(int tagId) async {
@@ -268,7 +296,8 @@ class DriftNoteService {
       await (database.delete(database.noteTagRelations)
             ..where((tbl) => tbl.tagId.equals(tagId)))
           .go();
-      await (database.delete(database.noteTags)..where((tbl) => tbl.id.equals(tagId)))
+      await (database.delete(database.noteTags)
+            ..where((tbl) => tbl.id.equals(tagId)))
           .go();
     });
   }
@@ -278,7 +307,8 @@ class DriftNoteService {
     return database.select(database.noteTags).watch();
   }
 
-  static Future<void> upsertNoteTagsWithNote(List<int> tagIds, int noteId) async {
+  static Future<void> upsertNoteTagsWithNote(
+      List<int> tagIds, int noteId) async {
     final database = getIt<AppDatabase>();
     await database.transaction(() async {
       // Delete existing relations for this note
@@ -287,17 +317,19 @@ class DriftNoteService {
           .go();
 
       // Insert new relations
-      final newRelations = tagIds.map((tagId) => NoteTagRelationsCompanion.insert(
-            noteId: noteId,
-            tagId: tagId,
-          ));
+      final newRelations =
+          tagIds.map((tagId) => NoteTagRelationsCompanion.insert(
+                noteId: noteId,
+                tagId: tagId,
+              ));
       await database.batch((batch) {
         batch.insertAll(database.noteTagRelations, newRelations);
       });
     });
   }
 
-  static Stream<List<NoteWithDetails>> watchNotesWithDetails([String searchQuery = '']) {
+  static Stream<List<NoteWithDetails>> watchNotesWithDetails(
+      [String searchQuery = '']) {
     try {
       final database = getIt<AppDatabase>();
       if (kDebugMode) {
@@ -361,151 +393,158 @@ class DriftNoteService {
           )
           .watch()
           .map(
-            (rows) {
+        (rows) {
+          if (kDebugMode) {
+            print('Received ${rows.length} rows from the database.');
+          }
+
+          final notesMap = <int, NoteWithDetails>{};
+
+          for (final row in rows) {
+            final noteId = row.read<int>('id');
+            if (kDebugMode) {
+              print('Processing note with ID: $noteId');
+            }
+
+            // Parse the note if it hasn't been parsed yet.
+            if (!notesMap.containsKey(noteId)) {
               if (kDebugMode) {
-                print('Received ${rows.length} rows from the database.');
+                print('Parsing note with ID: $noteId for the first time.');
               }
 
-              final notesMap = <int, NoteWithDetails>{};
-
-              for (final row in rows) {
-                final noteId = row.read<int>('id');
-                if (kDebugMode) {
-                  print('Processing note with ID: $noteId');
-                }
-
-                // Parse the note if it hasn't been parsed yet.
-                if (!notesMap.containsKey(noteId)) {
-                  if (kDebugMode) {
-                    print('Parsing note with ID: $noteId for the first time.');
-                  }
-
-                  // Parse the folders JSON array.
-                  final foldersJson = row.read<String?>('folders');
-                  if (kDebugMode) {
-                    print('Folders JSON for note $noteId: $foldersJson');
-                  }
-                  
-                  final List<NoteFolderDto> folders;
-                  if (foldersJson != null) {
-                    folders = (jsonDecode(foldersJson) as List<dynamic>)
-                        .map((folder) => NoteFolderDto(
-                              id: folder['id'],
-                              title: folder['title'],
-                            ))
-                        .toList();
-                  } else {
-                    folders = [];
-                  }
-
-
-                  if (kDebugMode) {
-                    print('Parsed folders for note $noteId: $folders');
-                  }
-
-                  // Parse the tags JSON array.
-                  final tagsJson = row.read<String?>('tags');
-                  final List<NoteTag> tags;
-                  if (tagsJson != null) {
-                    tags = (jsonDecode(tagsJson) as List<dynamic>)
-                        .map((tag) => NoteTag(
-                              id: tag['id'],
-                              tagTitle: tag['tag_title'],
-                              createdAt: DateTime.now(), // Placeholder, actual value not fetched
-                              updatedAt: DateTime.now(), // Placeholder, actual value not fetched
-                            ))
-                        .toList();
-                  } else {
-                    tags = [];
-                  }
-
-                  final audioFilePath = row.read<String?>('audio_file_path');
-                  final audioDuration = row.read<int?>('audio_duration');
-                  if (kDebugMode) {
-                    print(
-                        'Audio file path for note $noteId: $audioFilePath, duration: $audioDuration');
-                  }
-
-                  notesMap[noteId] = NoteWithDetails(
-                    note: Note(
-                      id: noteId,
-                      noteTitle: row.read<String?>('note_title'),
-                      defaultNoteType: row.read<String>('default_note_type'),
-                      content: row.read<String?>('content') != null ? EncryptionService.decrypt(row.read<String>('content')) : null,
-                      contentPlainText: row.read<String?>('content_plain_text') != null ? EncryptionService.decrypt(row.read<String>('content_plain_text')) : null,
-                      audioFilePath: audioFilePath,
-                      audioDuration: audioDuration,
-                      reminderDescription:
-                          row.read<String?>('reminder_description'),
-                      reminderTime: row.read<DateTime?>('reminder_time'),
-                      isPinned: row.read<bool>('is_pinned'),
-                      createdAt: row.read<DateTime>('created_at'),
-                      updatedAt: row.read<DateTime>('updated_at'),
-                      isArchived: row.read<bool?>('is_archived') ?? false,
-                    ),
-                    folders: folders,
-                    attachments: [],
-                    todoItems: [],
-                    tags: tags,
-                  );
-
-                  if (kDebugMode) {
-                    print('Successfully parsed note with ID: $noteId');
-                  }
-                }
-
-                // Parse attachments if they exist.
-                final attachmentName = row.read<String?>('attachment_name');
-                if (attachmentName != null) {
-                  if (kDebugMode) {
-                    print(
-                        'Parsing attachment for note $noteId: $attachmentName');
-                  }
-
-                  notesMap[noteId]!.attachments.add(
-                        NoteAttachmentDto(
-                          mimeType: row.read<String?>('attachment_mime_type'),
-                          path: row.read<String>('attachment_path'),
-                          name: attachmentName,
-                        ),
-                      );
-
-                  if (kDebugMode) {
-                    print('Successfully parsed attachment for note $noteId');
-                  }
-                }
-
-                // Parse to-do items if they exist.
-                final todoTitle = row.read<String?>('todo_title');
-                final todoId = row.read<int?>('todo_id');
-                if (todoTitle != null) {
-                  if (kDebugMode) {
-                    print('Parsing to-do item for note $noteId: $todoTitle');
-                  }
-
-                  notesMap[noteId]!.todoItems.add(
-                        NoteTodoItem(
-                          id: todoId!,
-                          noteId: noteId,
-                          todoTitle: todoTitle,
-                          isDone: row.read<bool>('todo_is_done'),
-                        ),
-                      );
-
-                  if (kDebugMode) {
-                    print('Successfully parsed to-do item for note $noteId');
-                  }
-                }
+              // Parse the folders JSON array.
+              final foldersJson = row.read<String?>('folders');
+              if (kDebugMode) {
+                print('Folders JSON for note $noteId: $foldersJson');
               }
 
+              final List<NoteFolderDto> folders;
+              if (foldersJson != null) {
+                folders = (jsonDecode(foldersJson) as List<dynamic>)
+                    .map((folder) => NoteFolderDto(
+                          id: folder['id'],
+                          title: folder['title'],
+                        ))
+                    .toList();
+              } else {
+                folders = [];
+              }
+
+              if (kDebugMode) {
+                print('Parsed folders for note $noteId: $folders');
+              }
+
+              // Parse the tags JSON array.
+              final tagsJson = row.read<String?>('tags');
+              final List<NoteTag> tags;
+              if (tagsJson != null) {
+                tags = (jsonDecode(tagsJson) as List<dynamic>)
+                    .map((tag) => NoteTag(
+                          id: tag['id'],
+                          tagTitle: tag['tag_title'],
+                          createdAt: DateTime
+                              .now(), // Placeholder, actual value not fetched
+                          updatedAt: DateTime
+                              .now(), // Placeholder, actual value not fetched
+                        ))
+                    .toList();
+              } else {
+                tags = [];
+              }
+
+              final audioFilePath = row.read<String?>('audio_file_path');
+              final audioDuration = row.read<int?>('audio_duration');
               if (kDebugMode) {
                 print(
-                    'Finished processing all rows. Returning ${notesMap.length} notes.');
+                    'Audio file path for note $noteId: $audioFilePath, duration: $audioDuration');
               }
 
-              return notesMap.values.toList();
-            },
-          );
+              notesMap[noteId] = NoteWithDetails(
+                note: Note(
+                  id: noteId,
+                  noteTitle: row.read<String?>('note_title'),
+                  defaultNoteType: row.read<String>('default_note_type'),
+                  content: row.read<String?>('content') != null
+                      ? EncryptionService.decrypt(row.read<String>('content'))
+                      : null,
+                  contentPlainText:
+                      row.read<String?>('content_plain_text') != null
+                          ? EncryptionService.decrypt(
+                              row.read<String>('content_plain_text'))
+                          : null,
+                  audioFilePath: audioFilePath,
+                  audioDuration: audioDuration,
+                  reminderDescription:
+                      row.read<String?>('reminder_description'),
+                  reminderTime: row.read<DateTime?>('reminder_time'),
+                  isPinned: row.read<bool>('is_pinned'),
+                  createdAt: row.read<DateTime>('created_at'),
+                  updatedAt: row.read<DateTime>('updated_at'),
+                  isArchived: row.read<bool?>('is_archived') ?? false,
+                  isDeleted: row.read<bool?>('is_deleted') ?? false,
+                ),
+                folders: folders,
+                attachments: [],
+                todoItems: [],
+                tags: tags,
+              );
+
+              if (kDebugMode) {
+                print('Successfully parsed note with ID: $noteId');
+              }
+            }
+
+            // Parse attachments if they exist.
+            final attachmentName = row.read<String?>('attachment_name');
+            if (attachmentName != null) {
+              if (kDebugMode) {
+                print('Parsing attachment for note $noteId: $attachmentName');
+              }
+
+              notesMap[noteId]!.attachments.add(
+                    NoteAttachmentDto(
+                      mimeType: row.read<String?>('attachment_mime_type'),
+                      path: row.read<String>('attachment_path'),
+                      name: attachmentName,
+                    ),
+                  );
+
+              if (kDebugMode) {
+                print('Successfully parsed attachment for note $noteId');
+              }
+            }
+
+            // Parse to-do items if they exist.
+            final todoTitle = row.read<String?>('todo_title');
+            final todoId = row.read<int?>('todo_id');
+            if (todoTitle != null) {
+              if (kDebugMode) {
+                print('Parsing to-do item for note $noteId: $todoTitle');
+              }
+
+              notesMap[noteId]!.todoItems.add(
+                    NoteTodoItem(
+                      id: todoId!,
+                      noteId: noteId,
+                      todoTitle: todoTitle,
+                      isDone: row.read<bool>('todo_is_done'),
+                    ),
+                  );
+
+              if (kDebugMode) {
+                print('Successfully parsed to-do item for note $noteId');
+              }
+            }
+          }
+
+          if (kDebugMode) {
+            print(
+                'Finished processing all rows. Returning ${notesMap.length} notes.');
+          }
+
+          return notesMap.values.toList();
+        },
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Something went wrong while fetching notes with details: $e');
@@ -514,7 +553,8 @@ class DriftNoteService {
     }
   }
 
-  static Stream<List<NoteWithDetails>> watchNotesWithDetailsByFolder(int folderId) {
+  static Stream<List<NoteWithDetails>> watchNotesWithDetailsByFolder(
+      int folderId) {
     try {
       final database = getIt<AppDatabase>();
       return database
@@ -571,8 +611,10 @@ class DriftNoteService {
                     .map((tag) => NoteTag(
                           id: tag['id'],
                           tagTitle: tag['tag_title'],
-                          createdAt: DateTime.now(), // Placeholder, actual value not fetched
-                          updatedAt: DateTime.now(), // Placeholder, actual value not fetched
+                          createdAt: DateTime
+                              .now(), // Placeholder, actual value not fetched
+                          updatedAt: DateTime
+                              .now(), // Placeholder, actual value not fetched
                         ))
                     .toList();
               } else {
@@ -584,20 +626,28 @@ class DriftNoteService {
                   id: row.read<int>('id'),
                   noteTitle: row.read<String?>('note_title'),
                   defaultNoteType: row.read<String>('default_note_type'),
-                  content: row.read<String?>('content') != null ? EncryptionService.decrypt(row.read<String>('content')) : null,
-                  contentPlainText: row.read<String?>('content_plain_text') != null ? EncryptionService.decrypt(row.read<String>('content_plain_text')) : null,
+                  content: row.read<String?>('content') != null
+                      ? EncryptionService.decrypt(row.read<String>('content'))
+                      : null,
+                  contentPlainText:
+                      row.read<String?>('content_plain_text') != null
+                          ? EncryptionService.decrypt(
+                              row.read<String>('content_plain_text'))
+                          : null,
                   audioFilePath: row.read<String?>('audio_file_path'),
                   audioDuration: row.read<int?>('audio_duration'),
-                  reminderDescription: row.read<String?>('reminder_description'),
+                  reminderDescription:
+                      row.read<String?>('reminder_description'),
                   reminderTime: row.read<DateTime?>('reminder_time'),
                   isPinned: row.read<bool>('is_pinned'),
                   createdAt: row.read<DateTime>('created_at'),
                   updatedAt: row.read<DateTime>('updated_at'),
                   isArchived: row.read<bool?>('is_archived') ?? false,
+                  isDeleted: row.read<bool?>('is_deleted') ?? false,
                 ),
                 folders: folders,
                 attachments: [], // Note: This query doesn't fetch attachments
-                todoItems: [],   // Note: This query doesn't fetch todos
+                todoItems: [], // Note: This query doesn't fetch todos
                 tags: tags,
               );
             }).toList();

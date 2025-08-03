@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:pinpoint/entities/note_tags.dart';
+import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/services/dialog_service.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';

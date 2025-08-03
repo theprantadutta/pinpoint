@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pinpoint/entities/note_todo_item.dart';
+import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 
 import '../../../services/dialog_service.dart';
@@ -188,7 +188,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                           title: GestureDetector(
                             onTap: () => markTodo(todo, !todo.isDone),
                             child: Text(
-                              todo.title,
+                              todo.todoTitle,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
