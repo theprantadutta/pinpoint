@@ -1,3 +1,5 @@
+import 'package:flex_color_scheme/flex_color_scheme.dart';
+
 import 'design/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
@@ -57,13 +59,13 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.light;
-  FlexScheme _flexScheme = kDefaultFlexTheme;
+  // FlexScheme _flexScheme = kDefaultFlexTheme;
   bool _isBiometricEnabled = false;
   SharedPreferences? _sharedPreferences;
 
   /// This is needed for components that may have a different theme data
   bool get isDarkMode => _themeMode == ThemeMode.dark;
-  FlexScheme get flexScheme => _flexScheme;
+  // FlexScheme get flexScheme => _flexScheme;
   bool get isBiometricEnabled => _isBiometricEnabled;
 
   void changeBiometricEnabledEnabled(bool isisBiometricEnabled) {
@@ -73,12 +75,12 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void changeFlexScheme(FlexScheme flexScheme) {
-    setState(() {
-      _flexScheme = flexScheme;
-      _sharedPreferences?.setString(kFlexSchemeKey, flexScheme.name);
-    });
-  }
+  // void changeFlexScheme(FlexScheme flexScheme) {
+  //   setState(() {
+  //     _flexScheme = flexScheme;
+  //     _sharedPreferences?.setString(kFlexSchemeKey, flexScheme.name);
+  //   });
+  // }
 
   void changeTheme(ThemeMode themeMode) {
     setState(() {
@@ -95,10 +97,10 @@ class _MyAppState extends State<MyApp> {
         () => _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light,
       );
     }
-    final flexScheme = _sharedPreferences?.getString(kFlexSchemeKey);
-    if (flexScheme != null) {
-      setState(() => _flexScheme = FlexScheme.values.byName(flexScheme));
-    }
+    // final flexScheme = _sharedPreferences?.getString(kFlexSchemeKey);
+    // if (flexScheme != null) {
+    //   setState(() => _flexScheme = FlexScheme.values.byName(flexScheme));
+    // }
     final isFingerPrintEnabled = _sharedPreferences?.getBool(kBiometricKey);
     if (isFingerPrintEnabled != null) {
       setState(() => _isBiometricEnabled = isFingerPrintEnabled);

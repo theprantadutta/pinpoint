@@ -49,8 +49,9 @@ dependencies:
   timezone: ^0.9.4
   local_auth: ^2.2.0
   encrypt: ^5.0.1
-  google_mlkit_text_recognition: ^0.11.0
-  speech_to_text: ^6.6.1
+  google_mlkit_text_recognition: ^0.15.0
+  speech_to_text: ^7.1.0
+  logger: ^2.4.0
 
 dev_dependencies:
   flutter_test:
@@ -59,6 +60,21 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   drift_dev: ^2.24.0
   build_runner: ^2.4.14
+
+flutter_plugins:
+  logger:
+    platforms:
+      android:
+      ios:
+      linux:
+      macos:
+      web:
+      windows:
+
+# This is a direct command to Flutter to ignore all other requests
+# and ONLY use version 7.1.0 of this package.
+dependency_overrides:
+  speech_to_text: 7.1.0
 
 flutter:
   uses-material-design: true

@@ -8,24 +8,27 @@ class NotificationService {
 
   static Future<void> init() async {
     tz.initializeTimeZones();
-    final AndroidInitializationSettings initializationSettingsAndroid = 
-        const AndroidInitializationSettings('app_icon'); // Replace 'app_icon' with your app's icon name
+    final AndroidInitializationSettings initializationSettingsAndroid =
+        const AndroidInitializationSettings(
+            '@mipmap/ic_launcher'); // Replace 'app_icon' with your app's icon name
 
-    final DarwinInitializationSettings initializationSettingsDarwin = 
+    final DarwinInitializationSettings initializationSettingsDarwin =
         const DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
 
-    final InitializationSettings initializationSettings = InitializationSettings(
+    final InitializationSettings initializationSettings =
+        InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsDarwin,
     );
 
     await _flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
+      onDidReceiveNotificationResponse:
+          (NotificationResponse notificationResponse) async {
         // Handle notification tap
       },
     );

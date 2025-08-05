@@ -96,7 +96,7 @@ class _CreateNoteTagSelectState extends State<CreateNoteTagSelect> {
                     backgroundColor: kPrimaryColor.withValues(alpha: 0.2),
                     labelStyle: TextStyle(color: isDarkTheme ? Colors.white : Colors.black),
                   );
-                }).toList(),
+                }),
                 ActionChip(
                   avatar: Icon(Icons.add),
                   label: Text('Select Existing'),

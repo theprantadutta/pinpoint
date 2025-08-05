@@ -31,11 +31,16 @@ class NoteCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: AppTheme.radiusL,
-          child: Container(
-            padding: const EdgeInsets.all(14),
+          splashColor: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+          highlightColor: Colors.transparent,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: AppTheme.radiusL,
-              color: (dark ? const Color(0xFF12151C) : Colors.white).withOpacity(0.78),
+              color: (dark ? const Color(0xFF12151C) : Colors.white)
+                  .withOpacity(0.78),
               boxShadow: AppTheme.shadowSoft(dark),
               border: Border.all(
                 color: (dark ? Colors.white : Colors.black).withOpacity(0.06),
@@ -51,11 +56,16 @@ class NoteCard extends StatelessWidget {
                         title?.isNotEmpty == true ? title! : 'Untitled',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: text.titleMedium,
+                        style: text.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.1,
+                        ),
                       ),
                     ),
                     if (pinned)
-                      const Icon(Icons.push_pin_rounded, size: 18, color: AppTheme.primary),
+                      Icon(Icons.push_pin_rounded,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -69,17 +79,25 @@ class NoteCard extends StatelessWidget {
                 const Spacer(),
                 Row(
                   children: [
-                    Icon(Icons.schedule_rounded, size: 14, color: Colors.grey.shade500),
+                    Icon(Icons.schedule_rounded,
+                        size: 14, color: Colors.grey.shade500),
                     const SizedBox(width: 6),
                     Text(
                       _friendlyTime(updatedAt),
-                      style: text.labelMedium?.copyWith(color: Colors.grey.shade600),
+                      style: text.labelMedium
+                          ?.copyWith(color: Colors.grey.shade600),
                     ),
                     const Spacer(),
-                    ...tags.take(2).map((t) => Padding(
-                          padding: const EdgeInsets.only(left: 6),
-                          child: Chip(label: Text(t), visualDensity: VisualDensity.compact),
-                        )),
+                    ...tags.take(2).map(
+                          (t) => Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: Chip(
+                              label: Text(t),
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ),
                   ],
                 )
               ],
