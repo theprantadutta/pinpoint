@@ -6,6 +6,7 @@ class PillButton extends StatelessWidget {
   final IconData? icon;
   final VoidCallback? onPressed;
   final bool primaryStyle;
+  final bool destructive;
 
   const PillButton({
     super.key,
@@ -13,28 +14,39 @@ class PillButton extends StatelessWidget {
     this.icon,
     this.onPressed,
     this.primaryStyle = false,
+    this.destructive = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
 
-    final bg = primaryStyle
-        ? AppTheme.primary
-        : (dark ? const Color(0xFF12151C) : Colors.white).withOpacity(0.72);
-    final fg = primaryStyle
-        ? Colors.white
-        : (dark ? Colors.white : Colors.black.withOpacity(0.8));
+    final Color bg = switch ((primaryStyle, destructive, dark)) {
+      (true, _, _) => AppTheme.primary,
+      (false, true, _) => AppTheme.danger.withOpacity(dark ? 0.24 : 0.14),
+      (false, false, true) => const Color(0xFF12151C).withOpacity(0.78),
+      _ => Colors.white.withOpacity(0.78),
+    };
+
+    final Color fg = switch ((primaryStyle, destructive, dark)) {
+      (true, _, _) => Colors.white,
+      (false, true, _) => AppTheme.danger,
+      (false, false, true) => Colors.white,
+      _ => Colors.black.withOpacity(0.84),
+    };
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: const StadiumBorder().radius,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        borderRadius: const BorderRadius.all(Radius.circular(999)),
+        splashColor: AppTheme.primary.withOpacity(0.12),
+        highlightColor: Colors.transparent,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           decoration: BoxDecoration(
             color: bg,
             borderRadius: const BorderRadius.all(Radius.circular(999)),
@@ -50,7 +62,14 @@ class PillButton extends StatelessWidget {
                 Icon(icon, size: 18, color: fg),
                 const SizedBox(width: 8),
               ],
-              Text(label, style: text.labelLarge?.copyWith(color: fg)),
+              Text(
+                label,
+                style: text.labelLarge?.copyWith(
+                  color: fg,
+                  letterSpacing: 0.2,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),

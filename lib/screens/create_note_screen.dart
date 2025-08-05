@@ -25,6 +25,9 @@ import '../dtos/note_folder_dto.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/drift_note_service.dart';
 import '../util/show_a_toast.dart';
+import '../services/logger_service.dart';
+import '../services/logger_service.dart';
+import '../services/logger_service.dart';
 
 class CreateNoteScreen extends StatefulWidget {
   static const String kRouteName = '/create-note';
@@ -66,27 +69,40 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   @override
   void initState() {
+    super.initState();
     _quillController = QuillController.basic();
     _titleEditingController = TextEditingController(text: '');
     _reminderDescription = TextEditingController(text: '');
     if (widget.args?.existingNote != null) {
-      // print(widget.args?.existingNote.toString());
       final existingNote = widget.args!.existingNote!;
       selectedNoteType = existingNote.note.defaultNoteType;
       _titleEditingController.text = existingNote.note.noteTitle ?? '';
-      _quillController.document =
-          Document.fromJson(jsonDecode(existingNote.note.content ?? ''));
+      try {
+        final raw = existingNote.note.content ?? '';
+        final decoded = raw.isNotEmpty ? jsonDecode(raw) : null;
+        _quillController.document =
+            decoded != null ? Document.fromJson(decoded) : Document();
+      } catch (e, st) {
+        log.w('[CreateNote] Failed to parse existing note content', e, st);
+        _quillController.document = Document();
+      }
       selectedFolders = existingNote.folders;
-      todos = existingNote.todoItems;
-      selectedTags = existingNote.tags;
+      todos = List<NoteTodoItem>.from(existingNote.todoItems);
+      selectedTags = List<NoteTag>.from(existingNote.tags);
     }
-    super.initState();
   }
 
   @override
   void dispose() {
-    _quillController.dispose();
-    _titleEditingController.dispose();
+    try {
+      _quillController.dispose();
+    } catch (_) {}
+    try {
+      _titleEditingController.dispose();
+    } catch (_) {}
+    try {
+      _reminderDescription.dispose();
+    } catch (_) {}
     super.dispose();
   }
 
@@ -198,20 +214,22 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       ],
       body: BackButtonListener(
         onBackButtonPressed: () async {
-          if (_titleEditingController.text.isNotEmpty ||
+          final hasUnsaved = _titleEditingController.text.isNotEmpty ||
               _quillController.document.toPlainText().isNotEmpty ||
               (audioPath != null && audioPath!.isNotEmpty) ||
               (todos.isNotEmpty) ||
               _reminderDescription.text.isNotEmpty ||
-              reminderDateTime != null) {
-            showDialog(
+              reminderDateTime != null;
+
+          if (hasUnsaved) {
+            final shouldDiscard = await showDialog<bool>(
               context: context,
-              builder: (context) {
+              builder: (dialogCtx) {
                 return AlertDialog(
                   title: Text('Please Confirm!'),
                   content: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: [
+                    children: const [
                       Text(
                         'You have unsaved changes. Do you wish to discard?',
                         textAlign: TextAlign.center,
@@ -220,24 +238,26 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                   ),
                   actions: [
                     ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('No'),
+                      onPressed: () => Navigator.of(dialogCtx).pop(false),
+                      child: const Text('No'),
                     ),
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        context
-                            .pop(); // Ensure GoRouter is handling navigation properly
-                      },
-                      child: Text('Yes'),
+                      onPressed: () => Navigator.of(dialogCtx).pop(true),
+                      child: const Text('Yes'),
                     ),
                   ],
                 );
               },
             );
-            return true;
+
+            if (shouldDiscard == true) {
+              if (!mounted) return true;
+              context.pop();
+              return true;
+            }
+            return true; // consumed back press
           }
-          return false;
+          return false; // allow default pop
         },
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -272,17 +292,24 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                       if (selectedNoteType == kNoteTypes[1])
                         RecordTypeContent(
                           audioPath: audioPath,
-                          onAudioPathChanged: (audioPathValue) =>
-                              audioPath = audioPathValue,
+                          onAudioPathChanged: (audioPathValue) {
+                            if (!mounted) return;
+                            setState(() {
+                              audioPath = audioPathValue;
+                            });
+                          },
                           audioDuration: audioDuration,
-                          onAudioDurationChanged: (audioDurationValue) =>
-                              setState(
-                            () => audioDuration == audioDurationValue,
-                          ),
+                          onAudioDurationChanged: (audioDurationValue) {
+                            if (!mounted) return;
+                            setState(() {
+                              audioDuration = audioDurationValue;
+                            });
+                          },
                           onTranscribedText: (transcribedText) {
+                            if (!mounted) return;
                             _quillController.document.insert(
                               _quillController.document.length,
-                              '\n\n' + transcribedText,
+                              '\n\n$transcribedText',
                             );
                           },
                         ),
@@ -312,7 +339,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: saveNoteToLocalDb,
+                  onTap: () async {
+                    await saveNoteToLocalDb();
+                  },
                   child: Container(
                     height: MediaQuery.sizeOf(context).height * 0.07,
                     width: double.infinity,

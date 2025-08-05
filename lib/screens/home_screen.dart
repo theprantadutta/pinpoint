@@ -17,22 +17,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5),
-      child: Column(
-        children: [
-          HomeScreenTopBar(
-            onSearchChanged: (query) {
-              setState(() {
-                _searchQuery = query;
-              });
-            },
-          ),
-          const SizedBox(height: 10),
-          HomeScreenMyFolders(),
-          const SizedBox(height: 10),
-          HomeScreenRecentNotes(searchQuery: _searchQuery),
-        ],
+    final theme = Theme.of(context);
+    return Container(
+      // Full-bleed background, no outer white gutters
+      color: theme.scaffoldBackgroundColor,
+      width: double.infinity,
+      height: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: 12), // consistent inner gutter
+        child: Column(
+          children: [
+            HomeScreenTopBar(
+              onSearchChanged: (query) {
+                setState(() {
+                  _searchQuery = query;
+                });
+              },
+            ),
+            const SizedBox(height: 10),
+            const HomeScreenMyFolders(),
+            const SizedBox(height: 10),
+            HomeScreenRecentNotes(searchQuery: _searchQuery),
+          ],
+        ),
       ),
     );
   }

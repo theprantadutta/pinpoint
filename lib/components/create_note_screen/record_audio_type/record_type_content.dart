@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:avatar_glow/avatar_glow.dart';
@@ -30,25 +31,29 @@ class RecordTypeContent extends StatefulWidget {
 class _RecordTypeContentState extends State<RecordTypeContent> {
   final AudioRecorder _recorder = AudioRecorder();
   final AudioPlayer _player = AudioPlayer();
+  StreamSubscription<void>? _onCompleteSub;
   bool _isRecording = false;
   bool _isPlaying = false;
 
   Future<void> _startRecording() async {
+    if (!mounted) return;
     if (await _recorder.hasPermission()) {
       final dir = await getApplicationDocumentsDirectory();
       final currentAudioPath = '${dir.path}/my_audio.m4a';
 
       await _recorder.start(RecordConfig(), path: currentAudioPath);
 
+      if (!mounted) return;
       setState(() {
         _isRecording = true;
-        widget.onAudioPathChanged(currentAudioPath);
       });
+      widget.onAudioPathChanged(currentAudioPath);
     }
   }
 
   Future<void> _stopRecording() async {
     await _recorder.stop();
+    if (!mounted) return;
     setState(() => _isRecording = false);
 
     if (widget.audioPath != null) {
@@ -56,7 +61,8 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Transcribe Audio?'),
-          content: const Text('Do you want to transcribe this audio recording?'),
+          content:
+              const Text('Do you want to transcribe this audio recording?'),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -71,7 +77,9 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
       );
 
       if (doTranscribe == true) {
-        final String transcribedText = await TranscriptionService.transcribeAudio(widget.audioPath!);
+        final String transcribedText =
+            await TranscriptionService.transcribeAudio(widget.audioPath!);
+        if (!mounted) return;
         if (transcribedText.isNotEmpty) {
           widget.onTranscribedText(transcribedText);
         }
@@ -82,9 +90,12 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
   Future<void> _playAudio() async {
     if (widget.audioPath != null && File(widget.audioPath!).existsSync()) {
       await _player.play(DeviceFileSource(widget.audioPath!));
+      if (!mounted) return;
       setState(() => _isPlaying = true);
 
-      _player.onPlayerComplete.listen((_) {
+      _onCompleteSub?.cancel();
+      _onCompleteSub = _player.onPlayerComplete.listen((_) {
+        if (!mounted) return;
         setState(() => _isPlaying = false);
       });
     }
@@ -92,8 +103,15 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
 
   @override
   void dispose() {
-    _recorder.dispose();
-    _player.dispose();
+    try {
+      _onCompleteSub?.cancel();
+    } catch (_) {}
+    try {
+      _recorder.dispose();
+    } catch (_) {}
+    try {
+      _player.dispose();
+    } catch (_) {}
     super.dispose();
   }
 

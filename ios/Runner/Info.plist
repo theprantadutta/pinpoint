@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Local Auth -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Authenticate to access Pinpoint.</string>
+	<key>NSTouchIDUsageDescription</key>
+	<string>Authenticate to access Pinpoint.</string>
 </dict>
 </plist>
