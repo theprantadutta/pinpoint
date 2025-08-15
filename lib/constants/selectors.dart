@@ -32,3 +32,4 @@ BoxDecoration getBackgroundDecoration(Color kPrimaryColor) {
     ),
   );
 }
+

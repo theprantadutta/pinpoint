@@ -1,16 +1,18 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
-import 'package:pinpoint/services/logger_service.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/dtos/note_attachment_dto.dart';
-
-import '../dtos/note_folder_dto.dart';
-import '../models/note_with_details.dart';
-import '../service_locators/init_service_locators.dart';
-import 'package:pinpoint/services/notification_service.dart';
+import 'package:pinpoint/dtos/note_folder_dto.dart';
+import 'package:pinpoint/models/note_todo_item_with_note.dart';
+import 'package:pinpoint/models/note_with_details.dart';
+import 'package:pinpoint/service_locators/init_service_locators.dart';
+import 'package:pinpoint/services/drift_note_folder_service.dart';
 import 'package:pinpoint/services/encryption_service.dart';
+import 'package:pinpoint/services/logger_service.dart';
+import 'package:pinpoint/services/notification_service.dart';
+import 'package:drift/drift.dart' as drift;
 
 class DriftNoteService {
   DriftNoteService._();
@@ -39,10 +41,10 @@ class DriftNoteService {
       final database = getIt<AppDatabase>();
 
       final encryptedContent = note.content.value != null
-          ? EncryptionService.encrypt(note.content.value!)
+          ? SecureEncryptionService.encrypt(note.content.value!)
           : null;
       final encryptedContentPlainText = note.contentPlainText.value != null
-          ? EncryptionService.encrypt(note.contentPlainText.value!)
+          ? SecureEncryptionService.encrypt(note.contentPlainText.value!)
           : null;
 
       final noteToSave = note.copyWith(
@@ -240,6 +242,17 @@ class DriftNoteService {
         .write(NotesCompanion(isPinned: Value(isPinned)));
   }
 
+  static Future<void> removeReminder(int noteId) async {
+    final database = getIt<AppDatabase>();
+    await (database.update(database.notes)
+          ..where((tbl) => tbl.id.equals(noteId)))
+        .write(const NotesCompanion(
+      reminderTime: Value(null),
+      reminderDescription: Value(null),
+    ));
+    NotificationService.cancelNotification(noteId);
+  }
+
   static Stream<List<NoteWithDetails>> watchArchivedNotes() {
     return (getIt<AppDatabase>().select(getIt<AppDatabase>().notes)
           ..where((tbl) => tbl.isArchived.equals(true))
@@ -291,6 +304,13 @@ class DriftNoteService {
         id: id, tagTitle: title, createdAt: now.value, updatedAt: now.value);
   }
 
+  static Future<void> updateNoteTag(int tagId, String newTitle) async {
+    final database = getIt<AppDatabase>();
+    await (database.update(database.noteTags)
+          ..where((tbl) => tbl.id.equals(tagId)))
+        .write(NoteTagsCompanion(tagTitle: Value(newTitle)));
+  }
+
   static Future<void> deleteNoteTag(int tagId) async {
     final database = getIt<AppDatabase>();
     await database.transaction(() async {
@@ -330,10 +350,13 @@ class DriftNoteService {
   }
 
   static Stream<List<NoteWithDetails>> watchNotesWithDetails(
-      [String searchQuery = '']) {
+      [String searchQuery = '',
+      String sortType = 'updatedAt',
+      String sortDirection = 'desc']) {
     try {
       final database = getIt<AppDatabase>();
-      log.d('[watchNotesWithDetails] start; query="$searchQuery"');
+      log.d(
+          '[watchNotesWithDetails] start; query="$searchQuery", sort: $sortType $sortDirection');
 
       String whereClause = 'WHERE n.is_archived = 0 AND n.is_deleted = 0';
       List<dynamic> variables = [];
@@ -341,6 +364,20 @@ class DriftNoteService {
         whereClause +=
             ' AND (n.note_title LIKE ? OR n.content_plain_text LIKE ?)';
         variables = ['%$searchQuery%', '%$searchQuery%'];
+      }
+
+      String orderBy;
+      switch (sortType) {
+        case 'createdAt':
+          orderBy = 'n.created_at';
+          break;
+        case 'title':
+          orderBy = 'n.note_title';
+          break;
+        case 'updatedAt':
+        default:
+          orderBy = 'n.updated_at';
+          break;
       }
 
       final sql = '''
@@ -375,7 +412,7 @@ class DriftNoteService {
     LEFT JOIN note_todo_items t ON n.id = t.note_id
     $whereClause
     GROUP BY n.id
-    ORDER BY n.is_pinned DESC, n.updated_at DESC
+    ORDER BY n.is_pinned DESC, $orderBy ${sortDirection.toUpperCase()}
     ''';
 
       log.d('[watchNotesWithDetails] SQL: $sql');
@@ -613,6 +650,180 @@ class DriftNoteService {
     }
   }
 
+  static Stream<List<NoteTodoItemWithNote>> watchAllTodoItems() {
+    try {
+      final database = getIt<AppDatabase>();
+      log.d('[watchAllTodoItems] start');
+
+      final sql = '''
+        SELECT
+          t.id AS todo_id,
+          t.note_id AS todo_note_id,
+          t.todo_title AS todo_title,
+          t.is_done AS todo_is_done,
+          n.note_title AS note_title,
+          n.created_at AS note_created_at,
+          n.updated_at AS note_updated_at
+        FROM note_todo_items t
+        INNER JOIN notes n ON t.note_id = n.id
+        WHERE n.is_archived = 0 AND n.is_deleted = 0
+        ORDER BY n.is_pinned DESC, n.updated_at DESC, t.id ASC
+      ''';
+
+      log.d('[watchAllTodoItems] SQL: $sql');
+
+      return database
+          .customSelect(
+            sql,
+            readsFrom: {
+              database.noteTodoItems,
+              database.notes,
+            },
+          )
+          .watch()
+          .handleError((e, st) {
+            log.e('[watchAllTodoItems] stream error', e, st);
+          })
+          .map((rows) {
+            log.d('[watchAllTodoItems] rows: ${rows.length}');
+            return rows.map((row) {
+              try {
+                return NoteTodoItemWithNote(
+                  todoItem: NoteTodoItem(
+                    id: row.read<int>('todo_id'),
+                    noteId: row.read<int>('todo_note_id'),
+                    todoTitle: row.read<String>('todo_title'),
+                    isDone: row.read<bool>('todo_is_done'),
+                  ),
+                  noteTitle: row.read<String?>('note_title') ?? 'Untitled Note',
+                  noteCreatedAt: row.read<DateTime>('note_created_at'),
+                  noteUpdatedAt: row.read<DateTime>('note_updated_at'),
+                );
+              } catch (rowErr, st) {
+                log.e('[watchAllTodoItems] row parse error', rowErr, st);
+                rethrow;
+              }
+            }).toList();
+          });
+    } catch (e, st) {
+      log.e('[watchAllTodoItems] fatal error', e, st);
+      rethrow;
+    }
+  }
+
+  static Stream<List<NoteWithDetails>> watchNotesByTag(int tagId) {
+    try {
+      final database = getIt<AppDatabase>();
+      log.d('[watchNotesByTag] start; tagId=$tagId');
+
+      final sql = '''
+        SELECT
+          n.*,
+          (
+            SELECT json_group_array(json_object(
+              'id', f.note_folder_id,
+              'title', f.note_folder_title
+            ))
+            FROM note_folders f
+            INNER JOIN note_folder_relations r_inner ON f.note_folder_id = r_inner.note_folder_id
+            WHERE r_inner.note_id = n.id
+          ) AS folders,
+          (
+            SELECT json_group_array(json_object(
+              'id', t.id,
+              'tag_title', t.tag_title
+            ))
+            FROM note_tags t
+            INNER JOIN note_tag_relations tr_inner ON t.id = tr_inner.tag_id
+            WHERE tr_inner.note_id = n.id
+          ) AS tags
+        FROM notes n
+        INNER JOIN note_tag_relations tr ON n.id = tr.note_id
+        WHERE tr.tag_id = ? AND n.is_archived = 0 AND n.is_deleted = 0
+        GROUP BY n.id
+        ORDER BY n.is_pinned DESC, n.updated_at DESC
+      ''';
+
+      log.d('[watchAllTodoItems] SQL: $sql');
+
+      return database
+          .customSelect(
+            sql,
+            variables: [Variable.withInt(tagId)],
+            readsFrom: {
+              database.notes,
+              database.noteFolderRelations,
+              database.noteFolders,
+              database.noteTags,
+              database.noteTagRelations,
+            },
+          )
+          .watch()
+          .handleError((e, st) {
+            log.e('[watchNotesByTag] stream error', e, st);
+          })
+          .map((rows) {
+            log.d('[watchNotesByTag] rows: ${rows.length} for tagId=$tagId');
+            return rows.map((row) {
+              try {
+                final foldersJson = row.read<String?>('folders');
+                final List<NoteFolderDto> folders = foldersJson != null
+                    ? (jsonDecode(foldersJson) as List<dynamic>)
+                        .map((folder) => NoteFolderDto(
+                              id: folder['id'],
+                              title: folder['title'],
+                            ))
+                        .toList()
+                    : <NoteFolderDto>[];
+
+                final tagsJson = row.read<String?>('tags');
+                final List<NoteTag> tags = tagsJson != null
+                    ? (jsonDecode(tagsJson) as List<dynamic>)
+                        .map((tag) => NoteTag(
+                              id: tag['id'],
+                              tagTitle: tag['tag_title'],
+                              createdAt: DateTime.now(),
+                              updatedAt: DateTime.now(),
+                            ))
+                        .toList()
+                    : <NoteTag>[];
+
+                return NoteWithDetails(
+                  note: Note(
+                    id: row.read<int>('id'),
+                    noteTitle: row.read<String?>('note_title'),
+                    defaultNoteType: row.read<String>('default_note_type'),
+                    content: _safeDecrypt(row.read<String?>('content')),
+                    contentPlainText:
+                        _safeDecrypt(row.read<String?>('content_plain_text')),
+                    audioFilePath: row.read<String?>('audio_file_path'),
+                    audioDuration: row.read<int?>('audio_duration'),
+                    reminderDescription:
+                        row.read<String?>('reminder_description'),
+                    reminderTime: row.read<DateTime?>('reminder_time'),
+                    isPinned: row.read<bool>('is_pinned'),
+                    createdAt: row.read<DateTime>('created_at'),
+                    updatedAt: row.read<DateTime>('updated_at'),
+                    isArchived: row.read<bool?>('is_archived') ?? false,
+                    isDeleted: row.read<bool?>('is_deleted') ?? false,
+                  ),
+                  folders: folders,
+                  attachments: [],
+                  todoItems: [],
+                  tags: tags,
+                );
+              } catch (rowErr, st) {
+                log.e('[watchNotesByTag] row parse error', rowErr, st);
+                rethrow;
+              }
+            }).toList();
+          });
+    } catch (e, st) {
+      log.e('[watchNotesByTag] fatal error', e, st);
+      rethrow;
+    }
+  }
+
   // Heuristic decrypt with quiet fallback:
   // - If it looks like JSON/delta (starts with '[' or '{'), return as-is.
   // - If it is not base64-like or length not multiple of 4, return as-is.
@@ -638,9 +849,69 @@ class DriftNoteService {
     }
 
     try {
-      return EncryptionService.decrypt(v);
+      return SecureEncryptionService.decrypt(v);
     } catch (_) {
       return value;
     }
+  }
+
+  static Future<void> importNoteFromJson(String jsonString) async {
+    final database = getIt<AppDatabase>();
+    final noteJson = jsonDecode(jsonString);
+
+    final title = noteJson['title'] as String;
+    final content = jsonEncode(noteJson['content']);
+    final plainText =
+        Document.fromJson(noteJson['content']).toPlainText().trim();
+    final now = DateTime.now();
+
+    final noteCompanion = NotesCompanion.insert(
+      noteTitle: drift.Value(title),
+      isPinned: drift.Value(false),
+      defaultNoteType: 'note',
+      content: drift.Value(content),
+      contentPlainText: drift.Value(plainText),
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    final noteId = await database.into(database.notes).insert(noteCompanion);
+
+    final folderTitles = noteJson['folders'] as List<dynamic>;
+    final folders = <NoteFolderDto>[];
+    for (final title in folderTitles) {
+      final existingFolder = await (database.select(database.noteFolders)
+            ..where((tbl) => tbl.noteFolderTitle.equals(title)))
+          .getSingleOrNull();
+      if (existingFolder != null) {
+        folders.add(NoteFolderDto(
+            id: existingFolder.noteFolderId,
+            title: existingFolder.noteFolderTitle));
+      } else {
+        final newFolderId = await database.into(database.noteFolders).insert(
+            NoteFoldersCompanion.insert(
+                noteFolderTitle: title, createdAt: now, updatedAt: now));
+        folders.add(NoteFolderDto(id: newFolderId, title: title));
+      }
+    }
+    await DriftNoteFolderService.upsertNoteFoldersWithNote(folders, noteId);
+
+    final tagTitles = noteJson['tags'] as List<dynamic>;
+    final tags = <NoteTag>[];
+    for (final title in tagTitles) {
+      final existingTag = await (database.select(database.noteTags)
+            ..where((tbl) => tbl.tagTitle.equals(title)))
+          .getSingleOrNull();
+      if (existingTag != null) {
+        tags.add(existingTag);
+      } else {
+        final newTagId = await database.into(database.noteTags).insert(
+            NoteTagsCompanion.insert(
+                tagTitle: title, createdAt: now, updatedAt: now));
+        tags.add(NoteTag(
+            id: newTagId, tagTitle: title, createdAt: now, updatedAt: now));
+      }
+    }
+    await upsertNoteTagsWithNote(tags.map((e) => e.id).toList(), noteId);
   }
 }

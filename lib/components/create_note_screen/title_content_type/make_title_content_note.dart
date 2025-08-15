@@ -36,7 +36,7 @@ class MakeTitleContentNote extends StatelessWidget {
                 vertical: 10,
               ),
               decoration: BoxDecoration(
-                color: Colors.blueGrey.withValues(alpha: 0.05),
+                color: Colors.blueGrey.withAlpha(12),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: KeyboardAvoider(
@@ -44,14 +44,13 @@ class MakeTitleContentNote extends StatelessWidget {
                   controller: quillController,
                   config: QuillEditorConfig(
                     expands: true,
-                    embedBuilders: kIsWeb
-                        ? FlutterQuillEmbeds.editorWebBuilders()
-                        : FlutterQuillEmbeds.editorBuilders(),
+                    embedBuilders: [
+                      ...kIsWeb
+                          ? FlutterQuillEmbeds.editorWebBuilders()
+                          : FlutterQuillEmbeds.editorBuilders(),
+                    ],
                     placeholder: 'Enter Content...',
                     scrollable: true,
-                    // onTapOutside: (_, focusNode) {
-                    //   FocusManager.instance.primaryFocus?.unfocus();
-                    // },
                     padding: EdgeInsets.only(bottom: 50),
                   ),
                 ),
@@ -63,3 +62,4 @@ class MakeTitleContentNote extends StatelessWidget {
     );
   }
 }
+

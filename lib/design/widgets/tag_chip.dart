@@ -20,19 +20,19 @@ class TagChip extends StatelessWidget {
     final dark = theme.brightness == Brightness.dark;
 
     final bg = selected
-        ? theme.colorScheme.primary.withOpacity(0.12)
+        ? theme.colorScheme.primary.withValues(alpha: 0.12)
         : theme.chipTheme.backgroundColor;
 
     final fg = selected
         ? theme.colorScheme.primary
-        : (dark ? Colors.white : Colors.black.withOpacity(0.84));
+        : (dark ? Colors.white : Colors.black.withValues(alpha: 0.84));
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: const BorderRadius.all(Radius.circular(999)),
-        splashColor: theme.colorScheme.primary.withOpacity(0.10),
+        splashColor: theme.colorScheme.primary.withValues(alpha: 0.10),
         highlightColor: Colors.transparent,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),

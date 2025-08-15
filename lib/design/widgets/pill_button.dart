@@ -24,16 +24,16 @@ class PillButton extends StatelessWidget {
 
     final Color bg = switch ((primaryStyle, destructive, dark)) {
       (true, _, _) => AppTheme.primary,
-      (false, true, _) => AppTheme.danger.withOpacity(dark ? 0.24 : 0.14),
-      (false, false, true) => const Color(0xFF12151C).withOpacity(0.78),
-      _ => Colors.white.withOpacity(0.78),
+      (false, true, _) => AppTheme.danger.withValues(alpha: dark ? 0.24 : 0.14),
+      (false, false, true) => const Color(0xFF12151C).withValues(alpha: 0.78),
+      _ => Colors.white.withValues(alpha: 0.78),
     };
 
     final Color fg = switch ((primaryStyle, destructive, dark)) {
       (true, _, _) => Colors.white,
       (false, true, _) => AppTheme.danger,
       (false, false, true) => Colors.white,
-      _ => Colors.black.withOpacity(0.84),
+      _ => Colors.black.withValues(alpha: 0.84),
     };
 
     return Material(
@@ -41,7 +41,7 @@ class PillButton extends StatelessWidget {
       child: InkWell(
         onTap: onPressed,
         borderRadius: const BorderRadius.all(Radius.circular(999)),
-        splashColor: AppTheme.primary.withOpacity(0.12),
+        splashColor: AppTheme.primary.withValues(alpha: 0.12),
         highlightColor: Colors.transparent,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
@@ -51,7 +51,7 @@ class PillButton extends StatelessWidget {
             color: bg,
             borderRadius: const BorderRadius.all(Radius.circular(999)),
             border: Border.all(
-              color: (dark ? Colors.white : Colors.black).withOpacity(0.06),
+              color: (dark ? Colors.white : Colors.black).withValues(alpha: 0.06),
             ),
             boxShadow: AppTheme.shadowSoft(dark),
           ),

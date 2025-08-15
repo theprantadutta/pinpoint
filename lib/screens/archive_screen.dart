@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:pinpoint/components/shared/empty_state_widget.dart';
 import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
@@ -59,10 +58,10 @@ class ArchiveScreen extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: cs.primary.withOpacity(0.14),
+                        color: cs.primary.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(
-                          color: cs.primary.withOpacity(0.22),
+                          color: cs.primary.withValues(alpha: 0.22),
                         ),
                       ),
                       child: Text(
@@ -83,8 +82,8 @@ class ArchiveScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        cs.primary.withOpacity(0.22),
-                        cs.primary.withOpacity(0.0),
+                        cs.primary.withValues(alpha: 0.22),
+                        cs.primary.withValues(alpha: 0.0),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(2),
@@ -137,15 +136,15 @@ class ArchiveScreen extends StatelessWidget {
                                   color: (dark
                                           ? const Color(0xFF0F1218)
                                           : Colors.white)
-                                      .withOpacity(0.78),
+                                      .withValues(alpha: 0.78),
                                   border: Border.all(
                                     color: (dark ? Colors.white : Colors.black)
-                                        .withOpacity(0.06),
+                                        .withValues(alpha: 0.06),
                                   ),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black
-                                          .withOpacity(dark ? 0.26 : 0.08),
+                                          .withValues(alpha: dark ? 0.26 : 0.08),
                                       blurRadius: 18,
                                       offset: const Offset(0, 10),
                                     ),
@@ -165,17 +164,17 @@ class ArchiveScreen extends StatelessWidget {
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                           colors: [
-                                            cs.primary.withOpacity(
-                                                dark ? 0.22 : 0.16),
-                                            cs.primary.withOpacity(
-                                                dark ? 0.10 : 0.08),
+                                            cs.primary.withValues(
+                                                alpha: dark ? 0.22 : 0.16),
+                                            cs.primary.withValues(
+                                                alpha: dark ? 0.10 : 0.08),
                                           ],
                                         ),
                                         border: Border.all(
                                           color: (dark
                                                   ? Colors.white
                                                   : Colors.black)
-                                              .withOpacity(0.08),
+                                              .withValues(alpha: 0.08),
                                         ),
                                       ),
                                       child: Center(
@@ -217,7 +216,7 @@ class ArchiveScreen extends StatelessWidget {
                                                     .textTheme.bodyMedium
                                                     ?.copyWith(
                                                   color: cs.onSurface
-                                                      .withOpacity(0.80),
+                                                      .withValues(alpha: 0.80),
                                                 ),
                                               ),
                                             ),

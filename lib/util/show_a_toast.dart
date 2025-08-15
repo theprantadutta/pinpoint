@@ -13,7 +13,7 @@ const kDescriptionTextStyle = TextStyle(
   color: Colors.white,
 );
 
-showSuccessToast({
+void showSuccessToast({
   required BuildContext context,
   required String title,
   required String description,
@@ -27,7 +27,7 @@ showSuccessToast({
       autoCloseDuration: Duration(seconds: 4),
     );
 
-showWarningToast({
+void showWarningToast({
   required BuildContext context,
   required String title,
   required String description,
@@ -41,7 +41,7 @@ showWarningToast({
       autoCloseDuration: Duration(seconds: 4),
     );
 
-showErrorToast({
+void showErrorToast({
   required BuildContext context,
   required String title,
   required String description,

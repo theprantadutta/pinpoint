@@ -67,7 +67,7 @@ class NoteGridItem extends StatelessWidget {
                       Text(
                         noteWithDetails.note.contentPlainText!,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.82),
+                          color: colorScheme.onSurface.withValues(alpha: 0.82),
                           height: 1.28,
                         ),
                         maxLines: 8,
@@ -231,8 +231,8 @@ class NoteGridItem extends StatelessWidget {
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: theme.brightness == Brightness.dark
-                            ? Colors.white.withOpacity(0.06)
-                            : Colors.black.withOpacity(0.04),
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : Colors.black.withValues(alpha: 0.04),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.more_vert, size: 18),
@@ -247,8 +247,8 @@ class NoteGridItem extends StatelessWidget {
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: theme.brightness == Brightness.dark
-                          ? Colors.white.withOpacity(0.06)
-                          : Colors.black.withOpacity(0.04),
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -272,7 +272,6 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Container(
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -318,10 +317,10 @@ class _MiniIconChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final bg = destructive
-        ? color.withOpacity(dark ? 0.14 : 0.10)
-        : color.withOpacity(dark ? 0.12 : 0.08);
-    final border =
-        (destructive ? color : Colors.black).withOpacity(dark ? 0.20 : 0.10);
+        ? color.withValues(alpha: dark ? 0.14 : 0.10)
+        : color.withValues(alpha: dark ? 0.12 : 0.08);
+    final border = (destructive ? color : Colors.black)
+        .withValues(alpha: dark ? 0.20 : 0.10);
 
     return Tooltip(
       message: tooltip,
@@ -338,7 +337,7 @@ class _MiniIconChip extends StatelessWidget {
             border: Border.all(color: border),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(dark ? 0.22 : 0.06),
+                color: Colors.black.withValues(alpha: dark ? 0.22 : 0.06),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               )
@@ -371,7 +370,7 @@ class _ConfirmDestructiveDialog extends StatelessWidget {
       content: Text(
         message,
         style: theme.textTheme.bodyMedium
-            ?.copyWith(color: cs.onSurface.withOpacity(0.86)),
+            ?.copyWith(color: cs.onSurface.withValues(alpha: 0.86)),
       ),
       actions: [
         TextButton(
@@ -380,7 +379,7 @@ class _ConfirmDestructiveDialog extends StatelessWidget {
         ),
         FilledButton.tonal(
           style: FilledButton.styleFrom(
-            backgroundColor: cs.error.withOpacity(0.14),
+            backgroundColor: cs.error.withValues(alpha: 0.14),
             foregroundColor: cs.error,
           ),
           onPressed: () => Navigator.of(context).pop(true),

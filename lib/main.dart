@@ -1,48 +1,212 @@
 import 'package:flex_color_scheme/flex_color_scheme.dart';
-
-import 'design/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:fquery/fquery.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_exit_app/flutter_exit_app.dart';
 
-import 'constants/selectors.dart';
 import 'constants/shared_preference_keys.dart';
+import 'design/app_theme.dart';
 import 'navigation/app_navigation.dart';
 import 'service_locators/init_service_locators.dart';
+import 'services/encryption_service.dart';
 import 'services/notification_service.dart';
 import 'services/auth_service.dart';
+import 'sync/sync_manager.dart';
 
-final queryClient = QueryClient(
-  defaultQueryOptions: DefaultQueryOptions(),
-);
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   // await dotenv.load();
+//   initServiceLocators();
+//   await NotificationService.init(); // Initialize notification service
+
+//   final sharedPreferences = await SharedPreferences.getInstance();
+//   final isBiometricEnabled = sharedPreferences.getBool(kBiometricKey) ?? false;
+
+//   if (isBiometricEnabled) {
+//     bool authenticated = await AuthService.authenticate();
+//     if (!authenticated) {
+//       // If authentication fails, exit the app
+//       // This is a simple exit, in a real app you might show an error screen or retry
+//       return;
+//     }
+//   }
+
+//   await     SecureEncryptionService.initialize();
+//   runApp(
+//     MyApp(),
+//   );
+// }
 
 void main() async {
+  // Always call this first in async main
   WidgetsFlutterBinding.ensureInitialized();
-  // await dotenv.load();
-  initServiceLocators();
-  await NotificationService.init(); // Initialize notification service
 
-  final sharedPreferences = await SharedPreferences.getInstance();
-  final isBiometricEnabled = sharedPreferences.getBool(kBiometricKey) ?? false;
+  try {
+    // Initialize core services first
+    await _initializeCoreServices();
 
-  if (isBiometricEnabled) {
-    bool authenticated = await AuthService.authenticate();
-    if (!authenticated) {
-      // If authentication fails, exit the app
-      // This is a simple exit, in a real app you might show an error screen or retry
-      return;
+    // Handle biometric authentication
+    final shouldAuthenticate = await _shouldShowBiometricAuth();
+
+    if (shouldAuthenticate) {
+      final isAuthenticated = await _handleBiometricAuth();
+      if (!isAuthenticated) {
+        // Run app with authentication failure state
+        runApp(const AuthenticationFailedApp());
+        return;
+      }
     }
+
+    // Initialize encryption service after authentication
+    await SecureEncryptionService.initialize();
+
+    // Run the main app
+    runApp(const MyApp());
+  } catch (error, stackTrace) {
+    // Handle initialization errors gracefully
+    debugPrint('App initialization error: $error');
+    debugPrint('Stack trace: $stackTrace');
+
+    // Run error app instead of crashing
+    runApp(InitializationErrorApp(error: error.toString()));
+  }
+}
+
+Future<void> _initializeCoreServices() async {
+  // Initialize services in order of dependency
+  // await dotenv.load(); // Uncomment if using dotenv
+
+  initServiceLocators(); // Assuming this is synchronous
+
+  await NotificationService.init();
+
+  // Initialize sync manager
+  final syncManager = getIt<SyncManager>();
+  await syncManager.init();
+
+  // Add any other core services here
+}
+
+Future<bool> _shouldShowBiometricAuth() async {
+  try {
+    final sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.getBool(kBiometricKey) ?? false;
+  } catch (e) {
+    debugPrint('Error checking biometric preference: $e');
+    return false; // Default to no auth if there's an error
+  }
+}
+
+Future<bool> _handleBiometricAuth() async {
+  try {
+    return await AuthService.authenticate();
+  } catch (e) {
+    debugPrint('Biometric authentication error: $e');
+    return false;
+  }
+}
+
+// Error handling apps
+class AuthenticationFailedApp extends StatelessWidget {
+  const AuthenticationFailedApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Authentication Required',
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock, size: 64, color: Colors.red),
+              SizedBox(height: 16),
+              Text(
+                'Authentication Failed',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Please restart the app and try again',
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  // Try authentication again
+                  _retryAuthentication();
+                },
+                child: Text('Try Again'),
+              ),
+              SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  // Exit the app
+                  FlutterExitApp.exitApp(iosForceExit: true);
+                },
+                child: Text('Exit App'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  runApp(
-    QueryClientProvider(
-      queryClient: queryClient,
-      child: MyApp(),
-    ),
-  );
+  void _retryAuthentication() async {
+    final isAuthenticated = await _handleBiometricAuth();
+    if (isAuthenticated) {
+      await SecureEncryptionService.initialize();
+      runApp(const MyApp());
+    }
+  }
+}
+
+class InitializationErrorApp extends StatelessWidget {
+  final String error;
+
+  const InitializationErrorApp({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Initialization Error',
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, size: 64, color: Colors.orange),
+                SizedBox(height: 16),
+                Text(
+                  'App Initialization Failed',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Error: $error',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.red),
+                ),
+                SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () {
+                    // Restart the app
+                    main();
+                  },
+                  child: Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -59,14 +223,16 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.light;
-  // FlexScheme _flexScheme = kDefaultFlexTheme;
+  FlexScheme _flexScheme = FlexScheme.material;
   bool _isBiometricEnabled = false;
+  String _selectedFont = 'Inter';
   SharedPreferences? _sharedPreferences;
 
   /// This is needed for components that may have a different theme data
   bool get isDarkMode => _themeMode == ThemeMode.dark;
-  // FlexScheme get flexScheme => _flexScheme;
+  FlexScheme get flexScheme => _flexScheme;
   bool get isBiometricEnabled => _isBiometricEnabled;
+  String get selectedFont => _selectedFont;
 
   void changeBiometricEnabledEnabled(bool isisBiometricEnabled) {
     setState(() {
@@ -75,12 +241,19 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  // void changeFlexScheme(FlexScheme flexScheme) {
-  //   setState(() {
-  //     _flexScheme = flexScheme;
-  //     _sharedPreferences?.setString(kFlexSchemeKey, flexScheme.name);
-  //   });
-  // }
+  void changeFlexScheme(FlexScheme flexScheme) {
+    setState(() {
+      _flexScheme = flexScheme;
+      _sharedPreferences?.setString(kFlexSchemeKey, flexScheme.name);
+    });
+  }
+
+  void changeFont(String fontName) {
+    setState(() {
+      _selectedFont = fontName;
+      _sharedPreferences?.setString(kSelectedFontKey, fontName);
+    });
+  }
 
   void changeTheme(ThemeMode themeMode) {
     setState(() {
@@ -89,7 +262,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void intializeSharedPreferences() async {
+  Future<void> initializeSharedPreferences() async {
     _sharedPreferences = await SharedPreferences.getInstance();
     final isDarkMode = _sharedPreferences?.getBool(kIsDarkModeKey);
     if (isDarkMode != null) {
@@ -97,13 +270,17 @@ class _MyAppState extends State<MyApp> {
         () => _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light,
       );
     }
-    // final flexScheme = _sharedPreferences?.getString(kFlexSchemeKey);
-    // if (flexScheme != null) {
-    //   setState(() => _flexScheme = FlexScheme.values.byName(flexScheme));
-    // }
+    final flexScheme = _sharedPreferences?.getString(kFlexSchemeKey);
+    if (flexScheme != null) {
+      setState(() => _flexScheme = FlexScheme.values.byName(flexScheme));
+    }
     final isFingerPrintEnabled = _sharedPreferences?.getBool(kBiometricKey);
     if (isFingerPrintEnabled != null) {
       setState(() => _isBiometricEnabled = isFingerPrintEnabled);
+    }
+    final selectedFont = _sharedPreferences?.getString(kSelectedFontKey);
+    if (selectedFont != null) {
+      setState(() => _selectedFont = selectedFont);
     }
   }
 
@@ -128,7 +305,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     setOptimalDisplayMode();
-    intializeSharedPreferences();
+    initializeSharedPreferences();
   }
 
   @override
@@ -142,9 +319,9 @@ class _MyAppState extends State<MyApp> {
       ],
       title: 'Pinpoint',
       routerConfig: AppNavigation.router,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
       themeMode: _themeMode,
+      theme: AppTheme.light(_flexScheme, _selectedFont),
+      darkTheme: AppTheme.dark(_flexScheme, _selectedFont),
       debugShowCheckedModeBanner: false,
     );
   }

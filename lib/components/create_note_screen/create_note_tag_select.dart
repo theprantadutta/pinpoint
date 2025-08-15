@@ -61,6 +61,7 @@ class _CreateNoteTagSelectState extends State<CreateNoteTagSelect> {
                         if (text.isNotEmpty) {
                           final existingTags = await DriftNoteService.watchAllNoteTags().first;
                           if (existingTags.any((t) => t.tagTitle.toLowerCase() == text.toLowerCase())) {
+                            if (!context.mounted) return;
                             showErrorToast(
                               context: context,
                               title: 'Tag already exists',
@@ -70,6 +71,7 @@ class _CreateNoteTagSelectState extends State<CreateNoteTagSelect> {
                           }
                           final newTag = await DriftNoteService.insertNoteTag(text);
                           widget.onSelectedTagsChanged([...widget.selectedTags, newTag]);
+                          if (!context.mounted) return;
                           Navigator.of(context).pop();
                         }
                       },
@@ -103,7 +105,7 @@ class _CreateNoteTagSelectState extends State<CreateNoteTagSelect> {
                   onPressed: () async {
                     final allTags = await DriftNoteService.watchAllNoteTags().first;
                     final availableTags = allTags.where((tag) => !widget.selectedTags.any((selected) => selected.id == tag.id)).toList();
-
+                    if (!context.mounted) return;
                     showModalBottomSheet(
                       context: context,
                       builder: (context) {

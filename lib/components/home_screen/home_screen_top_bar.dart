@@ -73,7 +73,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar>
     final isDarkTheme = theme.brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 260),
         switchInCurve: Curves.easeOutCubic,
@@ -127,17 +127,21 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar>
                   value: 'toggle_biometrics',
                   child: InkWell(
                     onTap: () async {
+                      if (!context.mounted) return;
                       Navigator.of(context).pop();
                       final prefs = await SharedPreferences.getInstance();
                       final current = prefs.getBool(kBiometricKey) ?? false;
                       await prefs.setBool(kBiometricKey, !current);
-                      MyApp.of(context).intializeSharedPreferences();
+                      if (!context.mounted) return;
+                      MyApp.of(context).initializeSharedPreferences();
                     },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Biometric lock'),
-                        Text(MyApp.of(context).isBiometricEnabled ? 'On' : 'Off'),
+                        Text(MyApp.of(context).isBiometricEnabled
+                            ? 'On'
+                            : 'Off'),
                       ],
                     ),
                   ),
@@ -148,8 +152,8 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   color: isDarkTheme
-                      ? Colors.white.withOpacity(0.06)
-                      : Colors.black.withOpacity(0.04),
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.black.withValues(alpha: 0.04),
                 ),
                 child: Icon(Symbols.menu, color: titleColor),
               ),
@@ -163,7 +167,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar>
                   'Pinpoint',
                   style: theme.textTheme.titleLarge?.copyWith(
                     letterSpacing: -0.2,
-                    color: titleColor.withOpacity(0.92),
+                    color: titleColor.withValues(alpha: 0.92),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -196,8 +200,8 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar>
 
   Widget _buildSearchBar(ThemeData theme) {
     final onSurfaceVariant = theme.brightness == Brightness.dark
-        ? Colors.white.withOpacity(0.72)
-        : Colors.black.withOpacity(0.6);
+        ? Colors.white.withValues(alpha: 0.72)
+        : Colors.black.withValues(alpha: 0.6);
 
     return ScaleTransition(
       key: const ValueKey('searchBar'),
@@ -248,11 +252,11 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar>
     final selected = _scope == label;
     final dark = theme.brightness == Brightness.dark;
     final bg = selected
-        ? theme.colorScheme.primary.withOpacity(dark ? 0.18 : 0.14)
-        : (dark ? Colors.white : Colors.black).withOpacity(0.06);
+        ? theme.colorScheme.primary.withValues(alpha: dark ? 0.18 : 0.14)
+        : (dark ? Colors.white : Colors.black).withValues(alpha: 0.06);
     final fg = selected
         ? theme.colorScheme.primary
-        : (dark ? Colors.white : Colors.black).withOpacity(0.72);
+        : (dark ? Colors.white : Colors.black).withValues(alpha: 0.72);
     return InkWell(
       borderRadius: BorderRadius.circular(999),
       onTap: () {
@@ -277,7 +281,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar>
           color: bg,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: (dark ? Colors.white : Colors.black).withOpacity(0.08),
+            color: (dark ? Colors.white : Colors.black).withValues(alpha: 0.08),
           ),
         ),
         child: Row(

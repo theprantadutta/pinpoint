@@ -27,6 +27,7 @@ class HomeScreenMyFolders extends StatelessWidget {
             await DriftNoteFolderService.watchAllNoteFoldersStream().first;
         if (folders.any(
             (f) => f.noteFolderTitle.toLowerCase() == text.toLowerCase())) {
+          if (!context.mounted) return;
           showErrorToast(
             context: context,
             title: 'Folder already exists',
@@ -35,6 +36,7 @@ class HomeScreenMyFolders extends StatelessWidget {
           return;
         }
         await DriftNoteFolderService.insertNoteFolder(text);
+        if (!context.mounted) return;
         Navigator.of(context).pop();
       },
     );
@@ -46,7 +48,7 @@ class HomeScreenMyFolders extends StatelessWidget {
     final dark = theme.brightness == Brightness.dark;
     return Builder(builder: (context) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -71,8 +73,8 @@ class HomeScreenMyFolders extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         color: dark
-                            ? Colors.white.withOpacity(0.07)
-                            : Colors.black.withOpacity(0.05),
+                            ? Colors.white.withValues(alpha: 0.07)
+                            : Colors.black.withValues(alpha: 0.05),
                       ),
                       child: const Icon(Symbols.add, size: 20),
                     ),
@@ -125,6 +127,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                               x.noteFolderTitle.toLowerCase() ==
                                   text.toLowerCase() &&
                               x.noteFolderId != f.noteFolderId)) {
+                            if (!context.mounted) return;
                             showErrorToast(
                               context: context,
                               title: 'Name already used',
@@ -134,6 +137,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                           }
                           await DriftNoteFolderService.renameFolder(
                               f.noteFolderId, text);
+                          if (!context.mounted) return;
                           showSuccessToast(
                             context: context,
                             title: 'Folder renamed',
@@ -141,6 +145,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                           );
                         },
                         onDelete: () async {
+                          if (!context.mounted) return;
                           final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (ctx) => AlertDialog(
@@ -162,6 +167,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                           if (confirmed == true) {
                             await DriftNoteFolderService.deleteFolder(
                                 f.noteFolderId);
+                            if (!context.mounted) return;
                             showSuccessToast(
                               context: context,
                               title: 'Folder deleted',
@@ -199,15 +205,15 @@ class _ActionDot extends StatelessWidget {
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: dark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.black.withOpacity(0.04),
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: (dark ? Colors.white : Colors.black).withOpacity(0.10),
+            color: (dark ? Colors.white : Colors.black).withValues(alpha: 0.10),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(dark ? 0.22 : 0.06),
+              color: Colors.black.withValues(alpha: dark ? 0.22 : 0.06),
               blurRadius: 10,
               offset: const Offset(0, 5),
             )
@@ -378,6 +384,7 @@ class _FolderCard extends StatelessWidget {
                 if (onRename != null) {
                   await onRename!(value);
                 }
+                if (!ctx.mounted) return;
                 Navigator.of(ctx).pop();
               },
               child: const Text('Save'),

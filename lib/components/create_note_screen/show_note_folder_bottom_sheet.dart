@@ -55,41 +55,40 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                   final TextEditingController controller =
                       TextEditingController();
                   if (mounted) {
-                        DialogService.addSomethingDialog(
-                          context: context,
-                          controller: controller,
-                          title: 'Add Folder',
-                          hintText: 'Enter title',
-                          onAddPressed: () async {
-                            final text = controller.text;
-                            if (text.isNotEmpty) {
-                              if (widget.noteFolderData.any((x) =>
-                                  x.noteFolderTitle.toLowerCase() ==
-                                  text.toLowerCase())) {
-                                if (!mounted) return;
-                                showErrorToast(
-                                  context: context,
-                                  title: 'Please Provide Unique Name',
-                                  description:
-                                      'That folder name already exists',
-                                );
-                                return;
-                              }
+                    DialogService.addSomethingDialog(
+                      context: context,
+                      controller: controller,
+                      title: 'Add Folder',
+                      hintText: 'Enter title',
+                      onAddPressed: () async {
+                        final text = controller.text;
+                        if (text.isNotEmpty) {
+                          if (widget.noteFolderData.any((x) =>
+                              x.noteFolderTitle.toLowerCase() ==
+                              text.toLowerCase())) {
+                            if (!mounted) return;
+                            showErrorToast(
+                              context: context,
+                              title: 'Please Provide Unique Name',
+                              description: 'That folder name already exists',
+                            );
+                            return;
+                          }
 
-                              final noteFolder =
-                                  await DriftNoteFolderService.insertNoteFolder(
-                                      text);
+                          final noteFolder =
+                              await DriftNoteFolderService.insertNoteFolder(
+                                  text);
 
-                              if (mounted) {
-                                setState(() {
-                                  tempSelectedFolders.add(noteFolder);
-                                });
-                                Navigator.pop(context);
-                              }
-                            }
-                          },
-                        );
-                      }
+                          if (context.mounted) {
+                            setState(() {
+                              tempSelectedFolders.add(noteFolder);
+                            });
+                            Navigator.pop(context);
+                          }
+                        }
+                      },
+                    );
+                  }
                 },
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),

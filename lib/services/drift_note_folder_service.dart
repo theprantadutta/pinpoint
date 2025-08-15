@@ -18,7 +18,7 @@ class DriftNoteFolderService {
     'Sports',
   ];
 
-  static get firstNoteFolder {
+  static NoteFolderDto get firstNoteFolder {
     return NoteFolderDto(
       id: 1,
       title: _noteFolders.first,
@@ -106,30 +106,7 @@ class DriftNoteFolderService {
     return NoteFolderDto(id: id, title: text);
   }
 
-  // static Future<bool> insertNoteFoldersWithNote(
-  //     List<NoteFolderDto> folders, int noteId) async {
-  //   try {
-  //     final database = getIt<AppDatabase>();
-
-  //     await database.batch((batch) {
-  //       batch.insertAll(
-  //         database.noteFolderRelations,
-  //         folders
-  //             .map((folder) => NoteFolderRelationsCompanion.insert(
-  //                   noteId: noteId,
-  //                   noteFolderId: folder.id,
-  //                 ))
-  //             .toList(),
-  //       );
-  //     });
-  //     return true;
-  //   } catch (e) {
-  //     if (kDebugMode) {
-  //       print('Something went wrong when inserting note folders: $e');
-  //     }
-  //     return false;
-  //   }
-  // }
+  
 
   static Future<void> renameFolder(int folderId, String newTitle) async {
     final database = getIt<AppDatabase>();
