@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:pinpoint/services/logger_service.dart';
 
 class AuthService {
   static final LocalAuthentication _localAuth = LocalAuthentication();
@@ -20,7 +21,7 @@ class AuthService {
       );
     } on PlatformException catch (e) {
       // Handle specific platform exceptions (e.g., not enrolled, locked out)
-      print("Authentication error: ${e.message}");
+      log.e("Authentication error: ${e.message}");
       return false;
     }
   }

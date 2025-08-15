@@ -25,8 +25,10 @@ import '../dtos/note_folder_dto.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/drift_note_service.dart';
 import '../util/show_a_toast.dart';
-import '../services/logger_service.dart';
-import '../services/logger_service.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:vsc_quill_delta_to_html/vsc_quill_delta_to_html.dart';
+import 'package:share_plus/share_plus.dart';
 import '../services/logger_service.dart';
 
 class CreateNoteScreen extends StatefulWidget {
@@ -49,12 +51,11 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   late TextEditingController _titleEditingController;
 
+  late SharePlus _sharePlus;
+
   List<NoteFolderDto> selectedFolders = [
     DriftNoteFolderService.firstNoteFolder
   ];
-
-  String? audioPath;
-  int? audioDuration;
 
   List<NoteTodoItem> todos = [];
   List<NoteTag> selectedTags = [];
@@ -63,7 +64,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   DateTime? reminderDateTime;
   List<NoteAttachmentDto> noteAttachments = [];
 
-  setSingleSelected(List<NoteFolderDto> value) {
+  void setSingleSelected(List<NoteFolderDto> value) {
     setState(() => selectedFolders = value);
   }
 
@@ -73,6 +74,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     _quillController = QuillController.basic();
     _titleEditingController = TextEditingController(text: '');
     _reminderDescription = TextEditingController(text: '');
+    _sharePlus = SharePlus.instance;
     if (widget.args?.existingNote != null) {
       final existingNote = widget.args!.existingNote!;
       selectedNoteType = existingNote.note.defaultNoteType;
@@ -175,8 +177,6 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       defaultNoteType: selectedNoteType,
       content: drift.Value(content),
       contentPlainText: drift.Value(plainText),
-      audioDuration: drift.Value(audioDuration),
-      audioFilePath: drift.Value(audioPath),
       reminderDescription: drift.Value(_reminderDescription.text),
       reminderTime: drift.Value(reminderDateTime),
       createdAt: now,
@@ -200,23 +200,103 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
         isDarkTheme ? Colors.grey.shade400 : Colors.grey.shade600;
     return MainLayout(
       actions: [
+        IconButton(
+          icon: Icon(
+            Symbols.share,
+            size: 20,
+            color: darkerColor,
+          ),
+          onPressed: () {
+            final title = _titleEditingController.text.trim();
+            final plainText = _quillController.document.toPlainText().trim();
+            final deltaJson = _quillController.document.toDelta().toJson();
+            final converter = QuillDeltaToHtmlConverter(
+              List.castFrom(deltaJson),
+            );
+
+            showModalBottomSheet(
+              context: context,
+              builder: (context) {
+                return Wrap(
+                  children: <Widget>[
+                    ListTile(
+                      leading: const Icon(Icons.text_fields),
+                      title: const Text('Share as Plain Text'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _sharePlus.share(
+                            ShareParams(text: plainText, subject: title));
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.html),
+                      title: const Text('Share as HTML'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _sharePlus.share(ShareParams(
+                            text: converter.convert(), subject: title));
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.picture_as_pdf),
+                      title: const Text('Share as PDF'),
+                      onTap: () async {},
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+        const SizedBox(width: 10),
         Icon(
           Symbols.keep_rounded,
           size: 20,
           color: darkerColor,
         ),
-        SizedBox(width: 10),
-        Icon(
-          Symbols.more_vert_rounded,
-          size: 20,
-          color: darkerColor,
+        const SizedBox(width: 10),
+        PopupMenuButton<String>(
+          onSelected: (value) async {
+            if (value == 'export') {
+              final noteJson = {
+                'title': _titleEditingController.text.trim(),
+                'content': _quillController.document.toDelta().toJson(),
+                'folders': selectedFolders.map((e) => e.title).toList(),
+                'tags': selectedTags.map((e) => e.tagTitle).toList(),
+                'attachments': noteAttachments.map((e) => e.path).toList(),
+              };
+              final jsonString = jsonEncode(noteJson);
+              final tempDir = await getTemporaryDirectory();
+              final file = await File(
+                      '${tempDir.path}/${_titleEditingController.text.trim()}.pinpoint-note')
+                  .writeAsString(jsonString);
+              // await SharePlus.shareFiles([file.path], text: 'Pinpoint Note');
+              _sharePlus.share(
+                ShareParams(
+                  // text: [file.path],
+                  files: [XFile(file.path)],
+                  subject: 'Pinpoint Note',
+                ),
+              );
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              value: 'export',
+              child: Text('Export'),
+            ),
+          ],
+          icon: Icon(
+            Symbols.more_vert_rounded,
+            size: 20,
+            color: darkerColor,
+          ),
         ),
       ],
       body: BackButtonListener(
         onBackButtonPressed: () async {
           final hasUnsaved = _titleEditingController.text.isNotEmpty ||
               _quillController.document.toPlainText().isNotEmpty ||
-              (audioPath != null && audioPath!.isNotEmpty) ||
               (todos.isNotEmpty) ||
               _reminderDescription.text.isNotEmpty ||
               reminderDateTime != null;
@@ -284,6 +364,12 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                         onNoteAttachChanged: (value) => setState(
                           () => noteAttachments = value,
                         ),
+                        onOcrCompleted: (recognizedText) {
+                          final currentOffset =
+                              _quillController.selection.baseOffset;
+                          _quillController.document
+                              .insert(currentOffset, recognizedText);
+                        },
                       ),
                       if (selectedNoteType == kNoteTypes[0])
                         MakeTitleContentNote(
@@ -291,26 +377,12 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                         ),
                       if (selectedNoteType == kNoteTypes[1])
                         RecordTypeContent(
-                          audioPath: audioPath,
-                          onAudioPathChanged: (audioPathValue) {
-                            if (!mounted) return;
-                            setState(() {
-                              audioPath = audioPathValue;
-                            });
-                          },
-                          audioDuration: audioDuration,
-                          onAudioDurationChanged: (audioDurationValue) {
-                            if (!mounted) return;
-                            setState(() {
-                              audioDuration = audioDurationValue;
-                            });
-                          },
                           onTranscribedText: (transcribedText) {
                             if (!mounted) return;
-                            _quillController.document.insert(
-                              _quillController.document.length,
-                              '\n\n$transcribedText',
-                            );
+                            final currentOffset =
+                                _quillController.selection.baseOffset;
+                            _quillController.document
+                                .insert(currentOffset, transcribedText);
                           },
                         ),
                       if (selectedNoteType == kNoteTypes[2])
@@ -347,8 +419,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                     width: double.infinity,
                     margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: kPrimaryColor.withValues(
-                          alpha: isDarkTheme ? 0.6 : 0.9),
+                      color: kPrimaryColor.withAlpha(isDarkTheme ? 153 : 229),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(

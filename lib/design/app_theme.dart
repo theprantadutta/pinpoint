@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -25,7 +26,7 @@ class AppTheme {
   // Shadows
   static List<BoxShadow> shadowSoft(bool dark) => [
         BoxShadow(
-          color: (dark ? Colors.black : Colors.black87).withOpacity(0.08),
+          color: (dark ? Colors.black : Colors.black87).withAlpha(20),
           blurRadius: 28,
           spreadRadius: 2,
           offset: const Offset(0, 12),
@@ -33,67 +34,61 @@ class AppTheme {
       ];
 
   // Typography scale
-  static TextTheme _textTheme(Brightness b) {
-    final base = GoogleFonts.interTextTheme(
-        // ensure dynamic type friendliness
-        );
-    final on = b == Brightness.dark ? Colors.white : neutral;
-    return base.copyWith(
-      displayLarge: base.displayLarge?.copyWith(
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.4,
-        color: on,
-      ),
-      titleLarge: base.titleLarge?.copyWith(
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.2,
-        color: on,
-      ),
-      titleMedium: base.titleMedium?.copyWith(
-        fontWeight: FontWeight.w700,
-        color: on.withOpacity(0.92),
-      ),
-      bodyLarge: base.bodyLarge?.copyWith(
-        height: 1.28,
-        color: on.withOpacity(0.9),
-      ),
-      bodyMedium: base.bodyMedium?.copyWith(
-        height: 1.28,
-        color: on.withOpacity(0.86),
-      ),
-      labelLarge: base.labelLarge?.copyWith(
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.2,
-        color: on,
-      ),
-    );
+  static TextTheme getTextThemeForFont(String fontName, TextTheme base) {
+    switch (fontName) {
+      case 'Roboto':
+        return GoogleFonts.robotoTextTheme(base);
+      case 'Open Sans':
+        return GoogleFonts.openSansTextTheme(base);
+      case 'Lato':
+        return GoogleFonts.latoTextTheme(base);
+      case 'Montserrat':
+        return GoogleFonts.montserratTextTheme(base);
+      case 'Poppins':
+        return GoogleFonts.poppinsTextTheme(base);
+      case 'Source Sans Pro':
+        return GoogleFonts.sourceSans3TextTheme(base);
+      case 'Noto Sans':
+        return GoogleFonts.notoSansTextTheme(base);
+      case 'Inter':
+      default:
+        return GoogleFonts.interTextTheme(base);
+    }
   }
 
-  static ThemeData light() {
+  static ThemeData light([FlexScheme? scheme, String? fontName]) {
+    final colorScheme = scheme != null
+        ? FlexColorScheme.light(scheme: scheme).toScheme
+        : ColorScheme.fromSeed(
+            seedColor: primary,
+            brightness: Brightness.light,
+            primary: primary,
+            secondary: secondary,
+            surface: surface,
+          );
     final base = ThemeData.light(useMaterial3: true);
-    final scheme = ColorScheme.fromSeed(
-      seedColor: primary,
-      brightness: Brightness.light,
-      primary: primary,
-      secondary: secondary,
-      surface: surface,
-    );
+    
+    // Apply custom font if specified
+    final textTheme = fontName != null 
+        ? getTextThemeForFont(fontName, base.textTheme)
+        : base.textTheme;
+        
     return base.copyWith(
-      colorScheme: scheme,
+      colorScheme: colorScheme,
       scaffoldBackgroundColor: surface,
       visualDensity: VisualDensity.adaptivePlatformDensity,
-      textTheme: _textTheme(Brightness.light),
+      textTheme: textTheme,
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         foregroundColor: neutral,
-        titleTextStyle: _textTheme(Brightness.light).titleLarge,
+        titleTextStyle: textTheme.titleLarge,
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: Colors.white.withOpacity(0.78),
+        color: Colors.white.withAlpha(199),
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.black12,
         shape: RoundedRectangleBorder(borderRadius: radiusL),
@@ -101,17 +96,17 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withOpacity(0.78),
-        hintStyle: _textTheme(Brightness.light).bodyMedium?.copyWith(
-              color: Colors.black.withOpacity(0.45),
-            ),
+        fillColor: Colors.white.withAlpha(199),
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: Colors.black.withAlpha(114),
+        ),
         border: OutlineInputBorder(
           borderRadius: radiusM,
-          borderSide: BorderSide(color: Colors.black.withOpacity(0.07)),
+          borderSide: BorderSide(color: Colors.black.withAlpha(17)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: radiusM,
-          borderSide: BorderSide(color: Colors.black.withOpacity(0.07)),
+          borderSide: BorderSide(color: Colors.black.withAlpha(17)),
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: radiusM,
@@ -123,38 +118,37 @@ class AppTheme {
       // Legendary bottom nav (light)
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         selectedItemColor: primary,
-        unselectedItemColor: Colors.black.withOpacity(0.45),
+        unselectedItemColor: Colors.black.withAlpha(114),
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.transparent,
         elevation: 0,
         selectedIconTheme: const IconThemeData(size: 24),
         unselectedIconTheme: const IconThemeData(size: 22),
-        selectedLabelStyle: _textTheme(Brightness.light).labelLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+        selectedLabelStyle: textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+        ),
         showUnselectedLabels: true,
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 64,
-        indicatorColor: primary.withOpacity(0.16),
-        labelTextStyle: MaterialStateProperty.resolveWith((states) {
-          final on = states.contains(MaterialState.selected)
+        indicatorColor: primary.withAlpha(40),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final on = states.contains(WidgetState.selected)
               ? primary
-              : Colors.black.withOpacity(0.60);
-          return _textTheme(Brightness.light).labelLarge!.copyWith(
-                color: on,
-                fontWeight: states.contains(MaterialState.selected)
-                    ? FontWeight.w800
-                    : FontWeight.w700,
-              );
+              : Colors.black.withAlpha(153);
+          return textTheme.labelLarge!.copyWith(
+            color: on,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w800
+                : FontWeight.w700,
+          );
         }),
-        iconTheme: MaterialStateProperty.resolveWith((states) {
-          final c = states.contains(MaterialState.selected)
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final c = states.contains(WidgetState.selected)
               ? primary
-              : Colors.black.withOpacity(0.60);
+              : Colors.black.withAlpha(153);
           return IconThemeData(
-              color: c,
-              size: states.contains(MaterialState.selected) ? 26 : 22);
+              color: c, size: states.contains(WidgetState.selected) ? 26 : 22);
         }),
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -169,19 +163,19 @@ class AppTheme {
         hoverElevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: radiusL,
-          side: BorderSide(color: Colors.black.withOpacity(0.06)),
+          side: BorderSide(color: Colors.black.withAlpha(15)),
         ),
-        extendedTextStyle: _textTheme(Brightness.light).labelLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-            ),
+        extendedTextStyle: textTheme.labelLarge?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+        ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: Colors.white.withOpacity(0.74),
-        selectedColor: primary.withOpacity(0.12),
-        labelStyle: _textTheme(Brightness.light).labelLarge!,
+        backgroundColor: Colors.white.withAlpha(188),
+        selectedColor: primary.withAlpha(30),
+        labelStyle: textTheme.labelLarge!,
         shape: const StadiumBorder(),
-        side: BorderSide(color: Colors.black.withOpacity(0.06)),
+        side: BorderSide(color: Colors.black.withAlpha(15)),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         showCheckmark: false,
       ),
@@ -193,31 +187,39 @@ class AppTheme {
     );
   }
 
-  static ThemeData dark() {
+  static ThemeData dark([FlexScheme? scheme, String? fontName]) {
+    final colorScheme = scheme != null
+        ? FlexColorScheme.dark(scheme: scheme).toScheme
+        : ColorScheme.fromSeed(
+            seedColor: primary,
+            brightness: Brightness.dark,
+            primary: primary,
+            secondary: secondary,
+            surface: surfaceDark,
+          );
     final base = ThemeData.dark(useMaterial3: true);
-    final scheme = ColorScheme.fromSeed(
-      seedColor: primary,
-      brightness: Brightness.dark,
-      primary: primary,
-      secondary: secondary,
-      surface: surfaceDark,
-    );
+    
+    // Apply custom font if specified
+    final textTheme = fontName != null 
+        ? getTextThemeForFont(fontName, base.textTheme)
+        : base.textTheme;
+        
     return base.copyWith(
-      colorScheme: scheme,
+      colorScheme: colorScheme,
       scaffoldBackgroundColor: surfaceDark,
       visualDensity: VisualDensity.adaptivePlatformDensity,
-      textTheme: _textTheme(Brightness.dark),
+      textTheme: textTheme,
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         foregroundColor: Colors.white,
-        titleTextStyle: _textTheme(Brightness.dark).titleLarge,
+        titleTextStyle: textTheme.titleLarge,
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: const Color(0xFF12151C).withOpacity(0.78),
+        color: const Color(0xFF12151C).withAlpha(199),
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.black54,
         shape: RoundedRectangleBorder(borderRadius: radiusL),
@@ -225,17 +227,17 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF12151C).withOpacity(0.78),
-        hintStyle: _textTheme(Brightness.dark).bodyMedium?.copyWith(
-              color: Colors.white.withOpacity(0.55),
-            ),
+        fillColor: const Color(0xFF12151C).withAlpha(199),
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: Colors.white.withAlpha(140),
+        ),
         border: OutlineInputBorder(
           borderRadius: radiusM,
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+          borderSide: BorderSide(color: Colors.white.withAlpha(20)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: radiusM,
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+          borderSide: BorderSide(color: Colors.white.withAlpha(20)),
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: radiusM,
@@ -247,38 +249,37 @@ class AppTheme {
       // Legendary bottom nav (dark)
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         selectedItemColor: primary,
-        unselectedItemColor: Colors.white.withOpacity(0.55),
+        unselectedItemColor: Colors.white.withAlpha(140),
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.transparent,
         elevation: 0,
         selectedIconTheme: const IconThemeData(size: 24),
         unselectedIconTheme: const IconThemeData(size: 22),
-        selectedLabelStyle: _textTheme(Brightness.dark).labelLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+        selectedLabelStyle: textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+        ),
         showUnselectedLabels: true,
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 64,
-        indicatorColor: primary.withOpacity(0.22),
-        labelTextStyle: MaterialStateProperty.resolveWith((states) {
-          final on = states.contains(MaterialState.selected)
+        indicatorColor: primary.withAlpha(56),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final on = states.contains(WidgetState.selected)
               ? primary
-              : Colors.white.withOpacity(0.72);
-          return _textTheme(Brightness.dark).labelLarge!.copyWith(
-                color: on,
-                fontWeight: states.contains(MaterialState.selected)
-                    ? FontWeight.w800
-                    : FontWeight.w700,
-              );
+              : Colors.white.withAlpha(183);
+          return textTheme.labelLarge!.copyWith(
+            color: on,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w800
+                : FontWeight.w700,
+          );
         }),
-        iconTheme: MaterialStateProperty.resolveWith((states) {
-          final c = states.contains(MaterialState.selected)
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final c = states.contains(WidgetState.selected)
               ? primary
-              : Colors.white.withOpacity(0.72);
+              : Colors.white.withAlpha(183);
           return IconThemeData(
-              color: c,
-              size: states.contains(MaterialState.selected) ? 26 : 22);
+              color: c, size: states.contains(WidgetState.selected) ? 26 : 22);
         }),
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -293,19 +294,19 @@ class AppTheme {
         hoverElevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: radiusL,
-          side: BorderSide(color: Colors.white.withOpacity(0.06)),
+          side: BorderSide(color: Colors.white.withAlpha(15)),
         ),
-        extendedTextStyle: _textTheme(Brightness.dark).labelLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-            ),
+        extendedTextStyle: textTheme.labelLarge?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+        ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: const Color(0xFF12151C).withOpacity(0.74),
-        selectedColor: primary.withOpacity(0.16),
-        labelStyle: _textTheme(Brightness.dark).labelLarge!,
+        backgroundColor: const Color(0xFF12151C).withAlpha(188),
+        selectedColor: primary.withAlpha(40),
+        labelStyle: textTheme.labelLarge!,
         shape: const StadiumBorder(),
-        side: BorderSide(color: Colors.white.withOpacity(0.06)),
+        side: BorderSide(color: Colors.white.withAlpha(15)),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         showCheckmark: false,
       ),
@@ -344,12 +345,12 @@ class Glass extends StatelessWidget {
           curve: Curves.easeOutCubic,
           padding: padding,
           decoration: BoxDecoration(
-            color: (dark ? const Color(0xFF12151C) : Colors.white)
-                .withOpacity(0.74),
+            color:
+                (dark ? const Color(0xFF12151C) : Colors.white).withAlpha(188),
             borderRadius: borderRadius,
             boxShadow: AppTheme.shadowSoft(dark),
             border: Border.all(
-              color: (dark ? Colors.white : Colors.black).withOpacity(0.06),
+              color: (dark ? Colors.white : Colors.black).withAlpha(15),
             ),
           ),
           child: child,

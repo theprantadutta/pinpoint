@@ -1,4 +1,5 @@
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:pinpoint/services/logger_service.dart';
 
 class TranscriptionService {
   static final SpeechToText _speechToText = SpeechToText();
@@ -18,7 +19,7 @@ class TranscriptionService {
   }
 
   static Future<bool> initialize() async {
-    return await _speechToText.initialize(onStatus: (status) => print('Speech recognition status: $status'), onError: (error) => print('Speech recognition error: $error'));
+    return await _speechToText.initialize(onStatus: (status) => log.i('Speech recognition status: $status'), onError: (error) => log.e('Speech recognition error: $error'));
   }
 
   static Future<bool> isAvailable() async {

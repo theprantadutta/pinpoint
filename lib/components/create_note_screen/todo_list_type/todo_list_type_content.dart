@@ -29,13 +29,15 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
       onAddPressed: () async {
         if (controller.text.isNotEmpty) {
           final newTodo = await DriftNoteService.insertTodoItem(
-            noteId: widget.todos.first.noteId, // Assuming all todos belong to the same note
+            noteId: widget.todos.first
+                .noteId, // Assuming all todos belong to the same note
             title: controller.text,
           );
           widget.onTodoChanged([
             ...widget.todos,
             newTodo,
           ]);
+          if (!mounted) return;
           Navigator.pop(context);
         }
       },
@@ -43,9 +45,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
   }
 
   void markAllAsDone() async {
-    final updatedTodos = [
-      for (var t in widget.todos) t.copyWith(isDone: true)
-    ];
+    final updatedTodos = [for (var t in widget.todos) t.copyWith(isDone: true)];
     for (var todo in updatedTodos) {
       await DriftNoteService.updateTodoItemStatus(todo.id, true);
     }
@@ -66,6 +66,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
               await DriftNoteService.deleteTodoItem(todo.id);
               widget.onTodoChanged(
                   widget.todos.where((t) => t.id != todo.id).toList());
+              if (!context.mounted) return;
               Navigator.pop(context);
             },
             child: Text('Delete', style: TextStyle(color: Colors.red)),
@@ -90,6 +91,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
             for (var t in widget.todos)
               if (t.id == todo.id) t.copyWith(todoTitle: controller.text) else t
           ]);
+          if (!mounted) return;
           Navigator.pop(context);
         }
       },
@@ -297,5 +299,3 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
     );
   }
 }
-
-

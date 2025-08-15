@@ -45,7 +45,7 @@ class _QuillToolbarState extends State<QuillToolbar> {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: kPrimaryColor.withValues(alpha: 0.1),
+                    color: kPrimaryColor.withAlpha(25),
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Center(
@@ -70,12 +70,8 @@ class _QuillToolbarState extends State<QuillToolbar> {
         QuillSimpleToolbar(
           controller: widget.quillController,
           config: QuillSimpleToolbarConfig(
-            embedButtons: FlutterQuillEmbeds.toolbarButtons(),
             multiRowsDisplay: multiRowsDisplay,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              // color: kPrimaryColor.withValues(alpha: 0.05),
-            ),
+            embedButtons: FlutterQuillEmbeds.toolbarButtons(),
           ),
         ),
       ],

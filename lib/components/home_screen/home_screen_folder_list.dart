@@ -60,6 +60,7 @@ class HomeScreenFolderList extends StatelessWidget {
                                   final text = controller.text.trim();
                                   if (text.isNotEmpty) {
                                     await DriftNoteFolderService.renameFolder(currentFolder.noteFolderId, text);
+                                    if (!context.mounted) return;
                                     Navigator.of(context).pop();
                                   }
                                 },
@@ -84,7 +85,9 @@ class HomeScreenFolderList extends StatelessWidget {
                                     TextButton(
                                       onPressed: () async {
                                         await DriftNoteFolderService.deleteFolder(currentFolder.noteFolderId);
+                                        if (!context.mounted) return;
                                         Navigator.pop(context);
+                                        if (!context.mounted) return;
                                         showSuccessToast(context: context, title: "Folder Deleted", description: "");
                                       },
                                       child: Text('Delete', style: TextStyle(color: Colors.red)),

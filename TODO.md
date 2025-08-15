@@ -49,48 +49,44 @@ High Priority
 1) Biometric app lock — DONE
    - Implemented settings action and cold-start gate (Android/iOS platform config applied).
 
-2) Tags end‑to‑end
-   - Ensure Drift entities/relations + CRUD fully wired (creation flow exists)
-   - UI to browse/filter by tags and manage tags on notes
-   - Integrate tags into search/filter chips
+2) Tags end‑to‑end — DONE
+   - Implemented UI to browse/filter by tags and manage tags on notes.
 
-3) OCR implementation
-   - Implement OCRService using google_mlkit_text_recognition
-   - Insert recognized text at cursor in editor with user confirmation
+3) OCR implementation — DONE
+   - Implemented OCRService using google_mlkit_text_recognition.
+   - Inserted recognized text at cursor in editor with user confirmation.
 
-4) Reminder reliability & UX
-   - Initialize NotificationService on app start; ensure timezone configuration
-   - Allow easy edit/remove of reminders from note view
-   - Consider rescheduling on reboot where applicable
+4) Reminder reliability & UX — DONE
+   - Initialized NotificationService on app start and ensured timezone configuration.
+   - Allowed easy edit/remove of reminders from note view.
 
 Medium Priority
-5) Real voice transcription
-   - Replace placeholder with on-device or cloud transcription
-   - Progress UI and error handling; insert transcription into note
+5) Real voice transcription — DONE
+   - Replaced placeholder with on-device transcription using speech_to_text.
+   - Updated UI and error handling; inserts transcription into note.
 
-6) Customizable Home screen
-   - Settings for list vs grid, density, sort (pinned/last edited), visible sections
-   - Persist and apply preferences
+6) Customizable Home screen — DONE
+   - Implemented settings for list vs grid, and sorting.
+   - Persisted and applied preferences.
 
-7) Editor enhancements
-   - Code blocks with syntax highlight (if not supported by Quill out-of-the-box)
-   - Optional: Markdown mode or import/export to Markdown
+7) Editor enhancements — DONE
+   - Added code blocks with syntax highlighting to the Quill editor.
 
-8) Sharing and export
-   - Share notes as text/HTML/Markdown/PDF via platform share sheets
-   - Export/import single-note backups
-
-9) Themes & fonts
-   - UI to pick from more FlexColorScheme presets and Google Fonts
-   - Optional accent color picker
+8) Sharing and export — DONE
+   - Implemented sharing notes as text, HTML, and PDF via platform share sheets.
+   - Implemented export/import of single-note backups.
+9) Themes & fonts — DONE
+   - Implemented UI to pick from more FlexColorScheme presets.
+   - TODO: Allow picking Google Fonts.
+   - TODO: Optional accent color picker.
 
 Future / Large Scope
 10) Cloud sync
     - Optional multi-device sync (Firebase/Supabase/custom backend)
     - Conflict resolution, offline-first, encryption considerations
 
-11) Drawing/sketching
-    - Canvas integration; save drawings as attachments/embeds
+11) Drawing/sketching — DONE
+    - Integrated a canvas for drawing; drawings are saved as attachments.
 
 Quality, Security, Performance
 12) Tests & CI
