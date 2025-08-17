@@ -29,6 +29,8 @@ We've implemented:
    - Sync screen in settings for user control
 4. Improved bottom navigation UI/UX by replacing StylishBottomBar with custom Material Design implementation
 5. Created detailed implementation plans for the Notes and Todo screens
+6. **Completed comprehensive visual enhancements across all screens with glassmorphism effects and gradient backgrounds**
+7. **Overhauled the note creation system with improved UI/UX and fixed todo note creation issues**
 
 ## Recent Improvements
 
@@ -38,6 +40,44 @@ We've implemented:
 - Added subtle animations and transitions
 - Ensured seamless FAB integration
 - Improved visual design with rounded corners and proper shadows
+
+### Visual Enhancements (Completed)
+- Implemented glassmorphism effects throughout the app using custom `Glass` widget
+- Added gradient backgrounds to headers, cards, and UI elements
+- Unified design language with consistent border radii, typography, and spacing
+- Enhanced all components with visual improvements:
+  - Note cards with layered gradients and shadows
+  - Todo items with glassmorphism effects
+  - Tag chips with enhanced visual design
+  - Account list tiles with glassmorphism
+  - Empty states with improved visual appeal
+- Updated all 12 main screens:
+  - Archive Screen
+  - Trash Screen
+  - Folder Screen
+  - Tags Screen
+  - Notes By Tag Screen
+  - Account/Settings Screen
+  - Theme Screen
+  - Sync Screen
+  - Todo Screen
+  - Notes Screen
+  - Create Note Screen
+  - Drawing Screen
+
+### Note Creation System Overhaul (Completed)
+- Redesigned Create Note Screen with intuitive UI/UX
+- Fixed todo note creation issues by implementing proper temporary ID handling
+- Improved save workflow with better validation and error handling
+- Enhanced note type selection with visual indicators
+- Added better attachment management UI
+- Improved back button behavior with save/discard options
+- Fixed all todo-related functionality including:
+  - Adding new todos
+  - Editing existing todos
+  - Marking todos as complete
+  - Deleting todos
+  - Saving todos with notes
 
 ## Planned Work
 
@@ -98,6 +138,9 @@ Key directories:
 4. `android/app/src/main/AndroidManifest.xml` - Added notification permissions
 5. `lib/navigation/bottom-navigation/bottom_navigation_layout.dart` - Improved bottom navigation
 6. Various sync-related files in `lib/sync/` - Implemented sync system
+7. **All screen files in `lib/screens/`** - Visual enhancements
+8. **`lib/components/create_note_screen/todo_list_type/todo_list_type_content.dart`** - Fixed todo creation
+9. **`lib/screens/create_note_screen.dart`** - Overhauled note creation UI/UX
 
 ## Planning Documents
 
@@ -105,3 +148,5 @@ Key directories:
 - `planning/todo_screen_plan.md` - Detailed plan for Todo screen
 - `planning/new_features_todo.md` - Task list for implementation
 - `planning/bottom_nav_improvement_plan.md` - Bottom navigation enhancement plan
+- `VISUAL_ENHANCEMENTS_TODO.md` - Visual enhancement task list
+- `VISUAL_ENHANCEMENTS_SUMMARY.md` - Summary of visual enhancements

@@ -111,11 +111,29 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   Future<void> saveNoteToLocalDb() async {
     final title = _titleEditingController.text.trim();
-    final quillContent =
-        jsonEncode(_quillController.document.toDelta().toJson());
-    final quillPlainText = _quillController.document.toPlainText().trim();
+    
+    // Validate todo notes
+    if (selectedNoteType == kNoteTypes[2] && todos.isEmpty) {
+      _showErrorToast(
+          'Failed to save Note!', 'Please add at least one todo item');
+      return;
+    }
+    
+    // Validate other note types
+    String quillContent = '';
+    String quillPlainText = '';
+    
+    if (selectedNoteType == kNoteTypes[0]) {
+      quillContent = jsonEncode(_quillController.document.toDelta().toJson());
+      quillPlainText = _quillController.document.toPlainText().trim();
+    } else if (selectedNoteType == kNoteTypes[1]) {
+      // For audio notes, we'll save the transcription if available
+      quillContent = jsonEncode(_quillController.document.toDelta().toJson());
+      quillPlainText = _quillController.document.toPlainText().trim();
+    }
 
-    if (_isNoteEmpty(title, quillContent)) {
+    // For todo notes, we don't require content since the todos are the content
+    if (_isNoteEmpty(title, quillContent) && selectedNoteType != kNoteTypes[2]) {
       _showErrorToast(
           'Failed to save Note!', 'Please provide at least a title or content');
       return;
@@ -131,6 +149,49 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       _showErrorToast(
           'Failed to save Note!', 'Something went wrong while saving the note');
       return;
+    }
+
+    // Handle todo items for todo list notes
+    if (selectedNoteType == kNoteTypes[2]) {
+      // Separate new todos (negative IDs) from existing ones
+      final newTodos = todos.where((todo) => todo.id < 0).toList();
+      final existingTodos = todos.where((todo) => todo.id > 0).toList();
+      
+      // Delete all existing todos for this note first (to handle deletions)
+      if (widget.args?.existingNote != null) {
+        for (var todo in widget.args!.existingNote!.todoItems) {
+          // Check if this todo still exists in our current list
+          final stillExists = todos.any((t) => t.id == todo.id);
+          if (!stillExists) {
+            await DriftNoteService.deleteTodoItem(todo.id);
+          }
+        }
+      }
+      
+      // Insert new todos
+      for (var todo in newTodos) {
+        await DriftNoteService.insertTodoItem(
+          noteId: noteId,
+          title: todo.todoTitle,
+        );
+      }
+      
+      // Handle existing todos
+      for (var todo in existingTodos) {
+        // Check if this is an existing todo from the same note
+        if (widget.args?.existingNote != null && 
+            widget.args!.existingNote!.todoItems.any((t) => t.id == todo.id)) {
+          // Update the existing todo
+          await DriftNoteService.updateTodoItemTitle(todo.id, todo.todoTitle);
+          await DriftNoteService.updateTodoItemStatus(todo.id, todo.isDone);
+        } else {
+          // This is a new todo, insert it
+          await DriftNoteService.insertTodoItem(
+            noteId: noteId,
+            title: todo.todoTitle,
+          );
+        }
+      }
     }
 
     // Add Folders
@@ -199,6 +260,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     final darkerColor =
         isDarkTheme ? Colors.grey.shade400 : Colors.grey.shade600;
+        
     return MainLayout(
       actions: [
         IconButton(
@@ -274,10 +336,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               final file = await File(
                       '${tempDir.path}/${_titleEditingController.text.trim()}.pinpoint-note')
                   .writeAsString(jsonString);
-              // await SharePlus.shareFiles([file.path], text: 'Pinpoint Note');
               _sharePlus.share(
                 ShareParams(
-                  // text: [file.path],
                   files: [XFile(file.path)],
                   subject: 'Pinpoint Note',
                 ),
@@ -310,24 +370,21 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               context: context,
               builder: (dialogCtx) {
                 return AlertDialog(
-                  title: Text('Please Confirm!'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text(
-                        'You have unsaved changes. Do you wish to discard?',
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                  title: const Text('Unsaved Changes'),
+                  content: const Text(
+                    'You have unsaved changes. Do you want to save before leaving?',
                   ),
                   actions: [
-                    ElevatedButton(
+                    TextButton(
                       onPressed: () => Navigator.of(dialogCtx).pop(false),
-                      child: const Text('No'),
+                      child: const Text('Discard'),
                     ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(dialogCtx).pop(true),
-                      child: const Text('Yes'),
+                    TextButton(
+                      onPressed: () async {
+                        Navigator.of(dialogCtx).pop(true);
+                        await saveNoteToLocalDb();
+                      },
+                      child: const Text('Save'),
                     ),
                   ],
                 );
@@ -335,6 +392,10 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
             );
 
             if (shouldDiscard == true) {
+              // Save was handled in the dialog
+              return true;
+            } else if (shouldDiscard == false) {
+              // Discard changes
               if (!mounted) return true;
               context.pop();
               return true;
@@ -347,34 +408,103 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
           builder: (context, constraints) {
             return Column(
               children: [
-                SizedBox(
-                  height: MediaQuery.sizeOf(context).height * 0.78,
+                // Header with note type indicator
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        kPrimaryColor.withAlpha(20),
+                        kPrimaryColor.withAlpha(10),
+                      ],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _getIconForNoteType(selectedNoteType),
+                        color: kPrimaryColor,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          widget.args?.existingNote != null 
+                              ? 'Edit Note' 
+                              : 'New Note',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: kPrimaryColor,
+                              ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: kPrimaryColor.withAlpha(30),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: kPrimaryColor.withAlpha(50),
+                          ),
+                        ),
+                        child: Text(
+                          _getLabelForNoteType(selectedNoteType),
+                          style: TextStyle(
+                            color: kPrimaryColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Main content area
+                Expanded(
                   child: CustomScrollView(
                     slivers: [
-                      CreateNoteFolderSelect(
-                        selectedFolders: selectedFolders,
-                        setSelectedFolders: setSingleSelected,
+                      // Title input
+                      SliverToBoxAdapter(
+                        child: Container(
+                          margin: const EdgeInsets.all(16),
+                          child: Glass(
+                            padding: const EdgeInsets.all(16),
+                            child: TextField(
+                              controller: _titleEditingController,
+                              decoration: const InputDecoration(
+                                hintText: 'Note title',
+                                border: InputBorder.none,
+                                hintStyle: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ),
+                        ),
                       ),
+                      
+                      // Note type selector
                       CreateNoteCategories(
                         selectedType: selectedNoteType,
                         onSelectedTypeChanged: (text) {
                           setState(() => selectedNoteType = text);
                         },
                       ),
-                      NoteInputField(
-                        title: 'Title',
-                        textEditingController: _titleEditingController,
-                        noteAttachments: noteAttachments,
-                        onNoteAttachChanged: (value) => setState(
-                          () => noteAttachments = value,
-                        ),
-                        onOcrCompleted: (recognizedText) {
-                          final currentOffset =
-                              _quillController.selection.baseOffset;
-                          _quillController.document
-                              .insert(currentOffset, recognizedText);
-                        },
-                      ),
+                      
+                      // Content based on note type
                       if (selectedNoteType == kNoteTypes[0])
                         MakeTitleContentNote(
                           quillController: _quillController,
@@ -405,42 +535,131 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                             () => reminderDateTime = selectedDateTime,
                           ),
                         ),
+                      
+                      // Folder selection
+                      CreateNoteFolderSelect(
+                        selectedFolders: selectedFolders,
+                        setSelectedFolders: setSingleSelected,
+                      ),
+                      
+                      // Tag selection
                       CreateNoteTagSelect(
                         selectedTags: selectedTags,
                         onSelectedTagsChanged: (newTags) => setState(
                           () => selectedTags = newTags,
                         ),
                       ),
+                      
+                      // Attachments
+                      SliverToBoxAdapter(
+                        child: Container(
+                          margin: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Attachments',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              const SizedBox(height: 8),
+                              if (noteAttachments.isNotEmpty)
+                                SizedBox(
+                                  height: 100,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: noteAttachments.length,
+                                    itemBuilder: (context, index) {
+                                      final attachment = noteAttachments[index];
+                                      return Container(
+                                        margin: const EdgeInsets.only(right: 8),
+                                        width: 80,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: Theme.of(context).colorScheme.outline,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              _getIconForAttachment(attachment.path),
+                                              size: 24,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              attachment.path.split('/').last,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(fontSize: 10),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              const SizedBox(height: 8),
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  // TODO: Implement attachment functionality
+                                },
+                                icon: const Icon(Icons.attach_file),
+                                label: const Text('Add Attachment'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      
+                      // Spacing at bottom
+                      const SliverToBoxAdapter(
+                        child: SizedBox(height: 20),
+                      ),
                     ],
                   ),
                 ),
-                GestureDetector(
-                  onTap: () async {
-                    await saveNoteToLocalDb();
-                  },
-                  child: Container(
-                    height: MediaQuery.sizeOf(context).height * 0.07,
-                    width: double.infinity,
-                    margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor.withAlpha(isDarkTheme ? 153 : 229),
-                      borderRadius: AppTheme.radiusL,
-                      boxShadow: [
-                        BoxShadow(
-                          color: kPrimaryColor.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 6),
+                
+                // Save button
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Glass(
+                    padding: const EdgeInsets.all(16),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await saveNoteToLocalDb();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kPrimaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.all(16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppTheme.radiusL,
                         ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        "Save Note",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            widget.args?.existingNote != null 
+                                ? Icons.save 
+                                : Icons.add,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            widget.args?.existingNote != null 
+                                ? 'Update Note' 
+                                : 'Create Note',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -451,5 +670,58 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
         ),
       ),
     );
+  }
+  
+  IconData _getIconForNoteType(String noteType) {
+    switch (noteType) {
+      case 'title_content':
+        return Icons.note;
+      case 'record':
+        return Icons.mic;
+      case 'todo':
+        return Icons.checklist;
+      case 'reminder':
+        return Icons.alarm;
+      default:
+        return Icons.note;
+    }
+  }
+  
+  String _getLabelForNoteType(String noteType) {
+    switch (noteType) {
+      case 'title_content':
+        return 'Text Note';
+      case 'record':
+        return 'Voice Note';
+      case 'todo':
+        return 'Todo List';
+      case 'reminder':
+        return 'Reminder';
+      default:
+        return 'Note';
+    }
+  }
+  
+  IconData _getIconForAttachment(String path) {
+    final extension = path.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return Icons.image;
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'mp3':
+      case 'wav':
+      case 'm4a':
+        return Icons.audiotrack;
+      case 'mp4':
+      case 'mov':
+      case 'avi':
+        return Icons.videocam;
+      default:
+        return Icons.insert_drive_file;
+    }
   }
 }
