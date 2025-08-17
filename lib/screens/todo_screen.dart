@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pinpoint/design/widgets/todo_item.dart';
 import 'package:pinpoint/models/note_todo_item_with_note.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
+import 'package:pinpoint/design/app_theme.dart';
+import 'package:pinpoint/components/shared/empty_state_widget.dart';
 
 class TodoScreen extends StatefulWidget {
   static const String kRouteName = '/todo';
@@ -17,6 +19,9 @@ class _TodoScreenState extends State<TodoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Todos'),
@@ -45,85 +50,135 @@ class _TodoScreenState extends State<TodoScreen> {
           ),
         ],
       ),
-      body: StreamBuilder<List<NoteTodoItemWithNote>>(
-        stream: DriftNoteService.watchAllTodoItems(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with gradient background
+          Glass(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Todos',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    StreamBuilder<List<NoteTodoItemWithNote>>(
+                      stream: DriftNoteService.watchAllTodoItems(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const SizedBox();
+                        }
+                        final allTodos = snapshot.data ?? [];
+                        final filteredTodos = _filterTodos(allTodos, _filter);
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: cs.primary.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: cs.primary.withValues(alpha: 0.22),
+                            ),
+                          ),
+                          child: Text(
+                            '${filteredTodos.length}',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: cs.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 2,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        cs.primary.withValues(alpha: 0.22),
+                        cs.primary.withValues(alpha: 0.0),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          // Content
+          Expanded(
+            child: StreamBuilder<List<NoteTodoItemWithNote>>(
+              stream: DriftNoteService.watchAllTodoItems(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Error loading todos: ${snapshot.error}'),
-            );
-          }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: EmptyStateWidget(
+                      message: 'Error loading todos: ${snapshot.error}',
+                      iconData: Icons.error_outline,
+                    ),
+                  );
+                }
 
-          final allTodos = snapshot.data ?? [];
-          final filteredTodos = _filterTodos(allTodos, _filter);
+                final allTodos = snapshot.data ?? [];
+                final filteredTodos = _filterTodos(allTodos, _filter);
 
-          if (filteredTodos.isEmpty) {
-            return _buildEmptyState();
-          }
+                if (filteredTodos.isEmpty) {
+                  return Center(
+                    child: EmptyStateWidget(
+                      message: 'No todos yet.\nAdd your first todo to get started',
+                      iconData: Icons.check_circle_outline,
+                    ),
+                  );
+                }
 
-          return ListView.builder(
-            itemCount: filteredTodos.length,
-            itemBuilder: (context, index) {
-              final todoWithNote = filteredTodos[index];
-              return TodoItem(
-                todo: todoWithNote.todoItem,
-                noteTitle: todoWithNote.noteTitle,
-                onCheckboxChanged: (value) {
-                  if (value != null) {
-                    _toggleTodoStatus(todoWithNote.todoItem.id, value);
-                  }
-                },
-                onTap: () {
-                  // TODO: Navigate to the note containing this todo
-                },
-              );
-            },
-          );
-        },
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+                  itemCount: filteredTodos.length,
+                  itemBuilder: (context, index) {
+                    final todoWithNote = filteredTodos[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: TodoItem(
+                        todo: todoWithNote.todoItem,
+                        noteTitle: todoWithNote.noteTitle,
+                        onCheckboxChanged: (value) {
+                          if (value != null) {
+                            _toggleTodoStatus(todoWithNote.todoItem.id, value);
+                          }
+                        },
+                        onTap: () {
+                          // TODO: Navigate to the note containing this todo
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddTodoDialog,
         child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.check_circle_outline,
-            size: 80,
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'No todos yet',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Add your first todo to get started',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _showAddTodoDialog,
-            child: const Text('Add Your First Todo'),
-          ),
-        ],
       ),
     );
   }

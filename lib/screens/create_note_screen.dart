@@ -30,6 +30,7 @@ import 'dart:io';
 import 'package:vsc_quill_delta_to_html/vsc_quill_delta_to_html.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/logger_service.dart';
+import 'package:pinpoint/design/app_theme.dart';
 
 class CreateNoteScreen extends StatefulWidget {
   static const String kRouteName = '/create-note';
@@ -217,32 +218,35 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
             showModalBottomSheet(
               context: context,
               builder: (context) {
-                return Wrap(
-                  children: <Widget>[
-                    ListTile(
-                      leading: const Icon(Icons.text_fields),
-                      title: const Text('Share as Plain Text'),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _sharePlus.share(
-                            ShareParams(text: plainText, subject: title));
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.html),
-                      title: const Text('Share as HTML'),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _sharePlus.share(ShareParams(
-                            text: converter.convert(), subject: title));
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.picture_as_pdf),
-                      title: const Text('Share as PDF'),
-                      onTap: () async {},
-                    ),
-                  ],
+                return Glass(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Wrap(
+                    children: <Widget>[
+                      ListTile(
+                        leading: const Icon(Icons.text_fields),
+                        title: const Text('Share as Plain Text'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _sharePlus.share(
+                              ShareParams(text: plainText, subject: title));
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.html),
+                        title: const Text('Share as HTML'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _sharePlus.share(ShareParams(
+                              text: converter.convert(), subject: title));
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.picture_as_pdf),
+                        title: const Text('Share as PDF'),
+                        onTap: () async {},
+                      ),
+                    ],
+                  ),
                 );
               },
             );
@@ -420,7 +424,14 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                     margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: kPrimaryColor.withAlpha(isDarkTheme ? 153 : 229),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppTheme.radiusL,
+                      boxShadow: [
+                        BoxShadow(
+                          color: kPrimaryColor.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
                     child: Center(
                       child: Text(

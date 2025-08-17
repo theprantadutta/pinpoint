@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pinpoint/design/app_theme.dart';
 
 class ThemeScreen extends StatefulWidget {
   static const String kRouteName = '/theme';
@@ -39,42 +40,111 @@ class _ThemeScreenState extends State<ThemeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select Theme'),
       ),
-      body: ListView(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text('Color Schemes',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+          // Header with gradient background
+          Glass(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Theme & Fonts',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 2,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        cs.primary.withValues(alpha: 0.22),
+                        cs.primary.withValues(alpha: 0.0),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+            ),
           ),
-          ...List.generate(FlexScheme.values.length, (index) {
-            final scheme = FlexScheme.values[index];
-            return ListTile(
-              title: Text(scheme.name),
-              onTap: () {
-                final myAppState = MyApp.of(context);
-                myAppState.changeFlexScheme(scheme);
-                Navigator.of(context).pop();
-              },
-            );
-          }),
-          const Divider(),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text('Fonts', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          
+          // Content
+          Expanded(
+            child: ListView(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('Color Schemes',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                ...List.generate(FlexScheme.values.length, (index) {
+                  final scheme = FlexScheme.values[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: ListTile(
+                      title: Text(scheme.name),
+                      onTap: () {
+                        final myAppState = MyApp.of(context);
+                        myAppState.changeFlexScheme(scheme);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  );
+                }),
+                const Divider(),
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('Fonts', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: _buildFontOption('Inter', GoogleFonts.inter().fontFamily),
+                ),
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: _buildFontOption('Roboto', GoogleFonts.roboto().fontFamily),
+                ),
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: _buildFontOption('Open Sans', GoogleFonts.openSans().fontFamily),
+                ),
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: _buildFontOption('Lato', GoogleFonts.lato().fontFamily),
+                ),
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: _buildFontOption('Montserrat', GoogleFonts.montserrat().fontFamily),
+                ),
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: _buildFontOption('Poppins', GoogleFonts.poppins().fontFamily),
+                ),
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: _buildFontOption(
+                      'Source Sans Pro', GoogleFonts.sourceSans3().fontFamily),
+                ),
+                Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: _buildFontOption('Noto Sans', GoogleFonts.notoSans().fontFamily),
+                ),
+              ],
+            ),
           ),
-          _buildFontOption('Inter', GoogleFonts.inter().fontFamily),
-          _buildFontOption('Roboto', GoogleFonts.roboto().fontFamily),
-          _buildFontOption('Open Sans', GoogleFonts.openSans().fontFamily),
-          _buildFontOption('Lato', GoogleFonts.lato().fontFamily),
-          _buildFontOption('Montserrat', GoogleFonts.montserrat().fontFamily),
-          _buildFontOption('Poppins', GoogleFonts.poppins().fontFamily),
-          _buildFontOption(
-              'Source Sans Pro', GoogleFonts.sourceSans3().fontFamily),
-          _buildFontOption('Noto Sans', GoogleFonts.notoSans().fontFamily),
         ],
       ),
     );

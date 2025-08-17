@@ -5,6 +5,8 @@ import 'package:pinpoint/design/widgets/tag_chip.dart';
 import 'package:pinpoint/screens/notes_by_tag_screen.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:pinpoint/util/dialogs.dart';
+import 'package:pinpoint/design/app_theme.dart';
+import 'package:pinpoint/components/shared/empty_state_widget.dart';
 
 class TagsScreen extends StatefulWidget {
   static const String kRouteName = '/tags';
@@ -91,6 +93,9 @@ class _TagsScreenState extends State<TagsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tags'),
@@ -102,29 +107,103 @@ class _TagsScreenState extends State<TagsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: EmptyStateWidget(
+                message: 'Error: ${snapshot.error}',
+                iconData: Icons.error_outline,
+              ),
+            );
           }
           final tags = snapshot.data ?? [];
-          if (tags.isEmpty) {
-            return const Center(child: Text('No tags yet.'));
-          }
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Wrap(
-              spacing: 8.0,
-              runSpacing: 8.0,
-              children: tags.map((tag) {
-                return GestureDetector(
-                  onLongPress: () => _showTagOptions(context, tag),
-                  child: TagChip(
-                    label: tag.tagTitle,
-                    onTap: () {
-                      context.push(NotesByTagScreen.kRouteName, extra: tag);
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
+          
+          // Header with tag count
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Glass(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Tags',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: cs.primary.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: cs.primary.withValues(alpha: 0.22),
+                            ),
+                          ),
+                          child: Text(
+                            '${tags.length}',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: cs.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 2,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            cs.primary.withValues(alpha: 0.22),
+                            cs.primary.withValues(alpha: 0.0),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              
+              // Content
+              Expanded(
+                child: tags.isEmpty
+                    ? const Center(
+                        child: EmptyStateWidget(
+                          message: 'No tags yet.',
+                          iconData: Icons.label_outline,
+                        ),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: tags.map((tag) {
+                            return GestureDetector(
+                              onLongPress: () => _showTagOptions(context, tag),
+                              child: TagChip(
+                                label: tag.tagTitle,
+                                onTap: () {
+                                  context.push(NotesByTagScreen.kRouteName, extra: tag);
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+              ),
+            ],
           );
         },
       ),
