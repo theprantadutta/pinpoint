@@ -30,23 +30,37 @@ class _DrawingScreenState extends State<DrawingScreen> {
       appBar: AppBar(
         title: const Text('Drawing'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.undo),
-            onPressed: () {
-              _controller.undo();
-            },
+          Container(
+            margin: const EdgeInsets.all(8),
+            child: Glass(
+              padding: const EdgeInsets.all(8),
+              borderRadius: AppTheme.radiusM,
+              child: IconButton(
+                icon: const Icon(Icons.undo),
+                onPressed: () {
+                  _controller.undo();
+                },
+              ),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: () async {
-              final PictureDetails picture = _controller.finish();
-              final image = await picture.toImage();
-              final data = await image.toByteData(format: ImageByteFormat.png);
-              if (!context.mounted) return;
-              if (data != null) {
-                Navigator.of(context).pop(data.buffer.asUint8List());
-              }
-            },
+          Container(
+            margin: const EdgeInsets.all(8),
+            child: Glass(
+              padding: const EdgeInsets.all(8),
+              borderRadius: AppTheme.radiusM,
+              child: IconButton(
+                icon: const Icon(Icons.save),
+                onPressed: () async {
+                  final PictureDetails picture = _controller.finish();
+                  final image = await picture.toImage();
+                  final data = await image.toByteData(format: ImageByteFormat.png);
+                  if (!context.mounted) return;
+                  if (data != null) {
+                    Navigator.of(context).pop(data.buffer.asUint8List());
+                  }
+                },
+              ),
+            ),
           ),
         ],
       ),
