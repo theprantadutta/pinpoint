@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
 import 'package:pinpoint/sync/sync_service.dart';
+import 'package:pinpoint/design/app_theme.dart';
 
 class SyncScreen extends StatefulWidget {
   static const String kRouteName = '/sync';
@@ -175,6 +176,9 @@ class _SyncScreenState extends State<SyncScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sync Settings'),
@@ -183,178 +187,203 @@ class _SyncScreenState extends State<SyncScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Cloud Sync',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Sync your notes across devices',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 32),
-            
-            // Sync status card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Sync Status',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Icon(
-                          _syncManager.status == SyncStatus.synced
-                              ? Icons.check_circle
-                              : _syncManager.status == SyncStatus.error
-                                  ? Icons.error
-                                  : Icons.info,
-                          color: _syncManager.status == SyncStatus.synced
-                              ? Colors.green
-                              : _syncManager.status == SyncStatus.error
-                                  ? Colors.red
-                                  : Colors.grey,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _syncManager.status == SyncStatus.synced
-                                    ? 'Synced'
-                                    : _syncManager.status == SyncStatus.error
-                                        ? 'Error'
-                                        : _syncManager.status == SyncStatus.syncing
-                                            ? 'Syncing...'
-                                            : 'Not synced',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _syncManager.lastSyncMessage,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              if (_syncManager.lastSyncDateTime != null) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Last sync: ${_syncManager.lastSyncDateTime!.toLocal()}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Sync actions
-            const Text(
-              'Sync Actions',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isSyncing ? null : _triggerSync,
-                icon: _isSyncing
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.sync),
-                label: const Text('Sync Now'),
-              ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            Row(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with gradient background
+          Glass(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _isSyncing ? null : _triggerUpload,
-                    icon: const Icon(Icons.upload),
-                    label: const Text('Upload Changes'),
+                Text(
+                  'Cloud Sync',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _isSyncing ? null : _triggerDownload,
-                    icon: const Icon(Icons.download),
-                    label: const Text('Download Changes'),
+                const SizedBox(height: 8),
+                Text(
+                  'Sync your notes across devices',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 2,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        cs.primary.withValues(alpha: 0.22),
+                        cs.primary.withValues(alpha: 0.0),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ],
             ),
-            
-            const SizedBox(height: 32),
-            
-            // Sync info
-            const Text(
-              'How Sync Works',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+          ),
+          const SizedBox(height: 8),
+          
+          // Content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Sync status card with glassmorphism
+                  Glass(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sync Status',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Icon(
+                              _syncManager.status == SyncStatus.synced
+                                  ? Icons.check_circle
+                                  : _syncManager.status == SyncStatus.error
+                                      ? Icons.error
+                                      : Icons.info,
+                              color: _syncManager.status == SyncStatus.synced
+                                  ? Colors.green
+                                  : _syncManager.status == SyncStatus.error
+                                      ? Colors.red
+                                      : Colors.grey,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _syncManager.status == SyncStatus.synced
+                                        ? 'Synced'
+                                        : _syncManager.status == SyncStatus.error
+                                            ? 'Error'
+                                            : _syncManager.status == SyncStatus.syncing
+                                                ? 'Syncing...'
+                                                : 'Not synced',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _syncManager.lastSyncMessage,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: cs.onSurface.withValues(alpha: 0.7),
+                                    ),
+                                  ),
+                                  if (_syncManager.lastSyncDateTime != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Last sync: ${_syncManager.lastSyncDateTime!.toLocal()}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: cs.onSurface.withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // Sync actions
+                  Text(
+                    'Sync Actions',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _isSyncing ? null : _triggerSync,
+                      icon: _isSyncing
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.sync),
+                      label: const Text('Sync Now'),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isSyncing ? null : _triggerUpload,
+                          icon: const Icon(Icons.upload),
+                          label: const Text('Upload Changes'),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isSyncing ? null : _triggerDownload,
+                          icon: const Icon(Icons.download),
+                          label: const Text('Download Changes'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // Sync info
+                  Text(
+                    'How Sync Works',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '• Sync automatically uploads your notes to the cloud\n'
+                    '• Download changes from other devices\n'
+                    '• Resolve conflicts automatically\n'
+                    '• Works offline - syncs when connection is restored',
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      color: cs.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              '• Sync automatically uploads your notes to the cloud\n'
-              '• Download changes from other devices\n'
-              '• Resolve conflicts automatically\n'
-              '• Works offline - syncs when connection is restored',
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:painter/painter.dart';
+import 'package:pinpoint/design/app_theme.dart';
 
 class DrawingScreen extends StatefulWidget {
   static const String kRouteName = '/drawing';
@@ -22,6 +23,9 @@ class _DrawingScreenState extends State<DrawingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Drawing'),
@@ -46,7 +50,45 @@ class _DrawingScreenState extends State<DrawingScreen> {
           ),
         ],
       ),
-      body: Painter(_controller),
+      body: Column(
+        children: [
+          // Header with gradient background
+          Glass(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Drawing',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 2,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        cs.primary.withValues(alpha: 0.22),
+                        cs.primary.withValues(alpha: 0.0),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          // Drawing canvas
+          Expanded(
+            child: Painter(_controller),
+          ),
+        ],
+      ),
     );
   }
 }

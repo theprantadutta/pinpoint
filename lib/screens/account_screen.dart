@@ -12,6 +12,7 @@ import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pinpoint/design/app_theme.dart';
 
 class AccountScreen extends StatefulWidget {
   static const String kRouteName = '/account';
@@ -68,107 +69,149 @@ class _AccountScreenState extends State<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: ListView(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Text('General',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-          AccountListTile(
-            title: 'Archive',
-            icon: Icons.archive_outlined,
-            onTap: () => context.push(ArchiveScreen.kRouteName),
-          ),
-          AccountListTile(
-            title: 'Trash',
-            icon: Icons.delete_outline,
-            onTap: () => context.push(TrashScreen.kRouteName),
-          ),
-          AccountListTile(
-            title: 'Tags',
-            icon: Icons.label_outline,
-            onTap: () => context.push(TagsScreen.kRouteName),
-          ),
-          AccountListTile(
-            title: 'Sync',
-            icon: Icons.sync_outlined,
-            onTap: () => context.push(SyncScreen.kRouteName),
-          ),
-          AccountListTile(
-            title: 'Import Note',
-            icon: Icons.file_upload_outlined,
-            onTap: () async {
-              final result = await FilePicker.platform.pickFiles(
-                type: FileType.custom,
-                allowedExtensions: ['pinpoint-note'],
-              );
-              if (result != null) {
-                final file = File(result.files.single.path!);
-                final jsonString = await file.readAsString();
-                await DriftNoteService.importNoteFromJson(jsonString);
-                final ctx = context;
-                if (ctx.mounted) {
-                  showSuccessToast(
-                      context: ctx,
-                      title: 'Note Imported',
-                      description: 'The note has been successfully imported.');
-                }
-              }
-            },
-          ),
-          const Divider(),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child:
-                Text('Appearance', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-          AccountListTile(
-            title: 'Theme',
-            icon: Icons.color_lens_outlined,
-            onTap: () => context.push(ThemeScreen.kRouteName),
-          ),
-          const Divider(),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child:
-                Text('Home Screen', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-          SwitchListTile(
-            title: const Text('Use Grid View'),
-            value: _viewType == 'grid',
-            onChanged: (value) {
-              _setViewType(value ? 'grid' : 'list');
-            },
-            secondary: const Icon(Icons.grid_view_outlined),
-          ),
-          ListTile(
-            leading: const Icon(Icons.sort_outlined),
-            title: const Text('Sort by'),
-            trailing: DropdownButton<String>(
-              value: _sortType,
-              items: const [
-                DropdownMenuItem(value: 'updatedAt', child: Text('Last Modified')),
-                DropdownMenuItem(value: 'createdAt', child: Text('Date Created')),
-                DropdownMenuItem(value: 'title', child: Text('Title')),
+          // Header with gradient background
+          Glass(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Settings',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 2,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        cs.primary.withValues(alpha: 0.22),
+                        cs.primary.withValues(alpha: 0.0),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ],
-              onChanged: _setSortType,
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.sort_by_alpha_outlined),
-            title: const Text('Sort Direction'),
-            trailing: DropdownButton<String>(
-              value: _sortDirection,
-              items: const [
-                DropdownMenuItem(value: 'desc', child: Text('Descending')),
-                DropdownMenuItem(value: 'asc', child: Text('Ascending')),
+          const SizedBox(height: 8),
+          
+          // Content
+          Expanded(
+            child: ListView(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Text('General',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                AccountListTile(
+                  title: 'Archive',
+                  icon: Icons.archive_outlined,
+                  onTap: () => context.push(ArchiveScreen.kRouteName),
+                ),
+                AccountListTile(
+                  title: 'Trash',
+                  icon: Icons.delete_outline,
+                  onTap: () => context.push(TrashScreen.kRouteName),
+                ),
+                AccountListTile(
+                  title: 'Tags',
+                  icon: Icons.label_outline,
+                  onTap: () => context.push(TagsScreen.kRouteName),
+                ),
+                AccountListTile(
+                  title: 'Sync',
+                  icon: Icons.sync_outlined,
+                  onTap: () => context.push(SyncScreen.kRouteName),
+                ),
+                AccountListTile(
+                  title: 'Import Note',
+                  icon: Icons.file_upload_outlined,
+                  onTap: () async {
+                    final result = await FilePicker.platform.pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: ['pinpoint-note'],
+                    );
+                    if (result != null) {
+                      final file = File(result.files.single.path!);
+                      final jsonString = await file.readAsString();
+                      await DriftNoteService.importNoteFromJson(jsonString);
+                      final ctx = context;
+                      if (ctx.mounted) {
+                        showSuccessToast(
+                            context: ctx,
+                            title: 'Note Imported',
+                            description: 'The note has been successfully imported.');
+                      }
+                    }
+                  },
+                ),
+                const Divider(),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child:
+                      Text('Appearance', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                AccountListTile(
+                  title: 'Theme',
+                  icon: Icons.color_lens_outlined,
+                  onTap: () => context.push(ThemeScreen.kRouteName),
+                ),
+                const Divider(),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child:
+                      Text('Home Screen', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                SwitchListTile(
+                  title: const Text('Use Grid View'),
+                  value: _viewType == 'grid',
+                  onChanged: (value) {
+                    _setViewType(value ? 'grid' : 'list');
+                  },
+                  secondary: const Icon(Icons.grid_view_outlined),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.sort_outlined),
+                  title: const Text('Sort by'),
+                  trailing: DropdownButton<String>(
+                    value: _sortType,
+                    items: const [
+                      DropdownMenuItem(value: 'updatedAt', child: Text('Last Modified')),
+                      DropdownMenuItem(value: 'createdAt', child: Text('Date Created')),
+                      DropdownMenuItem(value: 'title', child: Text('Title')),
+                    ],
+                    onChanged: _setSortType,
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.sort_by_alpha_outlined),
+                  title: const Text('Sort Direction'),
+                  trailing: DropdownButton<String>(
+                    value: _sortDirection,
+                    items: const [
+                      DropdownMenuItem(value: 'desc', child: Text('Descending')),
+                      DropdownMenuItem(value: 'asc', child: Text('Ascending')),
+                    ],
+                    onChanged: _setSortDirection,
+                  ),
+                ),
               ],
-              onChanged: _setSortDirection,
             ),
           ),
         ],
