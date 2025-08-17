@@ -46,7 +46,7 @@ This document outlines the visual enhancements needed to make all screens consis
 ### 6. Account/Settings Screen (`lib/screens/account_screen.dart`)
 - [x] Add gradient header
 - [x] Apply glassmorphism to `AccountListTile` components
-- [ ] Add visual enhancements to switches and dropdowns
+- [x] Add visual enhancements to switches and dropdowns
 
 ### 7. Theme Screen (`lib/screens/theme_screen.dart`)
 - [x] Add gradient header
@@ -79,7 +79,7 @@ This document outlines the visual enhancements needed to make all screens consis
 
 ### 12. Drawing Screen (`lib/screens/drawing_screen.dart`)
 - [x] Add gradient header
-- [ ] Apply glassmorphism to toolbar buttons
+- [x] Apply glassmorphism to toolbar buttons
 
 ## Components to Enhance
 

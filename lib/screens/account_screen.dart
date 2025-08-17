@@ -178,37 +178,56 @@ class _AccountScreenState extends State<AccountScreen> {
                   child:
                       Text('Home Screen', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
-                SwitchListTile(
-                  title: const Text('Use Grid View'),
-                  value: _viewType == 'grid',
-                  onChanged: (value) {
-                    _setViewType(value ? 'grid' : 'list');
-                  },
-                  secondary: const Icon(Icons.grid_view_outlined),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.sort_outlined),
-                  title: const Text('Sort by'),
-                  trailing: DropdownButton<String>(
-                    value: _sortType,
-                    items: const [
-                      DropdownMenuItem(value: 'updatedAt', child: Text('Last Modified')),
-                      DropdownMenuItem(value: 'createdAt', child: Text('Date Created')),
-                      DropdownMenuItem(value: 'title', child: Text('Title')),
-                    ],
-                    onChanged: _setSortType,
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Glass(
+                    child: SwitchListTile(
+                      title: const Text('Use Grid View'),
+                      value: _viewType == 'grid',
+                      onChanged: (value) {
+                        _setViewType(value ? 'grid' : 'list');
+                      },
+                      secondary: const Icon(Icons.grid_view_outlined),
+                    ),
                   ),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.sort_by_alpha_outlined),
-                  title: const Text('Sort Direction'),
-                  trailing: DropdownButton<String>(
-                    value: _sortDirection,
-                    items: const [
-                      DropdownMenuItem(value: 'desc', child: Text('Descending')),
-                      DropdownMenuItem(value: 'asc', child: Text('Ascending')),
-                    ],
-                    onChanged: _setSortDirection,
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Glass(
+                    child: ListTile(
+                      leading: const Icon(Icons.sort_outlined),
+                      title: const Text('Sort by'),
+                      trailing: DropdownButton<String>(
+                        value: _sortType,
+                        items: const [
+                          DropdownMenuItem(value: 'updatedAt', child: Text('Last Modified')),
+                          DropdownMenuItem(value: 'createdAt', child: Text('Date Created')),
+                          DropdownMenuItem(value: 'title', child: Text('Title')),
+                        ],
+                        onChanged: _setSortType,
+                        borderRadius: AppTheme.radiusM,
+                        underline: Container(), // Remove default underline
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Glass(
+                    child: ListTile(
+                      leading: const Icon(Icons.sort_by_alpha_outlined),
+                      title: const Text('Sort Direction'),
+                      trailing: DropdownButton<String>(
+                        value: _sortDirection,
+                        items: const [
+                          DropdownMenuItem(value: 'desc', child: Text('Descending')),
+                          DropdownMenuItem(value: 'asc', child: Text('Ascending')),
+                        ],
+                        onChanged: _setSortDirection,
+                        borderRadius: AppTheme.radiusM,
+                        underline: Container(), // Remove default underline
+                      ),
+                    ),
                   ),
                 ),
               ],
