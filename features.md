@@ -18,58 +18,84 @@ These features are already implemented in the application.
   - [x] Create and manage note folders.
   - [x] Assign notes to one or more folders.
   - [x] View recent notes on the home screen.
+  - [x] Tag system for flexible organization.
 - **Attachments:**
   - [x] Attach files to notes (e.g., images).
+  - [x] Optical Character Recognition (OCR) to extract text from images.
 - **User Interface & Experience:**
   - [x] Light and dark mode support.
   - [x] Customizable color schemes using FlexColorScheme.
   - [x] Smooth performance with high refresh rate support.
   - [x] A dedicated home screen to access recent notes and folders.
   - [x] Modern navigation using `go_router`.
-- **Architecture & Backend:**
-  - [x] All data is stored locally in a robust SQLite database using `drift`.
-  - [x] Clean architecture with a service layer for business logic.
-  - [x] Efficient data fetching and caching with `fquery`.
-  - [x] Dependency injection using `get_it` for a well-organized codebase.
-  - [x] User preferences (like theme) are saved locally using `shared_preferences`.
-
-## Next Steps (Core Features)
-
-These are the recommended next features to implement to round out the core functionality of the app.
-
+  - [x] Comprehensive visual overhaul with glassmorphism effects and gradient backgrounds.
+  - [x] Enhanced note creation UI/UX.
 - **Note Management:**
-  - [ ] **Pinning Notes:** Allow users to pin important notes to the top of the list. The `isPinned` field already exists in the database schema.
-  - [ ] **Search Functionality:** Implement a global search to find notes by title or content.
-  - [ ] **Archiving Notes:** Allow users to archive notes instead of deleting them permanently.
-  - [ ] **Soft Deletion (Trash):** Move deleted notes to a "Trash" folder with the option to restore or permanently delete them.
+  - [x] Pinning Notes: Allow users to pin important notes to the top of the list.
+  - [x] Search Functionality: Implement a global search to find notes by title or content.
+  - [x] Archiving Notes: Allow users to archive notes instead of deleting them permanently.
+  - [x] Soft Deletion (Trash): Move deleted notes to a "Trash" folder with the option to restore or permanently delete them.
 - **Folder Management:**
-  - [ ] **Dedicated Folder View:** A screen that shows all notes within a specific folder.
-  - [ ] **Folder CRUD:** Allow users to rename and delete folders.
+  - [x] Dedicated Folder View: A screen that shows all notes within a specific folder.
 - **Reminders & To-dos:**
-  - [ ] **Notifications:** Trigger system notifications for notes with reminders.
-  - [ ] **To-do List Interaction:** Mark to-do items as complete directly from the note view.
+  - [x] Notifications: Trigger system notifications for notes with reminders.
+  - [x] To-do List Interaction: Mark to-do items as complete directly from the note view.
 - **UI/UX Refinements:**
-  - [ ] **Note Grid View:** Display notes in a staggered grid view on the home screen for better visual organization.
-  - [ ] **Empty States:** Design and implement informative empty states (e.g., when there are no notes or search results).
+  - [x] Note Grid View: Display notes in a staggered grid view on the home screen for better visual organization.
+  - [x] Empty States: Design and implement informative empty states (e.g., when there are no notes or search results).
+- **Advanced Features:**
+  - [x] Voice Transcription: Transcribe audio notes into text automatically.
+  - [x] Drawing/Sketching: Integrate a canvas for drawing or handwriting notes.
+  - [x] Sharing and export: Share notes as text, HTML, and PDF.
+  - [x] Cloud Sync UI: User interface for managing cloud synchronization.
+- **Security:**
+  - [x] Biometric Lock: Protect the app with biometric authentication (fingerprint/face ID).
+  - [x] Note Encryption: Encrypt the content of notes for enhanced privacy.
+- **Customization:**
+  - [x] Customizable Home Screen: Allow users to customize the layout of the home screen.
+  - [x] More Themes: Add a wider variety of themes and fonts.
 
-## Bonus & Future Features
+## Architecture & Backend
+
+- [x] All data is stored locally in a robust SQLite database using `drift`.
+- [x] Clean architecture with a service layer for business logic.
+- [x] Efficient data fetching and caching with `fquery`.
+- [x] Dependency injection using `get_it` for a well-organized codebase.
+- [x] User preferences (like theme) are saved locally using `shared_preferences`.
+
+## Next Steps (Planned Features)
+
+These are the recommended next features to implement to enhance the app further.
+
+- **Dedicated Screens:**
+  - [ ] **Notes Screen:** Dedicated view for browsing and managing all notes with powerful filtering capabilities.
+  - [ ] **Todo Screen:** Unified view for managing all todo items across notes.
+- **Cloud Sync Backend:**
+  - [ ] **Multi-device Sync:** Implement backend for cloud synchronization across multiple devices.
+  - [ ] **Conflict Resolution:** Handle sync conflicts gracefully.
+- **Advanced Editor Features:**
+  - [ ] **Markdown Support:** Allow users to write notes in Markdown.
+  - [ ] **Code Blocks:** Enhanced syntax highlighting for code blocks.
+- **Automation & Integration:**
+  - [ ] **More Advanced OCR:** Improved text recognition accuracy.
+  - [ ] **Voice Commands:** Voice-based note creation and management.
+- **Performance & Quality:**
+  - [ ] **Comprehensive Testing:** Unit and widget tests for all features.
+  - [ ] **Performance Optimization:** Indexes for search and pagination for large lists.
+
+## Future Features
 
 These are more advanced features that could be considered for future versions of the app.
 
 - **Collaboration & Sync:**
-  - [ ] **Cloud Sync:** Sync notes across multiple devices using a cloud service (e.g., Firebase, Supabase, or a custom backend).
   - [ ] **Note Sharing:** Share notes with other users for viewing or collaboration.
-- **Advanced Editor Features:**
-  - [ ] **Markdown Support:** Allow users to write notes in Markdown.
-  - [ ] **Code Blocks:** Add support for syntax-highlighted code blocks in the editor.
-  - [ ] **Drawing/Sketching:** Integrate a canvas for drawing or handwriting notes.
-- **Security:**
-  - [ ] **Biometric Lock:** Protect the app with biometric authentication (fingerprint/face ID). The `isBiometricEnabled` flag is already in the code.
-  - [ ] **Note Encryption:** Encrypt the content of notes for enhanced privacy.
-- **Automation & Integration:**
-  - [ ] **Tags:** Add tags to notes for more flexible organization.
-  - [ ] **Optical Character Recognition (OCR):** Extract text from images attached to notes.
-  - [ ] **Voice Transcription:** Transcribe audio notes into text automatically.
-- **Customization:**
-  - [ ] **Customizable Home Screen:** Allow users to customize the layout of the home screen.
-  - [ ] **More Themes:** Add a wider variety of themes and fonts.
+  - [ ] **Real-time Collaboration:** Multiple users editing the same note simultaneously.
+- **AI Integration:**
+  - [ ] **Smart Organization:** AI-powered note categorization and tagging.
+  - [ ] **Content Summarization:** Automatic summarization of long notes.
+  - [ ] **Intelligent Search:** Natural language search capabilities.
+- **Advanced Customization:**
+  - [ ] **Custom Widgets:** User-created widgets for the home screen.
+  - [ ] **Plugin System:** Third-party extensions and integrations.
+- **Offline Capabilities:**
+  - [ ] **Enhanced Offline Mode:** Better offline functionality with improved caching.

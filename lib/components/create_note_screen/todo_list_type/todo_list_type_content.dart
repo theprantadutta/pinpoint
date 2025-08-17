@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:pinpoint/database/database.dart';
-import 'package:pinpoint/services/drift_note_service.dart';
 
 import '../../../services/dialog_service.dart';
 
@@ -28,15 +27,19 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
       hintText: 'Enter todo',
       onAddPressed: () async {
         if (controller.text.isNotEmpty) {
-          final newTodo = await DriftNoteService.insertTodoItem(
-            noteId: widget.todos.first
-                .noteId, // Assuming all todos belong to the same note
-            title: controller.text,
+          // Create a temporary todo item with a negative ID to indicate it's not yet saved
+          final newTodo = NoteTodoItem(
+            id: -(widget.todos.length + 1), // Negative ID for temporary items
+            noteId: 0, // Will be updated when note is saved
+            todoTitle: controller.text,
+            isDone: false,
           );
+          
           widget.onTodoChanged([
             ...widget.todos,
             newTodo,
           ]);
+          
           if (!mounted) return;
           Navigator.pop(context);
         }
@@ -46,9 +49,6 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
 
   void markAllAsDone() async {
     final updatedTodos = [for (var t in widget.todos) t.copyWith(isDone: true)];
-    for (var todo in updatedTodos) {
-      await DriftNoteService.updateTodoItemStatus(todo.id, true);
-    }
     widget.onTodoChanged(updatedTodos);
   }
 
@@ -63,7 +63,6 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
               onPressed: () => Navigator.pop(context), child: Text('Cancel')),
           TextButton(
             onPressed: () async {
-              await DriftNoteService.deleteTodoItem(todo.id);
               widget.onTodoChanged(
                   widget.todos.where((t) => t.id != todo.id).toList());
               if (!context.mounted) return;
@@ -86,7 +85,6 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
       hintText: 'Enter todo',
       onAddPressed: () async {
         if (controller.text.isNotEmpty) {
-          await DriftNoteService.updateTodoItemTitle(todo.id, controller.text);
           widget.onTodoChanged([
             for (var t in widget.todos)
               if (t.id == todo.id) t.copyWith(todoTitle: controller.text) else t
@@ -99,7 +97,6 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
   }
 
   void markTodo(NoteTodoItem todo, bool? value) async {
-    await DriftNoteService.updateTodoItemStatus(todo.id, value ?? false);
     widget.onTodoChanged([
       for (var t in widget.todos)
         if (t.id == todo.id) t.copyWith(isDone: value ?? false) else t

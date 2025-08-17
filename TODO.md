@@ -35,6 +35,8 @@ UI/UX
 - Grid/list note cards with badges and actions
 - Empty states for search, archive, trash, empty folder
 - Modern navigation (go_router)
+- **Complete visual overhaul with glassmorphism effects and gradient backgrounds**
+- **Enhanced note creation UI/UX with improved todo functionality**
 
 Architecture & Data
 - Local database (Drift + SQLite)
@@ -75,33 +77,51 @@ Medium Priority
 8) Sharing and export — DONE
    - Implemented sharing notes as text, HTML, and PDF via platform share sheets.
    - Implemented export/import of single-note backups.
+   
 9) Themes & fonts — DONE
    - Implemented UI to pick from more FlexColorScheme presets.
-   - TODO: Allow picking Google Fonts.
-   - TODO: Optional accent color picker.
+   - Implemented Google Fonts selection.
+   - Optional accent color picker.
+
+10) Drawing/sketching — DONE
+    - Integrated a canvas for drawing; drawings are saved as attachments.
+
+11) **Cloud sync UI — DONE**
+    - Implemented sync manager and settings UI
+    - Added sync screen with status and controls
+
+12) **Bottom navigation enhancement — DONE**
+    - Replaced third-party bottom bar with custom Material Design implementation
+
+13) **Visual enhancements — DONE**
+    - Complete visual overhaul with glassmorphism effects across all screens
+    - Unified design language with gradients, consistent styling, and enhanced components
+
+14) **Note creation overhaul — DONE**
+    - Redesigned note creation UI/UX
+    - Fixed todo note creation issues
+    - Improved save workflow and validation
 
 Future / Large Scope
-10) Cloud sync
+15) Cloud sync backend
     - Optional multi-device sync (Firebase/Supabase/custom backend)
     - Conflict resolution, offline-first, encryption considerations
 
-11) Drawing/sketching — DONE
-    - Integrated a canvas for drawing; drawings are saved as attachments.
-
 Quality, Security, Performance
-12) Tests & CI
+16) Tests & CI
     - Unit/widget tests for services and UI flows; Drift query tests
     - Lint/type checks and CI pipeline
 
-13) Security hardening
+17) Security hardening
     - Secure key management for EncryptionService (secure storage, per-install key)
     - Avoid logging sensitive content
 
-14) Performance
+18) Performance
     - Indexes for search; assess large lists (pagination/virtualization)
     - Cache thumbnails; handle large attachments robustly
 
 ---
 Notes
-- Many “Next Steps” from features.md (pin, search, archive, trash, folder view, notifications, to-do interactions, grid, empty states) are already implemented.
+- Many "Next Steps" from features.md (pin, search, archive, trash, folder view, notifications, to-do interactions, grid, empty states) are already implemented.
 - Partials: tags, OCR, biometrics, transcription, theme customization.
+- Recently completed major enhancements: visual overhaul, note creation improvements, cloud sync UI, bottom navigation enhancement.
