@@ -57,7 +57,8 @@ class NoteInputField extends StatelessWidget {
             context: context,
             builder: (BuildContext context) => AlertDialog(
               title: const Text('Perform OCR?'),
-              content: const Text('Do you want to extract text from this image?'),
+              content:
+                  const Text('Do you want to extract text from this image?'),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -72,7 +73,8 @@ class NoteInputField extends StatelessWidget {
           );
 
           if (doOCR == true) {
-            final String recognizedText = await OCRService.recognizeText(newPath);
+            final String recognizedText =
+                await OCRService.recognizeText(newPath);
             if (recognizedText.isNotEmpty) {
               onOcrCompleted(recognizedText);
             }
@@ -95,15 +97,11 @@ class NoteInputField extends StatelessWidget {
       await Permission.videos.request();
     }
 
-    
-
     if (await Permission.photos.isGranted ||
         await Permission.videos.isGranted) {
       return true;
     }
     return false;
-
-    
   }
 
   @override

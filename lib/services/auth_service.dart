@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:pinpoint/services/logger_service.dart';
 
@@ -14,14 +13,10 @@ class AuthService {
     try {
       return await _localAuth.authenticate(
         localizedReason: 'Authenticate to access Pinpoint',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: true,
-        ),
       );
-    } on PlatformException catch (e) {
-      // Handle specific platform exceptions (e.g., not enrolled, locked out)
-      log.e("Authentication error: ${e.message}");
+    } catch (e) {
+      // Handle authentication exceptions
+      log.e("Authentication error: $e");
       return false;
     }
   }

@@ -59,8 +59,10 @@ class _CreateNoteTagSelectState extends State<CreateNoteTagSelect> {
                       onAddPressed: () async {
                         final text = controller.text.trim();
                         if (text.isNotEmpty) {
-                          final existingTags = await DriftNoteService.watchAllNoteTags().first;
-                          if (existingTags.any((t) => t.tagTitle.toLowerCase() == text.toLowerCase())) {
+                          final existingTags =
+                              await DriftNoteService.watchAllNoteTags().first;
+                          if (existingTags.any((t) =>
+                              t.tagTitle.toLowerCase() == text.toLowerCase())) {
                             if (!context.mounted) return;
                             showErrorToast(
                               context: context,
@@ -69,8 +71,10 @@ class _CreateNoteTagSelectState extends State<CreateNoteTagSelect> {
                             );
                             return;
                           }
-                          final newTag = await DriftNoteService.insertNoteTag(text);
-                          widget.onSelectedTagsChanged([...widget.selectedTags, newTag]);
+                          final newTag =
+                              await DriftNoteService.insertNoteTag(text);
+                          widget.onSelectedTagsChanged(
+                              [...widget.selectedTags, newTag]);
                           if (!context.mounted) return;
                           Navigator.of(context).pop();
                         }
@@ -85,26 +89,33 @@ class _CreateNoteTagSelectState extends State<CreateNoteTagSelect> {
             Wrap(
               spacing: 8.0,
               runSpacing: 8.0,
-              children: [ 
+              children: [
                 ...widget.selectedTags.map((tag) {
                   return Chip(
                     label: Text(tag.tagTitle),
                     onDeleted: () {
                       widget.onSelectedTagsChanged(
-                        widget.selectedTags.where((t) => t.id != tag.id).toList(),
+                        widget.selectedTags
+                            .where((t) => t.id != tag.id)
+                            .toList(),
                       );
                     },
                     deleteIcon: Icon(Icons.close),
                     backgroundColor: kPrimaryColor.withValues(alpha: 0.2),
-                    labelStyle: TextStyle(color: isDarkTheme ? Colors.white : Colors.black),
+                    labelStyle: TextStyle(
+                        color: isDarkTheme ? Colors.white : Colors.black),
                   );
                 }),
                 ActionChip(
                   avatar: Icon(Icons.add),
                   label: Text('Select Existing'),
                   onPressed: () async {
-                    final allTags = await DriftNoteService.watchAllNoteTags().first;
-                    final availableTags = allTags.where((tag) => !widget.selectedTags.any((selected) => selected.id == tag.id)).toList();
+                    final allTags =
+                        await DriftNoteService.watchAllNoteTags().first;
+                    final availableTags = allTags
+                        .where((tag) => !widget.selectedTags
+                            .any((selected) => selected.id == tag.id))
+                        .toList();
                     if (!context.mounted) return;
                     showModalBottomSheet(
                       context: context,
@@ -116,7 +127,8 @@ class _CreateNoteTagSelectState extends State<CreateNoteTagSelect> {
                             return ListTile(
                               title: Text(tag.tagTitle),
                               onTap: () {
-                                widget.onSelectedTagsChanged([...widget.selectedTags, tag]);
+                                widget.onSelectedTagsChanged(
+                                    [...widget.selectedTags, tag]);
                                 Navigator.pop(context);
                               },
                             );

@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:painter/painter.dart';
-import 'package:pinpoint/design/app_theme.dart';
+import '../design_system/design_system.dart';
 
 class DrawingScreen extends StatefulWidget {
   static const String kRouteName = '/drawing';
@@ -26,83 +26,54 @@ class _DrawingScreenState extends State<DrawingScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Drawing'),
+    return GradientScaffold(
+      appBar: GlassAppBar(
+        title: Row(
+          children: [
+            Icon(Icons.brush_rounded, color: cs.primary, size: 20),
+            const SizedBox(width: 8),
+            const Text('Drawing'),
+          ],
+        ),
         actions: [
-          Container(
-            margin: const EdgeInsets.all(8),
-            child: Glass(
-              padding: const EdgeInsets.all(8),
-              borderRadius: AppTheme.radiusM,
-              child: IconButton(
-                icon: const Icon(Icons.undo),
-                onPressed: () {
-                  _controller.undo();
-                },
+          GestureDetector(
+            onTap: () {
+              PinpointHaptics.light();
+              _controller.undo();
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              child: GlassContainer(
+                padding: const EdgeInsets.all(10),
+                borderRadius: 12,
+                child: Icon(Icons.undo_rounded, color: cs.primary, size: 20),
               ),
             ),
           ),
-          Container(
-            margin: const EdgeInsets.all(8),
-            child: Glass(
-              padding: const EdgeInsets.all(8),
-              borderRadius: AppTheme.radiusM,
-              child: IconButton(
-                icon: const Icon(Icons.save),
-                onPressed: () async {
-                  final PictureDetails picture = _controller.finish();
-                  final image = await picture.toImage();
-                  final data = await image.toByteData(format: ImageByteFormat.png);
-                  if (!context.mounted) return;
-                  if (data != null) {
-                    Navigator.of(context).pop(data.buffer.asUint8List());
-                  }
-                },
+          GestureDetector(
+            onTap: () async {
+              PinpointHaptics.medium();
+              final PictureDetails picture = _controller.finish();
+              final image = await picture.toImage();
+              final data = await image.toByteData(format: ImageByteFormat.png);
+              if (!context.mounted) return;
+              if (data != null) {
+                PinpointHaptics.success();
+                Navigator.of(context).pop(data.buffer.asUint8List());
+              }
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              child: GlassContainer(
+                padding: const EdgeInsets.all(10),
+                borderRadius: 12,
+                child: Icon(Icons.save_rounded, color: cs.primary, size: 20),
               ),
             ),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Header with gradient background
-          Glass(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Drawing',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  height: 2,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        cs.primary.withValues(alpha: 0.22),
-                        cs.primary.withValues(alpha: 0.0),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          
-          // Drawing canvas
-          Expanded(
-            child: Painter(_controller),
-          ),
-        ],
-      ),
+      body: Painter(_controller),
     );
   }
 }

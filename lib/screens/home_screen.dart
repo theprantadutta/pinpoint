@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../design_system/design_system.dart';
 import '../components/home_screen/home_screen_my_folders.dart';
 import '../components/home_screen/home_screen_recent_notes.dart';
 import '../components/home_screen/home_screen_top_bar.dart';
@@ -14,13 +14,20 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(120),
-        child: HomeScreenTopBar(
+    return GradientScaffold(
+      appBar: GlassAppBar(
+        scrollController: _scrollController,
+        title: HomeScreenTopBar(
           onSearchChanged: (query) {
             setState(() {
               _searchQuery = query;
@@ -30,9 +37,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
+          const SizedBox(height: 8),
           const HomeScreenMyFolders(),
-          const SizedBox(height: 10),
-          HomeScreenRecentNotes(searchQuery: _searchQuery),
+          const SizedBox(height: 8),
+          HomeScreenRecentNotes(
+            searchQuery: _searchQuery,
+            scrollController: _scrollController,
+          ),
         ],
       ),
     );

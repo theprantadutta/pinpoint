@@ -18,7 +18,6 @@ class NoteAttachments extends StatelessWidget {
       stream: DriftNoteService.watchNoteAttachmentsById(noteId),
       builder: (context, snapshot) {
         final data = snapshot.data ?? []; // Ensure data is not null
-        
 
         // ❌ REMOVE this check (it prevents the UI from updating)
         // if (snapshot.connectionState != ConnectionState.done) {

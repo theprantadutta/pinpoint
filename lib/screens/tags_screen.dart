@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pinpoint/database/database.dart';
-import 'package:pinpoint/design/widgets/tag_chip.dart';
+import 'package:pinpoint/database/database.dart' as db;
 import 'package:pinpoint/screens/notes_by_tag_screen.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:pinpoint/util/dialogs.dart';
-import 'package:pinpoint/design/app_theme.dart';
-import 'package:pinpoint/components/shared/empty_state_widget.dart';
+import '../design_system/design_system.dart';
 
 class TagsScreen extends StatefulWidget {
   static const String kRouteName = '/tags';
@@ -18,39 +16,40 @@ class TagsScreen extends StatefulWidget {
 }
 
 class _TagsScreenState extends State<TagsScreen> {
-  void _showTagOptions(BuildContext context, NoteTag tag) {
-    showDialog(
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _showTagOptions(BuildContext context, db.NoteTag tag) async {
+    await showModalBottomSheet(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(tag.tagTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('Edit'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _showEditTagDialog(context, tag);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete_outline),
-                title: const Text('Delete'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _showDeleteTagDialog(context, tag);
-                },
-              ),
-            ],
-          ),
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return ConfirmSheet(
+          title: tag.tagTitle,
+          message: 'Choose an action',
+          icon: Icons.label_rounded,
+          onPrimary: () {
+            Navigator.of(ctx).pop();
+            _showEditTagDialog(context, tag);
+          },
+          primaryLabel: 'Edit',
+          onSecondary: () {
+            Navigator.of(ctx).pop();
+            _showDeleteTagDialog(context, tag);
+          },
+          secondaryLabel: 'Delete',
+          isDestructive: false,
         );
       },
     );
   }
 
-  void _showEditTagDialog(BuildContext context, NoteTag tag) {
+  void _showEditTagDialog(BuildContext context, db.NoteTag tag) {
     showTextFormDialog(
       context,
       title: 'Edit Tag',
@@ -59,36 +58,29 @@ class _TagsScreenState extends State<TagsScreen> {
       onSave: (newTitle) async {
         if (newTitle.isNotEmpty && newTitle != tag.tagTitle) {
           await DriftNoteService.updateNoteTag(tag.id, newTitle);
+          PinpointHaptics.success();
         }
       },
     );
   }
 
-  void _showDeleteTagDialog(BuildContext context, NoteTag tag) {
-    showDialog(
+  Future<void> _showDeleteTagDialog(
+      BuildContext context, db.NoteTag tag) async {
+    final confirmed = await ConfirmSheet.show(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Tag'),
-          content: Text(
-              'Are you sure you want to delete the "${tag.tagTitle}" tag? This will remove the tag from all associated notes.'),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child: const Text('Delete'),
-              onPressed: () async {
-                await DriftNoteService.deleteNoteTag(tag.id);
-                if (!context.mounted) return;
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
+      title: 'Delete Tag',
+      message:
+          'Are you sure you want to delete "${tag.tagTitle}"? This will remove the tag from all associated notes.',
+      primaryLabel: 'Delete',
+      secondaryLabel: 'Cancel',
+      isDestructive: true,
+      icon: Icons.delete_rounded,
     );
+
+    if (confirmed == true) {
+      await DriftNoteService.deleteNoteTag(tag.id);
+      PinpointHaptics.success();
+    }
   }
 
   @override
@@ -96,108 +88,82 @@ class _TagsScreenState extends State<TagsScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
+    return GradientScaffold(
+      appBar: GlassAppBar(
+        scrollController: _scrollController,
         title: const Text('Tags'),
       ),
-      body: StreamBuilder<List<NoteTag>>(
+      body: StreamBuilder<List<db.NoteTag>>(
         stream: DriftNoteService.watchAllNoteTags(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(
-              child: EmptyStateWidget(
-                message: 'Error: ${snapshot.error}',
-                iconData: Icons.error_outline,
-              ),
+            return EmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Error loading tags',
+              message: 'Please try again later',
             );
           }
           final tags = snapshot.data ?? [];
-          
-          // Header with tag count
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Glass(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Tags',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cs.primary.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: cs.primary.withValues(alpha: 0.22),
-                            ),
-                          ),
-                          child: Text(
-                            '${tags.length}',
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: cs.primary,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 2,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            cs.primary.withValues(alpha: 0.22),
-                            cs.primary.withValues(alpha: 0.0),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(2),
+                    Text(
+                      'All Tags',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    TagChip(
+                      label: '${tags.length}',
+                      color: cs.primary,
+                      size: TagChipSize.small,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              
+
               // Content
               Expanded(
                 child: tags.isEmpty
-                    ? const Center(
-                        child: EmptyStateWidget(
-                          message: 'No tags yet.',
-                          iconData: Icons.label_outline,
-                        ),
+                    ? EmptyState(
+                        icon: Icons.label_outline_rounded,
+                        title: 'No tags yet',
+                        message:
+                            'Tags will appear here when you add them to notes',
                       )
-                    : Padding(
-                        padding: const EdgeInsets.all(16.0),
+                    : SingleChildScrollView(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
                         child: Wrap(
                           spacing: 8.0,
                           runSpacing: 8.0,
                           children: tags.map((tag) {
-                            return GestureDetector(
-                              onLongPress: () => _showTagOptions(context, tag),
-                              child: TagChip(
-                                label: tag.tagTitle,
-                                onTap: () {
-                                  context.push(NotesByTagScreen.kRouteName, extra: tag);
-                                },
-                              ),
+                            final tagColor = TagColors.getPreset(
+                                tag.id % TagColors.presets.length);
+                            return TagChip(
+                              label: tag.tagTitle,
+                              color: tagColor.foreground,
+                              onTap: () {
+                                PinpointHaptics.medium();
+                                context.push(NotesByTagScreen.kRouteName,
+                                    extra: tag);
+                              },
+                              showClose: true,
+                              onClose: () {
+                                PinpointHaptics.light();
+                                _showTagOptions(context, tag);
+                              },
                             );
                           }).toList(),
                         ),

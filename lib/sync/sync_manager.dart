@@ -18,17 +18,17 @@ class SyncManager with ChangeNotifier {
   /// Initialize the sync manager
   Future<void> init() async {
     if (_isInitialized) return;
-    
+
     // For now, we'll use the file sync service
     // In the future, this could be configured to use different backends
     _syncService = FileSyncService();
     await _syncService!.init();
-    
+
     // Listen to sync service changes
     if (_syncService is FileSyncService) {
       (_syncService as FileSyncService).addListener(notifyListeners);
     }
-    
+
     _isInitialized = true;
     notifyListeners();
   }
@@ -40,14 +40,15 @@ class SyncManager with ChangeNotifier {
   }
 
   /// Perform sync operation
-  Future<SyncResult> sync({SyncDirection direction = SyncDirection.both}) async {
+  Future<SyncResult> sync(
+      {SyncDirection direction = SyncDirection.both}) async {
     if (!_isInitialized || _syncService == null) {
       return SyncResult(
         success: false,
         message: 'Sync service not initialized',
       );
     }
-    
+
     final result = await _syncService!.sync(direction: direction);
     notifyListeners();
     return result;

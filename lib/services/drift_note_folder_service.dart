@@ -106,8 +106,6 @@ class DriftNoteFolderService {
     return NoteFolderDto(id: id, title: text);
   }
 
-  
-
   static Future<void> renameFolder(int folderId, String newTitle) async {
     final database = getIt<AppDatabase>();
     await (database.update(database.noteFolders)

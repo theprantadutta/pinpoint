@@ -34,12 +34,12 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
             todoTitle: controller.text,
             isDone: false,
           );
-          
+
           widget.onTodoChanged([
             ...widget.todos,
             newTodo,
           ]);
-          
+
           if (!mounted) return;
           Navigator.pop(context);
         }

@@ -14,8 +14,14 @@ class NotificationService {
       tz.initializeTimeZones();
 
       // Get and set local timezone
-      final String currentTimeZone = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(currentTimeZone));
+      final currentTimeZone = await FlutterTimezone.getLocalTimezone();
+      // Extract the timezone identifier from TimezoneInfo object
+      // The TimezoneInfo object's toString() returns: "TimezoneInfo(Asia/Kolkata, ...)"
+      // We extract just the timezone identifier (e.g., "Asia/Kolkata")
+      final tzString = currentTimeZone.toString();
+      final match = RegExp(r'TimezoneInfo\(([^,]+)').firstMatch(tzString);
+      final timezoneName = match?.group(1) ?? 'UTC';
+      tz.setLocalLocation(tz.getLocation(timezoneName));
 
       // Android initialization settings
       const AndroidInitializationSettings initializationSettingsAndroid =
