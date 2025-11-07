@@ -10,6 +10,7 @@ import '../../design_system/design_system.dart';
 import '../../models/note_with_details.dart';
 import '../../services/drift_note_service.dart';
 import '../../screens/create_note_screen.dart' show CreateNoteScreen;
+import '../../util/note_utils.dart';
 
 class HomeScreenRecentNotes extends StatefulWidget {
   final String searchQuery;
@@ -117,6 +118,7 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
+                      padding: const EdgeInsets.only(bottom: 100),
                       itemCount: data.length,
                       itemBuilder: (context, i) {
                         return NoteListItem(note: data[i], showActions: true);
@@ -124,7 +126,7 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
                     );
                   } else {
                     return ListView.separated(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.only(top: 8, bottom: 100),
                       itemCount: data.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, i) {
@@ -162,6 +164,7 @@ class NoteListItem extends StatelessWidget {
     final cs = theme.colorScheme;
     final dark = theme.brightness == Brightness.dark;
     final n = note.note;
+    final hasTitle = n.noteTitle != null && n.noteTitle!.trim().isNotEmpty;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.98, end: 1),
@@ -173,8 +176,8 @@ class NoteListItem extends StatelessWidget {
         child: Transform.scale(scale: scale, child: child),
       ),
       child: NoteCard(
-        title: n.noteTitle ?? 'Untitled',
-        excerpt: n.contentPlainText,
+        title: getNoteTitleOrPreview(n.noteTitle, n.contentPlainText),
+        excerpt: hasTitle ? n.contentPlainText : null,
         lastModified: n.updatedAt,
         isPinned: n.isPinned,
         tags: [
@@ -183,12 +186,6 @@ class NoteListItem extends StatelessWidget {
               label: note.folders.first.title,
               color: cs.primary,
             ),
-          ...note.tags.take(2).map(
-                (t) => CardNoteTag(
-                  label: t.tagTitle,
-                  color: TagColors.getPreset(0).foreground,
-                ),
-              ),
         ],
         onTap: () {
           PinpointHaptics.medium();

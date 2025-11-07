@@ -173,8 +173,8 @@ class PinpointElevations {
       // Darker, more subtle shadows for dark mode
       return Colors.black.withOpacity(opacity * 1.5);
     } else {
-      // Softer shadows for light mode
-      return PinpointColors.shadowColor.withOpacity(opacity);
+      // Much softer, barely visible shadows for light mode
+      return PinpointColors.shadowColor.withOpacity(opacity * 0.3);
     }
   }
 

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/folder_screen.dart';
-import 'package:pinpoint/screens/notes_by_tag_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
-import 'package:pinpoint/screens/tags_screen.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
 
@@ -172,28 +170,6 @@ class AppNavigation {
         builder: (context, state) {
           return TrashScreen(
             key: state.pageKey,
-          );
-        },
-      ),
-      GoRoute(
-        parentNavigatorKey: rootNavigatorKey,
-        path: TagsScreen.kRouteName,
-        name: "Tags Screen",
-        builder: (context, state) {
-          return TagsScreen(
-            key: state.pageKey,
-          );
-        },
-      ),
-      GoRoute(
-        parentNavigatorKey: rootNavigatorKey,
-        path: NotesByTagScreen.kRouteName,
-        name: "Notes By Tag Screen",
-        builder: (context, state) {
-          final tag = state.extra as NoteTag;
-          return NotesByTagScreen(
-            key: state.pageKey,
-            tag: tag,
           );
         },
       ),

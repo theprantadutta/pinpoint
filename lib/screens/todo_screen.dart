@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pinpoint/models/note_todo_item_with_note.dart';
+import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:pinpoint/database/database.dart';
+import 'package:pinpoint/util/show_a_toast.dart';
 import '../design_system/design_system.dart';
+import 'create_note_screen.dart';
 
 class TodoScreen extends StatefulWidget {
   static const String kRouteName = '/todo';
@@ -135,7 +139,7 @@ class _TodoScreenState extends State<TodoScreen> {
 
                 return AnimatedListStagger(
                   itemCount: filteredTodos.length,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100),
                   itemBuilder: (context, index) {
                     final todoWithNote = filteredTodos[index];
                     return Padding(
@@ -143,15 +147,13 @@ class _TodoScreenState extends State<TodoScreen> {
                       child: _TodoCard(
                         todo: todoWithNote.todoItem,
                         noteTitle: todoWithNote.noteTitle,
+                        noteId: todoWithNote.todoItem.noteId,
+                        defaultNoteType: todoWithNote.defaultNoteType,
                         onCheckboxChanged: (value) {
                           if (value != null) {
                             PinpointHaptics.light();
                             _toggleTodoStatus(todoWithNote.todoItem.id, value);
                           }
-                        },
-                        onTap: () {
-                          PinpointHaptics.medium();
-                          // TODO: Navigate to the note containing this todo
                         },
                       ),
                     );
@@ -162,12 +164,15 @@ class _TodoScreenState extends State<TodoScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          PinpointHaptics.medium();
-          _showAddTodoDialog();
-        },
-        child: const Icon(Icons.add_rounded),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton(
+          onPressed: () {
+            PinpointHaptics.medium();
+            _showAddTodoDialog();
+          },
+          child: const Icon(Icons.add_rounded),
+        ),
       ),
     );
   }
@@ -201,106 +206,143 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 }
 
-class _TodoCard extends StatefulWidget {
+class _TodoCard extends StatelessWidget {
   final NoteTodoItem todo;
   final String noteTitle;
-  final VoidCallback? onTap;
+  final int noteId;
+  final String defaultNoteType;
   final Function(bool?)? onCheckboxChanged;
 
   const _TodoCard({
     required this.todo,
     required this.noteTitle,
-    this.onTap,
+    required this.noteId,
+    required this.defaultNoteType,
     this.onCheckboxChanged,
   });
 
-  @override
-  State<_TodoCard> createState() => _TodoCardState();
-}
+  Future<void> _handleTap(BuildContext context) async {
+    try {
+      // Fetch the full note with details
+      final noteWithDetails =
+          await DriftNoteService.getSingleNoteWithDetails(noteId);
 
-class _TodoCardState extends State<_TodoCard> {
-  bool _pressed = false;
+      if (noteWithDetails == null) {
+        if (context.mounted) {
+          showErrorToast(
+            context: context,
+            title: 'Note not found',
+            description: 'The note could not be loaded',
+          );
+        }
+        return;
+      }
+
+      if (context.mounted) {
+        context.push(
+          CreateNoteScreen.kRouteName,
+          extra: CreateNoteScreenArguments(
+            noticeType: defaultNoteType,
+            existingNote: noteWithDetails,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showErrorToast(
+          context: context,
+          title: 'Error',
+          description: 'Failed to open note: ${e.toString()}',
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final dark = theme.brightness == Brightness.dark;
 
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        if (widget.onTap != null) widget.onTap!();
-      },
-      child: AnimatedScale(
-        scale: _pressed ? 0.98 : 1.0,
-        duration: PinpointAnimations.durationFast,
-        curve: PinpointAnimations.emphasized,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: PinpointElevations.md(theme.brightness),
-          ),
-          child: GlassContainer(
-            padding: const EdgeInsets.all(16),
-            borderRadius: 20,
-            child: Row(
-              children: [
-                // Checkbox
-                Checkbox(
-                  value: widget.todo.isDone,
-                  onChanged: widget.onCheckboxChanged,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.98, end: 1),
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      builder: (context, scale, child) => AnimatedOpacity(
+        duration: const Duration(milliseconds: 220),
+        opacity: 1.0,
+        child: Transform.scale(scale: scale, child: child),
+      ),
+      child: GestureDetector(
+        onTap: () {
+          PinpointHaptics.medium();
+          _handleTap(context);
+        },
+        child: GlassContainer(
+          padding: const EdgeInsets.all(16),
+          borderRadius: 20,
+          child: Row(
+            children: [
+              // Checkbox
+              Checkbox(
+                value: todo.isDone,
+                onChanged: (value) {
+                  if (onCheckboxChanged != null) {
+                    PinpointHaptics.light();
+                    onCheckboxChanged!(value);
+                  }
+                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                const SizedBox(width: 12),
+              ),
+              const SizedBox(width: 12),
 
-                // Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.todo.todoTitle,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          decoration: widget.todo.isDone
-                              ? TextDecoration.lineThrough
-                              : null,
-                          color: widget.todo.isDone
-                              ? cs.onSurface.withAlpha(150)
-                              : null,
-                          fontWeight: FontWeight.w600,
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      todo.todoTitle,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.1,
+                        decoration: todo.isDone
+                            ? TextDecoration.lineThrough
+                            : null,
+                        color: todo.isDone
+                            ? cs.onSurface.withAlpha(150)
+                            : null,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    // Note source
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.note_rounded,
+                          size: 14,
+                          color: cs.onSurface.withAlpha(160),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.note_rounded,
-                            size: 14,
-                            color: cs.primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              widget.noteTitle,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: cs.onSurface.withAlpha(180),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            noteTitle,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: cs.onSurface.withAlpha(160),
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

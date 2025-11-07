@@ -105,192 +105,201 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
 
   @override
   Widget build(BuildContext context) {
-    final kPrimaryColor = Theme.of(context).primaryColor;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SliverToBoxAdapter(
-      child: Container(
-        height: MediaQuery.sizeOf(context).height * 0.59,
-        padding: EdgeInsets.symmetric(
-          vertical: 5,
-          horizontal: 0,
-        ),
-        margin: EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-        decoration: BoxDecoration(
-          color: kPrimaryColor.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Stack(
-          children: [
-            if (widget.todos.isEmpty)
-              SizedBox(
-                height: MediaQuery.sizeOf(context).height * 0.5,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.hourglass_empty,
-                        size: 80,
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        'Nothing Yet!',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            Container(
-              margin: EdgeInsets.symmetric(vertical: 5),
-              height: MediaQuery.sizeOf(context).height * 0.5,
-              child: AnimatedList(
-                key: ValueKey(widget.todos.length),
-                initialItemCount: widget.todos.length,
-                itemBuilder: (context, index, animation) {
-                  final todo = widget.todos[index];
-                  final isDarkTheme =
-                      Theme.of(context).brightness == Brightness.dark;
-
-                  return SizeTransition(
-                    sizeFactor: animation,
-                    child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isDarkTheme ? Colors.grey[900] : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: todo.isDone
-                                ? kPrimaryColor.withValues(alpha: 0.5)
-                                : (isDarkTheme
-                                    ? Colors.grey[700]!
-                                    : Colors.grey[400]!),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            if (!isDarkTheme)
-                              BoxShadow(
-                                color: Colors.grey.withValues(alpha: 0.2),
-                                blurRadius: 5,
-                                offset: Offset(0, 2),
-                              ),
-                          ],
-                        ),
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: GestureDetector(
-                            onTap: () => markTodo(todo, !todo.isDone),
-                            child: Text(
-                              todo.todoTitle,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.65,
+          child: Column(
+            children: [
+              // Todo List (Scrollable)
+              Expanded(
+                child: widget.todos.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline_rounded,
+                              size: 64,
+                              color: cs.onSurface.withValues(alpha: 0.3),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No todos yet',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color:
-                                    isDarkTheme ? Colors.white : Colors.black,
-                                decoration: todo.isDone
-                                    ? TextDecoration.lineThrough
-                                    : null,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface.withValues(alpha: 0.6),
                               ),
                             ),
-                          ),
-                          leading: Checkbox(
-                            value: todo.isDone,
-                            activeColor: kPrimaryColor.withValues(
-                                alpha: isDarkTheme ? 0.6 : 0.9),
-                            checkColor:
-                                isDarkTheme ? Colors.black : Colors.white,
-                            onChanged: (bool? value) => markTodo(todo, value),
-                          ),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (value) {
-                              if (value == 'edit') updateTodo(todo);
-                              if (value == 'delete') deleteTodo(todo);
-                            },
-                            icon: Icon(Icons.more_vert,
-                                color: isDarkTheme
-                                    ? Colors.white70
-                                    : Colors.black54),
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit, color: Colors.blue),
-                                    SizedBox(width: 8),
-                                    Text('Edit'),
-                                  ],
-                                ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Add your first todo to get started',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: cs.onSurface.withValues(alpha: 0.4),
                               ),
-                              PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.delete, color: Colors.red),
-                                    SizedBox(width: 8),
-                                    Text('Delete'),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
+                      )
+                    : ListView.builder(
+                        itemCount: widget.todos.length,
+                        itemBuilder: (context, index) {
+                          final todo = widget.todos[index];
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? cs.surfaceContainerHighest.withValues(alpha: 0.5)
+                                    : cs.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: todo.isDone
+                                      ? cs.primary.withValues(alpha: 0.3)
+                                      : cs.outline.withValues(alpha: 0.1),
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  if (!isDark)
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.04),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                ],
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                leading: Checkbox(
+                                  value: todo.isDone,
+                                  activeColor: cs.primary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  onChanged: (bool? value) => markTodo(todo, value),
+                                ),
+                                title: GestureDetector(
+                                  onTap: () => markTodo(todo, !todo.isDone),
+                                  child: Text(
+                                    todo.todoTitle,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
+                                      color: cs.onSurface,
+                                      decoration: todo.isDone
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                      decorationColor: cs.onSurface.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                ),
+                                trailing: PopupMenuButton<String>(
+                                  onSelected: (value) {
+                                    if (value == 'edit') updateTodo(todo);
+                                    if (value == 'delete') deleteTodo(todo);
+                                  },
+                                  icon: Icon(
+                                    Icons.more_vert_rounded,
+                                    color: cs.onSurface.withValues(alpha: 0.5),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit_rounded,
+                                               size: 20,
+                                               color: cs.primary),
+                                          const SizedBox(width: 12),
+                                          const Text('Edit'),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.delete_rounded,
+                                               size: 20,
+                                               color: cs.error),
+                                          const SizedBox(width: 12),
+                                          const Text('Delete'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                  );
-                },
               ),
-            ),
-            Positioned(
-              bottom: 5,
-              right: 5,
-              child: SizedBox(
-                height: MediaQuery.sizeOf(context).height * 0.055,
-                child: Row(
-                  children: [
-                    FloatingActionButton.extended(
-                      heroTag: UniqueKey(),
-                      onPressed: markAllAsDone,
-                      backgroundColor: kPrimaryColor,
-                      label: Text(
-                        'Mark All As Done',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
+
+              const SizedBox(height: 16),
+
+              // Action Buttons (Fixed at bottom)
+              Row(
+                children: [
+                  if (widget.todos.isNotEmpty) ...[
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: markAllAsDone,
+                        icon: Icon(
+                          Icons.check_circle_outline_rounded,
+                          size: 20,
+                        ),
+                        label: Text('Mark All Done'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          side: BorderSide(
+                            color: cs.outline.withValues(alpha: 0.2),
+                            width: 1,
+                          ),
                         ),
                       ),
-                      icon: Icon(
-                        Icons.check_circle_outline,
-                        color: Colors.white,
-                      ),
                     ),
-                    SizedBox(width: 10),
-                    FloatingActionButton.extended(
-                      heroTag: UniqueKey(),
-                      onPressed: addTodo,
-                      backgroundColor: kPrimaryColor,
-                      label: Text(
-                        'Add Todo',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                        ),
-                      ),
-                      icon: Icon(
-                        Icons.add_outlined,
-                        color: Colors.white,
-                      ),
-                    ),
+                    const SizedBox(width: 12),
                   ],
-                ),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: addTodo,
+                      icon: Icon(Icons.add_rounded, size: 20),
+                      label: Text('Add Todo'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

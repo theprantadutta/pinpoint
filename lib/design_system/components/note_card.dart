@@ -105,132 +105,134 @@ class _NoteCardState extends State<NoteCard> {
               ),
               boxShadow: listItemStyle.elevation,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header row with title and controls
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Thumbnail (if provided)
-                    if (widget.thumbnail != null) ...[
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: widget.thumbnail,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-
-                    // Title
-                    Expanded(
-                      child: Text(
-                        widget.title.isEmpty ? '(Untitled)' : widget.title,
-                        style: PinpointTypography.noteCardTitle(
-                          brightness: theme.brightness,
-                        ).copyWith(
-                          color: widget.title.isEmpty
-                              ? theme.colorScheme.onSurfaceVariant
-                              : null,
-                          fontStyle: widget.title.isEmpty
-                              ? FontStyle.italic
-                              : FontStyle.normal,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    // Controls
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Star button
-                        if (widget.onStarToggle != null)
-                          _ControlButton(
-                            icon: widget.isStarred
-                                ? Icons.star_rounded
-                                : Icons.star_outline_rounded,
-                            isActive: widget.isStarred,
-                            onTap: () {
-                              PinpointHaptics.light();
-                              widget.onStarToggle!();
-                            },
-                            semanticLabel:
-                                widget.isStarred ? 'Unstar note' : 'Star note',
+            child: ClipRect(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header row with title and controls
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Thumbnail (if provided)
+                      if (widget.thumbnail != null) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: widget.thumbnail,
                           ),
-
-                        const SizedBox(width: 4),
-
-                        // Pin button
-                        if (widget.onPinToggle != null)
-                          _ControlButton(
-                            icon: widget.isPinned
-                                ? Icons.push_pin_rounded
-                                : Icons.push_pin_outlined,
-                            isActive: widget.isPinned,
-                            onTap: () {
-                              PinpointHaptics.light();
-                              widget.onPinToggle!();
-                            },
-                            semanticLabel:
-                                widget.isPinned ? 'Unpin note' : 'Pin note',
-                          ),
+                        ),
+                        const SizedBox(width: 12),
                       ],
+
+                      // Title
+                      Expanded(
+                        child: Text(
+                          widget.title.isEmpty ? '(Untitled)' : widget.title,
+                          style: PinpointTypography.noteCardTitle(
+                            brightness: theme.brightness,
+                          ).copyWith(
+                            color: widget.title.isEmpty
+                                ? theme.colorScheme.onSurfaceVariant
+                                : null,
+                            fontStyle: widget.title.isEmpty
+                                ? FontStyle.italic
+                                : FontStyle.normal,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      // Controls
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Star button
+                          if (widget.onStarToggle != null)
+                            _ControlButton(
+                              icon: widget.isStarred
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
+                              isActive: widget.isStarred,
+                              onTap: () {
+                                PinpointHaptics.light();
+                                widget.onStarToggle!();
+                              },
+                              semanticLabel:
+                                  widget.isStarred ? 'Unstar note' : 'Star note',
+                            ),
+
+                          const SizedBox(width: 4),
+
+                          // Pin button
+                          if (widget.onPinToggle != null)
+                            _ControlButton(
+                              icon: widget.isPinned
+                                  ? Icons.push_pin_rounded
+                                  : Icons.push_pin_outlined,
+                              isActive: widget.isPinned,
+                              onTap: () {
+                                PinpointHaptics.light();
+                                widget.onPinToggle!();
+                              },
+                              semanticLabel:
+                                  widget.isPinned ? 'Unpin note' : 'Pin note',
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // Excerpt
+                  if (widget.excerpt != null && widget.excerpt!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.excerpt!,
+                      style: PinpointTypography.noteCardExcerpt(
+                        brightness: theme.brightness,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
 
-                // Excerpt
-                if (widget.excerpt != null && widget.excerpt!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.excerpt!,
-                    style: PinpointTypography.noteCardExcerpt(
-                      brightness: theme.brightness,
+                  // Tags
+                  if (widget.tags != null && widget.tags!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: widget.tags!
+                          .take(3)
+                          .map((tag) => TagChip(
+                                label: tag.label,
+                                color: tag.color,
+                                size: TagChipSize.small,
+                              ))
+                          .toList(),
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
 
-                // Tags
-                if (widget.tags != null && widget.tags!.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: widget.tags!
-                        .take(3)
-                        .map((tag) => TagChip(
-                              label: tag.label,
-                              color: tag.color,
-                              size: TagChipSize.small,
-                            ))
-                        .toList(),
-                  ),
-                ],
-
-                // Timestamp
-                if (widget.lastModified != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _formatTimestamp(widget.lastModified!),
-                    style: PinpointTypography.metadata(
-                      brightness: theme.brightness,
+                  // Timestamp
+                  if (widget.lastModified != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _formatTimestamp(widget.lastModified!),
+                      style: PinpointTypography.metadata(
+                        brightness: theme.brightness,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
               ],
             ),
           ),
         ),
+      ),
       ),
     );
   }

@@ -76,102 +76,68 @@ class _SearchBarStickyState extends State<SearchBarSticky> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final glassSurface = theme.glassSurface;
-    final motionSettings = MotionSettings.fromMediaQuery(context);
-
-    final effectiveBlur = motionSettings.reduceMotion
-        ? 0.0
-        : (_isFocused
-            ? glassSurface.blurAmount * 1.5
-            : glassSurface.blurAmount);
+    final cs = theme.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Search bar
-        ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(
-              sigmaX: effectiveBlur,
-              sigmaY: effectiveBlur,
+        TextField(
+          controller: _controller,
+          focusNode: _focusNode,
+          decoration: InputDecoration(
+            hintText: widget.hint ?? 'Search notes...',
+            prefixIcon: Icon(
+              Icons.search_rounded,
+              color: cs.onSurfaceVariant.withValues(alpha: 0.5),
             ),
-            child: AnimatedContainer(
-              duration: motionSettings.getDuration(PinpointAnimations.fast),
-              curve: motionSettings.getCurve(PinpointAnimations.emphasized),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: glassSurface.overlayColor.withOpacity(
-                  _isFocused
-                      ? glassSurface.opacity * 1.5
-                      : glassSurface.opacity,
-                ),
-                border: Border.all(
-                  color: _isFocused
-                      ? theme.colorScheme.primary
-                      : glassSurface.borderColor,
-                  width: _isFocused ? 2 : 1,
-                ),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.search_rounded,
-                    color: _isFocused
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurfaceVariant,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      decoration: InputDecoration(
-                        hintText: widget.hint ?? 'Search notes...',
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      style: theme.textTheme.bodyMedium,
-                      onTap: widget.onTap,
-                      onSubmitted: (_) => _handleSearch(),
-                    ),
-                  ),
-                  if (_controller.text.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded),
-                      iconSize: 20,
-                      color: theme.colorScheme.onSurfaceVariant,
-                      onPressed: () {
-                        _controller.clear();
-                        setState(() {});
-                      },
-                      tooltip: 'Clear',
-                    ),
-                  // Keyboard shortcut hint
-                  if (!_isFocused)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '⌘K',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                ],
+            suffixIcon: _controller.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    iconSize: 20,
+                    color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                    onPressed: () {
+                      _controller.clear();
+                      if (widget.onSearch != null) {
+                        widget.onSearch!('');
+                      }
+                      setState(() {});
+                    },
+                    tooltip: 'Clear',
+                  )
+                : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(999),
+              borderSide: BorderSide(
+                color: cs.outline.withValues(alpha: 0.05),
+                width: 0.5,
               ),
             ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(999),
+              borderSide: BorderSide(
+                color: cs.outline.withValues(alpha: 0.05),
+                width: 0.5,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(999),
+              borderSide: BorderSide(
+                color: cs.outline.withValues(alpha: 0.05),
+                width: 0.5,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
+          style: theme.textTheme.bodyLarge,
+          onTap: widget.onTap,
+          onSubmitted: (_) => _handleSearch(),
+          onChanged: (value) {
+            setState(() {});
+            if (widget.onSearch != null) {
+              widget.onSearch!(value);
+            }
+          },
         ),
 
         // Recent searches

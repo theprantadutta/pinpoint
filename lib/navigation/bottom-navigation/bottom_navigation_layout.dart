@@ -108,10 +108,21 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
 
   Future<bool> _onBackButtonPressed() async {
     debugPrint('Back button Pressed');
+
+    // Check if we can pop (i.e., there are screens pushed on top like CreateNoteScreen)
+    if (Navigator.of(context).canPop()) {
+      debugPrint('There are screens to pop, letting system handle it');
+      return false; // Let the system handle the back press
+    }
+
     if (selectedIndex == 0) {
-      // Exit the app
-      debugPrint('Existing the app as we are on top level page');
-      return await _onWillPop(context);
+      // Exit the app dialog
+      debugPrint('At root of navigation, showing exit dialog');
+      await _onWillPop(context);
+      // Always return true because either:
+      // - User clicked "Yes" and app exited (doesn't matter)
+      // - User clicked "No" and we want to prevent back (return true = handled)
+      return true;
     } else {
       // Go back
       debugPrint('Going back to previous page');
