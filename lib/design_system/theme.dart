@@ -82,7 +82,7 @@ class PinpointTheme {
         color: PinpointColors.darkSurface2,
         shadowColor: PinpointColors.shadowColor,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
 
@@ -94,7 +94,7 @@ class PinpointTheme {
         labelStyle: PinpointTypography.tagChip(brightness: Brightness.dark),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(999),
         ),
       ),
 
@@ -103,23 +103,23 @@ class PinpointTheme {
         filled: true,
         fillColor: PinpointColors.darkSurface3,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(999),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(999),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(999),
           borderSide: BorderSide(color: accent, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(999),
           borderSide: BorderSide(color: PinpointColors.rose, width: 1),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
 
       // Floating Action Button
@@ -128,7 +128,7 @@ class PinpointTheme {
         foregroundColor: Colors.white,
         elevation: 4,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
 
@@ -146,7 +146,7 @@ class PinpointTheme {
         backgroundColor: PinpointColors.darkSurface2,
         elevation: 8,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(32),
         ),
       ),
 
@@ -156,7 +156,7 @@ class PinpointTheme {
         modalBackgroundColor: PinpointColors.darkSurface2,
         elevation: 8,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
       ),
 
@@ -248,7 +248,7 @@ class PinpointTheme {
         color: PinpointColors.lightSurface2,
         shadowColor: PinpointColors.shadowColor,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
 
@@ -260,7 +260,7 @@ class PinpointTheme {
         labelStyle: PinpointTypography.tagChip(brightness: Brightness.light),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(999),
         ),
       ),
 
@@ -269,23 +269,23 @@ class PinpointTheme {
         filled: true,
         fillColor: PinpointColors.lightSurface3,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(999),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(999),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(999),
           borderSide: BorderSide(color: accent, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(999),
           borderSide: BorderSide(color: PinpointColors.rose, width: 1),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
 
       // Floating Action Button
@@ -294,7 +294,7 @@ class PinpointTheme {
         foregroundColor: Colors.white,
         elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
 
@@ -312,7 +312,7 @@ class PinpointTheme {
         backgroundColor: PinpointColors.lightSurface2,
         elevation: 8,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(32),
         ),
       ),
 
@@ -322,7 +322,7 @@ class PinpointTheme {
         modalBackgroundColor: PinpointColors.lightSurface2,
         elevation: 8,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
       ),
 
@@ -460,11 +460,11 @@ class GlassSurface extends ThemeExtension<GlassSurface> {
   factory GlassSurface.light({bool highContrast = false}) {
     return GlassSurface(
       overlayColor: highContrast
-          ? PinpointColors.glassBlackStrong
-          : PinpointColors.glassBlackMedium,
+          ? PinpointColors.glassWhiteStrong
+          : PinpointColors.glassWhiteMedium,
       borderColor: PinpointColors.lightBorder,
       blurAmount: highContrast ? 5 : 8,
-      opacity: highContrast ? 0.12 : 0.08,
+      opacity: highContrast ? 0.95 : 0.9,
     );
   }
 
@@ -521,7 +521,7 @@ class ListItemStyle extends ThemeExtension<ListItemStyle> {
       hoverColor: PinpointColors.darkSurface3,
       pressedColor: PinpointColors.darkSurface4,
       borderColor: PinpointColors.darkBorderSubtle,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(24),
       padding: const EdgeInsets.all(16),
       elevation: PinpointElevations.sm(Brightness.dark),
     );
@@ -533,7 +533,7 @@ class ListItemStyle extends ThemeExtension<ListItemStyle> {
       hoverColor: PinpointColors.lightSurface3,
       pressedColor: PinpointColors.lightSurface4,
       borderColor: PinpointColors.lightBorderSubtle,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(24),
       padding: const EdgeInsets.all(16),
       elevation: PinpointElevations.sm(Brightness.light),
     );
@@ -592,8 +592,8 @@ class TagStyle extends ThemeExtension<TagStyle> {
   factory TagStyle.dark() {
     return TagStyle(
       presets: TagColors.presets,
-      borderRadius: BorderRadius.circular(10),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      borderRadius: BorderRadius.circular(999),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       fontSize: 12,
     );
   }
@@ -601,8 +601,8 @@ class TagStyle extends ThemeExtension<TagStyle> {
   factory TagStyle.light() {
     return TagStyle(
       presets: TagColors.presets,
-      borderRadius: BorderRadius.circular(10),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      borderRadius: BorderRadius.circular(999),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       fontSize: 12,
     );
   }
@@ -661,7 +661,7 @@ class ToolbarStyle extends ThemeExtension<ToolbarStyle> {
       backgroundGradient: PinpointGradients.glassOverlay(Brightness.dark),
       iconColor: PinpointColors.darkTextSecondary,
       activeIconColor: accent,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       elevation: PinpointElevations.md(Brightness.dark),
     );
@@ -674,7 +674,7 @@ class ToolbarStyle extends ThemeExtension<ToolbarStyle> {
       backgroundGradient: PinpointGradients.glassOverlay(Brightness.light),
       iconColor: PinpointColors.lightTextSecondary,
       activeIconColor: accent,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       elevation: PinpointElevations.md(Brightness.light),
     );

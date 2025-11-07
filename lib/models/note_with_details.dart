@@ -8,13 +8,11 @@ class NoteWithDetails {
   final List<NoteFolderDto> folders; // List of folders
   final List<NoteAttachmentDto> attachments;
   final List<NoteTodoItem> todoItems;
-  final List<NoteTag> tags;
 
   NoteWithDetails({
     required this.note,
     required this.folders,
     required this.attachments,
     required this.todoItems,
-    this.tags = const [],
   });
 }

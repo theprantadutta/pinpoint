@@ -49,91 +49,219 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
 
   @override
   Widget build(BuildContext context) {
-    final kPrimaryColor = Theme.of(context).primaryColor;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SliverToBoxAdapter(
-      child: Container(
-        height: MediaQuery.sizeOf(context).height * 0.59,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 20,
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-        decoration: BoxDecoration(
-          color: kPrimaryColor.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Reminder Details",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: kPrimaryColor,
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: widget.descriptionController,
-              maxLines: 2,
-              decoration: InputDecoration(
-                hintText: "Enter a brief description...",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Container(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.sizeOf(context).height * 0.5,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Description Field
+              Text(
+                "Description",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface,
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: _pickDateTime,
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                decoration: BoxDecoration(
-                  color:
-                      kPrimaryColor.withValues(alpha: isDarkTheme ? 0.1 : 0.05),
-                  border: Border.all(
-                    color: kPrimaryColor.withValues(alpha: 0.3),
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      widget.selectedDateTime == null
-                          ? "Select Reminder Time"
-                          : DateFormat("d MMM, yy 'at' hh:mm a")
-                              .format(widget.selectedDateTime!),
-                      style: TextStyle(fontSize: 16),
+              const SizedBox(height: 12),
+              TextField(
+                controller: widget.descriptionController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: "What would you like to be reminded about?",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: cs.outline.withValues(alpha: 0.2),
+                      width: 1,
                     ),
-                    Icon(Icons.calendar_today, color: kPrimaryColor),
-                  ],
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: cs.outline.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: cs.primary,
+                      width: 2,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: isDark
+                      ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
+                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.5,
                 ),
               ),
-            ),
-            SizedBox(height: 10),
-            Padding(
-              padding: EdgeInsets.all(8.0),
-              child: SizedBox(
-                width: MediaQuery.sizeOf(context).height * 0.7,
+
+              const SizedBox(height: 24),
+
+              // Reminder Time
+              Text(
+                "Reminder Time",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface,
+                ),
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: _pickDateTime,
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        cs.primary.withValues(alpha: isDark ? 0.2 : 0.15),
+                        cs.primary.withValues(alpha: isDark ? 0.1 : 0.08),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: cs.primary.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: cs.primary.withValues(alpha: isDark ? 0.3 : 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.calendar_today_rounded,
+                          color: cs.primary,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.selectedDateTime == null
+                                  ? "Select Date & Time"
+                                  : DateFormat("EEEE, d MMMM yyyy")
+                                      .format(widget.selectedDateTime!),
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                            if (widget.selectedDateTime != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                DateFormat("h:mm a")
+                                    .format(widget.selectedDateTime!),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: cs.onSurface.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: cs.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Info Card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
+                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: cs.outline.withValues(alpha: 0.1),
+                    width: 1,
+                  ),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Reminder Details:',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(height: 4),
-                    Text(
-                        '• A reminder will be sent at the selected time and date.'),
-                    Text('• Ensure notifications are enabled to receive it.'),
-                    Text('• You can edit or delete this reminder anytime.'),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 20,
+                          color: cs.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Reminder Details',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoItem(
+                      '• A notification will be sent at the selected time',
+                      cs,
+                    ),
+                    const SizedBox(height: 6),
+                    _buildInfoItem(
+                      '• Ensure notifications are enabled in settings',
+                      cs,
+                    ),
+                    const SizedBox(height: 6),
+                    _buildInfoItem(
+                      '• You can edit or delete this reminder anytime',
+                      cs,
+                    ),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(String text, ColorScheme cs) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 14,
+        height: 1.5,
+        color: cs.onSurface.withValues(alpha: 0.7),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import '../design_system/design_system.dart';
+import '../util/note_utils.dart';
 
 class NotesScreen extends StatefulWidget {
   static const String kRouteName = '/notes';
@@ -118,7 +119,7 @@ class _NotesScreenState extends State<NotesScreen> {
         children: [
           // Search bar
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: SearchBarSticky(
               hint: 'Search notes...',
               onSearch: (value) {
@@ -177,14 +178,15 @@ class _NotesScreenState extends State<NotesScreen> {
     final theme = Theme.of(context);
     return AnimatedListStagger(
       itemCount: notes.length,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100),
       itemBuilder: (context, index) {
         final note = notes[index];
+        final hasTitle = note.note.noteTitle != null && note.note.noteTitle!.trim().isNotEmpty;
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: NoteCard(
-            title: note.note.noteTitle ?? 'Untitled',
-            excerpt: note.note.contentPlainText,
+            title: getNoteTitleOrPreview(note.note.noteTitle, note.note.contentPlainText),
+            excerpt: hasTitle ? note.note.contentPlainText : null,
             lastModified: note.note.updatedAt,
             isPinned: note.note.isPinned,
             tags: [
@@ -192,12 +194,6 @@ class _NotesScreenState extends State<NotesScreen> {
                 (f) => CardNoteTag(
                   label: f.title,
                   color: theme.colorScheme.primary,
-                ),
-              ),
-              ...note.tags.map(
-                (t) => CardNoteTag(
-                  label: t.tagTitle,
-                  color: TagColors.getPreset(0).foreground,
                 ),
               ),
             ],
@@ -227,7 +223,7 @@ class _NotesScreenState extends State<NotesScreen> {
   Widget _buildGridView(List<NoteWithDetails> notes) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
       child: AnimatedGridStagger(
         itemCount: notes.length,
         crossAxisCount: 2,
@@ -235,9 +231,10 @@ class _NotesScreenState extends State<NotesScreen> {
         crossAxisSpacing: 12,
         itemBuilder: (context, index) {
           final note = notes[index];
+          final hasTitle = note.note.noteTitle != null && note.note.noteTitle!.trim().isNotEmpty;
           return NoteCard(
-            title: note.note.noteTitle ?? 'Untitled',
-            excerpt: note.note.contentPlainText,
+            title: getNoteTitleOrPreview(note.note.noteTitle, note.note.contentPlainText),
+            excerpt: hasTitle ? note.note.contentPlainText : null,
             lastModified: note.note.updatedAt,
             isPinned: note.note.isPinned,
             tags: [
@@ -245,12 +242,6 @@ class _NotesScreenState extends State<NotesScreen> {
                 (f) => CardNoteTag(
                   label: f.title,
                   color: theme.colorScheme.primary,
-                ),
-              ),
-              ...note.tags.map(
-                (t) => CardNoteTag(
-                  label: t.tagTitle,
-                  color: TagColors.getPreset(0).foreground,
                 ),
               ),
             ],

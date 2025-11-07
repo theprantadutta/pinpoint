@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
-import 'package:pinpoint/screens/tags_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
@@ -81,7 +80,7 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
         children: [
           // General Section
           Text(
@@ -107,15 +106,6 @@ class _AccountScreenState extends State<AccountScreen> {
             onTap: () {
               PinpointHaptics.medium();
               context.push(TrashScreen.kRouteName);
-            },
-          ),
-          const SizedBox(height: 8),
-          _SettingsTile(
-            title: 'Tags',
-            icon: Icons.label_rounded,
-            onTap: () {
-              PinpointHaptics.medium();
-              context.push(TagsScreen.kRouteName);
             },
           ),
           const SizedBox(height: 8),

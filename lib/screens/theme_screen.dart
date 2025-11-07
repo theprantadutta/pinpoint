@@ -63,6 +63,31 @@ class _ThemeScreenState extends State<ThemeScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Theme Mode Section
+          Text(
+            'Theme Mode',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildThemeModeOption(
+            context,
+            'Light',
+            Icons.light_mode_rounded,
+            ThemeMode.light,
+          ),
+          const SizedBox(height: 8),
+          _buildThemeModeOption(
+            context,
+            'Dark',
+            Icons.dark_mode_rounded,
+            ThemeMode.dark,
+          ),
+
+          const SizedBox(height: 32),
+
           // Accent Colors Section
           Text(
             'Accent Colors',
@@ -171,6 +196,79 @@ class _ThemeScreenState extends State<ThemeScreen> {
               'Source Sans Pro', GoogleFonts.sourceSans3().fontFamily),
           _buildFontOption('Noto Sans', GoogleFonts.notoSans().fontFamily),
         ],
+      ),
+    );
+  }
+
+  Widget _buildThemeModeOption(
+      BuildContext context, String label, IconData icon, ThemeMode mode) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final myAppState = MyApp.of(context);
+    final isSelected = (mode == ThemeMode.dark && myAppState.isDarkMode) ||
+        (mode == ThemeMode.light && !myAppState.isDarkMode);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? cs.surface.withValues(alpha: 0.7)
+            : cs.surface.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isSelected
+              ? cs.primary.withValues(alpha: 0.5)
+              : cs.outline.withValues(alpha: 0.1),
+          width: isSelected ? 2 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            PinpointHaptics.medium();
+            myAppState.changeTheme(mode);
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: cs.primary.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: cs.primary.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(icon, color: cs.primary, size: 20),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  Icon(Icons.check_circle_rounded, color: cs.primary),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

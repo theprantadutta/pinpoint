@@ -5,6 +5,7 @@ import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import '../design_system/design_system.dart';
+import '../util/note_utils.dart';
 
 class FolderScreen extends StatelessWidget {
   static const String kRouteName = '/folder';
@@ -85,19 +86,18 @@ class FolderScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemBuilder: (context, index) {
                           final note = notes[index];
+                          final hasTitle = note.note.noteTitle != null && note.note.noteTitle!.trim().isNotEmpty;
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: NoteCard(
-                              title: note.note.noteTitle ?? 'Untitled',
-                              excerpt: note.note.contentPlainText,
+                              title: getNoteTitleOrPreview(note.note.noteTitle, note.note.contentPlainText),
+                              excerpt: hasTitle ? note.note.contentPlainText : null,
                               lastModified: note.note.updatedAt,
                               isPinned: note.note.isPinned,
-                              tags: note.tags
-                                  .map((t) => CardNoteTag(
-                                        label: t.tagTitle,
-                                        color: TagColors.getPreset(
-                                                t.id % TagColors.presets.length)
-                                            .foreground,
+                              tags: note.folders
+                                  .map((f) => CardNoteTag(
+                                        label: f.title,
+                                        color: theme.colorScheme.primary,
                                       ))
                                   .toList(),
                               onTap: () {
