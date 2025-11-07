@@ -6,9 +6,8 @@ import 'package:pinpoint/services/dialog_service.dart';
 import 'package:pinpoint/services/drift_note_folder_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/services/logger_service.dart';
-
 import '../../database/database.dart';
-import '../../design/app_theme.dart';
+import '../../design_system/design_system.dart';
 
 class HomeScreenMyFolders extends StatelessWidget {
   const HomeScreenMyFolders({super.key});
@@ -38,6 +37,7 @@ class HomeScreenMyFolders extends StatelessWidget {
         await DriftNoteFolderService.insertNoteFolder(text);
         if (!context.mounted) return;
         Navigator.of(context).pop();
+        PinpointHaptics.success();
       },
     );
   }
@@ -45,75 +45,74 @@ class HomeScreenMyFolders extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
-    return Builder(builder: (context) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'My folders',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.2,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'My folders',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Tooltip(
+                message: 'Create folder',
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    PinpointHaptics.light();
+                    _addFolderFlow(context);
+                  },
+                  child: GlassContainer(
+                    padding: const EdgeInsets.all(8),
+                    borderRadius: 12,
+                    child: const Icon(Symbols.add, size: 20),
                   ),
                 ),
-                Tooltip(
-                  message: 'Create folder',
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => _addFolderFlow(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: dark
-                            ? Colors.white.withValues(alpha: 0.07)
-                            : Colors.black.withValues(alpha: 0.05),
-                      ),
-                      child: const Icon(Symbols.add, size: 20),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Folder Rail
+          SizedBox(
+            height: 120,
+            child: StreamBuilder<List<NoteFolder>>(
+              stream: DriftNoteFolderService.watchAllNoteFoldersStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  log.e('[folders] stream error', snapshot.error);
+                  return Center(
+                    child: Text(
+                      'Failed to load folders',
+                      style: theme.textTheme.bodyMedium,
                     ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            // Legendary Folder Rail
-            SizedBox(
-              height: 120,
-              child: StreamBuilder<List<NoteFolder>>(
-                stream: DriftNoteFolderService.watchAllNoteFoldersStream(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    log.e('[folders] stream error', snapshot.error);
-                    return Center(
-                      child: Text('Failed to load folders',
-                          style: theme.textTheme.bodyMedium),
-                    );
-                  }
-                  final folders = snapshot.data ?? [];
-                  if (folders.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No folders yet — create one',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    );
-                  }
-                  return ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    itemBuilder: (context, idx) {
-                      final f = folders[idx];
-                      return _FolderCard(
+                  );
+                }
+                final folders = snapshot.data ?? [];
+                if (folders.isEmpty) {
+                  return EmptyState(
+                    icon: Icons.folder_open_rounded,
+                    title: 'No folders yet',
+                    message: 'Create one to organize your notes',
+                  );
+                }
+                return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: folders.length,
+                  itemBuilder: (context, idx) {
+                    final f = folders[idx];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _FolderCard(
                         folderId: f.noteFolderId,
                         title: f.noteFolderTitle,
                         countHint: 'Tap to view',
@@ -138,6 +137,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                           await DriftNoteFolderService.renameFolder(
                               f.noteFolderId, text);
                           if (!context.mounted) return;
+                          PinpointHaptics.success();
                           showSuccessToast(
                             context: context,
                             title: 'Folder renamed',
@@ -146,28 +146,21 @@ class HomeScreenMyFolders extends StatelessWidget {
                         },
                         onDelete: () async {
                           if (!context.mounted) return;
-                          final confirmed = await showDialog<bool>(
+                          final confirmed = await ConfirmSheet.show(
                             context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Delete folder?'),
-                              content: const Text(
-                                  'Notes will remain, but their link to this folder will be removed.'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(ctx).pop(false),
-                                  child: const Text('Cancel'),
-                                ),
-                                FilledButton.tonal(
-                                  onPressed: () => Navigator.of(ctx).pop(true),
-                                  child: const Text('Delete folder'),
-                                ),
-                              ],
-                            ),
+                            title: 'Delete folder?',
+                            message:
+                                'Notes will remain, but their link to this folder will be removed.',
+                            primaryLabel: 'Delete folder',
+                            secondaryLabel: 'Cancel',
+                            isDestructive: true,
+                            icon: Icons.folder_delete_rounded,
                           );
                           if (confirmed == true) {
                             await DriftNoteFolderService.deleteFolder(
                                 f.noteFolderId);
                             if (!context.mounted) return;
+                            PinpointHaptics.success();
                             showSuccessToast(
                               context: context,
                               title: 'Folder deleted',
@@ -175,51 +168,14 @@ class HomeScreenMyFolders extends StatelessWidget {
                             );
                           }
                         },
-                      );
-                    },
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemCount: folders.length,
-                  );
-                },
-              ),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-          ],
-        ),
-      );
-    });
-  }
-}
-
-class _ActionDot extends StatelessWidget {
-  final VoidCallback onTap;
-  const _ActionDot({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: dark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: (dark ? Colors.white : Colors.black).withValues(alpha: 0.10),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: dark ? 0.22 : 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            )
-          ],
-        ),
-        child: const Icon(Icons.more_vert, size: 16),
+        ],
       ),
     );
   }
@@ -243,46 +199,53 @@ class _FolderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final noteGradients = theme.noteGradients;
+
     return InkWell(
-      borderRadius: AppTheme.radiusL.resolve(TextDirection.ltr),
+      borderRadius: BorderRadius.circular(20),
       onTap: () {
+        PinpointHaptics.medium();
         final encodedTitle = Uri.encodeComponent(title);
-        // Use existing FolderScreen route pattern: /folder/:folderId/:folderTitle
         GoRouter.of(context)
             .push('${FolderScreen.kRouteName}/$folderId/$encodedTitle');
       },
-      child: Glass(
-        padding: const EdgeInsets.all(0),
-        borderRadius: AppTheme.radiusL,
-        child: Container(
-          width: 160,
+      child: Container(
+        width: 160,
+        decoration: BoxDecoration(
+          gradient: noteGradients.accentGradient,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: PinpointElevations.md(theme.brightness),
+        ),
+        child: GlassContainer(
           padding: const EdgeInsets.all(12),
-          decoration: const BoxDecoration(
-            borderRadius: AppTheme.radiusL,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0x337C3AED),
-                Color(0x2210B981),
-              ],
-            ),
-          ),
+          borderRadius: 20,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(Symbols.folder,
-                      color: theme.colorScheme.primary, size: 22),
+                  Icon(
+                    Symbols.folder,
+                    color: theme.colorScheme.primary,
+                    size: 22,
+                  ),
                   const Spacer(),
-                  // Overflow menu for actions
-                  _ActionDot(
-                    onTap: () => _showFolderActionsSheet(context),
+                  // Overflow menu
+                  GestureDetector(
+                    onTap: () {
+                      PinpointHaptics.light();
+                      _showFolderActionsSheet(context);
+                    },
+                    child: GlassContainer(
+                      padding: const EdgeInsets.all(6),
+                      borderRadius: 10,
+                      child: const Icon(Icons.more_vert, size: 16),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 title,
                 maxLines: 2,
@@ -291,11 +254,14 @@ class _FolderCard extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.touch_app,
-                      size: 14, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.touch_app,
+                    size: 14,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     countHint,
@@ -316,23 +282,27 @@ class _FolderCard extends StatelessWidget {
     final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
         final controller = TextEditingController(text: title);
-        return Padding(
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                  height: 4,
-                  width: 40,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                      color: theme.dividerColor,
-                      borderRadius: BorderRadius.circular(2))),
+                height: 4,
+                width: 40,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: theme.dividerColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               ListTile(
                 leading: const Icon(Icons.drive_file_rename_outline),
                 title: const Text('Rename'),
@@ -344,8 +314,10 @@ class _FolderCard extends StatelessWidget {
               ListTile(
                 leading:
                     Icon(Icons.delete_outline, color: theme.colorScheme.error),
-                title: Text('Delete',
-                    style: TextStyle(color: theme.colorScheme.error)),
+                title: Text(
+                  'Delete',
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
                 onTap: () async {
                   Navigator.of(ctx).pop();
                   if (onDelete != null) {

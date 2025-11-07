@@ -1,4 +1,3 @@
-import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -7,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
 
 import 'constants/shared_preference_keys.dart';
-import 'design/app_theme.dart';
+import 'design_system/design_system.dart';
 import 'navigation/app_navigation.dart';
 import 'service_locators/init_service_locators.dart';
 import 'services/encryption_service.dart';
@@ -222,17 +221,26 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  ThemeMode _themeMode = ThemeMode.light;
-  FlexScheme _flexScheme = FlexScheme.material;
+  ThemeMode _themeMode = ThemeMode.dark; // Dark-first design
+  Color _accentColor = PinpointColors.mint; // Default accent
   bool _isBiometricEnabled = false;
-  String _selectedFont = 'Inter';
+  bool _highContrastMode = false;
   SharedPreferences? _sharedPreferences;
+
+  /// Accent color presets
+  static const List<Color> _accentColors = [
+    PinpointColors.mint,
+    PinpointColors.iris,
+    PinpointColors.rose,
+    PinpointColors.amber,
+    PinpointColors.ocean,
+  ];
 
   /// This is needed for components that may have a different theme data
   bool get isDarkMode => _themeMode == ThemeMode.dark;
-  FlexScheme get flexScheme => _flexScheme;
+  Color get accentColor => _accentColor;
   bool get isBiometricEnabled => _isBiometricEnabled;
-  String get selectedFont => _selectedFont;
+  bool get highContrastMode => _highContrastMode;
 
   void changeBiometricEnabledEnabled(bool isisBiometricEnabled) {
     setState(() {
@@ -241,17 +249,17 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void changeFlexScheme(FlexScheme flexScheme) {
+  void changeAccentColor(Color color) {
     setState(() {
-      _flexScheme = flexScheme;
-      _sharedPreferences?.setString(kFlexSchemeKey, flexScheme.name);
+      _accentColor = color;
+      _sharedPreferences?.setInt('accent_color', color.value);
     });
   }
 
-  void changeFont(String fontName) {
+  void changeHighContrastMode(bool enabled) {
     setState(() {
-      _selectedFont = fontName;
-      _sharedPreferences?.setString(kSelectedFontKey, fontName);
+      _highContrastMode = enabled;
+      _sharedPreferences?.setBool('high_contrast', enabled);
     });
   }
 
@@ -264,23 +272,31 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> initializeSharedPreferences() async {
     _sharedPreferences = await SharedPreferences.getInstance();
+
+    // Load theme mode
     final isDarkMode = _sharedPreferences?.getBool(kIsDarkModeKey);
     if (isDarkMode != null) {
       setState(
         () => _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light,
       );
     }
-    final flexScheme = _sharedPreferences?.getString(kFlexSchemeKey);
-    if (flexScheme != null) {
-      setState(() => _flexScheme = FlexScheme.values.byName(flexScheme));
+
+    // Load accent color
+    final accentColorValue = _sharedPreferences?.getInt('accent_color');
+    if (accentColorValue != null) {
+      setState(() => _accentColor = Color(accentColorValue));
     }
+
+    // Load high contrast mode
+    final highContrast = _sharedPreferences?.getBool('high_contrast');
+    if (highContrast != null) {
+      setState(() => _highContrastMode = highContrast);
+    }
+
+    // Load biometric setting
     final isFingerPrintEnabled = _sharedPreferences?.getBool(kBiometricKey);
     if (isFingerPrintEnabled != null) {
       setState(() => _isBiometricEnabled = isFingerPrintEnabled);
-    }
-    final selectedFont = _sharedPreferences?.getString(kSelectedFontKey);
-    if (selectedFont != null) {
-      setState(() => _selectedFont = selectedFont);
     }
   }
 
@@ -320,8 +336,14 @@ class _MyAppState extends State<MyApp> {
       title: 'Pinpoint',
       routerConfig: AppNavigation.router,
       themeMode: _themeMode,
-      theme: AppTheme.light(_flexScheme, _selectedFont),
-      darkTheme: AppTheme.dark(_flexScheme, _selectedFont),
+      theme: PinpointTheme.light(
+        accentColor: _accentColor,
+        highContrast: _highContrastMode,
+      ),
+      darkTheme: PinpointTheme.dark(
+        accentColor: _accentColor,
+        highContrast: _highContrastMode,
+      ),
       debugShowCheckedModeBanner: false,
     );
   }

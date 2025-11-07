@@ -5,6 +5,7 @@ import 'package:pinpoint/screens/folder_screen.dart';
 import 'package:pinpoint/screens/notes_by_tag_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
 import 'package:pinpoint/screens/tags_screen.dart';
+import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
 
 import '../database/database.dart';
@@ -202,6 +203,16 @@ class AppNavigation {
         name: "Sync Screen",
         builder: (context, state) {
           return SyncScreen(
+            key: state.pageKey,
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: ThemeScreen.kRouteName,
+        name: "Theme Screen",
+        builder: (context, state) {
+          return ThemeScreen(
             key: state.pageKey,
           );
         },

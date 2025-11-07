@@ -48,9 +48,11 @@ class EmptyStateWidget extends StatelessWidget {
             height: 84,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: (dark ? Colors.white : Colors.black).withValues(alpha: 0.04),
+              color:
+                  (dark ? Colors.white : Colors.black).withValues(alpha: 0.04),
               border: Border.all(
-                color: (dark ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                color: (dark ? Colors.white : Colors.black)
+                    .withValues(alpha: 0.08),
               ),
               boxShadow: [
                 BoxShadow(

@@ -6,53 +6,115 @@ import 'package:keyboard_avoider/keyboard_avoider.dart';
 
 import 'quill_toolbar.dart';
 
-class MakeTitleContentNote extends StatelessWidget {
+class MakeTitleContentNote extends StatefulWidget {
   final QuillController quillController;
+  final FocusNode focusNode;
+  final ScrollController scrollController;
+
   const MakeTitleContentNote({
     super.key,
     required this.quillController,
+    required this.focusNode,
+    required this.scrollController,
   });
 
   @override
+  State<MakeTitleContentNote> createState() => _MakeTitleContentNoteState();
+}
+
+class _MakeTitleContentNoteState extends State<MakeTitleContentNote> {
+  final GlobalKey _containerKey = GlobalKey();
+  final GlobalKey _editorKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.focusNode.addListener(_onFocusChange);
+    widget.quillController.addListener(_onTextChange);
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(_onFocusChange);
+    widget.quillController.removeListener(_onTextChange);
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (widget.focusNode.hasFocus) {
+      _scrollToShowEditor();
+    }
+  }
+
+  void _onTextChange() {
+    if (widget.focusNode.hasFocus) {
+      _scrollToShowEditor();
+    }
+  }
+
+  void _scrollToShowEditor() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final containerContext = _containerKey.currentContext;
+      if (containerContext != null) {
+        Scrollable.ensureVisible(
+          containerContext,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          alignment: 0.0,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+        );
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return SliverToBoxAdapter(
       child: Padding(
-        padding: EdgeInsets.only(
-          left: 10,
-          right: 10,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
         child: Column(
+          key: _containerKey, // Key on whole column to include toolbar in scroll
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(height: 3),
             QuillToolbar(
-              quillController: quillController,
+              quillController: widget.quillController,
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 8),
             Container(
-              height: MediaQuery.sizeOf(context).height * 0.49,
-              padding: EdgeInsets.symmetric(
-                horizontal: 15,
-                vertical: 10,
+              key: _editorKey, // Key on editor to track its position
+              constraints: const BoxConstraints(
+                minHeight: 300,
               ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.blueGrey.withAlpha(12),
-                borderRadius: BorderRadius.circular(15),
+                color: isDark
+                    ? cs.surface.withValues(alpha: 0.4)
+                    : cs.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: cs.outline.withValues(alpha: 0.1),
+                  width: 1,
+                ),
               ),
-              child: KeyboardAvoider(
-                child: QuillEditor.basic(
-                  controller: quillController,
-                  config: QuillEditorConfig(
-                    expands: true,
-                    embedBuilders: [
-                      ...kIsWeb
-                          ? FlutterQuillEmbeds.editorWebBuilders()
-                          : FlutterQuillEmbeds.editorBuilders(),
-                    ],
-                    placeholder: 'Enter Content...',
-                    scrollable: true,
-                    padding: EdgeInsets.only(bottom: 50),
-                  ),
+              child: QuillEditor.basic(
+                controller: widget.quillController,
+                focusNode: widget.focusNode,
+                config: QuillEditorConfig(
+                  expands: false,
+                  embedBuilders: [
+                    ...kIsWeb
+                        ? FlutterQuillEmbeds.editorWebBuilders()
+                        : FlutterQuillEmbeds.editorBuilders(),
+                  ],
+                  placeholder: 'Start writing your note...',
+                  scrollable: false, // Let outer scroll handle it
+                  padding: const EdgeInsets.all(4),
                 ),
               ),
             ),
@@ -62,4 +124,3 @@ class MakeTitleContentNote extends StatelessWidget {
     );
   }
 }
-

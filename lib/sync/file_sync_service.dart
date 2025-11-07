@@ -17,7 +17,7 @@ class FileSyncService extends SyncService {
     await super.init();
     final dir = await getApplicationDocumentsDirectory();
     _syncFile = File('${dir.path}/$syncFilename');
-    
+
     // Create file if it doesn't exist
     if (!(await _syncFile!.exists())) {
       await _syncFile!.writeAsString(jsonEncode({
@@ -35,7 +35,8 @@ class FileSyncService extends SyncService {
   }
 
   @override
-  Future<SyncResult> sync({SyncDirection direction = SyncDirection.both}) async {
+  Future<SyncResult> sync(
+      {SyncDirection direction = SyncDirection.both}) async {
     return await super.sync(direction: direction);
   }
 

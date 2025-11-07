@@ -51,14 +51,15 @@ abstract class SyncService {
   }
 
   /// Perform sync operation
-  Future<SyncResult> sync({SyncDirection direction = SyncDirection.both}) async {
+  Future<SyncResult> sync(
+      {SyncDirection direction = SyncDirection.both}) async {
     _status = SyncStatus.syncing;
     _lastSyncMessage = 'Starting sync...';
     notifyListeners();
 
     try {
       SyncResult result;
-      
+
       switch (direction) {
         case SyncDirection.upload:
           result = await _uploadChanges();
@@ -71,17 +72,18 @@ abstract class SyncService {
           if (!uploadResult.success) {
             throw Exception('Upload failed: ${uploadResult.message}');
           }
-          
+
           final downloadResult = await _downloadChanges();
           if (!downloadResult.success) {
             throw Exception('Download failed: ${downloadResult.message}');
           }
-          
+
           result = SyncResult(
             success: true,
             message: 'Sync completed successfully',
             notesSynced: uploadResult.notesSynced + downloadResult.notesSynced,
-            foldersSynced: uploadResult.foldersSynced + downloadResult.foldersSynced,
+            foldersSynced:
+                uploadResult.foldersSynced + downloadResult.foldersSynced,
             tagsSynced: uploadResult.tagsSynced + downloadResult.tagsSynced,
           );
           break;
@@ -97,7 +99,7 @@ abstract class SyncService {
       _status = SyncStatus.error;
       _lastSyncMessage = 'Sync failed: ${e.toString()}';
       notifyListeners();
-      
+
       return SyncResult(
         success: false,
         message: e.toString(),

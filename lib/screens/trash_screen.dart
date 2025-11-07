@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:pinpoint/components/shared/empty_state_widget.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pinpoint/models/note_with_details.dart';
+import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
+import 'package:pinpoint/screens/create_note_screen.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
-import 'package:pinpoint/design/app_theme.dart';
+import '../design_system/design_system.dart';
 
 class TrashScreen extends StatelessWidget {
   static const String kRouteName = '/trash';
@@ -13,331 +15,264 @@ class TrashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final dark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Trash'),
-        centerTitle: true,
+    return GradientScaffold(
+      appBar: GlassAppBar(
+        title: Row(
+          children: [
+            Icon(Icons.delete_rounded, color: cs.error, size: 20),
+            const SizedBox(width: 8),
+            const Text('Trash'),
+          ],
+        ),
       ),
       body: StreamBuilder<List<NoteWithDetails>>(
         stream: DriftNoteService.watchDeletedNotes(),
         builder: (context, snapshot) {
-          final waiting = snapshot.connectionState == ConnectionState.waiting;
-          if (waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(
-              child: EmptyStateWidget(
-                message: 'Could not load trash.\n\${snapshot.error}',
-                iconData: Icons.error_outline,
-              ),
+            return EmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Error loading trash',
+              message: 'Please try again later',
             );
           }
 
-          final notes = snapshot.data ?? const <NoteWithDetails>[];
+          final notes = snapshot.data ?? [];
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with gradient background
-              Glass(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Trash',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cs.error.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: cs.error.withValues(alpha: 0.22),
-                            ),
-                          ),
-                          child: Text(
-                            '\${notes.length}',
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: cs.error,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 2,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            cs.error.withValues(alpha: 0.22),
-                            cs.error.withValues(alpha: 0.0),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(2),
+                    Text(
+                      'Trash',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    TagChip(
+                      label: '${notes.length}',
+                      color: cs.error,
+                      size: TagChipSize.small,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
 
               // Content
               Expanded(
                 child: notes.isEmpty
-                    ? const Center(
-                        child: EmptyStateWidget(
-                          message:
-                              'Trash is empty.\nDeleted notes will appear here temporarily.',
-                          iconData: Icons.delete_outline,
-                        ),
+                    ? EmptyState(
+                        icon: Icons.delete_outline_rounded,
+                        title: 'Trash is empty',
+                        message: 'Deleted notes will appear here temporarily',
                       )
-                    : AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        child: ListView.separated(
-                          key: ValueKey(notes.length),
-                          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                          itemCount: notes.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final n = notes[index].note;
-                            final note = notes[index];
-                            final theme = Theme.of(context);
-                            final cs = theme.colorScheme;
-                            final dark = theme.brightness == Brightness.dark;
+                    : AnimatedListStagger(
+                        itemCount: notes.length,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemBuilder: (context, index) {
+                          final note = notes[index];
+                          final n = note.note;
 
-                            return InkWell(
-                              borderRadius: AppTheme.radiusL,
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _TrashedNoteCard(
+                              note: note,
                               onTap: () {
-                                Navigator.of(context).pushNamed(
-                                  '/create',
-                                  arguments: {
-                                    'existingNote': note,
-                                    'noticeType': n.defaultNoteType,
-                                  },
+                                PinpointHaptics.medium();
+                                context.push(
+                                  CreateNoteScreen.kRouteName,
+                                  extra: CreateNoteScreenArguments(
+                                    noticeType: n.defaultNoteType,
+                                    existingNote: note,
+                                  ),
                                 );
                               },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: AppTheme.radiusL,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withAlpha(dark ? 70 : 25),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 12),
-                                    ),
-                                    BoxShadow(
-                                      color: cs.primary.withAlpha(dark ? 25 : 15),
-                                      blurRadius: 36,
-                                      spreadRadius: -6,
-                                      offset: const Offset(0, 18),
-                                    ),
-                                  ],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: AppTheme.radiusL,
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        decoration: const BoxDecoration(
-                                          borderRadius: AppTheme.radiusL,
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                            colors: [
-                                              Color(0x1A7C3AED),
-                                              Color(0x1110B981),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned.fill(
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            borderRadius: AppTheme.radiusL,
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: [
-                                                Colors.white.withAlpha(dark ? 5 : 50),
-                                                Colors.transparent,
-                                                Colors.black.withAlpha(dark ? 60 : 15),
-                                              ],
-                                              stops: const [0.0, 0.55, 1.0],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 16, vertical: 14),
-                                        decoration: BoxDecoration(
-                                          color: (dark ? const Color(0xFF0F1218) : Colors.white)
-                                              .withAlpha(200),
-                                          borderRadius: AppTheme.radiusL,
-                                          border: Border.all(
-                                            color: (dark ? Colors.white : Colors.black).withAlpha(15),
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            // Leading badge
-                                            Container(
-                                              width: 48,
-                                              height: 48,
-                                              decoration: BoxDecoration(
-                                                borderRadius: AppTheme.radiusM,
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                  colors: [
-                                                    cs.primary.withValues(
-                                                        alpha: dark ? 0.22 : 0.16),
-                                                    cs.primary.withValues(
-                                                        alpha: dark ? 0.10 : 0.08),
-                                                  ],
-                                                ),
-                                                border: Border.all(
-                                                  color: (dark
-                                                          ? Colors.white
-                                                          : Colors.black)
-                                                      .withValues(alpha: 0.08),
-                                                ),
-                                              ),
-                                              child: Center(
-                                                child: Icon(
-                                                  Icons.description_rounded,
-                                                  color: cs.primary,
-                                                  size: 22,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 14),
-                                            // Title + snippet
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  if ((n.noteTitle ?? '').isNotEmpty)
-                                                    Text(
-                                                      n.noteTitle!,
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                      style: theme.textTheme.titleMedium
-                                                          ?.copyWith(
-                                                        fontWeight: FontWeight.w800,
-                                                        letterSpacing: -0.1,
-                                                      ),
-                                                    ),
-                                                  if ((n.contentPlainText ?? '')
-                                                      .isNotEmpty)
-                                                    Padding(
-                                                      padding: const EdgeInsets.only(
-                                                          top: 2.0),
-                                                      child: Text(
-                                                        n.contentPlainText!,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
-                                                        style: theme
-                                                            .textTheme.bodyMedium
-                                                            ?.copyWith(
-                                                          color: cs.onSurface
-                                                              .withValues(alpha: 0.80),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            // Trailing actions for trash
-                                            Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                IconButton(
-                                                  tooltip: 'Restore',
-                                                  icon: const Icon(
-                                                      Icons.restore_from_trash),
-                                                  color: cs.primary,
-                                                  onPressed: () async {
-                                                    await DriftNoteService
-                                                        .restoreNoteById(n.id);
-                                                  },
-                                                ),
-                                                IconButton(
-                                                  tooltip: 'Delete forever',
-                                                  icon:
-                                                      const Icon(Icons.delete_forever),
-                                                  color: cs.error,
-                                                  onPressed: () async {
-                                                    final confirmed =
-                                                        await showDialog<bool>(
-                                                      context: context,
-                                                      builder: (ctx) => AlertDialog(
-                                                        title: const Text(
-                                                            'Delete permanently?'),
-                                                        content: const Text(
-                                                            'This action cannot be undone. The note and its attachments will be removed forever.'),
-                                                        actions: [
-                                                          TextButton(
-                                                            onPressed: () =>
-                                                                Navigator.of(ctx)
-                                                                    .pop(false),
-                                                            child: const Text('Cancel'),
-                                                          ),
-                                                          FilledButton.tonal(
-                                                            onPressed: () =>
-                                                                Navigator.of(ctx)
-                                                                    .pop(true),
-                                                            child: const Text(
-                                                                'Delete forever'),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                    if (confirmed == true) {
-                                                      await DriftNoteService
-                                                          .permanentlyDeleteNoteById(
-                                                              n.id);
-                                                    }
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                              onRestore: () async {
+                                PinpointHaptics.light();
+                                await DriftNoteService.restoreNoteById(n.id);
+                              },
+                              onDelete: () async {
+                                final confirmed = await ConfirmSheet.show(
+                                  context: context,
+                                  title: 'Delete permanently?',
+                                  message:
+                                      'This action cannot be undone. The note and its attachments will be removed forever.',
+                                  primaryLabel: 'Delete forever',
+                                  secondaryLabel: 'Cancel',
+                                  isDestructive: true,
+                                  icon: Icons.delete_forever_rounded,
+                                );
+                                if (confirmed == true) {
+                                  PinpointHaptics.success();
+                                  await DriftNoteService
+                                      .permanentlyDeleteNoteById(n.id);
+                                }
+                              },
+                            ),
+                          );
+                        },
                       ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _TrashedNoteCard extends StatefulWidget {
+  final NoteWithDetails note;
+  final VoidCallback onTap;
+  final VoidCallback onRestore;
+  final VoidCallback onDelete;
+
+  const _TrashedNoteCard({
+    required this.note,
+    required this.onTap,
+    required this.onRestore,
+    required this.onDelete,
+  });
+
+  @override
+  State<_TrashedNoteCard> createState() => _TrashedNoteCardState();
+}
+
+class _TrashedNoteCardState extends State<_TrashedNoteCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    final n = widget.note.note;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      child: AnimatedScale(
+        scale: _pressed ? 0.98 : 1.0,
+        duration: PinpointAnimations.durationFast,
+        curve: PinpointAnimations.emphasized,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: PinpointElevations.lg(theme.brightness),
+          ),
+          child: GlassContainer(
+            padding: const EdgeInsets.all(16),
+            borderRadius: 20,
+            child: Row(
+              children: [
+                // Leading icon
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        cs.error.withAlpha(dark ? 56 : 40),
+                        cs.error.withAlpha(dark ? 25 : 20),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: (dark ? Colors.white : Colors.black).withAlpha(20),
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.delete_rounded,
+                      color: cs.error,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if ((n.noteTitle ?? '').isNotEmpty)
+                        Text(
+                          n.noteTitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.1,
+                          ),
+                        ),
+                      if ((n.contentPlainText ?? '').isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            n.contentPlainText!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: cs.onSurface.withAlpha(200),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Actions
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: widget.onRestore,
+                      child: GlassContainer(
+                        padding: const EdgeInsets.all(10),
+                        borderRadius: 12,
+                        child: Icon(
+                          Icons.restore_from_trash_rounded,
+                          color: cs.primary,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: widget.onDelete,
+                      child: GlassContainer(
+                        padding: const EdgeInsets.all(10),
+                        borderRadius: 12,
+                        child: Icon(
+                          Icons.delete_forever_rounded,
+                          color: cs.error,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -6,20 +6,18 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import '../components/create_note_screen/create_note_categories.dart';
-import '../components/create_note_screen/create_note_folder_select.dart';
+import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
+import '../components/create_note_screen/show_note_tag_bottom_sheet.dart';
 import '../components/create_note_screen/record_audio_type/record_type_content.dart';
 import '../components/create_note_screen/reminder_type/reminder_type_content.dart';
 import '../components/create_note_screen/title_content_type/make_title_content_note.dart';
-import '../components/create_note_screen/title_content_type/note_input_field.dart';
 import '../components/create_note_screen/todo_list_type/todo_list_type_content.dart';
-import '../components/create_note_screen/create_note_tag_select.dart';
-import '../components/layouts/main_layout.dart';
 import '../constants/constants.dart';
-import '../database/database.dart';
+import '../database/database.dart' as db;
 import '../dtos/note_attachment_dto.dart';
 import '../dtos/note_folder_dto.dart';
 import '../services/drift_note_folder_service.dart';
@@ -30,7 +28,7 @@ import 'dart:io';
 import 'package:vsc_quill_delta_to_html/vsc_quill_delta_to_html.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/logger_service.dart';
-import 'package:pinpoint/design/app_theme.dart';
+import '../design_system/design_system.dart';
 
 class CreateNoteScreen extends StatefulWidget {
   static const String kRouteName = '/create-note';
@@ -47,23 +45,19 @@ class CreateNoteScreen extends StatefulWidget {
 
 class _CreateNoteScreenState extends State<CreateNoteScreen> {
   String selectedNoteType = kNoteTypes[0];
-
   late QuillController _quillController;
-
   late TextEditingController _titleEditingController;
-
   late SharePlus _sharePlus;
-
   List<NoteFolderDto> selectedFolders = [
     DriftNoteFolderService.firstNoteFolder
   ];
-
-  List<NoteTodoItem> todos = [];
-  List<NoteTag> selectedTags = [];
-
+  List<db.NoteTodoItem> todos = [];
+  List<db.NoteTag> selectedTags = [];
   late TextEditingController _reminderDescription;
   DateTime? reminderDateTime;
   List<NoteAttachmentDto> noteAttachments = [];
+  final ScrollController _scrollController = ScrollController();
+  final FocusNode _quillFocusNode = FocusNode();
 
   void setSingleSelected(List<NoteFolderDto> value) {
     setState(() => selectedFolders = value);
@@ -76,6 +70,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     _titleEditingController = TextEditingController(text: '');
     _reminderDescription = TextEditingController(text: '');
     _sharePlus = SharePlus.instance;
+
     if (widget.args?.existingNote != null) {
       final existingNote = widget.args!.existingNote!;
       selectedNoteType = existingNote.note.defaultNoteType;
@@ -90,13 +85,15 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
         _quillController.document = Document();
       }
       selectedFolders = existingNote.folders;
-      todos = List<NoteTodoItem>.from(existingNote.todoItems);
-      selectedTags = List<NoteTag>.from(existingNote.tags);
+      todos = List<db.NoteTodoItem>.from(existingNote.todoItems);
+      selectedTags = List<db.NoteTag>.from(existingNote.tags);
     }
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
+    _quillFocusNode.dispose();
     try {
       _quillController.dispose();
     } catch (_) {}
@@ -111,29 +108,26 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   Future<void> saveNoteToLocalDb() async {
     final title = _titleEditingController.text.trim();
-    
-    // Validate todo notes
+
     if (selectedNoteType == kNoteTypes[2] && todos.isEmpty) {
       _showErrorToast(
           'Failed to save Note!', 'Please add at least one todo item');
       return;
     }
-    
-    // Validate other note types
+
     String quillContent = '';
     String quillPlainText = '';
-    
+
     if (selectedNoteType == kNoteTypes[0]) {
       quillContent = jsonEncode(_quillController.document.toDelta().toJson());
       quillPlainText = _quillController.document.toPlainText().trim();
     } else if (selectedNoteType == kNoteTypes[1]) {
-      // For audio notes, we'll save the transcription if available
       quillContent = jsonEncode(_quillController.document.toDelta().toJson());
       quillPlainText = _quillController.document.toPlainText().trim();
     }
 
-    // For todo notes, we don't require content since the todos are the content
-    if (_isNoteEmpty(title, quillContent) && selectedNoteType != kNoteTypes[2]) {
+    if (_isNoteEmpty(title, quillContent) &&
+        selectedNoteType != kNoteTypes[2]) {
       _showErrorToast(
           'Failed to save Note!', 'Please provide at least a title or content');
       return;
@@ -151,41 +145,32 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       return;
     }
 
-    // Handle todo items for todo list notes
     if (selectedNoteType == kNoteTypes[2]) {
-      // Separate new todos (negative IDs) from existing ones
       final newTodos = todos.where((todo) => todo.id < 0).toList();
       final existingTodos = todos.where((todo) => todo.id > 0).toList();
-      
-      // Delete all existing todos for this note first (to handle deletions)
+
       if (widget.args?.existingNote != null) {
         for (var todo in widget.args!.existingNote!.todoItems) {
-          // Check if this todo still exists in our current list
           final stillExists = todos.any((t) => t.id == todo.id);
           if (!stillExists) {
             await DriftNoteService.deleteTodoItem(todo.id);
           }
         }
       }
-      
-      // Insert new todos
+
       for (var todo in newTodos) {
         await DriftNoteService.insertTodoItem(
           noteId: noteId,
           title: todo.todoTitle,
         );
       }
-      
-      // Handle existing todos
+
       for (var todo in existingTodos) {
-        // Check if this is an existing todo from the same note
-        if (widget.args?.existingNote != null && 
+        if (widget.args?.existingNote != null &&
             widget.args!.existingNote!.todoItems.any((t) => t.id == todo.id)) {
-          // Update the existing todo
           await DriftNoteService.updateTodoItemTitle(todo.id, todo.todoTitle);
           await DriftNoteService.updateTodoItemStatus(todo.id, todo.isDone);
         } else {
-          // This is a new todo, insert it
           await DriftNoteService.insertTodoItem(
             noteId: noteId,
             title: todo.todoTitle,
@@ -194,7 +179,6 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       }
     }
 
-    // Add Folders
     final result = await DriftNoteFolderService.upsertNoteFoldersWithNote(
       selectedFolders,
       noteId,
@@ -212,9 +196,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
           'Some attachments may not have been saved.');
     }
 
-    // Add Tags
     await DriftNoteService.upsertNoteTagsWithNote(
-      selectedTags.map((tag) => tag.id).toList(),
+      selectedTags.map((tag) => tag.id).toList().cast<int>(),
       noteId,
     );
 
@@ -231,9 +214,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 emptyQuillContent);
   }
 
-  NotesCompanion _createNoteCompanion(
+  db.NotesCompanion _createNoteCompanion(
       String title, String content, String plainText, DateTime now) {
-    return NotesCompanion.insert(
+    return db.NotesCompanion.insert(
       noteTitle: drift.Value(title),
       isPinned: drift.Value(false),
       defaultNoteType: selectedNoteType,
@@ -256,107 +239,13 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final kPrimaryColor = Theme.of(context).primaryColor;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
-    final darkerColor =
-        isDarkTheme ? Colors.grey.shade400 : Colors.grey.shade600;
-        
-    return MainLayout(
-      actions: [
-        IconButton(
-          icon: Icon(
-            Symbols.share,
-            size: 20,
-            color: darkerColor,
-          ),
-          onPressed: () {
-            final title = _titleEditingController.text.trim();
-            final plainText = _quillController.document.toPlainText().trim();
-            final deltaJson = _quillController.document.toDelta().toJson();
-            final converter = QuillDeltaToHtmlConverter(
-              List.castFrom(deltaJson),
-            );
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
-            showModalBottomSheet(
-              context: context,
-              builder: (context) {
-                return Glass(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Wrap(
-                    children: <Widget>[
-                      ListTile(
-                        leading: const Icon(Icons.text_fields),
-                        title: const Text('Share as Plain Text'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _sharePlus.share(
-                              ShareParams(text: plainText, subject: title));
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.html),
-                        title: const Text('Share as HTML'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _sharePlus.share(ShareParams(
-                              text: converter.convert(), subject: title));
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.picture_as_pdf),
-                        title: const Text('Share as PDF'),
-                        onTap: () async {},
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        ),
-        const SizedBox(width: 10),
-        Icon(
-          Symbols.keep_rounded,
-          size: 20,
-          color: darkerColor,
-        ),
-        const SizedBox(width: 10),
-        PopupMenuButton<String>(
-          onSelected: (value) async {
-            if (value == 'export') {
-              final noteJson = {
-                'title': _titleEditingController.text.trim(),
-                'content': _quillController.document.toDelta().toJson(),
-                'folders': selectedFolders.map((e) => e.title).toList(),
-                'tags': selectedTags.map((e) => e.tagTitle).toList(),
-                'attachments': noteAttachments.map((e) => e.path).toList(),
-              };
-              final jsonString = jsonEncode(noteJson);
-              final tempDir = await getTemporaryDirectory();
-              final file = await File(
-                      '${tempDir.path}/${_titleEditingController.text.trim()}.pinpoint-note')
-                  .writeAsString(jsonString);
-              _sharePlus.share(
-                ShareParams(
-                  files: [XFile(file.path)],
-                  subject: 'Pinpoint Note',
-                ),
-              );
-            }
-          },
-          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            const PopupMenuItem<String>(
-              value: 'export',
-              child: Text('Export'),
-            ),
-          ],
-          icon: Icon(
-            Symbols.more_vert_rounded,
-            size: 20,
-            color: darkerColor,
-          ),
-        ),
-      ],
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: BackButtonListener(
         onBackButtonPressed: () async {
           final hasUnsaved = _titleEditingController.text.isNotEmpty ||
@@ -366,362 +255,658 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               reminderDateTime != null;
 
           if (hasUnsaved) {
-            final shouldDiscard = await showDialog<bool>(
+            final shouldSave = await ConfirmSheet.show(
               context: context,
-              builder: (dialogCtx) {
-                return AlertDialog(
-                  title: const Text('Unsaved Changes'),
-                  content: const Text(
-                    'You have unsaved changes. Do you want to save before leaving?',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(dialogCtx).pop(false),
-                      child: const Text('Discard'),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        Navigator.of(dialogCtx).pop(true);
-                        await saveNoteToLocalDb();
-                      },
-                      child: const Text('Save'),
-                    ),
-                  ],
-                );
-              },
+              title: 'Unsaved Changes',
+              message:
+                  'You have unsaved changes. Do you want to save before leaving?',
+              primaryLabel: 'Save',
+              secondaryLabel: 'Discard',
+              isDestructive: false,
+              icon: Icons.save_rounded,
             );
 
-            if (shouldDiscard == true) {
-              // Save was handled in the dialog
+            if (shouldSave == true) {
+              await saveNoteToLocalDb();
               return true;
-            } else if (shouldDiscard == false) {
-              // Discard changes
+            } else if (shouldSave == false) {
+              PinpointHaptics.medium();
               if (!mounted) return true;
               context.pop();
               return true;
             }
-            return true; // consumed back press
+            return true;
           }
-          return false; // allow default pop
+          return false;
         },
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Column(
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              // Modern Header
+              _buildHeader(context, cs, isDark),
+
+              // Content
+              Expanded(
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  slivers: [
+                    // Title Input
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                        child: TextField(
+                          controller: _titleEditingController,
+                          decoration: InputDecoration(
+                            hintText: 'Note title...',
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(
+                              color: cs.onSurface.withValues(alpha: 0.4),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                        ),
+                      ),
+                    ),
+
+                    // Note Type Selector
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        child: _buildNoteTypeSelector(cs, isDark),
+                      ),
+                    ),
+
+                    // Content Area
+                    _buildContentArea(),
+
+                    // Metadata Section
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: _buildMetadataSection(cs, isDark),
+                      ),
+                    ),
+
+                    // Extra padding to ensure content can scroll above keyboard and FAB
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: 200,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      // Floating Save Button
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: SizedBox(
+          width: double.infinity,
+          child: FloatingActionButton.extended(
+            onPressed: () async {
+              PinpointHaptics.medium();
+              await saveNoteToLocalDb();
+            },
+            backgroundColor: cs.primary,
+            elevation: 8,
+            icon: Icon(
+              widget.args?.existingNote != null
+                  ? Symbols.save
+                  : Symbols.add_circle,
+              size: 24,
+              color: Colors.white,
+            ),
+            label: Text(
+              widget.args?.existingNote != null ? 'Update Note' : 'Create Note',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, ColorScheme cs, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1E293B).withValues(alpha: 0.8)
+            : Colors.white.withValues(alpha: 0.95),
+        border: Border(
+          bottom: BorderSide(
+            color: cs.outline.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Back Button
+          Container(
+            decoration: BoxDecoration(
+              color: cs.surface.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: Icon(Symbols.arrow_back, color: cs.onSurface, size: 22),
+              onPressed: () {
+                PinpointHaptics.light();
+                Navigator.of(context).pop();
+              },
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          // Title
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with note type indicator
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        kPrimaryColor.withAlpha(20),
-                        kPrimaryColor.withAlpha(10),
-                      ],
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _getIconForNoteType(selectedNoteType),
-                        color: kPrimaryColor,
-                        size: 24,
+                Text(
+                  widget.args?.existingNote != null ? 'Edit Note' : 'New Note',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          widget.args?.existingNote != null 
-                              ? 'Edit Note' 
-                              : 'New Note',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: kPrimaryColor,
-                              ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: kPrimaryColor.withAlpha(30),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: kPrimaryColor.withAlpha(50),
-                          ),
-                        ),
-                        child: Text(
-                          _getLabelForNoteType(selectedNoteType),
-                          style: TextStyle(
-                            color: kPrimaryColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-                
-                // Main content area
-                Expanded(
-                  child: CustomScrollView(
-                    slivers: [
-                      // Title input
-                      SliverToBoxAdapter(
-                        child: Container(
-                          margin: const EdgeInsets.all(16),
-                          child: Glass(
-                            padding: const EdgeInsets.all(16),
-                            child: TextField(
-                              controller: _titleEditingController,
-                              decoration: const InputDecoration(
-                                hintText: 'Note title',
-                                border: InputBorder.none,
-                                hintStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                          ),
-                        ),
+                Text(
+                  _getLabelForNoteType(selectedNoteType),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: cs.primary,
+                        fontWeight: FontWeight.w600,
                       ),
-                      
-                      // Note type selector
-                      CreateNoteCategories(
-                        selectedType: selectedNoteType,
-                        onSelectedTypeChanged: (text) {
-                          setState(() => selectedNoteType = text);
-                        },
-                      ),
-                      
-                      // Content based on note type
-                      if (selectedNoteType == kNoteTypes[0])
-                        MakeTitleContentNote(
-                          quillController: _quillController,
-                        ),
-                      if (selectedNoteType == kNoteTypes[1])
-                        RecordTypeContent(
-                          onTranscribedText: (transcribedText) {
-                            if (!mounted) return;
-                            final currentOffset =
-                                _quillController.selection.baseOffset;
-                            _quillController.document
-                                .insert(currentOffset, transcribedText);
-                          },
-                        ),
-                      if (selectedNoteType == kNoteTypes[2])
-                        TodoListTypeContent(
-                          todos: todos,
-                          onTodoChanged: (newTodoItems) => setState(
-                            () => todos = newTodoItems,
-                          ),
-                        ),
-                      if (selectedNoteType == kNoteTypes[3])
-                        ReminderTypeContent(
-                          descriptionController: _reminderDescription,
-                          selectedDateTime: reminderDateTime,
-                          onReminderDateTimeChanged: (selectedDateTime) =>
-                              setState(
-                            () => reminderDateTime = selectedDateTime,
-                          ),
-                        ),
-                      
-                      // Folder selection
-                      CreateNoteFolderSelect(
-                        selectedFolders: selectedFolders,
-                        setSelectedFolders: setSingleSelected,
-                      ),
-                      
-                      // Tag selection
-                      CreateNoteTagSelect(
-                        selectedTags: selectedTags,
-                        onSelectedTagsChanged: (newTags) => setState(
-                          () => selectedTags = newTags,
-                        ),
-                      ),
-                      
-                      // Attachments
-                      SliverToBoxAdapter(
-                        child: Container(
-                          margin: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Attachments',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                              const SizedBox(height: 8),
-                              if (noteAttachments.isNotEmpty)
-                                SizedBox(
-                                  height: 100,
-                                  child: ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: noteAttachments.length,
-                                    itemBuilder: (context, index) {
-                                      final attachment = noteAttachments[index];
-                                      return Container(
-                                        margin: const EdgeInsets.only(right: 8),
-                                        width: 80,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(
-                                            color: Theme.of(context).colorScheme.outline,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              _getIconForAttachment(attachment.path),
-                                              size: 24,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              attachment.path.split('/').last,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(fontSize: 10),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              const SizedBox(height: 8),
-                              OutlinedButton.icon(
-                                onPressed: () {
-                                  // TODO: Implement attachment functionality
-                                },
-                                icon: const Icon(Icons.attach_file),
-                                label: const Text('Add Attachment'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      
-                      // Spacing at bottom
-                      const SliverToBoxAdapter(
-                        child: SizedBox(height: 20),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Save button
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Glass(
-                    padding: const EdgeInsets.all(16),
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        await saveNoteToLocalDb();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.all(16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppTheme.radiusL,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            widget.args?.existingNote != null 
-                                ? Icons.save 
-                                : Icons.add,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            widget.args?.existingNote != null 
-                                ? 'Update Note' 
-                                : 'Create Note',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
               ],
-            );
+            ),
+          ),
+
+          // Action Buttons
+          _buildActionButton(
+            Symbols.share,
+            () {
+              PinpointHaptics.light();
+              _showShareMenu(context, cs);
+            },
+            cs,
+          ),
+          const SizedBox(width: 8),
+          _buildActionButton(
+            Symbols.download,
+            () async {
+              PinpointHaptics.light();
+              await _exportNote();
+            },
+            cs,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, VoidCallback onTap, ColorScheme cs) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: cs.surface.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, size: 20, color: cs.primary),
+      ),
+    );
+  }
+
+  Widget _buildNoteTypeSelector(ColorScheme cs, bool isDark) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: kNoteTypes.map((type) {
+          final isSelected = selectedNoteType == type;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () {
+                PinpointHaptics.light();
+                setState(() => selectedNoteType = type);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? LinearGradient(
+                          colors: [
+                            cs.primary,
+                            cs.primary.withValues(alpha: 0.8),
+                          ],
+                        )
+                      : null,
+                  color: isSelected
+                      ? null
+                      : isDark
+                          ? cs.surface.withValues(alpha: 0.4)
+                          : cs.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isSelected
+                        ? cs.primary.withValues(alpha: 0.3)
+                        : cs.outline.withValues(alpha: 0.1),
+                    width: 1.5,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: cs.primary.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _getIconForNoteType(type),
+                      size: 18,
+                      color: isSelected ? Colors.white : cs.onSurface,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _getLabelForNoteType(type),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? Colors.white : cs.onSurface,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildContentArea() {
+    switch (selectedNoteType) {
+      case 'Title Content':
+        return MakeTitleContentNote(
+          quillController: _quillController,
+          focusNode: _quillFocusNode,
+          scrollController: _scrollController,
+        );
+      case 'Record Audio':
+        return RecordTypeContent(
+          onTranscribedText: (transcribedText) {
+            if (!mounted) return;
+            final currentOffset = _quillController.selection.baseOffset;
+            _quillController.document.insert(currentOffset, transcribedText);
           },
+        );
+      case 'Todo List':
+        return TodoListTypeContent(
+          todos: todos,
+          onTodoChanged: (newTodoItems) => setState(() => todos = newTodoItems),
+        );
+      case 'Reminder':
+        return ReminderTypeContent(
+          descriptionController: _reminderDescription,
+          selectedDateTime: reminderDateTime,
+          onReminderDateTimeChanged: (selectedDateTime) =>
+              setState(() => reminderDateTime = selectedDateTime),
+        );
+      default:
+        return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+  }
+
+  Widget _buildMetadataSection(ColorScheme cs, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Folders
+        _buildSectionHeader('Folders', Symbols.folder, cs),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ...selectedFolders.map((folder) => _buildChip(
+                  folder.title,
+                  Symbols.folder,
+                  cs.primary,
+                  () {
+                    PinpointHaptics.light();
+                    // Remove folder
+                    setState(() {
+                      selectedFolders =
+                          selectedFolders.where((f) => f != folder).toList();
+                    });
+                  },
+                  isDark,
+                )),
+            _buildAddChip('Add Folder', () {
+              PinpointHaptics.light();
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => Container(
+                  height: MediaQuery.of(context).size.height * 0.65,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(28)),
+                  ),
+                  child: StreamBuilder(
+                    stream: DriftNoteFolderService.watchAllNoteFoldersStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return const Center(child: Text('Something went wrong'));
+                      }
+                      final noteFolderData = snapshot.data ?? [];
+                      return ShowNoteFolderBottomSheet(
+                        selectedFolders: selectedFolders,
+                        setSelectedFolders: (folders) {
+                          setState(() => selectedFolders = folders);
+                        },
+                        noteFolderData: noteFolderData,
+                      );
+                    },
+                  ),
+                ),
+              );
+            }, cs, isDark),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        // Tags
+        _buildSectionHeader('Tags', Symbols.label, cs),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ...selectedTags.map((tag) => _buildChip(
+                  tag.tagTitle,
+                  Symbols.label,
+                  cs.secondary,
+                  () {
+                    PinpointHaptics.light();
+                    setState(() {
+                      selectedTags = selectedTags.where((t) => t != tag).toList();
+                    });
+                  },
+                  isDark,
+                )),
+            _buildAddChip('Add Tag', () async {
+              PinpointHaptics.light();
+              final allTags = await DriftNoteService.watchAllNoteTags().first;
+              if (!context.mounted) return;
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => Container(
+                  height: MediaQuery.of(context).size.height * 0.65,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(28)),
+                  ),
+                  child: ShowNoteTagBottomSheet(
+                    selectedTags: selectedTags,
+                    setSelectedTags: (tags) {
+                      setState(() => selectedTags = tags);
+                    },
+                    noteTagData: allTags,
+                  ),
+                ),
+              );
+            }, cs, isDark),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon, ColorScheme cs) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: cs.primary),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+              ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChip(String label, IconData icon, Color color,
+      VoidCallback onDelete, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark
+            ? color.withValues(alpha: 0.15)
+            : color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: onDelete,
+            child: Icon(Symbols.close, size: 16, color: color),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddChip(String label, VoidCallback onTap, ColorScheme cs, bool isDark) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDark
+              ? cs.surface.withValues(alpha: 0.4)
+              : cs.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: cs.outline.withValues(alpha: 0.2),
+            width: 1,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Symbols.add, size: 14, color: cs.primary),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: cs.primary,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-  
+
+  void _showShareMenu(BuildContext context, ColorScheme cs) {
+    final title = _titleEditingController.text.trim();
+    final plainText = _quillController.document.toPlainText().trim();
+    final deltaJson = _quillController.document.toDelta().toJson();
+    final converter = QuillDeltaToHtmlConverter(List.castFrom(deltaJson));
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 4,
+                width: 40,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: cs.outline.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: Icon(Symbols.text_fields, color: cs.primary),
+                title: const Text('Share as Plain Text'),
+                onTap: () {
+                  PinpointHaptics.medium();
+                  Navigator.pop(context);
+                  _sharePlus.share(ShareParams(text: plainText, subject: title));
+                },
+              ),
+              ListTile(
+                leading: Icon(Symbols.code, color: cs.primary),
+                title: const Text('Share as HTML'),
+                onTap: () {
+                  PinpointHaptics.medium();
+                  Navigator.pop(context);
+                  _sharePlus.share(
+                      ShareParams(text: converter.convert(), subject: title));
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _exportNote() async {
+    final noteJson = {
+      'title': _titleEditingController.text.trim(),
+      'content': _quillController.document.toDelta().toJson(),
+      'folders': selectedFolders.map((e) => e.title).toList(),
+      'tags': selectedTags.map((e) => e.tagTitle).toList(),
+      'attachments': noteAttachments.map((e) => e.path).toList(),
+    };
+    final jsonString = jsonEncode(noteJson);
+    final tempDir = await getTemporaryDirectory();
+    final file = await File(
+            '${tempDir.path}/${_titleEditingController.text.trim()}.pinpoint-note')
+        .writeAsString(jsonString);
+    _sharePlus.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        subject: 'Pinpoint Note',
+      ),
+    );
+  }
+
   IconData _getIconForNoteType(String noteType) {
     switch (noteType) {
-      case 'title_content':
-        return Icons.note;
-      case 'record':
-        return Icons.mic;
-      case 'todo':
-        return Icons.checklist;
-      case 'reminder':
-        return Icons.alarm;
+      case 'Title Content':
+        return Symbols.note;
+      case 'Record Audio':
+        return Symbols.mic;
+      case 'Todo List':
+        return Symbols.checklist;
+      case 'Reminder':
+        return Symbols.alarm;
       default:
-        return Icons.note;
+        return Symbols.note;
     }
   }
-  
+
   String _getLabelForNoteType(String noteType) {
     switch (noteType) {
-      case 'title_content':
+      case 'Title Content':
         return 'Text Note';
-      case 'record':
+      case 'Record Audio':
         return 'Voice Note';
-      case 'todo':
+      case 'Todo List':
         return 'Todo List';
-      case 'reminder':
+      case 'Reminder':
         return 'Reminder';
       default:
         return 'Note';
     }
   }
-  
+
   IconData _getIconForAttachment(String path) {
     final extension = path.split('.').last.toLowerCase();
     switch (extension) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
       case 'jpg':
       case 'jpeg':
       case 'png':
-      case 'gif':
         return Icons.image;
-      case 'pdf':
-        return Icons.picture_as_pdf;
-      case 'mp3':
-      case 'wav':
-      case 'm4a':
-        return Icons.audiotrack;
-      case 'mp4':
-      case 'mov':
-      case 'avi':
-        return Icons.videocam;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
       default:
-        return Icons.insert_drive_file;
+        return Icons.attach_file;
     }
   }
 }

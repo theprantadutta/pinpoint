@@ -1,10 +1,13 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import '../../constants/hero_tags.dart';
 import '../../constants/selectors.dart';
 import '../../screens/create_note_screen.dart';
+import '../../design_system/design_system.dart';
 import 'top_level_pages.dart';
 
 class BottomNavigationLayout extends StatefulWidget {
@@ -44,11 +47,11 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
 
   void _updateCurrentPageIndex(int index) {
     if (index == selectedIndex) return;
-    
+
     setState(() {
       selectedIndex = index;
     });
-    
+
     pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 300),
@@ -122,104 +125,222 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     final kPrimaryColor = Theme.of(context).primaryColor;
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return BackButtonListener(
       onBackButtonPressed: _onBackButtonPressed,
       child: Scaffold(
         extendBodyBehindAppBar: false,
         resizeToAvoidBottomInset: false,
+        extendBody: true,
         body: AnnotatedRegion(
           value: getDefaultSystemUiStyle(isDarkTheme),
           child: Container(
             decoration: getBackgroundDecoration(kPrimaryColor),
-            child: SafeArea(
-              top: false, // We only want bottom safe area padding
-              bottom: false, // Handle bottom padding manually
-              child: Stack(
-                children: [
-                  PageView(
-                    onPageChanged: _handlePageViewChanged,
-                    controller: pageController,
-                    padEnds: true,
-                    children: kTopLevelPages,
-                  ),
-                ],
-              ),
+            child: Stack(
+          children: [
+            PageView(
+              onPageChanged: _handlePageViewChanged,
+              controller: pageController,
+              padEnds: true,
+              children: kTopLevelPages,
             ),
-          ),
-        ),
-        extendBody: true,
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: FloatingActionButton(
-          heroTag: kAddNewNote,
-          shape: const CircleBorder(),
-          onPressed: () => context.push(
-            CreateNoteScreen.kRouteName,
-          ),
-          backgroundColor: kPrimaryColor.withValues(alpha: 0.9),
-          child: Icon(
-            Icons.add,
-            color: Colors.white,
-          ),
-          elevation: 10,
-        ),
-        bottomNavigationBar: Container(
-        margin: const EdgeInsets.fromLTRB(12.0, 0, 12.0, 12.0), // Add margin for floating effect
-        decoration: BoxDecoration(
-          color: isDarkTheme 
-              ? colorScheme.surface
-              : colorScheme.surface.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(20), // More rounded corners
-          boxShadow: [
-            BoxShadow(
-              color: isDarkTheme
-                  ? Colors.black.withValues(alpha: 0.3)
-                  : Colors.grey.withValues(alpha: 0.3),
-              blurRadius: 15,
-              offset: const Offset(0, -5),
+            // Floating Navigation Bar
+            Positioned(
+              left: 24,
+              right: 24,
+              bottom: 24,
+              child: Container(
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDarkTheme
+                        ? [
+                            const Color(0xFF1E293B), // Slate 800
+                            const Color(0xFF0F172A), // Slate 900
+                          ]
+                        : [
+                            const Color(0xFFF8FAFC), // Slate 50
+                            const Color(0xFFE2E8F0), // Slate 200
+                          ],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDarkTheme ? 0.5 : 0.2),
+                      blurRadius: 32,
+                      offset: const Offset(0, 12),
+                    ),
+                    BoxShadow(
+                      color: isDarkTheme
+                          ? kPrimaryColor.withValues(alpha: 0.1)
+                          : kPrimaryColor.withValues(alpha: 0.05),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: isDarkTheme
+                              ? [
+                                  Colors.white.withValues(alpha: 0.08),
+                                  Colors.white.withValues(alpha: 0.03),
+                                ]
+                              : [
+                                  Colors.white.withValues(alpha: 0.7),
+                                  Colors.white.withValues(alpha: 0.5),
+                                ],
+                        ),
+                        border: Border.all(
+                          color: isDarkTheme
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.white.withValues(alpha: 0.3),
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _NavBarItem(
+                            icon: Symbols.home,
+                            label: 'Home',
+                            isSelected: selectedIndex == 0,
+                            onTap: () {
+                              PinpointHaptics.light();
+                              _updateCurrentPageIndex(0);
+                            },
+                          ),
+                          _NavBarItem(
+                            icon: Symbols.sticky_note_2,
+                            label: 'Notes',
+                            isSelected: selectedIndex == 1,
+                            onTap: () {
+                              PinpointHaptics.light();
+                              _updateCurrentPageIndex(1);
+                            },
+                          ),
+                          // FAB in the middle
+                          FloatingActionButton(
+                            heroTag: kAddNewNote,
+                            onPressed: () {
+                              PinpointHaptics.medium();
+                              context.push(CreateNoteScreen.kRouteName);
+                            },
+                            backgroundColor: kPrimaryColor,
+                            elevation: 0,
+                            child: const Icon(
+                              Symbols.add,
+                              size: 28,
+                              color: Colors.white,
+                              weight: 600,
+                            ),
+                          ),
+                          _NavBarItem(
+                            icon: Symbols.task_alt,
+                            label: 'Todo',
+                            isSelected: selectedIndex == 2,
+                            onTap: () {
+                              PinpointHaptics.light();
+                              _updateCurrentPageIndex(2);
+                            },
+                          ),
+                          _NavBarItem(
+                            icon: Symbols.account_circle,
+                            label: 'Account',
+                            isSelected: selectedIndex == 3,
+                            onTap: () {
+                              PinpointHaptics.light();
+                              _updateCurrentPageIndex(3);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
+            ),
+          ),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20), // Match the container's border radius
-          child: BottomNavigationBar(
-            backgroundColor: Colors.transparent,
-            selectedItemColor: kPrimaryColor,
-            unselectedItemColor: isDarkTheme
-                ? Colors.grey.shade400
-                : Colors.grey.shade600,
-            selectedFontSize: 12,
-            unselectedFontSize: 12,
-            iconSize: 24,
-            type: BottomNavigationBarType.fixed,
-            elevation: 0, // Remove default elevation since we're adding our own
-            currentIndex: selectedIndex,
-            onTap: _updateCurrentPageIndex,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                activeIcon: Icon(Icons.home),
-                label: 'Home',
+      ),
+    );
+  }
+}
+
+class _NavBarItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavBarItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon
+              AnimatedScale(
+                scale: isSelected ? 1.1 : 1.0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                child: Icon(
+                  icon,
+                  size: 26,
+                  color: isSelected
+                      ? primaryColor
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  fill: isSelected ? 1.0 : 0.0,
+                  weight: isSelected ? 600 : 400,
+                ),
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.notes_outlined),
-                activeIcon: Icon(Icons.notes),
-                label: 'Notes',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.check_box_outline_blank),
-                activeIcon: Icon(Icons.check_box),
-                label: 'Todo',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                activeIcon: Icon(Icons.person),
-                label: 'Account',
+              const SizedBox(height: 4),
+              // Label
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                style: theme.textTheme.labelSmall!.copyWith(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? primaryColor
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  letterSpacing: 0.1,
+                ),
+                child: Text(label),
               ),
             ],
           ),
         ),
-      ),
       ),
     );
   }

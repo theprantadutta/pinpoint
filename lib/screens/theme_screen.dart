@@ -1,10 +1,9 @@
-import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pinpoint/design/app_theme.dart';
+import '../design_system/design_system.dart';
 
 class ThemeScreen extends StatefulWidget {
   static const String kRouteName = '/theme';
@@ -43,132 +42,199 @@ class _ThemeScreenState extends State<ThemeScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Theme'),
+    final accentColors = [
+      {'name': 'Neon Mint', 'color': PinpointColors.mint},
+      {'name': 'Purple Dream', 'color': PinpointColors.purple},
+      {'name': 'Pink Bliss', 'color': PinpointColors.pink},
+      {'name': 'Orange Sunset', 'color': PinpointColors.orange},
+      {'name': 'Blue Ocean', 'color': PinpointColors.blue},
+    ];
+
+    return GradientScaffold(
+      appBar: GlassAppBar(
+        title: Row(
+          children: [
+            Icon(Icons.palette_rounded, color: cs.primary, size: 20),
+            const SizedBox(width: 8),
+            const Text('Theme'),
+          ],
+        ),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          // Header with gradient background
-          Glass(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Theme & Fonts',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  height: 2,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        cs.primary.withValues(alpha: 0.22),
-                        cs.primary.withValues(alpha: 0.0),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ],
+          // Accent Colors Section
+          Text(
+            'Accent Colors',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.1,
             ),
           ),
-          const SizedBox(height: 8),
-          
-          // Content
-          Expanded(
-            child: ListView(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text('Color Schemes',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                ...List.generate(FlexScheme.values.length, (index) {
-                  final scheme = FlexScheme.values[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    child: ListTile(
-                      title: Text(scheme.name),
-                      onTap: () {
-                        final myAppState = MyApp.of(context);
-                        myAppState.changeFlexScheme(scheme);
-                        Navigator.of(context).pop();
-                      },
+          const SizedBox(height: 12),
+          ...accentColors.map((accent) {
+            final isSelected = cs.primary == accent['color'];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: theme.brightness == Brightness.dark
+                      ? cs.surface.withValues(alpha: 0.7)
+                      : cs.surface.withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? (accent['color'] as Color).withValues(alpha: 0.5)
+                        : cs.outline.withValues(alpha: 0.1),
+                    width: isSelected ? 2 : 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                          alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                  );
-                }),
-                const Divider(),
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text('Fonts', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
                 ),
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: _buildFontOption('Inter', GoogleFonts.inter().fontFamily),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      PinpointHaptics.medium();
+                      final myAppState = MyApp.of(context);
+                      myAppState.changeAccentColor(accent['color'] as Color);
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: accent['color'] as Color,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (accent['color'] as Color).withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              accent['name'] as String,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (isSelected)
+                            Icon(Icons.check_circle_rounded,
+                                color: accent['color'] as Color),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: _buildFontOption('Roboto', GoogleFonts.roboto().fontFamily),
-                ),
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: _buildFontOption('Open Sans', GoogleFonts.openSans().fontFamily),
-                ),
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: _buildFontOption('Lato', GoogleFonts.lato().fontFamily),
-                ),
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: _buildFontOption('Montserrat', GoogleFonts.montserrat().fontFamily),
-                ),
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: _buildFontOption('Poppins', GoogleFonts.poppins().fontFamily),
-                ),
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: _buildFontOption(
-                      'Source Sans Pro', GoogleFonts.sourceSans3().fontFamily),
-                ),
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: _buildFontOption('Noto Sans', GoogleFonts.notoSans().fontFamily),
-                ),
-              ],
+              ),
+            );
+          }),
+
+          const SizedBox(height: 32),
+
+          // Fonts Section
+          Text(
+            'Fonts',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.1,
             ),
           ),
+          const SizedBox(height: 12),
+          _buildFontOption('Inter', GoogleFonts.inter().fontFamily),
+          _buildFontOption('Roboto', GoogleFonts.roboto().fontFamily),
+          _buildFontOption('Open Sans', GoogleFonts.openSans().fontFamily),
+          _buildFontOption('Lato', GoogleFonts.lato().fontFamily),
+          _buildFontOption('Montserrat', GoogleFonts.montserrat().fontFamily),
+          _buildFontOption('Poppins', GoogleFonts.poppins().fontFamily),
+          _buildFontOption(
+              'Source Sans Pro', GoogleFonts.sourceSans3().fontFamily),
+          _buildFontOption('Noto Sans', GoogleFonts.notoSans().fontFamily),
         ],
       ),
     );
   }
 
   Widget _buildFontOption(String fontName, String? fontFamily) {
-    return ListTile(
-      title: Text(
-        fontName,
-        style: TextStyle(
-          fontFamily: fontFamily,
-          fontSize: 16,
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isSelected = _selectedFont == fontName;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.brightness == Brightness.dark
+              ? cs.surface.withValues(alpha: 0.7)
+              : cs.surface.withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? cs.primary.withValues(alpha: 0.5)
+                : cs.outline.withValues(alpha: 0.1),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(
+                  alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              PinpointHaptics.medium();
+              _saveFontPreference(fontName);
+              // Font preference is saved to SharedPreferences
+              // TODO: Implement font changing in theme if needed
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      fontName,
+                      style: TextStyle(
+                        fontFamily: fontFamily,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (isSelected)
+                    Icon(Icons.check_circle_rounded, color: cs.primary),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
-      trailing: _selectedFont == fontName
-          ? const Icon(Icons.check, color: Colors.green)
-          : null,
-      onTap: () {
-        _saveFontPreference(fontName);
-        // Update the app theme with the new font
-        final myAppState = MyApp.of(context);
-        myAppState.changeFont(fontName);
-        Navigator.of(context).pop();
-      },
     );
   }
 }

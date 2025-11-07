@@ -19,7 +19,9 @@ class TranscriptionService {
   }
 
   static Future<bool> initialize() async {
-    return await _speechToText.initialize(onStatus: (status) => log.i('Speech recognition status: $status'), onError: (error) => log.e('Speech recognition error: $error'));
+    return await _speechToText.initialize(
+        onStatus: (status) => log.i('Speech recognition status: $status'),
+        onError: (error) => log.e('Speech recognition error: $error'));
   }
 
   static Future<bool> isAvailable() async {

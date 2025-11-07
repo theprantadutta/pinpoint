@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pinpoint/components/shared/empty_state_widget.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../design/app_theme.dart';
+import '../../design_system/design_system.dart';
 import '../../models/note_with_details.dart';
 import '../../services/drift_note_service.dart';
 import '../../screens/create_note_screen.dart' show CreateNoteScreen;
 
 class HomeScreenRecentNotes extends StatefulWidget {
   final String searchQuery;
-  const HomeScreenRecentNotes({super.key, required this.searchQuery});
+  final ScrollController? scrollController;
+
+  const HomeScreenRecentNotes({
+    super.key,
+    required this.searchQuery,
+    this.scrollController,
+  });
 
   @override
   State<HomeScreenRecentNotes> createState() => _HomeScreenRecentNotesState();
@@ -37,8 +42,7 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
     setState(() {
       _viewType = _prefs?.getString(kHomeScreenViewTypeKey) ?? 'list';
       _sortType = _prefs?.getString(kHomeScreenSortTypeKey) ?? 'updatedAt';
-      _sortDirection =
-          _prefs?.getString(kHomeScreenSortDirectionKey) ?? 'desc';
+      _sortDirection = _prefs?.getString(kHomeScreenSortDirectionKey) ?? 'desc';
     });
   }
 
@@ -92,17 +96,17 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
-                    return Center(
-                      child: EmptyStateWidget(
-                        message: 'Something went wrong',
-                        iconData: Icons.error_outline,
-                      ),
+                    return EmptyState(
+                      icon: Icons.error_outline_rounded,
+                      title: 'Something went wrong',
+                      message: 'Please try again later',
                     );
                   }
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const EmptyStateWidget(
-                      message: 'No notes yet. Create your first note!',
-                      iconData: Icons.note_add,
+                    return EmptyState(
+                      icon: Icons.note_add_rounded,
+                      title: 'No notes yet',
+                      message: 'Create your first note to get started',
                     );
                   }
 
@@ -168,9 +172,26 @@ class NoteListItem extends StatelessWidget {
         opacity: 1.0,
         child: Transform.scale(scale: scale, child: child),
       ),
-      child: InkWell(
-        borderRadius: AppTheme.radiusL,
+      child: NoteCard(
+        title: n.noteTitle ?? 'Untitled',
+        excerpt: n.contentPlainText,
+        lastModified: n.updatedAt,
+        isPinned: n.isPinned,
+        tags: [
+          if (note.folders.isNotEmpty)
+            CardNoteTag(
+              label: note.folders.first.title,
+              color: cs.primary,
+            ),
+          ...note.tags.take(2).map(
+                (t) => CardNoteTag(
+                  label: t.tagTitle,
+                  color: TagColors.getPreset(0).foreground,
+                ),
+              ),
+        ],
         onTap: () {
+          PinpointHaptics.medium();
           context.push(
             CreateNoteScreen.kRouteName,
             extra: CreateNoteScreenArguments(
@@ -179,132 +200,10 @@ class NoteListItem extends StatelessWidget {
             ),
           );
         },
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: AppTheme.radiusL,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(dark ? 70 : 25),
-                blurRadius: 20,
-                offset: const Offset(0, 12),
-              ),
-              BoxShadow(
-                color: cs.primary.withAlpha(dark ? 25 : 15),
-                blurRadius: 36,
-                spreadRadius: -6,
-                offset: const Offset(0, 18),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: AppTheme.radiusL,
-            child: Stack(
-              children: [
-                Container(
-                  decoration: const BoxDecoration(
-                    borderRadius: AppTheme.radiusL,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0x1A7C3AED),
-                        Color(0x1110B981),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: AppTheme.radiusL,
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.white.withAlpha(dark ? 5 : 50),
-                          Colors.transparent,
-                          Colors.black.withAlpha(dark ? 60 : 15),
-                        ],
-                        stops: const [0.0, 0.55, 1.0],
-                      ),
-                    ),
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: (dark ? const Color(0xFF0F1218) : Colors.white)
-                        .withAlpha(200),
-                    borderRadius: AppTheme.radiusL,
-                    border: Border.all(
-                      color: (dark ? Colors.white : Colors.black).withAlpha(15),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _LeadingBadge(
-                        isPinned: n.isPinned,
-                        color: cs.primary,
-                      ),
-                      const SizedBox(height: 14),
-                      _TitleBlock(
-                        title: n.noteTitle,
-                        snippet: n.contentPlainText,
-                        updatedAt: n.updatedAt,
-                        reminderTime: n.reminderTime,
-                        folder: note.folders.isNotEmpty
-                            ? note.folders.first.title
-                            : null,
-                        tag: note.tags.isNotEmpty
-                            ? note.tags.first.tagTitle
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          _MiniActionPro(
-                            tooltip: n.isPinned ? 'Unpin' : 'Pin',
-                            icon: n.isPinned
-                                ? Icons.push_pin
-                                : Icons.push_pin_outlined,
-                            color: cs.primary,
-                            onTap: () {
-                              DriftNoteService.togglePinStatus(
-                                  n.id, !n.isPinned);
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          _MiniActionPro(
-                            tooltip: 'Archive',
-                            icon: Icons.archive_outlined,
-                            color: cs.secondary,
-                            onTap: () {
-                              DriftNoteService.toggleArchiveStatus(n.id, true);
-                            },
-                          ),
-                          if (n.reminderTime != null) ...[
-                            const SizedBox(width: 8),
-                            _MiniActionPro(
-                              tooltip: 'Remove Reminder',
-                              icon: Icons.alarm_off_outlined,
-                              color: cs.error,
-                              onTap: () {
-                                DriftNoteService.removeReminder(n.id);
-                              },
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        onPinToggle: () {
+          PinpointHaptics.light();
+          DriftNoteService.togglePinStatus(n.id, !n.isPinned);
+        },
       ),
     );
   }
@@ -322,7 +221,7 @@ class _LeadingBadge extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        borderRadius: AppTheme.radiusM,
+        borderRadius: BorderRadius.circular(14),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
