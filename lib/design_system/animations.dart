@@ -71,6 +71,25 @@ class PinpointAnimations {
   static const Curve smooth = Curves.easeOutQuart;
 
   // ============================================
+  // Brutalist/Bold Animation Curves
+  // ============================================
+
+  /// Bounce - playful spring effect
+  static const Curve bounce = Curves.bounceOut;
+
+  /// Overshoot - goes past target and bounces back
+  static const Curve overshoot = Curves.elasticOut;
+
+  /// Quick bounce - faster spring
+  static const Curve quickBounce = Cubic(0.68, -0.55, 0.27, 1.55);
+
+  /// Snappy - fast and confident
+  static const Curve snappy = Cubic(0.4, 0.0, 0.2, 1.0);
+
+  /// Punchy - bold emphasis
+  static const Curve punchy = Cubic(0.8, 0.0, 0.2, 1.0);
+
+  // ============================================
   // Animation Configs
   // ============================================
 
@@ -121,6 +140,34 @@ class PinpointAnimations {
 
   /// Maximum stagger offset for lists
   static const Duration maxStaggerOffset = Duration(milliseconds: 300);
+
+  // ============================================
+  // Bold Interaction Configs
+  // ============================================
+
+  /// Button press - snappy and satisfying
+  static const AnimationConfig buttonPress = AnimationConfig(
+    duration: veryFast,
+    curve: snappy,
+  );
+
+  /// Spring bounce - playful interaction
+  static const AnimationConfig springBounce = AnimationConfig(
+    duration: normal,
+    curve: quickBounce,
+  );
+
+  /// Card lift - hover effect
+  static const AnimationConfig cardLift = AnimationConfig(
+    duration: fast,
+    curve: emphasizedDecelerate,
+  );
+
+  /// Checkbox check - satisfying completion
+  static const AnimationConfig checkboxCheck = AnimationConfig(
+    duration: fast,
+    curve: overshoot,
+  );
 }
 
 /// Animation configuration

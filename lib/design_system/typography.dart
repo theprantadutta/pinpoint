@@ -43,80 +43,80 @@ class PinpointTypography {
         : const Color(0xFF111827);
 
     return TextTheme(
-      // Display styles - for hero headers and onboarding
+      // Display styles - for hero headers and onboarding (BOLD)
       displayLarge: GoogleFonts.getFont(
         heading,
-        fontSize: 57,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -1.5,
-        height: 1.2,
+        fontSize: 60, // Slightly larger
+        fontWeight: FontWeight.w900, // BOLD: Increased from w700
+        letterSpacing: -2.0, // Tighter for modern feel
+        height: 1.1, // Tighter line height
         color: baseTextColor,
       ),
       displayMedium: GoogleFonts.getFont(
         heading,
-        fontSize: 45,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.5,
-        height: 1.2,
+        fontSize: 48, // Slightly larger
+        fontWeight: FontWeight.w800, // BOLD: Increased from w600
+        letterSpacing: -1.0, // Tighter
+        height: 1.15,
         color: baseTextColor,
       ),
       displaySmall: GoogleFonts.getFont(
         heading,
-        fontSize: 36,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0,
-        height: 1.3,
+        fontSize: 38, // Slightly larger
+        fontWeight: FontWeight.w800, // BOLD: Increased from w600
+        letterSpacing: -0.5, // Tighter
+        height: 1.2,
         color: baseTextColor,
       ),
 
-      // Headline styles - for section headers
+      // Headline styles - for section headers (BOLD)
       headlineLarge: GoogleFonts.getFont(
         heading,
-        fontSize: 32,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0,
-        height: 1.3,
+        fontSize: 34, // Slightly larger
+        fontWeight: FontWeight.w800, // BOLD: Increased from w600
+        letterSpacing: -0.5, // Tighter
+        height: 1.25,
         color: baseTextColor,
       ),
       headlineMedium: GoogleFonts.getFont(
         heading,
-        fontSize: 28,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0,
+        fontSize: 30, // Slightly larger
+        fontWeight: FontWeight.w700, // BOLD: Increased from w500
+        letterSpacing: -0.3,
         height: 1.3,
         color: baseTextColor,
       ),
       headlineSmall: GoogleFonts.getFont(
         primary,
-        fontSize: 24,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0,
-        height: 1.4,
+        fontSize: 26, // Slightly larger
+        fontWeight: FontWeight.w700, // BOLD: Increased from w500
+        letterSpacing: -0.2,
+        height: 1.35,
         color: baseTextColor,
       ),
 
-      // Title styles - for cards and list items
+      // Title styles - for cards and list items (BOLD)
       titleLarge: GoogleFonts.getFont(
         primary,
         fontSize: 22,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0,
+        fontWeight: FontWeight.w700, // BOLD: Increased from w600
+        letterSpacing: -0.1, // Tighter
         height: 1.4,
         color: baseTextColor,
       ),
       titleMedium: GoogleFonts.getFont(
         primary,
         fontSize: 18,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.1,
-        height: 1.5,
+        fontWeight: FontWeight.w600, // BOLD: Increased from w500
+        letterSpacing: 0,
+        height: 1.45,
         color: baseTextColor,
       ),
       titleSmall: GoogleFonts.getFont(
         primary,
         fontSize: 14,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.1,
+        fontWeight: FontWeight.w600, // BOLD: Increased from w500
+        letterSpacing: 0,
         height: 1.5,
         color: baseTextColor,
       ),
@@ -147,28 +147,28 @@ class PinpointTypography {
         color: baseTextColor.withValues(alpha: 0.8),
       ),
 
-      // Label styles - for buttons and chips
+      // Label styles - for buttons and chips (BOLD)
       labelLarge: GoogleFonts.getFont(
         primary,
         fontSize: 14,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.5,
+        fontWeight: FontWeight.w700, // BOLD: Increased from w600
+        letterSpacing: 0.3, // Slightly tighter
         height: 1.4,
         color: baseTextColor,
       ),
       labelMedium: GoogleFonts.getFont(
         primary,
         fontSize: 12,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.5,
+        fontWeight: FontWeight.w600, // BOLD: Increased from w500
+        letterSpacing: 0.4,
         height: 1.4,
         color: baseTextColor,
       ),
       labelSmall: GoogleFonts.getFont(
         primary,
         fontSize: 11,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.5,
+        fontWeight: FontWeight.w600, // BOLD: Increased from w500
+        letterSpacing: 0.4,
         height: 1.4,
         color: baseTextColor.withValues(alpha: 0.8),
       ),
@@ -179,7 +179,7 @@ class PinpointTypography {
   // Specialized Text Styles
   // ============================================
 
-  /// Editor title style - large, prominent for note titles
+  /// Editor title style - large, prominent for note titles (BOLD)
   static TextStyle editorTitle({required Brightness brightness}) {
     final color = brightness == Brightness.dark
         ? const Color(0xFFF9FAFB)
@@ -187,10 +187,10 @@ class PinpointTypography {
 
     return GoogleFonts.getFont(
       headingFontFamily,
-      fontSize: 28,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.5,
-      height: 1.3,
+      fontSize: 32, // Larger
+      fontWeight: FontWeight.w800, // BOLD: Increased from w700
+      letterSpacing: -0.8, // Tighter
+      height: 1.25,
       color: color,
     );
   }
@@ -229,7 +229,7 @@ class PinpointTypography {
     );
   }
 
-  /// Note card title
+  /// Note card title (BOLD)
   static TextStyle noteCardTitle({required Brightness brightness}) {
     final color = brightness == Brightness.dark
         ? const Color(0xFFF9FAFB)
@@ -237,9 +237,9 @@ class PinpointTypography {
 
     return GoogleFonts.getFont(
       primaryFontFamily,
-      fontSize: 16,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0,
+      fontSize: 17, // Slightly larger
+      fontWeight: FontWeight.w700, // BOLD: Increased from w600
+      letterSpacing: -0.1, // Tighter
       height: 1.4,
       color: color,
     );
@@ -297,7 +297,7 @@ class PinpointTypography {
     );
   }
 
-  /// Button text styles
+  /// Button text styles (BOLD)
   static TextStyle button({
     required Brightness brightness,
     ButtonSize size = ButtonSize.medium,
@@ -313,16 +313,16 @@ class PinpointTypography {
 
     switch (size) {
       case ButtonSize.small:
-        fontSize = 12;
-        fontWeight = FontWeight.w500;
+        fontSize = 13; // Slightly larger
+        fontWeight = FontWeight.w600; // BOLD: Increased from w500
         break;
       case ButtonSize.medium:
-        fontSize = 14;
-        fontWeight = FontWeight.w600;
+        fontSize = 15; // Slightly larger
+        fontWeight = FontWeight.w700; // BOLD: Increased from w600
         break;
       case ButtonSize.large:
-        fontSize = 16;
-        fontWeight = FontWeight.w600;
+        fontSize = 17; // Slightly larger
+        fontWeight = FontWeight.w700; // BOLD: Same weight
         break;
     }
 
@@ -330,7 +330,7 @@ class PinpointTypography {
       primaryFontFamily,
       fontSize: fontSize,
       fontWeight: fontWeight,
-      letterSpacing: 0.5,
+      letterSpacing: 0.3, // Tighter
       height: 1.4,
       color: textColor,
     );

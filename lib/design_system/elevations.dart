@@ -164,6 +164,64 @@ class PinpointElevations {
       ];
 
   // ============================================
+  // Brutalist Shadow Styles
+  // ============================================
+
+  /// Brutalist shadow - sharp offset with minimal blur
+  static List<BoxShadow> brutalist(Brightness brightness, {
+    double offsetX = 4,
+    double offsetY = 4,
+    Color? color,
+  }) => [
+        BoxShadow(
+          color: color ?? _shadowColor(brightness, 0.2),
+          blurRadius: 1,
+          offset: Offset(offsetX, offsetY),
+        ),
+      ];
+
+  /// Bold brutalist shadow - larger offset
+  static List<BoxShadow> brutalistBold(Brightness brightness, {
+    Color? color,
+  }) => [
+        BoxShadow(
+          color: color ?? _shadowColor(brightness, 0.25),
+          blurRadius: 2,
+          offset: const Offset(6, 6),
+        ),
+      ];
+
+  /// Brutalist inset - creates pressed effect
+  static List<BoxShadow> brutalistInset(Brightness brightness) => [
+        BoxShadow(
+          color: _shadowColor(brightness, 0.15),
+          blurRadius: 0,
+          offset: const Offset(-2, -2),
+        ),
+        BoxShadow(
+          color: _shadowColor(brightness, 0.05),
+          blurRadius: 0,
+          offset: const Offset(2, 2),
+        ),
+      ];
+
+  /// Layered brutalist shadow - multiple offset layers
+  static List<BoxShadow> brutalistLayered(Brightness brightness, {
+    Color? accentColor,
+  }) => [
+        BoxShadow(
+          color: accentColor?.withValues(alpha: 0.3) ?? _shadowColor(brightness, 0.1),
+          blurRadius: 0,
+          offset: const Offset(4, 4),
+        ),
+        BoxShadow(
+          color: _shadowColor(brightness, 0.2),
+          blurRadius: 1,
+          offset: const Offset(6, 6),
+        ),
+      ];
+
+  // ============================================
   // Helper Methods
   // ============================================
 
