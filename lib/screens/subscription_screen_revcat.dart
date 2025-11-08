@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 import '../design_system/design_system.dart';
 import '../services/revenue_cat_service.dart';
@@ -22,7 +21,7 @@ class SubscriptionScreenRevCat extends StatefulWidget {
 class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
   bool _isLoading = true;
   bool _isPremium = false;
-  CustomerInfo? _customerInfo;
+  // CustomerInfo? _customerInfo;
 
   @override
   void initState() {
@@ -35,12 +34,10 @@ class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
 
     try {
       final isPremium = await RevenueCatService.isPremium();
-      final customerInfo = await RevenueCatService.getCustomerInfo();
 
       if (mounted) {
         setState(() {
           _isPremium = isPremium;
-          _customerInfo = customerInfo;
           _isLoading = false;
         });
       }

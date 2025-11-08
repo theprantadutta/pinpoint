@@ -265,6 +265,15 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
           const SizedBox(height: 12),
           _SettingsTile(
+            title: 'My Folders',
+            icon: Icons.folder_rounded,
+            onTap: () {
+              PinpointHaptics.medium();
+              context.push('/my-folders');
+            },
+          ),
+          const SizedBox(height: 8),
+          _SettingsTile(
             title: 'Archive',
             icon: Icons.archive_rounded,
             onTap: () {

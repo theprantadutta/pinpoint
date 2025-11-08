@@ -47,7 +47,6 @@ class EditorToolbar extends StatefulWidget {
 
 class _EditorToolbarState extends State<EditorToolbar> {
   bool _isCollapsed = false;
-  double _scrollOffset = 0.0;
 
   @override
   void initState() {
@@ -74,7 +73,6 @@ class _EditorToolbarState extends State<EditorToolbar> {
     if (widget.scrollController != null) {
       final offset = widget.scrollController!.offset;
       setState(() {
-        _scrollOffset = offset;
         // Collapse when scrolling down past threshold
         _isCollapsed = offset > 100;
       });
@@ -243,7 +241,6 @@ class _ToolbarButton extends StatefulWidget {
   final String label;
   final VoidCallback onTap;
   final ToolbarStyle toolbarStyle;
-  final bool isActive;
 
   const _ToolbarButton({
     required this.icon,
@@ -281,17 +278,13 @@ class _ToolbarButtonState extends State<_ToolbarButton> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: widget.isActive
-                  ? widget.toolbarStyle.activeIconColor.withValues(alpha: 0.2)
-                  : Colors.transparent,
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               widget.icon,
               size: 20,
-              color: widget.isActive
-                  ? widget.toolbarStyle.activeIconColor
-                  : widget.toolbarStyle.iconColor,
+              color: widget.toolbarStyle.iconColor,
             ),
           ),
         ),

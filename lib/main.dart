@@ -266,13 +266,13 @@ class _MyAppState extends State<MyApp> {
   SharedPreferences? _sharedPreferences;
 
   /// Accent color presets
-  static const List<Color> _accentColors = [
-    PinpointColors.mint,
-    PinpointColors.iris,
-    PinpointColors.rose,
-    PinpointColors.amber,
-    PinpointColors.ocean,
-  ];
+  // static const List<Color> _accentColors = [
+  //   PinpointColors.mint,
+  //   PinpointColors.iris,
+  //   PinpointColors.rose,
+  //   PinpointColors.amber,
+  //   PinpointColors.ocean,
+  // ];
 
   /// This is needed for components that may have a different theme data
   bool get isDarkMode => _themeMode == ThemeMode.dark;

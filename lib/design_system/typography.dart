@@ -36,7 +36,7 @@ class PinpointTypography {
   }) {
     final primary = primaryFont ?? primaryFontFamily;
     final heading = headingFont ?? headingFontFamily;
-    final mono = monoFont ?? monospaceFontFamily;
+    // final mono = monoFont ?? monospaceFontFamily;
 
     final baseTextColor = brightness == Brightness.dark
         ? const Color(0xFFF9FAFB)

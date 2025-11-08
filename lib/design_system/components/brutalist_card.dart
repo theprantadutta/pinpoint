@@ -41,7 +41,6 @@ class _BrutalistCardState extends State<BrutalistCard>
   late AnimationController _hoverController;
   late Animation<double> _elevationAnimation;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
   bool _isPressed = false;
 
   @override
@@ -73,14 +72,12 @@ class _BrutalistCardState extends State<BrutalistCard>
 
   void _handleHoverEnter(PointerEvent details) {
     if (widget.enableHoverEffect && widget.onTap != null) {
-      setState(() => _isHovered = true);
       _hoverController.forward();
     }
   }
 
   void _handleHoverExit(PointerEvent details) {
     if (widget.enableHoverEffect) {
-      setState(() => _isHovered = false);
       _hoverController.reverse();
     }
   }

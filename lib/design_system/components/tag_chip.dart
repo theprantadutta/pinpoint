@@ -40,7 +40,6 @@ class TagChip extends StatefulWidget {
 
 class _TagChipState extends State<TagChip> with SingleTickerProviderStateMixin {
   bool _isHovered = false;
-  bool _isPressed = false;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
@@ -112,9 +111,6 @@ class _TagChipState extends State<TagChip> with SingleTickerProviderStateMixin {
                     widget.onTap!();
                   }
                 : null,
-            onTapDown: (_) => setState(() => _isPressed = true),
-            onTapUp: (_) => setState(() => _isPressed = false),
-            onTapCancel: () => setState(() => _isPressed = false),
             child: Semantics(
               label: 'Tag: ${widget.label}',
               button: widget.onTap != null,

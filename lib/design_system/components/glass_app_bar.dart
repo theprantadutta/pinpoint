@@ -166,7 +166,7 @@ class SliverGlassAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final glassSurface = theme.glassSurface;
-    final motionSettings = MotionSettings.fromMediaQuery(context);
+    // final motionSettings = MotionSettings.fromMediaQuery(context);
 
     return SliverAppBar(
       systemOverlayStyle: theme.brightness == Brightness.dark

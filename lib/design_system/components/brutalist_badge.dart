@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import '../colors.dart';
-import '../elevations.dart';
-import '../spacing.dart';
-import '../typography.dart';
+import '../design_system.dart';
 
 /// Brutalist Badge Component
 /// Sharp, bold badge/chip for labels, tags, and status indicators

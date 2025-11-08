@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
-import '../../constants/hero_tags.dart';
 import '../../constants/selectors.dart';
 import '../../screens/create_note_screen.dart';
 import '../../design_system/design_system.dart';
@@ -135,7 +134,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
   Widget build(BuildContext context) {
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     final kPrimaryColor = Theme.of(context).primaryColor;
-    final colorScheme = Theme.of(context).colorScheme;
+    // final colorScheme = Theme.of(context).colorScheme;
 
     return BackButtonListener(
       onBackButtonPressed: _onBackButtonPressed,
@@ -243,20 +242,45 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
                                   _updateCurrentPageIndex(1);
                                 },
                               ),
-                              // FAB in the middle
-                              FloatingActionButton(
-                                heroTag: kAddNewNote,
-                                onPressed: () {
-                                  PinpointHaptics.medium();
-                                  context.push(CreateNoteScreen.kRouteName);
-                                },
-                                backgroundColor: kPrimaryColor,
-                                elevation: 0,
-                                child: const Icon(
-                                  Symbols.add,
-                                  size: 28,
-                                  color: Colors.white,
-                                  weight: 600,
+                              // FAB in the middle - Large with gradient
+                              Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      PinpointColors.mint,
+                                      PinpointColors.mint.withValues(alpha: 0.8),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: PinpointColors.mint.withValues(alpha: 0.4),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {
+                                      PinpointHaptics.medium();
+                                      context.push(CreateNoteScreen.kRouteName);
+                                    },
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: const Center(
+                                      child: Icon(
+                                        Symbols.add,
+                                        size: 36,
+                                        color: Colors.white,
+                                        weight: 700,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                               _NavBarItem(
