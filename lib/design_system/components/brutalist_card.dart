@@ -247,7 +247,7 @@ class _BrutalistCardState extends State<BrutalistCard>
     if (from.isEmpty) {
       return to
           .map((s) => BoxShadow(
-                color: s.color.withValues(alpha: s.color.opacity * t),
+                color: s.color.withValues(alpha: s.color.a * t),
                 blurRadius: s.blurRadius * t,
                 spreadRadius: s.spreadRadius * t,
                 offset: Offset.lerp(Offset.zero, s.offset, t)!,
@@ -257,7 +257,7 @@ class _BrutalistCardState extends State<BrutalistCard>
     if (to.isEmpty) {
       return from
           .map((s) => BoxShadow(
-                color: s.color.withValues(alpha: s.color.opacity * (1 - t)),
+                color: s.color.withValues(alpha: s.color.a * (1 - t)),
                 blurRadius: s.blurRadius * (1 - t),
                 spreadRadius: s.spreadRadius * (1 - t),
                 offset: Offset.lerp(s.offset, Offset.zero, t)!,
@@ -275,7 +275,7 @@ class _BrutalistCardState extends State<BrutalistCard>
         }
         if (shadowFrom == null) {
           return BoxShadow(
-            color: shadowTo!.color.withValues(alpha: shadowTo.color.opacity * t),
+            color: shadowTo!.color.withValues(alpha: shadowTo.color.a * t),
             blurRadius: shadowTo.blurRadius * t,
             spreadRadius: shadowTo.spreadRadius * t,
             offset: Offset.lerp(Offset.zero, shadowTo.offset, t)!,
@@ -284,7 +284,7 @@ class _BrutalistCardState extends State<BrutalistCard>
         if (shadowTo == null) {
           return BoxShadow(
             color: shadowFrom.color
-                .withValues(alpha: shadowFrom.color.opacity * (1 - t)),
+                .withValues(alpha: shadowFrom.color.a * (1 - t)),
             blurRadius: shadowFrom.blurRadius * (1 - t),
             spreadRadius: shadowFrom.spreadRadius * (1 - t),
             offset: Offset.lerp(shadowFrom.offset, Offset.zero, t)!,

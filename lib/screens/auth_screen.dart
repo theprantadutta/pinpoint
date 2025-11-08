@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:pinpoint/services/google_sign_in_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/api_service.dart';
-import 'package:pinpoint/design_system/design_system.dart';
 import 'package:go_router/go_router.dart';
 
 /// Authentication screen with Google Sign-In and email/password options
@@ -42,6 +41,9 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     try {
+      // Get BackendAuthService before any await
+      final backendAuthService = context.read<BackendAuthService>();
+
       // 1. Sign in with Google and get Firebase credential
       final userCredential = await _googleSignInService.signInWithGoogle();
 
@@ -57,8 +59,6 @@ class _AuthScreenState extends State<AuthScreen> {
       }
 
       // 3. Authenticate with backend using Firebase token
-      final backendAuthService = context.read<BackendAuthService>();
-
       try {
         await backendAuthService.authenticateWithGoogle(firebaseToken);
 
@@ -66,16 +66,18 @@ class _AuthScreenState extends State<AuthScreen> {
         if (mounted) {
           context.go('/');
         }
-      } on AccountLinkingRequiredException catch (e) {
+      } on AccountLinkingRequiredException {
         // Account linking required - navigate to account linking screen
         if (mounted) {
           context.push('/account-linking', extra: firebaseToken);
         }
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -375,7 +377,7 @@ class _AuthScreenState extends State<AuthScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: cs.shadow.withOpacity(0.1),
+            color: cs.shadow.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

@@ -314,7 +314,7 @@ class _MyAppState extends State<MyApp> {
   void changeAccentColor(Color color) {
     setState(() {
       _accentColor = color;
-      _sharedPreferences?.setInt('accent_color', color.value);
+      _sharedPreferences?.setInt('accent_color', color.toARGB32());
     });
   }
 

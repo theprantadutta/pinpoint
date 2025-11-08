@@ -30,31 +30,31 @@ class PinpointColors {
   static const Color mint = Color(0xFF10B981);
   static const Color mintLight = Color(0xFF34D399);
   static const Color mintDark = Color(0xFF059669);
-  static const Color mintSubtle = Color(0xff10b98120);
+  static const Color mintSubtle = Color(0x2010B981);
 
   /// Iris - Secondary accent
   static const Color iris = Color(0xFF6366F1);
   static const Color irisLight = Color(0xFF818CF8);
   static const Color irisDark = Color(0xFF4F46E5);
-  static const Color irisSubtle = Color(0xff6366f120);
+  static const Color irisSubtle = Color(0x206366F1);
 
   /// Rose - Destructive/Love accent
   static const Color rose = Color(0xFFF43F5E);
   static const Color roseLight = Color(0xFFFB7185);
   static const Color roseDark = Color(0xFFE11D48);
-  static const Color roseSubtle = Color(0xfff43f5e20);
+  static const Color roseSubtle = Color(0x20F43F5E);
 
   /// Amber - Warning/Favorite accent
   static const Color amber = Color(0xFFF59E0B);
   static const Color amberLight = Color(0xFFFBBF24);
   static const Color amberDark = Color(0xFFD97706);
-  static const Color amberSubtle = Color(0xfff59e0b20);
+  static const Color amberSubtle = Color(0x20F59E0B);
 
   /// Ocean - Info accent
   static const Color ocean = Color(0xFF0EA5E9);
   static const Color oceanLight = Color(0xFF38BDF8);
   static const Color oceanDark = Color(0xFF0284C7);
-  static const Color oceanSubtle = Color(0xff0ea5e920);
+  static const Color oceanSubtle = Color(0x200EA5E9);
 
   // ============================================
   // Aliases for backward compatibility
@@ -72,22 +72,22 @@ class PinpointColors {
   static const Color success = mint;
   static const Color successLight = mintLight;
   static const Color successDark = mintDark;
-  static const Color successBackground = Color(0xff10b98110);
+  static const Color successBackground = Color(0x1010B981);
 
   static const Color error = rose;
   static const Color errorLight = roseLight;
   static const Color errorDark = roseDark;
-  static const Color errorBackground = Color(0xfff43f5e10);
+  static const Color errorBackground = Color(0x10F43F5E);
 
   static const Color warning = amber;
   static const Color warningLight = amberLight;
   static const Color warningDark = amberDark;
-  static const Color warningBackground = Color(0xfff59e0b10);
+  static const Color warningBackground = Color(0x10F59E0B);
 
   static const Color info = ocean;
   static const Color infoLight = oceanLight;
   static const Color infoDark = oceanDark;
-  static const Color infoBackground = Color(0xff0ea5e910);
+  static const Color infoBackground = Color(0x100EA5E9);
 
   // ============================================
   // Text Colors

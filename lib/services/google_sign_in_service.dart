@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pinpoint/services/logger_service.dart';
@@ -69,7 +68,6 @@ class GoogleSignInService {
         // Create a new Firebase credential
         final credential = GoogleAuthProvider.credential(
           idToken: googleAuth.idToken,
-          accessToken: googleAuth.accessToken,
         );
 
         log.i('Creating Firebase credential...');
@@ -90,7 +88,7 @@ class GoogleSignInService {
       log.e('Firebase Auth error during Google Sign-In: ${e.code} - ${e.message}');
       rethrow;
     } catch (e, stackTrace) {
-      log.e('Error signing in with Google', error: e, stackTrace: stackTrace);
+      log.e('Error signing in with Google', e, stackTrace);
       rethrow;
     }
   }
@@ -110,7 +108,7 @@ class GoogleSignInService {
       log.i('Retrieved Firebase ID token');
       return token;
     } catch (e, stackTrace) {
-      log.e('Error getting Firebase ID token', error: e, stackTrace: stackTrace);
+      log.e('Error getting Firebase ID token', e, stackTrace);
       return null;
     }
   }
@@ -123,24 +121,8 @@ class GoogleSignInService {
       await _auth.signOut();
       log.i('Sign out successful');
     } catch (e, stackTrace) {
-      log.e('Error signing out', error: e, stackTrace: stackTrace);
+      log.e('Error signing out', e, stackTrace);
       rethrow;
-    }
-  }
-
-  /// Check if Google Play Services are available (Android only)
-  ///
-  /// Returns true if available, false otherwise
-  Future<bool> isGooglePlayServicesAvailable() async {
-    try {
-      // This will throw an exception if Google Play Services are not available
-      await _googleSignIn.isSignedIn();
-      return true;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Google Play Services check: $e');
-      }
-      return false;
     }
   }
 }

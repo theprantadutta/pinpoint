@@ -391,7 +391,7 @@ class ElevationAnimation {
     }
     if (a == null) {
       return BoxShadow(
-        color: b!.color.withValues(alpha: b.color.opacity * t),
+        color: b!.color.withValues(alpha: b.color.a * t),
         blurRadius: b.blurRadius * t,
         spreadRadius: b.spreadRadius * t,
         offset: Offset.lerp(Offset.zero, b.offset, t)!,
@@ -399,7 +399,7 @@ class ElevationAnimation {
     }
     if (b == null) {
       return BoxShadow(
-        color: a.color.withValues(alpha: a.color.opacity * (1 - t)),
+        color: a.color.withValues(alpha: a.color.a * (1 - t)),
         blurRadius: a.blurRadius * (1 - t),
         spreadRadius: a.spreadRadius * (1 - t),
         offset: Offset.lerp(a.offset, Offset.zero, t)!,

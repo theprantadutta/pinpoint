@@ -106,11 +106,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     const Spacer(),
                     TextButton(
                       onPressed: () async {
-                        final ctx = context;
                         await _subscriptionService.restorePurchases();
                         if (!mounted) return;
                         showSuccessToast(
-                          context: ctx,
+                          context: context,
                           title: 'Restore Complete',
                           description: 'Purchases restored',
                         );
