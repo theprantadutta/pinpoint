@@ -50,5 +50,21 @@
 	<string>Authenticate to access Pinpoint.</string>
 	<key>NSTouchIDUsageDescription</key>
 	<string>Authenticate to access Pinpoint.</string>
+
+	<!-- Google Sign-In URL Schemes -->
+	<!-- IMPORTANT: Replace YOUR_REVERSED_CLIENT_ID with the REVERSED_CLIENT_ID from GoogleService-Info.plist -->
+	<!-- Example: com.googleusercontent.apps.123456789-abcdefg -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- Get this from GoogleService-Info.plist after downloading from Firebase Console -->
+				<string>com.googleusercontent.apps.YOUR-REVERSED-CLIENT-ID-HERE</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
