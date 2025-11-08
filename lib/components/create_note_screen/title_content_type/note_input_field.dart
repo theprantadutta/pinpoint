@@ -8,6 +8,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:pinpoint/dtos/note_attachment_dto.dart';
 import 'package:pinpoint/screens/drawing_screen.dart';
 import 'package:pinpoint/services/ocr_service.dart';
+import 'package:pinpoint/services/premium_service.dart';
+import 'package:pinpoint/widgets/premium_gate_dialog.dart';
+import 'package:pinpoint/design_system/design_system.dart';
+import 'package:pinpoint/constants/premium_limits.dart';
 
 class NoteInputField extends StatelessWidget {
   final String title;
@@ -53,12 +57,46 @@ class NoteInputField extends StatelessWidget {
         // Offer OCR for images
         if (media.mimeType?.startsWith('image/') == true) {
           if (!context.mounted) return;
+
+          // Check OCR limits
+          final premiumService = PremiumService();
+          if (!premiumService.canPerformOcrScan()) {
+            PinpointHaptics.error();
+            final remaining = premiumService.getRemainingOcrScans();
+            await PremiumGateDialog.showOcrLimit(context, remaining);
+            continue; // Skip OCR for this image
+          }
+
+          // Build dialog content with usage indicator
+          final isPremium = premiumService.isPremium;
+          final used = premiumService.getOcrScansThisMonth();
+          final total = PremiumLimits.maxOcrScansPerMonthForFree;
+          final usageText = isPremium
+              ? 'Unlimited OCR scans available'
+              : 'OCR scans: $used/$total this month';
+
           final bool? doOCR = await showDialog<bool>(
             context: context,
             builder: (BuildContext context) => AlertDialog(
               title: const Text('Perform OCR?'),
-              content:
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   const Text('Do you want to extract text from this image?'),
+                  const SizedBox(height: 12),
+                  Text(
+                    usageText,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -77,6 +115,9 @@ class NoteInputField extends StatelessWidget {
                 await OCRService.recognizeText(newPath);
             if (recognizedText.isNotEmpty) {
               onOcrCompleted(recognizedText);
+              // Increment OCR usage counter
+              await premiumService.incrementOcrScans();
+              PinpointHaptics.success();
             }
           }
         }
