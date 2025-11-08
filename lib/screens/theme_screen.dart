@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/main.dart';
+import 'package:pinpoint/services/premium_service.dart';
+import 'package:pinpoint/widgets/premium_gate_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../design_system/design_system.dart';
 
@@ -15,7 +17,7 @@ class ThemeScreen extends StatefulWidget {
 
 class _ThemeScreenState extends State<ThemeScreen> {
   String _selectedFont = 'Inter';
-  SharedPreferences? _prefs;
+  SharedPreferences? _preferences;
 
   @override
   void initState() {
@@ -24,14 +26,14 @@ class _ThemeScreenState extends State<ThemeScreen> {
   }
 
   Future<void> _loadFontPreference() async {
-    _prefs = await SharedPreferences.getInstance();
+    _preferences = await SharedPreferences.getInstance();
     setState(() {
-      _selectedFont = _prefs?.getString(kSelectedFontKey) ?? 'Inter';
+      _selectedFont = _preferences?.getString(kSelectedFontKey) ?? 'Inter';
     });
   }
 
   Future<void> _saveFontPreference(String font) async {
-    await _prefs?.setString(kSelectedFontKey, font);
+    await _preferences?.setString(kSelectedFontKey, font);
     setState(() {
       _selectedFont = font;
     });
@@ -99,6 +101,10 @@ class _ThemeScreenState extends State<ThemeScreen> {
           const SizedBox(height: 12),
           ...accentColors.map((accent) {
             final isSelected = cs.primary == accent['color'];
+            final colorName = accent['name'] as String;
+            final premiumService = PremiumService();
+            final isAvailable = premiumService.isThemeColorAvailable(colorName);
+
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Container(
@@ -116,7 +122,8 @@ class _ThemeScreenState extends State<ThemeScreen> {
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(
-                          alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
+                          alpha:
+                              theme.brightness == Brightness.dark ? 0.2 : 0.05),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -126,6 +133,13 @@ class _ThemeScreenState extends State<ThemeScreen> {
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
+                      // Check if color is available for free users
+                      if (!isAvailable) {
+                        PinpointHaptics.error();
+                        PremiumGateDialog.showThemeLimit(context);
+                        return;
+                      }
+
                       PinpointHaptics.medium();
                       final myAppState = MyApp.of(context);
                       myAppState.changeAccentColor(accent['color'] as Color);
@@ -147,7 +161,8 @@ class _ThemeScreenState extends State<ThemeScreen> {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: (accent['color'] as Color).withValues(alpha: 0.3),
+                                  color: (accent['color'] as Color)
+                                      .withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -156,11 +171,47 @@ class _ThemeScreenState extends State<ThemeScreen> {
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: Text(
-                              accent['name'] as String,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    colorName,
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                if (!isAvailable)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: cs.primary.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.stars_rounded,
+                                          size: 14,
+                                          color: cs.primary,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Premium',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: cs.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                           if (isSelected)
@@ -307,8 +358,9 @@ class _ThemeScreenState extends State<ThemeScreen> {
             onTap: () {
               PinpointHaptics.medium();
               _saveFontPreference(fontName);
-              // Font preference is saved to SharedPreferences
-              // TODO: Implement font changing in theme if needed
+              // Apply font change to theme
+              final myAppState = MyApp.of(context);
+              myAppState.changeFontFamily(fontName);
             },
             borderRadius: BorderRadius.circular(16),
             child: Padding(

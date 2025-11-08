@@ -132,8 +132,7 @@ class SubscriptionService {
   /// Handle purchase updates
   Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
-      log.i(
-          'Purchase update: ${purchase.productID} - ${purchase.status}');
+      log.i('Purchase update: ${purchase.productID} - ${purchase.status}');
 
       if (purchase.status == PurchaseStatus.pending) {
         // Payment pending

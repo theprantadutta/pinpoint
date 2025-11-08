@@ -135,7 +135,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             borderRadius: BorderRadius.circular(40),
                             boxShadow: [
                               BoxShadow(
-                                color: colorScheme.primary.withValues(alpha: 0.3),
+                                color:
+                                    colorScheme.primary.withValues(alpha: 0.3),
                                 blurRadius: 20,
                                 spreadRadius: 5,
                               ),
@@ -315,9 +316,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return GlassContainer(
       padding: EdgeInsets.zero,
       borderRadius: 20,
-      border: isPopular
-          ? Border.all(color: colorScheme.primary, width: 2)
-          : null,
+      border:
+          isPopular ? Border.all(color: colorScheme.primary, width: 2) : null,
       child: Stack(
         children: [
           if (badge != null)
@@ -325,7 +325,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               top: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: isPopular ? colorScheme.primary : PinpointColors.amber,
                   borderRadius: const BorderRadius.only(
@@ -395,8 +396,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       backgroundColor: isPopular
                           ? colorScheme.primary
                           : colorScheme.primaryContainer,
-                      foregroundColor:
-                          isPopular ? Colors.white : colorScheme.onPrimaryContainer,
+                      foregroundColor: isPopular
+                          ? Colors.white
+                          : colorScheme.onPrimaryContainer,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

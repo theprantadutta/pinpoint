@@ -146,7 +146,8 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: cs.primary.withValues(alpha: isDark ? 0.3 : 0.2),
+                          color:
+                              cs.primary.withValues(alpha: isDark ? 0.3 : 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(

@@ -250,7 +250,6 @@ class _ToolbarButton extends StatefulWidget {
     required this.label,
     required this.onTap,
     required this.toolbarStyle,
-    this.isActive = false,
   });
 
   @override

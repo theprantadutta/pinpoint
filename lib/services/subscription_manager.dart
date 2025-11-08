@@ -33,15 +33,15 @@ class SubscriptionManager extends ChangeNotifier {
 
   /// Get or generate device ID
   Future<void> _loadDeviceId() async {
-    final prefs = await SharedPreferences.getInstance();
+    final preferences = await SharedPreferences.getInstance();
 
     // Try to load existing device ID
-    _deviceId = prefs.getString(_deviceIdKey);
+    _deviceId = preferences.getString(_deviceIdKey);
 
     // Generate new one if doesn't exist
     if (_deviceId == null) {
       _deviceId = await _generateDeviceId();
-      await prefs.setString(_deviceIdKey, _deviceId!);
+      await preferences.setString(_deviceIdKey, _deviceId!);
     }
   }
 
@@ -68,18 +68,18 @@ class SubscriptionManager extends ChangeNotifier {
   /// Generate fallback ID if device ID unavailable
   String _generateFallbackId() {
     return DateTime.now().millisecondsSinceEpoch.toString() +
-           (Platform.localHostname.hashCode.toString());
+        (Platform.localHostname.hashCode.toString());
   }
 
   /// Load subscription status from local storage
   Future<void> _loadLocalSubscriptionStatus() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final preferences = await SharedPreferences.getInstance();
 
-      _isPremium = prefs.getBool(_premiumKey) ?? false;
-      _subscriptionTier = prefs.getString(_tierKey) ?? 'free';
+      _isPremium = preferences.getBool(_premiumKey) ?? false;
+      _subscriptionTier = preferences.getString(_tierKey) ?? 'free';
 
-      final expiryString = prefs.getString(_expiryKey);
+      final expiryString = preferences.getString(_expiryKey);
       if (expiryString != null) {
         _subscriptionExpiresAt = DateTime.parse(expiryString);
 
@@ -99,13 +99,14 @@ class SubscriptionManager extends ChangeNotifier {
   /// Save subscription status to local storage
   Future<void> _saveLocalSubscriptionStatus() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final preferences = await SharedPreferences.getInstance();
 
-      await prefs.setBool(_premiumKey, _isPremium);
-      await prefs.setString(_tierKey, _subscriptionTier);
+      await preferences.setBool(_premiumKey, _isPremium);
+      await preferences.setString(_tierKey, _subscriptionTier);
 
       if (_subscriptionExpiresAt != null) {
-        await prefs.setString(_expiryKey, _subscriptionExpiresAt!.toIso8601String());
+        await preferences.setString(
+            _expiryKey, _subscriptionExpiresAt!.toIso8601String());
       }
     } catch (e) {
       debugPrint('Error saving subscription status: $e');
@@ -117,7 +118,8 @@ class SubscriptionManager extends ChangeNotifier {
     if (_deviceId == null) return;
 
     try {
-      final status = await _apiService.getSubscriptionStatusByDevice(_deviceId!);
+      final status =
+          await _apiService.getSubscriptionStatusByDevice(_deviceId!);
 
       _isPremium = status['is_premium'] ?? false;
       _subscriptionTier = status['tier'] ?? 'free';

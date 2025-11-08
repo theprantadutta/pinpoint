@@ -163,8 +163,9 @@ class _NoteCardState extends State<NoteCard> {
                                 PinpointHaptics.light();
                                 widget.onStarToggle!();
                               },
-                              semanticLabel:
-                                  widget.isStarred ? 'Unstar note' : 'Star note',
+                              semanticLabel: widget.isStarred
+                                  ? 'Unstar note'
+                                  : 'Star note',
                             ),
 
                           const SizedBox(width: 4),
@@ -228,11 +229,11 @@ class _NoteCardState extends State<NoteCard> {
                       ),
                     ),
                   ],
-              ],
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

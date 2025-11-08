@@ -25,14 +25,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _navigateAfterDelay() async {
     // Wait for splash animation to complete
-    await Future.delayed(const Duration(milliseconds: 2500));
+    // await Future.delayed(const Duration(milliseconds: 2500));
 
     if (!mounted) return;
 
     // Check if user has completed onboarding
-    final prefs = await SharedPreferences.getInstance();
+    final preferences = await SharedPreferences.getInstance();
     final hasCompletedOnboarding =
-        prefs.getBool(kHasCompletedOnboardingKey) ?? false;
+        preferences.getBool(kHasCompletedOnboardingKey) ?? false;
 
     if (!mounted) return;
 
@@ -121,23 +121,6 @@ class _SplashScreenState extends State<SplashScreen> {
                   .animate(delay: 400.ms)
                   .fadeIn(duration: 600.ms)
                   .slideY(begin: 0.3, end: 0, curve: Curves.easeOut),
-
-              const SizedBox(height: 80),
-
-              // Loading indicator
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    colorScheme.primary.withValues(alpha: 0.7),
-                  ),
-                ),
-              )
-                  .animate(delay: 600.ms)
-                  .fadeIn(duration: 400.ms)
-                  .scale(curve: Curves.easeOut),
             ],
           ),
         ),

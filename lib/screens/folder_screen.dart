@@ -86,12 +86,15 @@ class FolderScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemBuilder: (context, index) {
                           final note = notes[index];
-                          final hasTitle = note.note.noteTitle != null && note.note.noteTitle!.trim().isNotEmpty;
+                          final hasTitle = note.note.noteTitle != null &&
+                              note.note.noteTitle!.trim().isNotEmpty;
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: NoteCard(
-                              title: getNoteTitleOrPreview(note.note.noteTitle, note.note.contentPlainText),
-                              excerpt: hasTitle ? note.note.contentPlainText : null,
+                              title: getNoteTitleOrPreview(note.note.noteTitle,
+                                  note.note.contentPlainText),
+                              excerpt:
+                                  hasTitle ? note.note.contentPlainText : null,
                               lastModified: note.note.updatedAt,
                               isPinned: note.note.isPinned,
                               tags: note.folders

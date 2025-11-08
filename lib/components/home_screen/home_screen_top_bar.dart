@@ -69,7 +69,8 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.2),
                           blurRadius: 4,
                           spreadRadius: 1,
                         ),
@@ -153,9 +154,9 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
             onTap: () async {
               if (!context.mounted) return;
               Navigator.of(context).pop();
-              final prefs = await SharedPreferences.getInstance();
-              final current = prefs.getBool(kBiometricKey) ?? false;
-              await prefs.setBool(kBiometricKey, !current);
+              final preferences = await SharedPreferences.getInstance();
+              final current = preferences.getBool(kBiometricKey) ?? false;
+              await preferences.setBool(kBiometricKey, !current);
               if (!context.mounted) return;
               MyApp.of(context).initializeSharedPreferences();
             },

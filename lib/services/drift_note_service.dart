@@ -328,7 +328,6 @@ class DriftNoteService {
             .toList());
   }
 
-
   static Stream<List<NoteWithDetails>> watchNotesWithDetails(
       [String searchQuery = '',
       String sortType = 'updatedAt',

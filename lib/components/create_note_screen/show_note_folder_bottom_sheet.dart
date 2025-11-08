@@ -111,7 +111,8 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -293,11 +294,10 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                               child: Text(
                                 title,
                                 style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontWeight:
-                                      isSelected ? FontWeight.w700 : FontWeight.w600,
-                                  color: isSelected
-                                      ? cs.primary
-                                      : cs.onSurface,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w600,
+                                  color: isSelected ? cs.primary : cs.onSurface,
                                   letterSpacing: 0.1,
                                 ),
                               ),
