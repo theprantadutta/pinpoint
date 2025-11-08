@@ -9,6 +9,8 @@ import 'dart:io';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/services/firebase_notification_service.dart';
+import 'package:pinpoint/services/backend_auth_service.dart';
+import 'package:pinpoint/services/google_sign_in_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -254,6 +256,27 @@ class _AccountScreenState extends State<AccountScreen> {
           _UsageLimitsSection(),
 
           const SizedBox(height: 32),
+
+          // Account Section
+          Consumer<BackendAuthService>(
+            builder: (context, backendAuth, child) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Account',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _LinkedAccountsSection(backendAuth: backendAuth),
+                  const SizedBox(height: 32),
+                ],
+              );
+            },
+          ),
 
           // General Section
           Text(
@@ -785,6 +808,303 @@ class _SettingsTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Linked Accounts Section showing authentication providers
+class _LinkedAccountsSection extends StatefulWidget {
+  final BackendAuthService backendAuth;
+
+  const _LinkedAccountsSection({required this.backendAuth});
+
+  @override
+  State<_LinkedAccountsSection> createState() => _LinkedAccountsSectionState();
+}
+
+class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
+  bool _isLoading = false;
+  Map<String, dynamic>? _providers;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProviders();
+  }
+
+  Future<void> _loadProviders() async {
+    if (!widget.backendAuth.isAuthenticated) {
+      return;
+    }
+
+    try {
+      final providers = await widget.backendAuth.getAuthProviders();
+      if (mounted) {
+        setState(() {
+          _providers = providers;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading auth providers: $e');
+    }
+  }
+
+  Future<void> _linkGoogleAccount() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final googleSignInService = GoogleSignInService();
+
+      // 1. Sign in with Google
+      final userCredential = await googleSignInService.signInWithGoogle();
+
+      if (userCredential == null) {
+        throw Exception('Google Sign-In was cancelled');
+      }
+
+      // 2. Get Firebase token
+      final firebaseToken = await googleSignInService.getFirebaseIdToken();
+
+      if (firebaseToken == null) {
+        throw Exception('Failed to get Firebase token');
+      }
+
+      // 3. Show password dialog
+      if (!mounted) return;
+
+      final password = await showDialog<String>(
+        context: context,
+        builder: (context) => _PasswordDialog(),
+      );
+
+      if (password == null || password.isEmpty) {
+        return; // User cancelled
+      }
+
+      // 4. Link accounts
+      await widget.backendAuth.linkGoogleAccount(
+        firebaseToken: firebaseToken,
+        password: password,
+      );
+
+      // 5. Reload providers
+      await _loadProviders();
+
+      if (mounted) {
+        PinpointHaptics.success();
+        showSuccessToast(
+          context: context,
+          title: 'Account Linked',
+          description: 'Your Google account has been linked successfully.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        PinpointHaptics.error();
+        showErrorToast(
+          context: context,
+          title: 'Linking Failed',
+          description: e.toString().replaceAll('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _unlinkGoogleAccount() async {
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Unlink Google Account'),
+        content: const Text(
+          'Are you sure you want to unlink your Google account? '
+          'You can always link it again later.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Unlink'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await widget.backendAuth.unlinkGoogleAccount();
+
+      // Reload providers
+      await _loadProviders();
+
+      if (mounted) {
+        PinpointHaptics.success();
+        showSuccessToast(
+          context: context,
+          title: 'Account Unlinked',
+          description: 'Your Google account has been unlinked.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        PinpointHaptics.error();
+        showErrorToast(
+          context: context,
+          title: 'Unlinking Failed',
+          description: e.toString().replaceAll('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.backendAuth.isAuthenticated) {
+      return _SettingsTile(
+        title: 'Sign In',
+        subtitle: 'Sign in to sync your notes',
+        icon: Icons.login_rounded,
+        onTap: () {
+          PinpointHaptics.medium();
+          AppNavigation.router.push('/auth');
+        },
+      );
+    }
+
+    if (_providers == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final hasGoogle = _providers!['has_google'] ?? false;
+
+    return Column(
+      children: [
+        // Email Provider (always shown if authenticated)
+        _SettingsTile(
+          title: widget.backendAuth.userEmail ?? 'Email',
+          subtitle: 'Email/Password authentication',
+          icon: Icons.email_rounded,
+          onTap: () {
+            PinpointHaptics.light();
+          },
+        ),
+
+        const SizedBox(height: 8),
+
+        // Google Provider
+        _SettingsTile(
+          title: hasGoogle ? 'Google (Linked)' : 'Link Google Account',
+          subtitle: hasGoogle
+            ? 'Sign in with Google'
+            : 'Link your Google account for easy sign-in',
+          icon: hasGoogle ? Icons.check_circle : Icons.add_link_rounded,
+          trailing: hasGoogle
+            ? IconButton(
+                icon: const Icon(Icons.link_off_rounded),
+                onPressed: _isLoading ? null : _unlinkGoogleAccount,
+                tooltip: 'Unlink Google account',
+              )
+            : null,
+          onTap: _isLoading
+            ? () {}
+            : (hasGoogle ? () {} : _linkGoogleAccount),
+        ),
+      ],
+    );
+  }
+}
+
+/// Password Dialog for account linking
+class _PasswordDialog extends StatefulWidget {
+  @override
+  State<_PasswordDialog> createState() => _PasswordDialogState();
+}
+
+class _PasswordDialogState extends State<_PasswordDialog> {
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Verify Your Password'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Enter your password to link your Google account:',
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _passwordController,
+            obscureText: _obscurePassword,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Password',
+              prefixIcon: const Icon(Icons.lock_outlined),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final password = _passwordController.text;
+            if (password.isNotEmpty) {
+              Navigator.of(context).pop(password);
+            }
+          },
+          child: const Text('Verify'),
+        ),
+      ],
     );
   }
 }
