@@ -66,7 +66,7 @@ class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
       if (mounted) {
         final isPremium = await RevenueCatService.isPremium();
 
-        if (isPremium) {
+        if (mounted && isPremium) {
           showSuccessToast(
             context: context,
             title: 'Welcome to Premium!',

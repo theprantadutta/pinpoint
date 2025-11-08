@@ -21,8 +21,9 @@ class HomeScreenMyFolders extends StatelessWidget {
         await DriftNoteFolderService.watchAllNoteFoldersStream().first;
     final premiumService = PremiumService();
 
+    if (!context.mounted) return;
+
     if (!premiumService.canCreateFolder(folders.length)) {
-      if (!context.mounted) return;
       PinpointHaptics.error();
       PremiumGateDialog.showFolderLimit(context);
       return;

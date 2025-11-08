@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
-import 'package:pinpoint/design_system/design_system.dart';
 import 'package:go_router/go_router.dart';
 
 /// Screen for linking Google account to existing email/password account
