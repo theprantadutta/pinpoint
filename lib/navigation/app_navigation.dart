@@ -9,6 +9,8 @@ import 'package:pinpoint/screens/splash_screen.dart';
 import 'package:pinpoint/screens/onboarding_screen.dart';
 import 'package:pinpoint/screens/subscription_screen_revcat.dart';
 import 'package:pinpoint/screens/my_folders_screen.dart';
+import 'package:pinpoint/screens/auth_screen.dart';
+import 'package:pinpoint/screens/account_linking_screen.dart';
 
 import '../screen_arguments/create_note_screen_arguments.dart';
 import '../screens/account_screen.dart';
@@ -54,6 +56,34 @@ class AppNavigation {
         path: OnboardingScreen.kRouteName,
         name: "Onboarding",
         builder: (context, state) => const OnboardingScreen(),
+      ),
+
+      /// Authentication Screen
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AuthScreen.kRouteName,
+        name: "Auth",
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const AuthScreen(),
+        ),
+      ),
+
+      /// Account Linking Screen
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AccountLinkingScreen.kRouteName,
+        name: "Account Linking",
+        pageBuilder: (context, state) {
+          final firebaseToken = state.extra as String;
+          return NoTransitionPage(
+            key: state.pageKey,
+            child: AccountLinkingScreen(
+              key: state.pageKey,
+              firebaseToken: firebaseToken,
+            ),
+          );
+        },
       ),
 
       /// Subscription Screen
