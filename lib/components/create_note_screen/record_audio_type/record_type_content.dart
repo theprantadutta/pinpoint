@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:avatar_glow/avatar_glow.dart';
+import 'package:pinpoint/services/premium_service.dart';
+import 'package:pinpoint/widgets/premium_gate_dialog.dart';
+import 'package:pinpoint/design_system/design_system.dart';
 
 class RecordTypeContent extends StatefulWidget {
   final Function(String transcribedText) onTranscribedText;
@@ -19,11 +23,22 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
   final SpeechToText _speechToText = SpeechToText();
   bool _isListening = false;
   String _lastWords = '';
+  Timer? _durationTimer;
+  Timer? _countdownTimer;
+  int _remainingSeconds = 0;
+  final PremiumService _premiumService = PremiumService();
 
   @override
   void initState() {
     super.initState();
     _initSpeech();
+  }
+
+  @override
+  void dispose() {
+    _durationTimer?.cancel();
+    _countdownTimer?.cancel();
+    super.dispose();
   }
 
   void _initSpeech() async {
@@ -32,19 +47,49 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
   }
 
   void _startListening() async {
+    // Get max recording duration
+    final maxDuration = _premiumService.getMaxVoiceRecordingDuration();
+    _remainingSeconds = maxDuration;
+
     await _speechToText.listen(onResult: _onSpeechResult);
     setState(() {
       _isListening = true;
     });
+
+    // Start countdown timer (updates UI every second)
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingSeconds > 0) {
+        setState(() {
+          _remainingSeconds--;
+        });
+      }
+    });
+
+    // Start duration limit timer
+    _durationTimer = Timer(Duration(seconds: maxDuration), () {
+      if (_isListening) {
+        _stopListening(showLimitDialog: !_premiumService.isPremium);
+      }
+    });
   }
 
-  void _stopListening() async {
+  void _stopListening({bool showLimitDialog = false}) async {
+    _durationTimer?.cancel();
+    _countdownTimer?.cancel();
+
     await _speechToText.stop();
     setState(() {
       _isListening = false;
+      _remainingSeconds = 0;
     });
     if (_lastWords.isNotEmpty) {
       widget.onTranscribedText(_lastWords);
+    }
+
+    // Show premium gate if limit reached
+    if (showLimitDialog && mounted) {
+      PinpointHaptics.error();
+      await PremiumGateDialog.showVoiceRecordingLimit(context);
     }
   }
 
@@ -52,6 +97,12 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
     setState(() {
       _lastWords = result.recognizedWords;
     });
+  }
+
+  String _formatDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes.toString().padLeft(1, '0')}:${secs.toString().padLeft(2, '0')} remaining';
   }
 
   @override
@@ -146,6 +197,32 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
                       : cs.onSurface.withValues(alpha: 0.6),
                 ),
               ),
+
+              // Countdown timer
+              if (_isListening) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _formatDuration(_remainingSeconds),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: _remainingSeconds <= 10
+                        ? cs.error
+                        : cs.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                if (!_premiumService.isPremium && _remainingSeconds <= 10)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Upgrade for unlimited recording',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.error.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
+              ],
 
               const SizedBox(height: 40),
 
