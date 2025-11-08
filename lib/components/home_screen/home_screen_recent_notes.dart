@@ -54,10 +54,9 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
 
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
           children: [
             // Header
             Row(
@@ -117,6 +116,7 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
 
                   if (_viewType == 'grid') {
                     return MasonryGridView.count(
+                      controller: widget.scrollController,
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
@@ -128,6 +128,7 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
                     );
                   } else {
                     return ListView.separated(
+                      controller: widget.scrollController,
                       padding: const EdgeInsets.only(top: 8, bottom: 100),
                       itemCount: data.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -141,7 +142,6 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
             ),
           ],
         ),
-      ),
     );
   }
 }
@@ -164,7 +164,6 @@ class NoteListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final dark = theme.brightness == Brightness.dark;
     final n = note.note;
     final hasTitle = n.noteTitle != null && n.noteTitle!.trim().isNotEmpty;
 
@@ -208,137 +207,6 @@ class NoteListItem extends StatelessWidget {
   }
 }
 
-class _LeadingBadge extends StatelessWidget {
-  final bool isPinned;
-  final Color color;
-  const _LeadingBadge({required this.isPinned, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            color.withAlpha(dark ? 56 : 40),
-            color.withAlpha(dark ? 25 : 20),
-          ],
-        ),
-        border: Border.all(
-            color: (dark ? Colors.white : Colors.black).withAlpha(20)),
-      ),
-      child: Stack(
-        children: [
-          Center(
-            child: Icon(Icons.description_rounded, color: color, size: 22),
-          ),
-          if (isPinned)
-            Positioned(
-              right: 0,
-              top: 0,
-              child: Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: (dark ? Colors.white : Colors.black).withAlpha(25),
-                  ),
-                ),
-                child:
-                    const Icon(Icons.push_pin, size: 12, color: Colors.white),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TitleBlock extends StatelessWidget {
-  final String? title;
-  final String? snippet;
-  final DateTime updatedAt;
-  final DateTime? reminderTime;
-  final String? folder;
-  final String? tag;
-
-  const _TitleBlock({
-    required this.title,
-    required this.snippet,
-    required this.updatedAt,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if ((title ?? '').isNotEmpty)
-          Text(
-            title!,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.1,
-            ),
-          ),
-        if ((snippet ?? '').isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 2.0),
-            child: Text(
-              snippet!,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: cs.onSurface.withAlpha(200),
-              ),
-            ),
-          ),
-        const SizedBox(height: 8),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 10,
-          runSpacing: 6,
-          children: [
-            _MetaPill(
-              icon: Icons.access_time,
-              label: _formatRelative(updatedAt),
-              color: cs.secondary,
-            ),
-            if (folder != null)
-              _MetaPill(
-                icon: Icons.folder_open,
-                label: folder!,
-                color: cs.primary,
-              ),
-            if (tag != null)
-              _MetaPill(
-                icon: Icons.sell_outlined,
-                label: tag!,
-                color: cs.primary,
-              ),
-            if (reminderTime != null)
-              _MetaPill(
-                icon: Icons.alarm,
-                label: _formatRelative(reminderTime!),
-                color: cs.primary,
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
 
 class _MiniActionPro extends StatefulWidget {
   final String tooltip;
@@ -401,53 +269,3 @@ class _MiniActionProState extends State<_MiniActionPro>
   }
 }
 
-String _formatRelative(DateTime dt) {
-  final now = DateTime.now();
-  final diff = now.difference(dt);
-  if (diff.inMinutes < 1) return 'just now';
-  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-  if (diff.inHours < 24) return '${diff.inHours}h ago';
-  if (diff.inDays < 7) return '${diff.inDays}d ago';
-  return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-}
-
-class _MetaPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _MetaPill({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: (dark ? Colors.white : Colors.black).withAlpha(15),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: (dark ? Colors.white : Colors.black).withAlpha(20),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurface.withAlpha(220),
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}

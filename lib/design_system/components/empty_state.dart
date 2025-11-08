@@ -71,7 +71,7 @@ class _EmptyStateState extends State<EmptyState>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final motionSettings = MotionSettings.fromMediaQuery(context);
+    // final motionSettings = MotionSettings.fromMediaQuery(context);
 
     final gradient = widget.gradientHalo ??
         (theme.brightness == Brightness.dark
@@ -83,72 +83,85 @@ class _EmptyStateState extends State<EmptyState>
       child: SlideTransition(
         position: _slideAnimation,
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icon with gradient halo
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    gradient: gradient,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Icon(
-                      widget.icon,
-                      size: 64,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Scale down for small spaces
+              final isCompact = constraints.maxHeight < 250;
+              final iconSize = isCompact ? 60.0 : 120.0;
+              final iconContentSize = isCompact ? 32.0 : 64.0;
+              final padding = isCompact ? 16.0 : 24.0;
+              final spacing = isCompact ? 12.0 : 24.0;
 
-                const SizedBox(height: 24),
-
-                // Title
-                Text(
-                  widget.title,
-                  style: PinpointTypography.emptyState(
-                    brightness: theme.brightness,
-                    isTitle: true,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                // Message
-                if (widget.message != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    widget.message!,
-                    style: PinpointTypography.emptyState(
-                      brightness: theme.brightness,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-
-                // Action button
-                if (widget.actionLabel != null && widget.onAction != null) ...[
-                  const SizedBox(height: 24),
-                  FilledButton.icon(
-                    onPressed: () {
-                      PinpointHaptics.medium();
-                      widget.onAction!();
-                    },
-                    icon: const Icon(Icons.add_rounded),
-                    label: Text(widget.actionLabel!),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
+              return SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.all(padding),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Icon with gradient halo
+                      Container(
+                        width: iconSize,
+                        height: iconSize,
+                        decoration: BoxDecoration(
+                          gradient: gradient,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Icon(
+                            widget.icon,
+                            size: iconContentSize,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                          ),
+                        ),
                       ),
-                    ),
+
+                      SizedBox(height: spacing),
+
+                      // Title
+                      Text(
+                        widget.title,
+                        style: PinpointTypography.emptyState(
+                          brightness: theme.brightness,
+                          isTitle: true,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      // Message
+                      if (widget.message != null) ...[
+                        SizedBox(height: isCompact ? 8 : 12),
+                        Text(
+                          widget.message!,
+                          style: PinpointTypography.emptyState(
+                            brightness: theme.brightness,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+
+                      // Action button
+                      if (widget.actionLabel != null && widget.onAction != null) ...[
+                        const SizedBox(height: 24),
+                        FilledButton.icon(
+                          onPressed: () {
+                            PinpointHaptics.medium();
+                            widget.onAction!();
+                          },
+                          icon: const Icon(Icons.add_rounded),
+                          label: Text(widget.actionLabel!),
+                          style: FilledButton.styleFrom(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ],
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),

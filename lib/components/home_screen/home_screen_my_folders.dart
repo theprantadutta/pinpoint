@@ -60,7 +60,7 @@ class HomeScreenMyFolders extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -70,66 +70,86 @@ class HomeScreenMyFolders extends StatelessWidget {
             children: [
               Text(
                 'My folders',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.1,
                 ),
               ),
-              Tooltip(
-                message: 'Create folder',
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    PinpointHaptics.light();
-                    _addFolderFlow(context);
-                  },
-                  child: GlassContainer(
-                    padding: const EdgeInsets.all(8),
-                    borderRadius: 12,
-                    child: const Icon(Symbols.add, size: 20),
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      PinpointHaptics.light();
+                      context.push('/my-folders');
+                    },
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                    label: const Text('View All'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 4),
+                  Tooltip(
+                    message: 'Create folder',
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () {
+                        PinpointHaptics.light();
+                        _addFolderFlow(context);
+                      },
+                      child: GlassContainer(
+                        padding: const EdgeInsets.all(6),
+                        borderRadius: 10,
+                        child: const Icon(Symbols.add, size: 18),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          // Folder Rail
+          const SizedBox(height: 8),
+          // Compact Folder Chips
           SizedBox(
-            height: 120,
+            height: 44,
             child: StreamBuilder<List<NoteFolder>>(
               stream: DriftNoteFolderService.watchAllNoteFoldersStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator.adaptive());
                 }
                 if (snapshot.hasError) {
                   log.e('[folders] stream error', snapshot.error);
                   return Center(
                     child: Text(
                       'Failed to load folders',
-                      style: theme.textTheme.bodyMedium,
+                      style: theme.textTheme.bodySmall,
                     ),
                   );
                 }
                 final folders = snapshot.data ?? [];
                 if (folders.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.folder_open_rounded,
-                    title: 'No folders yet',
-                    message: 'Create one to organize your notes',
+                  return Center(
+                    child: Text(
+                      'No folders yet. Tap + to create one.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
                   );
                 }
+                // Show max 4 folders
+                final displayFolders = folders.take(4).toList();
                 return ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: folders.length,
+                  itemCount: displayFolders.length,
                   itemBuilder: (context, idx) {
-                    final f = folders[idx];
+                    final f = displayFolders[idx];
                     return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: _FolderCard(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _CompactFolderChip(
                         folderId: f.noteFolderId,
                         title: f.noteFolderTitle,
-                        countHint: 'Tap to view',
                         onRename: (newTitle) async {
                           final text = newTitle.trim();
                           if (text.isEmpty) return;
@@ -195,17 +215,16 @@ class HomeScreenMyFolders extends StatelessWidget {
   }
 }
 
-class _FolderCard extends StatelessWidget {
+// Compact folder chip for home screen
+class _CompactFolderChip extends StatelessWidget {
   final int folderId;
   final String title;
-  final String countHint;
   final Future<void> Function(String newTitle)? onRename;
   final Future<void> Function()? onDelete;
 
-  const _FolderCard({
+  const _CompactFolderChip({
     required this.folderId,
     required this.title,
-    required this.countHint,
     this.onRename,
     this.onDelete,
   });
@@ -213,171 +232,49 @@ class _FolderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final noteGradients = theme.noteGradients;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(12),
       onTap: () {
-        PinpointHaptics.medium();
+        PinpointHaptics.light();
         final encodedTitle = Uri.encodeComponent(title);
         GoRouter.of(context)
             .push('${FolderScreen.kRouteName}/$folderId/$encodedTitle');
       },
       child: Container(
-        width: 160,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          gradient: noteGradients.accentGradient,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: PinpointElevations.md(theme.brightness),
-        ),
-        child: GlassContainer(
-          padding: const EdgeInsets.all(12),
-          borderRadius: 20,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Symbols.folder,
-                    color: theme.colorScheme.primary,
-                    size: 22,
-                  ),
-                  const Spacer(),
-                  // Overflow menu
-                  GestureDetector(
-                    onTap: () {
-                      PinpointHaptics.light();
-                      _showFolderActionsSheet(context);
-                    },
-                    child: GlassContainer(
-                      padding: const EdgeInsets.all(6),
-                      borderRadius: 10,
-                      child: const Icon(Icons.more_vert, size: 16),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    Icons.touch_app,
-                    size: 14,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    countHint,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ],
-              )
-            ],
+          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: theme.colorScheme.primary.withValues(alpha: 0.2),
+            width: 1,
           ),
         ),
-      ),
-    );
-  }
-
-  void _showFolderActionsSheet(BuildContext context) {
-    final theme = Theme.of(context);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final controller = TextEditingController(text: title);
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                height: 4,
-                width: 40,
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: theme.dividerColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.drive_file_rename_outline),
-                title: const Text('Rename'),
-                onTap: () async {
-                  Navigator.of(ctx).pop();
-                  await _showRenameDialog(context, controller);
-                },
-              ),
-              ListTile(
-                leading:
-                    Icon(Icons.delete_outline, color: theme.colorScheme.error),
-                title: Text(
-                  'Delete',
-                  style: TextStyle(color: theme.colorScheme.error),
-                ),
-                onTap: () async {
-                  Navigator.of(ctx).pop();
-                  if (onDelete != null) {
-                    await onDelete!();
-                  }
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _showRenameDialog(
-      BuildContext context, TextEditingController controller) async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Rename folder'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(hintText: 'Folder name'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Symbols.folder,
+              color: theme.colorScheme.primary,
+              size: 18,
             ),
-            FilledButton(
-              onPressed: () async {
-                final value = controller.text.trim();
-                if (value.isEmpty) return;
-                if (onRename != null) {
-                  await onRename!(value);
-                }
-                if (!ctx.mounted) return;
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('Save'),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 100),
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }
