@@ -10,7 +10,6 @@ import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/services/logger_service.dart';
 import '../../database/database.dart';
 import '../../design_system/design_system.dart';
-import '../../navigation/app_navigation.dart';
 
 class HomeScreenMyFolders extends StatelessWidget {
   const HomeScreenMyFolders({super.key});
@@ -81,7 +80,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () {
                       PinpointHaptics.light();
-                      AppNavigation.router.push('/my-folders');
+                      context.go('/my-folders');
                     },
                     icon: const Icon(Icons.arrow_forward_rounded, size: 16),
                     label: const Text('View All'),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
@@ -16,7 +17,6 @@ import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
 import '../services/premium_service.dart';
 import '../constants/premium_limits.dart';
-import '../navigation/app_navigation.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
 import 'package:flutter/services.dart';
 
@@ -228,7 +228,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         : null,
                     onTap: () {
                       PinpointHaptics.medium();
-                      AppNavigation.router.push(SubscriptionScreenRevCat.kRouteName);
+                      context.go(SubscriptionScreenRevCat.kRouteName);
                     },
                   ),
                   // Manage Subscription button (only for premium users)
@@ -269,7 +269,7 @@ class _AccountScreenState extends State<AccountScreen> {
             icon: Icons.folder_rounded,
             onTap: () {
               PinpointHaptics.medium();
-              AppNavigation.router.push('/my-folders');
+              context.go('/my-folders');
             },
           ),
           const SizedBox(height: 8),
@@ -278,7 +278,7 @@ class _AccountScreenState extends State<AccountScreen> {
             icon: Icons.archive_rounded,
             onTap: () {
               PinpointHaptics.medium();
-              AppNavigation.router.push(ArchiveScreen.kRouteName);
+              context.go(ArchiveScreen.kRouteName);
             },
           ),
           const SizedBox(height: 8),
@@ -287,7 +287,7 @@ class _AccountScreenState extends State<AccountScreen> {
             icon: Icons.delete_rounded,
             onTap: () {
               PinpointHaptics.medium();
-              AppNavigation.router.push(TrashScreen.kRouteName);
+              context.go(TrashScreen.kRouteName);
             },
           ),
           const SizedBox(height: 8),
@@ -296,7 +296,7 @@ class _AccountScreenState extends State<AccountScreen> {
             icon: Icons.sync_rounded,
             onTap: () {
               PinpointHaptics.medium();
-              AppNavigation.router.push(SyncScreen.kRouteName);
+              context.go(SyncScreen.kRouteName);
             },
           ),
           const SizedBox(height: 8),
@@ -372,7 +372,7 @@ class _AccountScreenState extends State<AccountScreen> {
             icon: Icons.color_lens_rounded,
             onTap: () {
               PinpointHaptics.medium();
-              AppNavigation.router.push(ThemeScreen.kRouteName);
+              context.go(ThemeScreen.kRouteName);
             },
           ),
 
