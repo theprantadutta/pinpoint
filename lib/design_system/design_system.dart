@@ -10,6 +10,7 @@ export 'gradients.dart';
 export 'typography.dart';
 export 'elevations.dart';
 export 'animations.dart';
+export 'spacing.dart';
 
 // Theme
 export 'theme.dart';

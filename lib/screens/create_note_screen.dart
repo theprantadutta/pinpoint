@@ -1,11 +1,13 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:async';
+import 'dart:io';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
 import '../components/create_note_screen/record_audio_type/record_type_content.dart';
@@ -440,6 +442,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 case 'share':
                   _handleShareNote(context);
                   break;
+                case 'export_markdown':
+                  _handleExportMarkdown(context);
+                  break;
                 case 'info':
                   _showNoteInfoModal(context, cs, isDark);
                   break;
@@ -481,6 +486,38 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                   ],
                 ),
               ),
+              // Markdown Export (Premium only)
+              if (PremiumService().isPremium)
+                PopupMenuItem(
+                  value: 'export_markdown',
+                  child: Row(
+                    children: [
+                      Icon(Icons.file_download_rounded,
+                          size: 20, color: cs.primary),
+                      const SizedBox(width: 12),
+                      const Text('Export Markdown'),
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: PinpointColors.mint.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'PRO',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: PinpointColors.mint,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               PopupMenuItem(
                 value: 'info',
                 child: Row(
@@ -1087,6 +1124,96 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
     // Show success feedback
     PinpointHaptics.success();
+  }
+
+  Future<void> _handleExportMarkdown(BuildContext context) async {
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
+
+    if (title.isEmpty && content.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Nothing to Export'),
+          content: const Text('Please add some content before exporting.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Format as markdown
+      final markdown = StringBuffer();
+
+      // Add title as H1
+      if (title.isNotEmpty) {
+        markdown.writeln('# $title');
+        markdown.writeln();
+      }
+
+      // Add content
+      if (content.isNotEmpty) {
+        markdown.writeln(content);
+      }
+
+      // Add todo items if this is a todo note
+      if (selectedNoteType == kNoteTypes[2] && todos.isNotEmpty) {
+        markdown.writeln();
+        markdown.writeln('## Tasks');
+        markdown.writeln();
+        for (final todo in todos) {
+          final checkbox = todo.isDone ? '[x]' : '[ ]';
+          markdown.writeln('- $checkbox ${todo.todoTitle}');
+        }
+      }
+
+      // Add metadata
+      markdown.writeln();
+      markdown.writeln('---');
+      markdown.writeln('*Exported from Pinpoint*');
+      markdown.writeln('*Date: ${DateTime.now().toString().split('.')[0]}*');
+
+      // Save as file
+      final directory = await getTemporaryDirectory();
+      final fileName = title.isNotEmpty
+          ? '${title.replaceAll(RegExp(r'[^\w\s-]'), '')}.md'
+          : 'note_${DateTime.now().millisecondsSinceEpoch}.md';
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsString(markdown.toString());
+
+      // Share the file
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: title.isNotEmpty ? title : 'Exported Note',
+      );
+
+      PinpointHaptics.success();
+
+      if (mounted) {
+        showSuccessToast(
+          context: context,
+          title: 'Exported!',
+          description: 'Markdown file exported successfully',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error exporting markdown: $e');
+      PinpointHaptics.error();
+
+      if (mounted) {
+        showErrorToast(
+          context: context,
+          title: 'Export Failed',
+          description: 'Unable to export markdown file',
+        );
+      }
+    }
   }
 
   void _showNoteInfoModal(BuildContext context, ColorScheme cs, bool isDark) {

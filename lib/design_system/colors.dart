@@ -123,8 +123,10 @@ class PinpointColors {
 
   static const Color darkBorder = Color(0xFF2D3748);
   static const Color darkBorderSubtle = Color(0xFF1A202C);
+  static const Color darkBorderBold = Color(0xFF4A5568); // Bold borders for brutalist style
   static const Color lightBorder = Color(0xFFE5E7EB);
   static const Color lightBorderSubtle = Color(0xFFF3F4F6);
+  static const Color lightBorderBold = Color(0xFF9CA3AF); // Bold borders for brutalist style
 
   // ============================================
   // Shadow Colors
@@ -133,6 +135,20 @@ class PinpointColors {
   static const Color shadowColor = Color(0x1A000000);
   static const Color shadowColorStrong = Color(0x33000000);
   static const Color shadowColorLight = Color(0x0D000000);
+
+  // ============================================
+  // Brutalist/Bold Design Elements
+  // ============================================
+
+  /// Bold border widths for brutalist aesthetic
+  static const double borderThin = 1.0;
+  static const double borderMedium = 2.0;
+  static const double borderThick = 3.0;
+  static const double borderExtraThick = 4.0;
+
+  /// High contrast overlays for emphasis
+  static const Color highContrastLight = Color(0xFFFFFFFF);
+  static const Color highContrastDark = Color(0xFF000000);
 }
 
 /// Material 3 Color Scheme Extensions
