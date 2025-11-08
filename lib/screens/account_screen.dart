@@ -15,6 +15,8 @@ import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
+import '../services/premium_service.dart';
+import '../constants/premium_limits.dart';
 
 class AccountScreen extends StatefulWidget {
   static const String kRouteName = '/account';
@@ -212,6 +214,11 @@ class _AccountScreenState extends State<AccountScreen> {
               );
             },
           ),
+
+          // Usage Limits Section
+          _UsageLimitsSection(),
+
+          const SizedBox(height: 32),
 
           // General Section
           Text(
@@ -444,6 +451,230 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UsageLimitsSection extends StatelessWidget {
+  const _UsageLimitsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final premiumService = PremiumService();
+    final isPremium = premiumService.isPremium;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Usage',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.1,
+              ),
+            ),
+            if (!isPremium) _MonthlyResetIndicator(),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Cloud Sync
+        _UsageLimitCard(
+          icon: Icons.cloud_sync_rounded,
+          title: 'Cloud Sync',
+          used: premiumService.getSyncedNotesCount(),
+          limit: PremiumLimits.maxSyncedNotesForFree,
+          isPremium: isPremium,
+          isMonthly: false,
+        ),
+        const SizedBox(height: 8),
+
+        // OCR Scans
+        _UsageLimitCard(
+          icon: Icons.document_scanner_rounded,
+          title: 'OCR Scans',
+          used: premiumService.getOcrScansThisMonth(),
+          limit: PremiumLimits.maxOcrScansPerMonthForFree,
+          isPremium: isPremium,
+          isMonthly: true,
+        ),
+        const SizedBox(height: 8),
+
+        // Exports
+        _UsageLimitCard(
+          icon: Icons.file_download_rounded,
+          title: 'Exports',
+          used: premiumService.getExportsThisMonth(),
+          limit: PremiumLimits.maxExportsPerMonthForFree,
+          isPremium: isPremium,
+          isMonthly: true,
+        ),
+      ],
+    );
+  }
+}
+
+class _MonthlyResetIndicator extends StatelessWidget {
+  const _MonthlyResetIndicator();
+
+  String _getResetCountdown() {
+    final now = DateTime.now();
+    final nextMonth = DateTime(now.year, now.month + 1, 1);
+    final difference = nextMonth.difference(now);
+
+    if (difference.inDays > 0) {
+      return 'Resets in ${difference.inDays}d';
+    } else if (difference.inHours > 0) {
+      return 'Resets in ${difference.inHours}h';
+    } else {
+      return 'Resets soon';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: cs.primary.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.refresh_rounded,
+            size: 14,
+            color: cs.primary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            _getResetCountdown(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: cs.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UsageLimitCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final int used;
+  final int limit;
+  final bool isPremium;
+  final bool isMonthly;
+
+  const _UsageLimitCard({
+    required this.icon,
+    required this.title,
+    required this.used,
+    required this.limit,
+    required this.isPremium,
+    required this.isMonthly,
+  });
+
+  Color _getProgressColor(BuildContext context, double percentage) {
+    if (isPremium) return Theme.of(context).colorScheme.primary;
+
+    if (percentage >= 0.9) return PinpointColors.rose;
+    if (percentage >= 0.7) return PinpointColors.amber;
+    return PinpointColors.mint;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final percentage = isPremium ? 0.0 : (used / limit).clamp(0.0, 1.0);
+    final progressColor = _getProgressColor(context, percentage);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? cs.surface.withValues(alpha: 0.7)
+            : cs.surface.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: cs.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: cs.primary, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (isMonthly && !isPremium)
+                      Text(
+                        'This month',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Text(
+                isPremium ? 'Unlimited' : '$used / $limit',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: progressColor,
+                ),
+              ),
+            ],
+          ),
+          if (!isPremium) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: percentage,
+                minHeight: 6,
+                backgroundColor: cs.outline.withValues(alpha: 0.1),
+                valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+              ),
+            ),
+          ],
         ],
       ),
     );
