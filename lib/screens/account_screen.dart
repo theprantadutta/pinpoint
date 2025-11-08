@@ -17,6 +17,8 @@ import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
 import '../services/premium_service.dart';
 import '../constants/premium_limits.dart';
+import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+import 'package:flutter/services.dart';
 
 class AccountScreen extends StatefulWidget {
   static const String kRouteName = '/account';
@@ -70,6 +72,26 @@ class _AccountScreenState extends State<AccountScreen> {
     setState(() {
       _sortDirection = value;
     });
+  }
+
+  Future<void> _openCustomerCenter() async {
+    try {
+      debugPrint('🎯 [AccountScreen] Opening Customer Center...');
+
+      await RevenueCatUI.presentCustomerCenter();
+
+      debugPrint('✅ [AccountScreen] Customer Center closed');
+    } on PlatformException catch (e) {
+      debugPrint('❌ [AccountScreen] Customer Center error: ${e.message}');
+
+      if (mounted) {
+        showErrorToast(
+          context: context,
+          title: 'Error',
+          description: e.message ?? 'Unable to open subscription management',
+        );
+      }
+    }
   }
 
   @override
@@ -209,6 +231,19 @@ class _AccountScreenState extends State<AccountScreen> {
                       context.push(SubscriptionScreenRevCat.kRouteName);
                     },
                   ),
+                  // Manage Subscription button (only for premium users)
+                  if (subscriptionManager.isPremium) ...[
+                    const SizedBox(height: 8),
+                    _SettingsTile(
+                      title: 'Manage Subscription',
+                      subtitle: 'Update payment, cancel, or restore',
+                      icon: Icons.manage_accounts_rounded,
+                      onTap: () {
+                        PinpointHaptics.medium();
+                        _openCustomerCenter();
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 32),
                 ],
               );
