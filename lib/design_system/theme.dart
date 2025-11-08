@@ -44,7 +44,7 @@ class PinpointTheme {
       outline: PinpointColors.darkBorder,
       outlineVariant: PinpointColors.darkBorderSubtle,
       shadow: PinpointColors.shadowColor,
-      scrim: Colors.black.withOpacity(0.5),
+      scrim: Colors.black.withValues(alpha: 0.5),
       inverseSurface: PinpointColors.lightSurface2,
       onInverseSurface: PinpointColors.lightTextPrimary,
       inversePrimary: _darken(accent, 0.2),
@@ -89,8 +89,8 @@ class PinpointTheme {
       // Chip
       chipTheme: ChipThemeData(
         backgroundColor: PinpointColors.darkSurface3,
-        selectedColor: accent.withOpacity(0.2),
-        disabledColor: PinpointColors.darkSurface3.withOpacity(0.5),
+        selectedColor: accent.withValues(alpha: 0.2),
+        disabledColor: PinpointColors.darkSurface3.withValues(alpha: 0.5),
         labelStyle: PinpointTypography.tagChip(brightness: Brightness.dark),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
@@ -134,7 +134,7 @@ class PinpointTheme {
 
       // Bottom Navigation Bar
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: PinpointColors.darkSurface2.withOpacity(0.8),
+        backgroundColor: PinpointColors.darkSurface2.withValues(alpha: 0.8),
         selectedItemColor: accent,
         unselectedItemColor: PinpointColors.darkTextSecondary,
         type: BottomNavigationBarType.fixed,
@@ -210,7 +210,7 @@ class PinpointTheme {
       outline: PinpointColors.lightBorder,
       outlineVariant: PinpointColors.lightBorderSubtle,
       shadow: PinpointColors.shadowColor,
-      scrim: Colors.black.withOpacity(0.5),
+      scrim: Colors.black.withValues(alpha: 0.5),
       inverseSurface: PinpointColors.darkSurface2,
       onInverseSurface: PinpointColors.darkTextPrimary,
       inversePrimary: _lighten(accent, 0.2),
@@ -255,8 +255,8 @@ class PinpointTheme {
       // Chip
       chipTheme: ChipThemeData(
         backgroundColor: PinpointColors.lightSurface3,
-        selectedColor: accent.withOpacity(0.15),
-        disabledColor: PinpointColors.lightSurface3.withOpacity(0.5),
+        selectedColor: accent.withValues(alpha: 0.15),
+        disabledColor: PinpointColors.lightSurface3.withValues(alpha: 0.5),
         labelStyle: PinpointTypography.tagChip(brightness: Brightness.light),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
@@ -300,7 +300,7 @@ class PinpointTheme {
 
       // Bottom Navigation Bar
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: PinpointColors.lightSurface2.withOpacity(0.9),
+        backgroundColor: PinpointColors.lightSurface2.withValues(alpha: 0.9),
         selectedItemColor: accent,
         unselectedItemColor: PinpointColors.lightTextSecondary,
         type: BottomNavigationBarType.fixed,

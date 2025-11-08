@@ -100,7 +100,7 @@ class _EmptyStateState extends State<EmptyState>
                     child: Icon(
                       widget.icon,
                       size: 64,
-                      color: theme.colorScheme.onSurface.withOpacity(0.8),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                     ),
                   ),
                 ),

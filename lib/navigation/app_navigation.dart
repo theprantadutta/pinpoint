@@ -5,8 +5,10 @@ import 'package:pinpoint/screens/folder_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
+import 'package:pinpoint/screens/splash_screen.dart';
+import 'package:pinpoint/screens/onboarding_screen.dart';
+import 'package:pinpoint/screens/subscription_screen.dart';
 
-import '../database/database.dart';
 import '../screen_arguments/create_note_screen_arguments.dart';
 import '../screens/account_screen.dart';
 import '../screens/create_note_screen.dart';
@@ -18,7 +20,7 @@ import 'bottom-navigation/bottom_navigation_layout.dart';
 class AppNavigation {
   AppNavigation._();
 
-  static String initial = HomeScreen.kRouteName;
+  static String initial = SplashScreen.kRouteName;
 
   // Private navigators
   static final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -37,25 +39,29 @@ class AppNavigation {
     debugLogDiagnostics: true,
     navigatorKey: rootNavigatorKey,
     routes: [
-      // /// OnBoardingScreen
-      // GoRoute(
-      //   parentNavigatorKey: rootNavigatorKey,
-      //   path: OnBoardingScreen.route,
-      //   name: "OnBoarding",
-      //   builder: (context, state) => OnBoardingScreen(
-      //     key: state.pageKey,
-      //   ),
-      // ),
+      /// Splash Screen
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: SplashScreen.kRouteName,
+        name: "Splash",
+        builder: (context, state) => const SplashScreen(),
+      ),
 
-      // /// OnBoardingThemeScreen
-      // GoRoute(
-      //   parentNavigatorKey: rootNavigatorKey,
-      //   path: OnboardingThemeScreen.route,
-      //   name: "OnBoardingTheme",
-      //   builder: (context, state) => OnboardingThemeScreen(
-      //     key: state.pageKey,
-      //   ),
-      // ),
+      /// Onboarding Screen
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: OnboardingScreen.kRouteName,
+        name: "Onboarding",
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+
+      /// Subscription Screen
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: SubscriptionScreen.kRouteName,
+        name: "Subscription",
+        builder: (context, state) => const SubscriptionScreen(),
+      ),
 
       /// MainWrapper
       StatefulShellRoute.indexedStack(

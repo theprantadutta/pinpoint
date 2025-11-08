@@ -116,10 +116,10 @@ class _GlassAppBarState extends State<GlassAppBar> {
             curve: motionSettings.getCurve(PinpointAnimations.standard),
             decoration: BoxDecoration(
               color: (widget.backgroundColor ?? glassSurface.overlayColor)
-                  .withOpacity(glassSurface.opacity + (opacity * 0.1)),
+                  .withValues(alpha: glassSurface.opacity + (opacity * 0.1)),
               border: Border(
                 bottom: BorderSide(
-                  color: glassSurface.borderColor.withOpacity(opacity),
+                  color: glassSurface.borderColor.withValues(alpha: opacity),
                   width: 1,
                 ),
               ),
@@ -196,7 +196,7 @@ class SliverGlassAppBar extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: glassSurface.borderColor.withOpacity(0.5),
+                color: glassSurface.borderColor.withValues(alpha: 0.5),
                 width: 1,
               ),
             ),
@@ -255,9 +255,7 @@ class GlassContainer extends StatelessWidget {
             padding: padding,
             decoration: BoxDecoration(
               color: backgroundColor ??
-                  glassSurface.overlayColor.withOpacity(
-                    glassSurface.opacity,
-                  ),
+                  glassSurface.overlayColor.withValues(alpha: glassSurface.opacity,),
               border: border ??
                   Border.all(
                     color: glassSurface.borderColor,

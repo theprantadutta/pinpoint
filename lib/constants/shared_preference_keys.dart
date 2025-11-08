@@ -14,3 +14,6 @@ const kHomeScreenSortDirectionKey =
 // note-type key
 const kDidPopulatedNoteType = 'did-populate-note-type';
 const kDidPopulatedNoteFolder = 'did-populate-note-folder';
+
+// onboarding key
+const kHasCompletedOnboardingKey = 'has_completed_onboarding';

@@ -99,7 +99,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
           padding: toolbarStyle.padding,
           decoration: BoxDecoration(
             gradient: toolbarStyle.backgroundGradient,
-            color: toolbarStyle.backgroundColor.withOpacity(0.8),
+            color: toolbarStyle.backgroundColor.withValues(alpha: 0.8),
             borderRadius: toolbarStyle.borderRadius,
             boxShadow: toolbarStyle.elevation,
           ),
@@ -283,7 +283,7 @@ class _ToolbarButtonState extends State<_ToolbarButton> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: widget.isActive
-                  ? widget.toolbarStyle.activeIconColor.withOpacity(0.2)
+                  ? widget.toolbarStyle.activeIconColor.withValues(alpha: 0.2)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
@@ -309,7 +309,7 @@ class _ToolbarDivider extends StatelessWidget {
     return Container(
       width: 1,
       height: 24,
-      color: theme.colorScheme.outline.withOpacity(0.3),
+      color: theme.colorScheme.outline.withValues(alpha: 0.3),
     );
   }
 }

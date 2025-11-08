@@ -105,7 +105,7 @@ class PinpointElevations {
   }) =>
       [
         BoxShadow(
-          color: color.withOpacity(intensity),
+          color: color.withValues(alpha: intensity),
           blurRadius: blur,
           spreadRadius: blur * 0.3,
         ),
@@ -132,7 +132,7 @@ class PinpointElevations {
 
     return [
       BoxShadow(
-        color: color.withOpacity(opacity * 0.3),
+        color: color.withValues(alpha: opacity * 0.3),
         blurRadius: blur,
         offset: offset,
       ),
@@ -171,10 +171,10 @@ class PinpointElevations {
   static Color _shadowColor(Brightness brightness, double opacity) {
     if (brightness == Brightness.dark) {
       // Darker, more subtle shadows for dark mode
-      return Colors.black.withOpacity(opacity * 1.5);
+      return Colors.black.withValues(alpha: opacity * 1.5);
     } else {
       // Much softer, barely visible shadows for light mode
-      return PinpointColors.shadowColor.withOpacity(opacity * 0.3);
+      return PinpointColors.shadowColor.withValues(alpha: opacity * 0.3);
     }
   }
 
@@ -333,7 +333,7 @@ class ElevationAnimation {
     }
     if (a == null) {
       return BoxShadow(
-        color: b!.color.withOpacity(b.color.opacity * t),
+        color: b!.color.withValues(alpha: b.color.opacity * t),
         blurRadius: b.blurRadius * t,
         spreadRadius: b.spreadRadius * t,
         offset: Offset.lerp(Offset.zero, b.offset, t)!,
@@ -341,7 +341,7 @@ class ElevationAnimation {
     }
     if (b == null) {
       return BoxShadow(
-        color: a.color.withOpacity(a.color.opacity * (1 - t)),
+        color: a.color.withValues(alpha: a.color.opacity * (1 - t)),
         blurRadius: a.blurRadius * (1 - t),
         spreadRadius: a.spreadRadius * (1 - t),
         offset: Offset.lerp(a.offset, Offset.zero, t)!,
