@@ -158,8 +158,8 @@ class PinpointGradients {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Colors.white.withOpacity(0.1),
-          Colors.white.withOpacity(0.05),
+          Colors.white.withValues(alpha: 0.1),
+          Colors.white.withValues(alpha: 0.05),
         ],
       );
     } else {
@@ -167,8 +167,8 @@ class PinpointGradients {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Colors.black.withOpacity(0.05),
-          Colors.black.withOpacity(0.02),
+          Colors.black.withValues(alpha: 0.05),
+          Colors.black.withValues(alpha: 0.02),
         ],
       );
     }
@@ -247,9 +247,9 @@ class GradientUtils {
     if (brightness == Brightness.dark) {
       return LinearGradient(
         colors: [
-          Colors.white.withOpacity(0.0),
-          Colors.white.withOpacity(0.05),
-          Colors.white.withOpacity(0.0),
+          Colors.white.withValues(alpha: 0.0),
+          Colors.white.withValues(alpha: 0.05),
+          Colors.white.withValues(alpha: 0.0),
         ],
         stops: const [0.0, 0.5, 1.0],
         transform: transform,
@@ -257,9 +257,9 @@ class GradientUtils {
     } else {
       return LinearGradient(
         colors: [
-          Colors.black.withOpacity(0.0),
-          Colors.black.withOpacity(0.03),
-          Colors.black.withOpacity(0.0),
+          Colors.black.withValues(alpha: 0.0),
+          Colors.black.withValues(alpha: 0.03),
+          Colors.black.withValues(alpha: 0.0),
         ],
         stops: const [0.0, 0.5, 1.0],
         transform: transform,

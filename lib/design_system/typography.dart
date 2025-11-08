@@ -144,7 +144,7 @@ class PinpointTypography {
         fontWeight: FontWeight.w400,
         letterSpacing: 0.4,
         height: 1.5,
-        color: baseTextColor.withOpacity(0.8),
+        color: baseTextColor.withValues(alpha: 0.8),
       ),
 
       // Label styles - for buttons and chips
@@ -170,7 +170,7 @@ class PinpointTypography {
         fontWeight: FontWeight.w500,
         letterSpacing: 0.5,
         height: 1.4,
-        color: baseTextColor.withOpacity(0.8),
+        color: baseTextColor.withValues(alpha: 0.8),
       ),
     );
   }
@@ -362,7 +362,7 @@ class PinpointTypography {
       fontWeight: FontWeight.w400,
       letterSpacing: 0,
       height: 1.5,
-      color: color.withOpacity(0.8),
+      color: color.withValues(alpha: 0.8),
     );
   }
 

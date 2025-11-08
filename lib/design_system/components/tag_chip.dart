@@ -125,12 +125,12 @@ class _TagChipState extends State<TagChip> with SingleTickerProviderStateMixin {
                 padding: padding,
                 decoration: BoxDecoration(
                   color: widget.isSelected
-                      ? tagColors.foreground.withOpacity(0.15)
+                      ? tagColors.foreground.withValues(alpha: 0.15)
                       : tagColors.background,
                   border: Border.all(
                     color: widget.isSelected || _isHovered
                         ? tagColors.foreground
-                        : tagColors.border.withOpacity(0.3),
+                        : tagColors.border.withValues(alpha: 0.3),
                     width: widget.isSelected ? 2 : 1,
                   ),
                   borderRadius: tagStyle.borderRadius,
@@ -229,7 +229,7 @@ class _TagChipState extends State<TagChip> with SingleTickerProviderStateMixin {
 
   TagColors _getColorsFromColor(Color color) {
     return TagColors(
-      background: color.withOpacity(0.15),
+      background: color.withValues(alpha: 0.15),
       foreground: color,
       border: color,
     );

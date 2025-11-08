@@ -62,12 +62,28 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
               // Logo
               Row(
                 children: [
-                  Icon(
-                    Symbols.push_pin,
-                    size: 18,
-                    color: theme.colorScheme.primary,
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        'assets/images/pinpoint-logo.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 10),
                   Text(
                     'Pinpoint',
                     style: theme.textTheme.titleLarge?.copyWith(

@@ -4,12 +4,16 @@ import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
+import 'package:pinpoint/screens/subscription_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:pinpoint/services/drift_note_service.dart';
+import 'package:pinpoint/services/subscription_manager.dart';
+import 'package:pinpoint/services/firebase_notification_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -82,6 +86,126 @@ class _AccountScreenState extends State<AccountScreen> {
       body: ListView(
         padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
         children: [
+          // Profile/Branding Section
+          Container(
+            padding: const EdgeInsets.all(24),
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  cs.primary.withValues(alpha: 0.1),
+                  cs.primary.withValues(alpha: 0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: cs.primary.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: [
+                      BoxShadow(
+                        color: cs.primary.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(32),
+                    child: Image.asset(
+                      'assets/images/pinpoint-logo.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pinpoint',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Your thoughts, perfectly organized',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Subscription Section
+          Consumer<SubscriptionManager>(
+            builder: (context, subscriptionManager, child) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Subscription',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
+                    title: subscriptionManager.isPremium ? 'Premium Active' : 'Upgrade to Premium',
+                    subtitle: subscriptionManager.isPremium
+                        ? 'Thank you for your support!'
+                        : 'Unlock all features',
+                    icon: subscriptionManager.isPremium
+                        ? Icons.workspace_premium
+                        : Icons.star_outline,
+                    trailing: subscriptionManager.isPremium
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: PinpointColors.mint,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              subscriptionManager.subscriptionTier.toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
+                          )
+                        : null,
+                    onTap: () {
+                      PinpointHaptics.medium();
+                      context.push(SubscriptionScreen.kRouteName);
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              );
+            },
+          ),
+
           // General Section
           Text(
             'General',
@@ -138,6 +262,36 @@ class _AccountScreenState extends State<AccountScreen> {
                     context: ctx,
                     title: 'Note Imported',
                     description: 'The note has been successfully imported.',
+                  );
+                }
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+          _SettingsTile(
+            title: 'Test Notification',
+            subtitle: 'Send a test push notification',
+            icon: Icons.notifications_active_rounded,
+            onTap: () async {
+              PinpointHaptics.medium();
+              try {
+                final notificationService = FirebaseNotificationService();
+                await notificationService.sendTestNotification();
+                final ctx = context;
+                if (ctx.mounted) {
+                  showSuccessToast(
+                    context: ctx,
+                    title: '🔔 Test Notification Sent!',
+                    description: 'Check your notification tray',
+                  );
+                }
+              } catch (e) {
+                final ctx = context;
+                if (ctx.mounted) {
+                  showErrorToast(
+                    context: ctx,
+                    title: 'Failed',
+                    description: 'Error: ${e.toString()}',
                   );
                 }
               }
@@ -291,13 +445,17 @@ class _AccountScreenState extends State<AccountScreen> {
 
 class _SettingsTile extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final IconData icon;
   final VoidCallback onTap;
+  final Widget? trailing;
 
   const _SettingsTile({
     required this.title,
+    this.subtitle,
     required this.icon,
     required this.onTap,
+    this.trailing,
   });
 
   @override

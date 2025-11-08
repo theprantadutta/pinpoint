@@ -111,7 +111,7 @@ class _ChecklistItemState extends State<ChecklistItem>
                 child: Icon(
                   Icons.drag_indicator_rounded,
                   size: 20,
-                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 ),
               ),
 

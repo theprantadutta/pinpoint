@@ -1,5 +1,3 @@
-import 'package:pinpoint/database/database.dart';
-
 import '../models/note_with_details.dart';
 
 class CreateNoteScreenArguments {

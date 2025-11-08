@@ -3,6 +3,7 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
+import 'package:provider/provider.dart';
 
 import 'constants/shared_preference_keys.dart';
 import 'design_system/design_system.dart';
@@ -11,6 +12,8 @@ import 'service_locators/init_service_locators.dart';
 import 'services/encryption_service.dart';
 import 'services/notification_service.dart';
 import 'services/auth_service.dart';
+import 'services/subscription_manager.dart';
+import 'services/firebase_notification_service.dart';
 import 'sync/sync_manager.dart';
 
 // void main() async {
@@ -79,6 +82,18 @@ Future<void> _initializeCoreServices() async {
   initServiceLocators(); // Assuming this is synchronous
 
   await NotificationService.init();
+
+  // Initialize Firebase notifications
+  try {
+    debugPrint('🔔 [main.dart] Initializing Firebase notifications...');
+    final firebaseNotifications = FirebaseNotificationService();
+    await firebaseNotifications.initialize();
+    debugPrint('✅ [main.dart] Firebase notifications initialized');
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ [main.dart] Firebase notifications not initialized: $e');
+    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
+    // Continue without Firebase - app will still work
+  }
 
   // Initialize sync manager
   final syncManager = getIt<SyncManager>();
@@ -325,24 +340,31 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => SubscriptionManager()..initialize(),
+        ),
       ],
-      title: 'Pinpoint',
-      routerConfig: AppNavigation.router,
-      themeMode: _themeMode,
-      theme: PinpointTheme.light(
-        accentColor: _accentColor,
-        highContrast: _highContrastMode,
+      child: MaterialApp.router(
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        title: 'Pinpoint',
+        routerConfig: AppNavigation.router,
+        themeMode: _themeMode,
+        theme: PinpointTheme.light(
+          accentColor: _accentColor,
+          highContrast: _highContrastMode,
+        ),
+        darkTheme: PinpointTheme.dark(
+          accentColor: _accentColor,
+          highContrast: _highContrastMode,
+        ),
+        debugShowCheckedModeBanner: false,
       ),
-      darkTheme: PinpointTheme.dark(
-        accentColor: _accentColor,
-        highContrast: _highContrastMode,
-      ),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
