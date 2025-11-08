@@ -3,7 +3,8 @@
     "allow": [
       "Bash(dir:*)",
       "Bash(flutter analyze:*)",
-      "Bash(flutter pub get:*)"
+      "Bash(flutter pub get:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

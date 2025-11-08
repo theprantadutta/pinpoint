@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/shared_preference_keys.dart';
 import '../design_system/design_system.dart';
+import '../services/backend_auth_service.dart';
+import 'auth_screen.dart';
 import 'home_screen.dart';
 import 'onboarding_screen.dart';
 
@@ -36,10 +39,64 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    // Navigate based on onboarding status only (no authentication required)
+    // Navigate to onboarding if not completed
     if (!hasCompletedOnboarding) {
       context.go(OnboardingScreen.kRouteName);
+      return;
+    }
+
+    // Check authentication status
+    final backendAuth = context.read<BackendAuthService>();
+    final hasSeenAuthPrompt = preferences.getBool(kHasSeenAuthPromptKey) ?? false;
+
+    // If user completed onboarding but hasn't signed in and hasn't seen the prompt
+    if (!backendAuth.isAuthenticated && !hasSeenAuthPrompt) {
+      if (!mounted) return;
+
+      // Show authentication prompt
+      await _showAuthPrompt(preferences);
     } else {
+      // Navigate to home screen
+      if (!mounted) return;
+      context.go(HomeScreen.kRouteName);
+    }
+  }
+
+  Future<void> _showAuthPrompt(SharedPreferences preferences) async {
+    // Mark that user has seen the prompt
+    await preferences.setBool(kHasSeenAuthPromptKey, true);
+
+    if (!mounted) return;
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Welcome to Pinpoint!'),
+        content: const Text(
+          'Sign in to sync your notes across devices and keep them safe in the cloud.',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Skip for now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Sign In'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (result == true) {
+      // Navigate to auth screen
+      context.go(AuthScreen.kRouteName);
+    } else {
+      // Navigate to home screen
       context.go(HomeScreen.kRouteName);
     }
   }
