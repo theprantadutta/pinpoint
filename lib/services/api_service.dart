@@ -2,6 +2,17 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 
+/// Exception thrown when account linking is required
+class AccountLinkingRequiredException implements Exception {
+  final String message;
+  final bool requiresLinking;
+
+  AccountLinkingRequiredException(this.message, {this.requiresLinking = true});
+
+  @override
+  String toString() => message;
+}
+
 class ApiService {
   // Backend API configuration
   static const String baseUrl =
@@ -134,6 +145,75 @@ class ApiService {
       _logger.e('Logout error: $e');
     } finally {
       await deleteToken();
+    }
+  }
+
+  /// Authenticate with Firebase token (Google Sign-In)
+  Future<Map<String, dynamic>> authenticateWithFirebase(
+      String firebaseToken) async {
+    try {
+      final response = await _dio.post(
+        '/auth/firebase',
+        data: {
+          'firebase_token': firebaseToken,
+        },
+      );
+
+      // Save token
+      final token = response.data['access_token'];
+      await saveToken(token);
+
+      return response.data;
+    } on DioException catch (e) {
+      // Check if this is an account linking conflict (HTTP 409)
+      if (e.response?.statusCode == 409) {
+        // Return the error with conflict flag for handling
+        throw AccountLinkingRequiredException(
+          'An account with this email already exists. Please link your accounts.',
+          requiresLinking: true,
+        );
+      }
+      throw _handleError(e);
+    }
+  }
+
+  /// Link Google account to existing account (requires password verification)
+  Future<Map<String, dynamic>> linkGoogleAccount({
+    required String firebaseToken,
+    required String password,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/auth/link-google',
+        data: {
+          'firebase_token': firebaseToken,
+          'password': password,
+        },
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Unlink Google account from current account
+  Future<Map<String, dynamic>> unlinkGoogleAccount() async {
+    try {
+      final response = await _dio.post('/auth/unlink-google');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Get linked authentication providers
+  Future<Map<String, dynamic>> getAuthProviders() async {
+    try {
+      final response = await _dio.get('/auth/providers');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
     }
   }
 

@@ -89,6 +89,67 @@ class BackendAuthService extends ChangeNotifier {
     }
   }
 
+  /// Authenticate with Firebase token (Google Sign-In)
+  Future<void> authenticateWithGoogle(String firebaseToken) async {
+    try {
+      final response = await _apiService.authenticateWithFirebase(firebaseToken);
+
+      _userId = response['user_id'];
+      _isAuthenticated = true;
+
+      // Fetch full user info
+      await refreshUserInfo();
+
+      notifyListeners();
+    } catch (e) {
+      throw Exception('Google authentication failed: $e');
+    }
+  }
+
+  /// Link Google account to existing account (requires password verification)
+  Future<void> linkGoogleAccount({
+    required String firebaseToken,
+    required String password,
+  }) async {
+    try {
+      await _apiService.linkGoogleAccount(
+        firebaseToken: firebaseToken,
+        password: password,
+      );
+
+      // Refresh user info to get updated linked accounts
+      await refreshUserInfo();
+
+      notifyListeners();
+    } catch (e) {
+      throw Exception('Failed to link Google account: $e');
+    }
+  }
+
+  /// Unlink Google account from current account
+  Future<void> unlinkGoogleAccount() async {
+    try {
+      await _apiService.unlinkGoogleAccount();
+
+      // Refresh user info to get updated linked accounts
+      await refreshUserInfo();
+
+      notifyListeners();
+    } catch (e) {
+      throw Exception('Failed to unlink Google account: $e');
+    }
+  }
+
+  /// Get linked authentication providers
+  Future<Map<String, dynamic>> getAuthProviders() async {
+    try {
+      final response = await _apiService.getAuthProviders();
+      return response;
+    } catch (e) {
+      throw Exception('Failed to get auth providers: $e');
+    }
+  }
+
   /// Refresh user information and subscription status
   Future<void> refreshUserInfo() async {
     try {

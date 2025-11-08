@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'constants/shared_preference_keys.dart';
 import 'design_system/design_system.dart';
@@ -12,8 +13,10 @@ import 'service_locators/init_service_locators.dart';
 import 'services/encryption_service.dart';
 import 'services/notification_service.dart';
 import 'services/auth_service.dart';
+import 'services/backend_auth_service.dart';
 import 'services/subscription_manager.dart';
 import 'services/firebase_notification_service.dart';
+import 'services/google_sign_in_service.dart';
 import 'services/revenue_cat_service.dart';
 import 'services/premium_service.dart';
 import 'sync/sync_manager.dart';
@@ -78,14 +81,22 @@ void main() async {
 }
 
 Future<void> _initializeCoreServices() async {
-  // Initialize services in order of dependency
-  // await dotenv.load(); // Uncomment if using dotenv
+  // Load environment variables first (needed for Google Sign-In Web Client ID)
+  try {
+    debugPrint('🔧 [main.dart] Loading environment variables...');
+    await dotenv.load(fileName: '.env');
+    debugPrint('✅ [main.dart] Environment variables loaded');
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ [main.dart] Failed to load .env file: $e');
+    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
+    // Continue without .env - some features may not work
+  }
 
   initServiceLocators(); // Assuming this is synchronous
 
   await NotificationService.init();
 
-  // Initialize Firebase notifications
+  // Initialize Firebase notifications (this also initializes Firebase Core)
   try {
     debugPrint('🔔 [main.dart] Initializing Firebase notifications...');
     final firebaseNotifications = FirebaseNotificationService();
@@ -95,6 +106,18 @@ Future<void> _initializeCoreServices() async {
     debugPrint('⚠️ [main.dart] Firebase notifications not initialized: $e');
     debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
     // Continue without Firebase - app will still work
+  }
+
+  // Initialize Google Sign-In service
+  try {
+    debugPrint('🔐 [main.dart] Initializing Google Sign-In...');
+    // The service is a singleton and initializes itself on first access
+    GoogleSignInService();
+    debugPrint('✅ [main.dart] Google Sign-In service initialized');
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ [main.dart] Google Sign-In not initialized: $e');
+    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
+    // Continue without Google Sign-In - users can still use email/password
   }
 
   // Initialize sync manager
@@ -382,6 +405,9 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider(
           create: (_) => SubscriptionManager()..initialize(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => BackendAuthService()..initialize(),
         ),
       ],
       child: MaterialApp.router(
