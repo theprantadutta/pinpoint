@@ -17,6 +17,8 @@ import '../dtos/note_attachment_dto.dart';
 import '../dtos/note_folder_dto.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/drift_note_service.dart';
+import '../services/premium_service.dart';
+import '../widgets/premium_gate_dialog.dart';
 import '../util/show_a_toast.dart';
 import '../design_system/design_system.dart';
 
@@ -40,7 +42,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   late TextEditingController _reminderDescription;
   late SharePlus _sharePlus;
 
-  List<NoteFolderDto> selectedFolders = [DriftNoteFolderService.firstNoteFolder];
+  List<NoteFolderDto> selectedFolders = [
+    DriftNoteFolderService.firstNoteFolder
+  ];
   List<db.NoteTodoItem> todos = [];
   List<db.NoteTodoItem> _savedTodos = []; // Track previously saved todos
   DateTime? reminderDateTime;
@@ -94,9 +98,11 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     // Check if there's any content to save based on note type
     final hasTextContent = title.isNotEmpty || content.isNotEmpty;
     final hasTodos = selectedNoteType == kNoteTypes[2] && todos.isNotEmpty;
-    final hasReminder = selectedNoteType == kNoteTypes[3] && reminderDateTime != null;
+    final hasReminder =
+        selectedNoteType == kNoteTypes[3] && reminderDateTime != null;
 
-    debugPrint('Auto-save triggered: noteType=$selectedNoteType, hasTextContent=$hasTextContent, hasTodos=$hasTodos (${todos.length} todos), hasReminder=$hasReminder');
+    debugPrint(
+        'Auto-save triggered: noteType=$selectedNoteType, hasTextContent=$hasTextContent, hasTodos=$hasTodos (${todos.length} todos), hasReminder=$hasReminder');
 
     // Don't save if there's nothing to save
     if (!hasTextContent && !hasTodos && !hasReminder) {
@@ -146,14 +152,18 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       // Validate based on note type
       if (selectedNoteType == kNoteTypes[2] && todos.isEmpty) {
         if (showToast) {
-          _showErrorToast('Failed to save Note!', 'Please add at least one todo item');
+          _showErrorToast(
+              'Failed to save Note!', 'Please add at least one todo item');
         }
         return;
       }
 
-      if (selectedNoteType == kNoteTypes[0] && title.isEmpty && content.isEmpty) {
+      if (selectedNoteType == kNoteTypes[0] &&
+          title.isEmpty &&
+          content.isEmpty) {
         if (showToast) {
-          _showErrorToast('Failed to save Note!', 'Please provide at least a title or content');
+          _showErrorToast('Failed to save Note!',
+              'Please provide at least a title or content');
         }
         return;
       }
@@ -165,114 +175,122 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
         return;
       }
 
-    final now = DateTime.now();
-    final noteCompanion = db.NotesCompanion.insert(
-      noteTitle: drift.Value(title),
-      isPinned: drift.Value(false),
-      defaultNoteType: selectedNoteType,
-      content: drift.Value(content), // Store plain text in content field too
-      contentPlainText: drift.Value(content), // Main plain text field
-      reminderDescription: drift.Value(_reminderDescription.text),
-      reminderTime: drift.Value(reminderDateTime),
-      createdAt: now,
-      updatedAt: now,
-    );
+      final now = DateTime.now();
+      final noteCompanion = db.NotesCompanion.insert(
+        noteTitle: drift.Value(title),
+        isPinned: drift.Value(false),
+        defaultNoteType: selectedNoteType,
+        content: drift.Value(content), // Store plain text in content field too
+        contentPlainText: drift.Value(content), // Main plain text field
+        reminderDescription: drift.Value(_reminderDescription.text),
+        reminderTime: drift.Value(reminderDateTime),
+        createdAt: now,
+        updatedAt: now,
+      );
 
-    final noteId = await DriftNoteService.upsertANewTitleContentNote(
-      noteCompanion,
-      _currentNoteId,
-    );
+      final noteId = await DriftNoteService.upsertANewTitleContentNote(
+        noteCompanion,
+        _currentNoteId,
+      );
 
-    if (noteId == 0) {
-      _showErrorToast('Failed to save Note!', 'Something went wrong while saving the note');
-      return;
-    }
-
-    // Update the current note ID after first save
-    if (_currentNoteId == null) {
-      setState(() {
-        _currentNoteId = noteId;
-      });
-    }
-
-    // Save todos
-    if (selectedNoteType == kNoteTypes[2]) {
-      debugPrint('Saving todos: ${todos.length} total, ${_savedTodos.length} previously saved');
-      final newTodos = todos.where((todo) => todo.id < 0).toList();
-      final existingTodos = todos.where((todo) => todo.id > 0).toList();
-      debugPrint('  - ${newTodos.length} new todos, ${existingTodos.length} existing todos');
-
-      // Delete todos that were removed
-      for (var savedTodo in _savedTodos) {
-        final stillExists = todos.any((t) => t.id == savedTodo.id);
-        if (!stillExists) {
-          debugPrint('  - Deleting todo ${savedTodo.id}: ${savedTodo.todoTitle}');
-          await DriftNoteService.deleteTodoItem(savedTodo.id);
-        }
+      if (noteId == 0) {
+        _showErrorToast('Failed to save Note!',
+            'Something went wrong while saving the note');
+        return;
       }
 
-      // Insert new todos and update their IDs
-      for (var todo in newTodos) {
-        debugPrint('  - Inserting new todo: ${todo.todoTitle}');
-        final insertedTodo = await DriftNoteService.insertTodoItem(
-          noteId: noteId,
-          title: todo.todoTitle,
-        );
-        debugPrint('    - Inserted with ID: ${insertedTodo.id}');
-        // Update the todo item with the real ID
-        final index = todos.indexWhere((t) => t.id == todo.id);
-        if (index != -1) {
-          todos[index] = insertedTodo.copyWith(isDone: todo.isDone);
-        }
+      // Update the current note ID after first save
+      if (_currentNoteId == null) {
+        setState(() {
+          _currentNoteId = noteId;
+        });
       }
 
-      // Update existing todos
-      for (var todo in existingTodos) {
-        final wasPreviouslySaved = _savedTodos.any((t) => t.id == todo.id);
-        if (wasPreviouslySaved) {
-          debugPrint('  - Updating todo ${todo.id}: ${todo.todoTitle}, isDone=${todo.isDone}');
-          await DriftNoteService.updateTodoItemTitle(todo.id, todo.todoTitle);
-          await DriftNoteService.updateTodoItemStatus(todo.id, todo.isDone);
-        } else {
-          // This shouldn't happen but handle it just in case
-          debugPrint('  - Unexpected: existing todo ${todo.id} not in saved list, inserting');
-          await DriftNoteService.insertTodoItem(
+      // Save todos
+      if (selectedNoteType == kNoteTypes[2]) {
+        debugPrint(
+            'Saving todos: ${todos.length} total, ${_savedTodos.length} previously saved');
+        final newTodos = todos.where((todo) => todo.id < 0).toList();
+        final existingTodos = todos.where((todo) => todo.id > 0).toList();
+        debugPrint(
+            '  - ${newTodos.length} new todos, ${existingTodos.length} existing todos');
+
+        // Delete todos that were removed
+        for (var savedTodo in _savedTodos) {
+          final stillExists = todos.any((t) => t.id == savedTodo.id);
+          if (!stillExists) {
+            debugPrint(
+                '  - Deleting todo ${savedTodo.id}: ${savedTodo.todoTitle}');
+            await DriftNoteService.deleteTodoItem(savedTodo.id);
+          }
+        }
+
+        // Insert new todos and update their IDs
+        for (var todo in newTodos) {
+          debugPrint('  - Inserting new todo: ${todo.todoTitle}');
+          final insertedTodo = await DriftNoteService.insertTodoItem(
             noteId: noteId,
             title: todo.todoTitle,
           );
+          debugPrint('    - Inserted with ID: ${insertedTodo.id}');
+          // Update the todo item with the real ID
+          final index = todos.indexWhere((t) => t.id == todo.id);
+          if (index != -1) {
+            todos[index] = insertedTodo.copyWith(isDone: todo.isDone);
+          }
         }
+
+        // Update existing todos
+        for (var todo in existingTodos) {
+          final wasPreviouslySaved = _savedTodos.any((t) => t.id == todo.id);
+          if (wasPreviouslySaved) {
+            debugPrint(
+                '  - Updating todo ${todo.id}: ${todo.todoTitle}, isDone=${todo.isDone}');
+            await DriftNoteService.updateTodoItemTitle(todo.id, todo.todoTitle);
+            await DriftNoteService.updateTodoItemStatus(todo.id, todo.isDone);
+          } else {
+            // This shouldn't happen but handle it just in case
+            debugPrint(
+                '  - Unexpected: existing todo ${todo.id} not in saved list, inserting');
+            await DriftNoteService.insertTodoItem(
+              noteId: noteId,
+              title: todo.todoTitle,
+            );
+          }
+        }
+
+        // Update the saved todos list
+        setState(() {
+          _savedTodos = List<db.NoteTodoItem>.from(todos);
+        });
+        debugPrint('Todo save completed successfully');
       }
 
-      // Update the saved todos list
-      setState(() {
-        _savedTodos = List<db.NoteTodoItem>.from(todos);
-      });
-      debugPrint('Todo save completed successfully');
-    }
+      // Save folders
+      final result = await DriftNoteFolderService.upsertNoteFoldersWithNote(
+        selectedFolders,
+        noteId,
+      );
 
-    // Save folders
-    final result = await DriftNoteFolderService.upsertNoteFoldersWithNote(
-      selectedFolders,
-      noteId,
-    );
+      if (!result) {
+        _showErrorToast(
+            'Failed to save folders!', 'Some folders may not have been saved.');
+      }
 
-    if (!result) {
-      _showErrorToast('Failed to save folders!', 'Some folders may not have been saved.');
-    }
+      // Save attachments
+      final attachmentsUpdated =
+          await DriftNoteService.upsertNoteAttachments(noteAttachments, noteId);
+      if (!attachmentsUpdated) {
+        _showErrorToast('Failed to save Attachments!',
+            'Some attachments may not have been saved.');
+      }
 
-    // Save attachments
-    final attachmentsUpdated =
-        await DriftNoteService.upsertNoteAttachments(noteAttachments, noteId);
-    if (!attachmentsUpdated) {
-      _showErrorToast('Failed to save Attachments!',
-          'Some attachments may not have been saved.');
-    }
-
-    if (showToast) {
-      PinpointHaptics.success();
-      _showSuccessToast('Note Saved Successfully!', 'Your note was successfully saved!');
-      Navigator.of(context).pop();
-    }
+      if (showToast) {
+        PinpointHaptics.success();
+        _showSuccessToast(
+            'Note Saved Successfully!', 'Your note was successfully saved!');
+        Navigator.of(context).pop();
+      }
     } catch (e, stackTrace) {
       debugPrint('Error saving note: $e');
       debugPrint('Stack trace: $stackTrace');
@@ -298,7 +316,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor:
+          isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: BackButtonListener(
         onBackButtonPressed: () async {
           // Auto-save is handling saves, just allow back navigation
@@ -315,7 +334,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               Expanded(
                 child: CustomScrollView(
                   controller: _scrollController,
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   slivers: [
                     // Metadata Section (Folders & Tags)
                     SliverToBoxAdapter(
@@ -392,9 +412,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                   ),
                 ),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.1,
-                ),
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.1,
+                    ),
                 maxLines: 1,
               ),
             ),
@@ -429,7 +449,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 value: 'delete',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_outline_rounded, size: 20, color: cs.error),
+                    Icon(Icons.delete_outline_rounded,
+                        size: 20, color: cs.error),
                     const SizedBox(width: 12),
                     const Text('Delete'),
                   ],
@@ -449,7 +470,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 value: 'info',
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline_rounded, size: 20, color: cs.primary),
+                    Icon(Icons.info_outline_rounded,
+                        size: 20, color: cs.primary),
                     const SizedBox(width: 12),
                     const Text('Info'),
                   ],
@@ -478,7 +500,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   gradient: isSelected
                       ? LinearGradient(
@@ -609,23 +632,24 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
             ),
             contentPadding: const EdgeInsets.all(16),
           ),
-            style: theme.textTheme.bodyLarge?.copyWith(
-              height: 1.6,
-              letterSpacing: 0.2,
-              fontSize: 16,
-            ),
-            maxLines: null,
-            textInputAction: TextInputAction.newline,
-            expands: true,
-            textAlignVertical: TextAlignVertical.top,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            height: 1.6,
+            letterSpacing: 0.2,
+            fontSize: 16,
           ),
+          maxLines: null,
+          textInputAction: TextInputAction.newline,
+          expands: true,
+          textAlignVertical: TextAlignVertical.top,
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildMetadataSection(ColorScheme cs, bool isDark) {
     final now = DateTime.now();
-    final timeFormat = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    final timeFormat =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
     final dateFormat = '${_getMonthName(now.month)} ${now.day}, ${now.year}';
 
     return Column(
@@ -732,7 +756,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 isDark: isDark,
                 onTap: () async {
                   PinpointHaptics.light();
-                  final allFolders = await DriftNoteFolderService.watchAllNoteFoldersStream().first;
+                  final allFolders =
+                      await DriftNoteFolderService.watchAllNoteFoldersStream()
+                          .first;
                   if (!context.mounted) return;
                   showModalBottomSheet(
                     context: context,
@@ -742,7 +768,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                       height: MediaQuery.of(context).size.height * 0.65,
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(28)),
                       ),
                       child: ShowNoteFolderBottomSheet(
                         selectedFolders: selectedFolders,
@@ -763,34 +790,42 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: selectedFolders.skip(1).map((folder) => _buildMiniBubble(
-                  label: folder.title,
-                  color: cs.secondary,
-                  cs: cs,
-                  isDark: isDark,
-                  onTap: () async {
-                    PinpointHaptics.light();
-                    final allFolders = await DriftNoteFolderService.watchAllNoteFoldersStream().first;
-                    if (!context.mounted) return;
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => Container(
-                        height: MediaQuery.of(context).size.height * 0.65,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                        ),
-                        child: ShowNoteFolderBottomSheet(
-                          selectedFolders: selectedFolders,
-                          setSelectedFolders: _onFoldersChanged,
-                          noteFolderData: allFolders,
-                        ),
-                      ),
-                    );
-                  },
-                )).toList(),
+            children: selectedFolders
+                .skip(1)
+                .map((folder) => _buildMiniBubble(
+                      label: folder.title,
+                      color: cs.secondary,
+                      cs: cs,
+                      isDark: isDark,
+                      onTap: () async {
+                        PinpointHaptics.light();
+                        final allFolders = await DriftNoteFolderService
+                                .watchAllNoteFoldersStream()
+                            .first;
+                        if (!context.mounted) return;
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => Container(
+                            height: MediaQuery.of(context).size.height * 0.65,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF1E293B)
+                                  : Colors.white,
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(28)),
+                            ),
+                            child: ShowNoteFolderBottomSheet(
+                              selectedFolders: selectedFolders,
+                              setSelectedFolders: _onFoldersChanged,
+                              noteFolderData: allFolders,
+                            ),
+                          ),
+                        );
+                      },
+                    ))
+                .toList(),
           ),
         ],
       ],
@@ -799,8 +834,18 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   String _getMonthName(int month) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     return months[month - 1];
   }
@@ -856,10 +901,10 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 label,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface,
-                  letterSpacing: 0.2,
-                ),
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface,
+                      letterSpacing: 0.2,
+                    ),
               ),
             ),
             const SizedBox(width: 6),
@@ -896,9 +941,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
         child: Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: cs.onSurface.withValues(alpha: 0.8),
-          ),
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface.withValues(alpha: 0.8),
+              ),
         ),
       ),
     );
@@ -921,8 +966,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
             Text(
               'Select Note Type',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
             const SizedBox(height: 24),
             ...kNoteTypes.map((type) {
@@ -949,7 +994,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                   },
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -961,7 +1006,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Note'),
-        content: const Text('Are you sure you want to delete this note? This action cannot be undone.'),
+        content: const Text(
+            'Are you sure you want to delete this note? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -986,7 +1032,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     );
   }
 
-  void _handleShareNote(BuildContext context) {
+  Future<void> _handleShareNote(BuildContext context) async {
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
 
@@ -1007,10 +1053,25 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       return;
     }
 
+    // Check export limits
+    final premiumService = PremiumService();
+    if (!premiumService.canExport()) {
+      PinpointHaptics.error();
+      PremiumGateDialog.showExportLimit(context);
+      return;
+    }
+
+    // Increment export counter
+    await premiumService.incrementExports();
+
+    // Share the note
     _sharePlus.share(ShareParams(
       text: '$title\n\n$content',
       subject: title,
     ));
+
+    // Show success feedback
+    PinpointHaptics.success();
   }
 
   void _showNoteInfoModal(BuildContext context, ColorScheme cs, bool isDark) {
@@ -1021,7 +1082,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Note Info'),
-          content: const Text('This note hasn\'t been saved yet. Save it to see metadata.'),
+          content: const Text(
+              'This note hasn\'t been saved yet. Save it to see metadata.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -1064,26 +1126,35 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
             Text(
               'Note Information',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
             const SizedBox(height: 24),
 
             // Metadata Items
-            _buildInfoItem('Created', _formatDateTime(note.createdAt), Icons.event_rounded, cs),
+            _buildInfoItem('Created', _formatDateTime(note.createdAt),
+                Icons.event_rounded, cs),
             const SizedBox(height: 16),
-            _buildInfoItem('Last Modified', _formatDateTime(note.updatedAt), Icons.update_rounded, cs),
+            _buildInfoItem('Last Modified', _formatDateTime(note.updatedAt),
+                Icons.update_rounded, cs),
             const SizedBox(height: 16),
-            _buildInfoItem('Note Type', _getLabelForNoteType(note.defaultNoteType), Icons.category_rounded, cs),
+            _buildInfoItem(
+                'Note Type',
+                _getLabelForNoteType(note.defaultNoteType),
+                Icons.category_rounded,
+                cs),
             const SizedBox(height: 16),
-            _buildInfoItem('Folders', '${selectedFolders.length}', Icons.folder_rounded, cs),
+            _buildInfoItem('Folders', '${selectedFolders.length}',
+                Icons.folder_rounded, cs),
             if (selectedNoteType == 'Todo List') ...[
               const SizedBox(height: 16),
-              _buildInfoItem('Todo Items', '${todos.length}', Icons.checklist_rounded, cs),
+              _buildInfoItem(
+                  'Todo Items', '${todos.length}', Icons.checklist_rounded, cs),
             ],
             if (reminderDateTime != null) ...[
               const SizedBox(height: 16),
-              _buildInfoItem('Reminder', _formatDateTime(reminderDateTime!), Icons.alarm_rounded, cs),
+              _buildInfoItem('Reminder', _formatDateTime(reminderDateTime!),
+                  Icons.alarm_rounded, cs),
             ],
 
             const SizedBox(height: 24),
@@ -1100,7 +1171,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     );
   }
 
-  Widget _buildInfoItem(String label, String value, IconData icon, ColorScheme cs) {
+  Widget _buildInfoItem(
+      String label, String value, IconData icon, ColorScheme cs) {
     return Row(
       children: [
         Container(
