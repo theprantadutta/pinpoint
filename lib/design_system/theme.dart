@@ -20,6 +20,7 @@ class PinpointTheme {
   static ThemeData dark({
     Color? accentColor,
     bool highContrast = false,
+    String? fontFamily,
   }) {
     final accent = accentColor ?? PinpointColors.mint;
 
@@ -59,6 +60,7 @@ class PinpointTheme {
       // Typography
       textTheme: PinpointTypography.createTextTheme(
         brightness: Brightness.dark,
+        primaryFont: fontFamily,
       ),
 
       // App Bar
@@ -70,6 +72,7 @@ class PinpointTheme {
         systemOverlayStyle: SystemUiOverlayStyle.light,
         titleTextStyle: PinpointTypography.createTextTheme(
           brightness: Brightness.dark,
+          primaryFont: fontFamily,
         ).titleLarge,
       ),
 
@@ -188,6 +191,7 @@ class PinpointTheme {
   static ThemeData light({
     Color? accentColor,
     bool highContrast = false,
+    String? fontFamily,
   }) {
     final accent = accentColor ?? PinpointColors.mint;
 
@@ -225,6 +229,7 @@ class PinpointTheme {
       // Typography
       textTheme: PinpointTypography.createTextTheme(
         brightness: Brightness.light,
+        primaryFont: fontFamily,
       ),
 
       // App Bar
@@ -236,6 +241,7 @@ class PinpointTheme {
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         titleTextStyle: PinpointTypography.createTextTheme(
           brightness: Brightness.light,
+          primaryFont: fontFamily,
         ).titleLarge,
       ),
 

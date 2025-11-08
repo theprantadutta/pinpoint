@@ -157,7 +157,8 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                             child: Container(
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? cs.surfaceContainerHighest.withValues(alpha: 0.5)
+                                    ? cs.surfaceContainerHighest
+                                        .withValues(alpha: 0.5)
                                     : cs.surface,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
@@ -169,7 +170,8 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                                 boxShadow: [
                                   if (!isDark)
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.04),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.04),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -186,7 +188,8 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  onChanged: (bool? value) => markTodo(todo, value),
+                                  onChanged: (bool? value) =>
+                                      markTodo(todo, value),
                                 ),
                                 title: GestureDetector(
                                   onTap: () => markTodo(todo, !todo.isDone),
@@ -199,7 +202,8 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                                       decoration: todo.isDone
                                           ? TextDecoration.lineThrough
                                           : null,
-                                      decorationColor: cs.onSurface.withValues(alpha: 0.5),
+                                      decorationColor:
+                                          cs.onSurface.withValues(alpha: 0.5),
                                     ),
                                   ),
                                 ),
@@ -221,8 +225,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                                       child: Row(
                                         children: [
                                           Icon(Icons.edit_rounded,
-                                               size: 20,
-                                               color: cs.primary),
+                                              size: 20, color: cs.primary),
                                           const SizedBox(width: 12),
                                           const Text('Edit'),
                                         ],
@@ -233,8 +236,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                                       child: Row(
                                         children: [
                                           Icon(Icons.delete_rounded,
-                                               size: 20,
-                                               color: cs.error),
+                                              size: 20, color: cs.error),
                                           const SizedBox(width: 12),
                                           const Text('Delete'),
                                         ],

@@ -4,7 +4,8 @@ import 'package:logger/logger.dart';
 
 class ApiService {
   // Backend API configuration
-  static const String baseUrl = 'http://localhost:8000'; // Change to your production URL
+  static const String baseUrl =
+      'http://localhost:8000'; // Change to your production URL
   static const String apiV1 = '/api/v1';
 
   final Dio _dio = Dio();
@@ -255,7 +256,8 @@ class ApiService {
   }
 
   /// Get subscription status by device ID (no authentication required)
-  Future<Map<String, dynamic>> getSubscriptionStatusByDevice(String deviceId) async {
+  Future<Map<String, dynamic>> getSubscriptionStatusByDevice(
+      String deviceId) async {
     try {
       final response = await _dio.get('/subscription/status/$deviceId');
       return response.data;

@@ -3,6 +3,7 @@ import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
 import 'package:pinpoint/sync/sync_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
+import 'package:pinpoint/widgets/premium_gate_dialog.dart';
 import '../design_system/design_system.dart';
 
 class SyncScreen extends StatefulWidget {
@@ -60,11 +61,19 @@ class _SyncScreenState extends State<SyncScreen> {
           );
         } else {
           PinpointHaptics.error();
-          showErrorToast(
-            context: context,
-            title: 'Sync Failed',
-            description: result.message,
-          );
+
+          // Check if error is due to premium limit
+          if (result.message.toLowerCase().contains('limit reached') ||
+              result.message.toLowerCase().contains('upgrade to premium')) {
+            // Show premium gate dialog
+            PremiumGateDialog.showSyncLimit(context, 0);
+          } else {
+            showErrorToast(
+              context: context,
+              title: 'Sync Failed',
+              description: result.message,
+            );
+          }
         }
       }
     } catch (e) {

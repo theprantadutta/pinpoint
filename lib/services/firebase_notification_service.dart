@@ -4,8 +4,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pinpoint/services/api_service.dart';
-import 'package:pinpoint/services/subscription_manager.dart';
-import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pinpoint/firebase_options.dart';
@@ -15,7 +13,8 @@ import 'dart:io';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
   }
   debugPrint('📱 Background message received: ${message.messageId}');
   debugPrint('Title: ${message.notification?.title}');
@@ -58,7 +57,8 @@ class FirebaseNotificationService {
         );
         debugPrint('✅ Firebase initialized successfully');
       } else {
-        debugPrint('✅ Firebase already initialized with ${Firebase.apps.length} apps');
+        debugPrint(
+            '✅ Firebase already initialized with ${Firebase.apps.length} apps');
       }
 
       // Initialize FirebaseMessaging instance AFTER Firebase is initialized

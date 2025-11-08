@@ -4,6 +4,8 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:pinpoint/screens/folder_screen.dart';
 import 'package:pinpoint/services/dialog_service.dart';
 import 'package:pinpoint/services/drift_note_folder_service.dart';
+import 'package:pinpoint/services/premium_service.dart';
+import 'package:pinpoint/widgets/premium_gate_dialog.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/services/logger_service.dart';
 import '../../database/database.dart';
@@ -13,6 +15,18 @@ class HomeScreenMyFolders extends StatelessWidget {
   const HomeScreenMyFolders({super.key});
 
   Future<void> _addFolderFlow(BuildContext context) async {
+    // Check premium limits first
+    final folders =
+        await DriftNoteFolderService.watchAllNoteFoldersStream().first;
+    final premiumService = PremiumService();
+
+    if (!premiumService.canCreateFolder(folders.length)) {
+      if (!context.mounted) return;
+      PinpointHaptics.error();
+      PremiumGateDialog.showFolderLimit(context);
+      return;
+    }
+
     final controller = TextEditingController();
     DialogService.addSomethingDialog(
       context: context,

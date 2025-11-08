@@ -1,7 +1,4 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../theme.dart';
-import '../animations.dart';
 import 'tag_chip.dart';
 
 /// SearchBarSticky - Expandable search bar with command palette
@@ -127,7 +124,8 @@ class _SearchBarStickyState extends State<SearchBarSticky> {
                 width: 0.5,
               ),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
           style: theme.textTheme.bodyLarge,
           onTap: widget.onTap,

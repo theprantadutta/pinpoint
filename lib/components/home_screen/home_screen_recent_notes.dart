@@ -30,7 +30,7 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
   String _viewType = 'list';
   String _sortType = 'updatedAt';
   String _sortDirection = 'desc';
-  SharedPreferences? _prefs;
+  SharedPreferences? _preferences;
 
   @override
   void initState() {
@@ -39,11 +39,13 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
   }
 
   Future<void> _loadSettings() async {
-    _prefs = await SharedPreferences.getInstance();
+    _preferences = await SharedPreferences.getInstance();
     setState(() {
-      _viewType = _prefs?.getString(kHomeScreenViewTypeKey) ?? 'list';
-      _sortType = _prefs?.getString(kHomeScreenSortTypeKey) ?? 'updatedAt';
-      _sortDirection = _prefs?.getString(kHomeScreenSortDirectionKey) ?? 'desc';
+      _viewType = _preferences?.getString(kHomeScreenViewTypeKey) ?? 'list';
+      _sortType =
+          _preferences?.getString(kHomeScreenSortTypeKey) ?? 'updatedAt';
+      _sortDirection =
+          _preferences?.getString(kHomeScreenSortDirectionKey) ?? 'desc';
     });
   }
 
@@ -270,9 +272,6 @@ class _TitleBlock extends StatelessWidget {
     required this.title,
     required this.snippet,
     required this.updatedAt,
-    this.reminderTime,
-    this.folder,
-    this.tag,
   });
 
   @override

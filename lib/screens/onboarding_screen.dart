@@ -74,8 +74,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(kHasCompletedOnboardingKey, true);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(kHasCompletedOnboardingKey, true);
 
     if (!mounted) return;
     context.go(HomeScreen.kRouteName);
@@ -133,7 +133,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: colorScheme.primary.withValues(alpha: 0.2),
+                                color:
+                                    colorScheme.primary.withValues(alpha: 0.2),
                                 blurRadius: 8,
                                 spreadRadius: 2,
                               ),
@@ -293,7 +294,10 @@ class _OnboardingPageWidget extends StatelessWidget {
               borderRadius: BorderRadius.circular(isSmallScreen ? 70 : 90),
               boxShadow: [
                 BoxShadow(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.3),
                   blurRadius: 30,
                   spreadRadius: 8,
                 ),

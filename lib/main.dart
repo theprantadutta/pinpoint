@@ -14,6 +14,8 @@ import 'services/notification_service.dart';
 import 'services/auth_service.dart';
 import 'services/subscription_manager.dart';
 import 'services/firebase_notification_service.dart';
+import 'services/revenue_cat_service.dart';
+import 'services/premium_service.dart';
 import 'sync/sync_manager.dart';
 
 // void main() async {
@@ -98,6 +100,27 @@ Future<void> _initializeCoreServices() async {
   // Initialize sync manager
   final syncManager = getIt<SyncManager>();
   await syncManager.init();
+
+  // Initialize RevenueCat
+  try {
+    debugPrint('💎 [main.dart] Initializing RevenueCat...');
+    await RevenueCatService.initialize();
+    debugPrint('✅ [main.dart] RevenueCat initialized');
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ [main.dart] RevenueCat not initialized: $e');
+    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
+    // Continue without RevenueCat - app will still work in free mode
+  }
+
+  // Initialize PremiumService
+  try {
+    debugPrint('💎 [main.dart] Initializing PremiumService...');
+    await PremiumService().initialize();
+    debugPrint('✅ [main.dart] PremiumService initialized');
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ [main.dart] PremiumService not initialized: $e');
+    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
+  }
 
   // Add any other core services here
 }
@@ -239,6 +262,7 @@ class _MyAppState extends State<MyApp> {
   Color _accentColor = PinpointColors.mint; // Default accent
   bool _isBiometricEnabled = false;
   bool _highContrastMode = false;
+  String _fontFamily = 'Inter'; // Default font
   SharedPreferences? _sharedPreferences;
 
   /// Accent color presets
@@ -255,6 +279,7 @@ class _MyAppState extends State<MyApp> {
   Color get accentColor => _accentColor;
   bool get isBiometricEnabled => _isBiometricEnabled;
   bool get highContrastMode => _highContrastMode;
+  String get fontFamily => _fontFamily;
 
   void changeBiometricEnabledEnabled(bool isisBiometricEnabled) {
     setState(() {
@@ -281,6 +306,13 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _themeMode = themeMode;
       _sharedPreferences?.setBool(kIsDarkModeKey, themeMode == ThemeMode.dark);
+    });
+  }
+
+  void changeFontFamily(String fontFamily) {
+    setState(() {
+      _fontFamily = fontFamily;
+      _sharedPreferences?.setString(kSelectedFontKey, fontFamily);
     });
   }
 
@@ -311,6 +343,12 @@ class _MyAppState extends State<MyApp> {
     final isFingerPrintEnabled = _sharedPreferences?.getBool(kBiometricKey);
     if (isFingerPrintEnabled != null) {
       setState(() => _isBiometricEnabled = isFingerPrintEnabled);
+    }
+
+    // Load font family
+    final fontFamily = _sharedPreferences?.getString(kSelectedFontKey);
+    if (fontFamily != null) {
+      setState(() => _fontFamily = fontFamily);
     }
   }
 
@@ -358,10 +396,12 @@ class _MyAppState extends State<MyApp> {
         theme: PinpointTheme.light(
           accentColor: _accentColor,
           highContrast: _highContrastMode,
+          fontFamily: _fontFamily,
         ),
         darkTheme: PinpointTheme.dark(
           accentColor: _accentColor,
           highContrast: _highContrastMode,
+          fontFamily: _fontFamily,
         ),
         debugShowCheckedModeBanner: false,
       ),

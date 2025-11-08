@@ -148,141 +148,143 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
           child: Container(
             decoration: getBackgroundDecoration(kPrimaryColor),
             child: Stack(
-          children: [
-            PageView(
-              onPageChanged: _handlePageViewChanged,
-              controller: pageController,
-              padEnds: true,
-              children: kTopLevelPages,
-            ),
-            // Floating Navigation Bar
-            Positioned(
-              left: 24,
-              right: 24,
-              bottom: 24,
-              child: Container(
-                height: 72,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: isDarkTheme
-                        ? [
-                            const Color(0xFF1E293B), // Slate 800
-                            const Color(0xFF0F172A), // Slate 900
-                          ]
-                        : [
-                            const Color(0xFFF8FAFC), // Slate 50
-                            const Color(0xFFE2E8F0), // Slate 200
-                          ],
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDarkTheme ? 0.5 : 0.2),
-                      blurRadius: 32,
-                      offset: const Offset(0, 12),
-                    ),
-                    BoxShadow(
-                      color: isDarkTheme
-                          ? kPrimaryColor.withValues(alpha: 0.1)
-                          : kPrimaryColor.withValues(alpha: 0.05),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+              children: [
+                PageView(
+                  onPageChanged: _handlePageViewChanged,
+                  controller: pageController,
+                  padEnds: true,
+                  children: kTopLevelPages,
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: isDarkTheme
-                              ? [
-                                  Colors.white.withValues(alpha: 0.08),
-                                  Colors.white.withValues(alpha: 0.03),
-                                ]
-                              : [
-                                  Colors.white.withValues(alpha: 0.7),
-                                  Colors.white.withValues(alpha: 0.5),
-                                ],
+                // Floating Navigation Bar
+                Positioned(
+                  left: 24,
+                  right: 24,
+                  bottom: 24,
+                  child: Container(
+                    height: 72,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isDarkTheme
+                            ? [
+                                const Color(0xFF1E293B), // Slate 800
+                                const Color(0xFF0F172A), // Slate 900
+                              ]
+                            : [
+                                const Color(0xFFF8FAFC), // Slate 50
+                                const Color(0xFFE2E8F0), // Slate 200
+                              ],
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black
+                              .withValues(alpha: isDarkTheme ? 0.5 : 0.2),
+                          blurRadius: 32,
+                          offset: const Offset(0, 12),
                         ),
-                        border: Border.all(
+                        BoxShadow(
                           color: isDarkTheme
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.white.withValues(alpha: 0.3),
-                          width: 1.5,
+                              ? kPrimaryColor.withValues(alpha: 0.1)
+                              : kPrimaryColor.withValues(alpha: 0.05),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
                         ),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _NavBarItem(
-                            icon: Symbols.home,
-                            label: 'Home',
-                            isSelected: selectedIndex == 0,
-                            onTap: () {
-                              PinpointHaptics.light();
-                              _updateCurrentPageIndex(0);
-                            },
-                          ),
-                          _NavBarItem(
-                            icon: Symbols.sticky_note_2,
-                            label: 'Notes',
-                            isSelected: selectedIndex == 1,
-                            onTap: () {
-                              PinpointHaptics.light();
-                              _updateCurrentPageIndex(1);
-                            },
-                          ),
-                          // FAB in the middle
-                          FloatingActionButton(
-                            heroTag: kAddNewNote,
-                            onPressed: () {
-                              PinpointHaptics.medium();
-                              context.push(CreateNoteScreen.kRouteName);
-                            },
-                            backgroundColor: kPrimaryColor,
-                            elevation: 0,
-                            child: const Icon(
-                              Symbols.add,
-                              size: 28,
-                              color: Colors.white,
-                              weight: 600,
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 8),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: isDarkTheme
+                                  ? [
+                                      Colors.white.withValues(alpha: 0.08),
+                                      Colors.white.withValues(alpha: 0.03),
+                                    ]
+                                  : [
+                                      Colors.white.withValues(alpha: 0.7),
+                                      Colors.white.withValues(alpha: 0.5),
+                                    ],
                             ),
+                            border: Border.all(
+                              color: isDarkTheme
+                                  ? Colors.white.withValues(alpha: 0.1)
+                                  : Colors.white.withValues(alpha: 0.3),
+                              width: 1.5,
+                            ),
+                            borderRadius: BorderRadius.circular(24),
                           ),
-                          _NavBarItem(
-                            icon: Symbols.task_alt,
-                            label: 'Todo',
-                            isSelected: selectedIndex == 2,
-                            onTap: () {
-                              PinpointHaptics.light();
-                              _updateCurrentPageIndex(2);
-                            },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _NavBarItem(
+                                icon: Symbols.home,
+                                label: 'Home',
+                                isSelected: selectedIndex == 0,
+                                onTap: () {
+                                  PinpointHaptics.light();
+                                  _updateCurrentPageIndex(0);
+                                },
+                              ),
+                              _NavBarItem(
+                                icon: Symbols.sticky_note_2,
+                                label: 'Notes',
+                                isSelected: selectedIndex == 1,
+                                onTap: () {
+                                  PinpointHaptics.light();
+                                  _updateCurrentPageIndex(1);
+                                },
+                              ),
+                              // FAB in the middle
+                              FloatingActionButton(
+                                heroTag: kAddNewNote,
+                                onPressed: () {
+                                  PinpointHaptics.medium();
+                                  context.push(CreateNoteScreen.kRouteName);
+                                },
+                                backgroundColor: kPrimaryColor,
+                                elevation: 0,
+                                child: const Icon(
+                                  Symbols.add,
+                                  size: 28,
+                                  color: Colors.white,
+                                  weight: 600,
+                                ),
+                              ),
+                              _NavBarItem(
+                                icon: Symbols.task_alt,
+                                label: 'Todo',
+                                isSelected: selectedIndex == 2,
+                                onTap: () {
+                                  PinpointHaptics.light();
+                                  _updateCurrentPageIndex(2);
+                                },
+                              ),
+                              _NavBarItem(
+                                icon: Symbols.account_circle,
+                                label: 'Account',
+                                isSelected: selectedIndex == 3,
+                                onTap: () {
+                                  PinpointHaptics.light();
+                                  _updateCurrentPageIndex(3);
+                                },
+                              ),
+                            ],
                           ),
-                          _NavBarItem(
-                            icon: Symbols.account_circle,
-                            label: 'Account',
-                            isSelected: selectedIndex == 3,
-                            onTap: () {
-                              PinpointHaptics.light();
-                              _updateCurrentPageIndex(3);
-                            },
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ],
+              ],
             ),
           ),
         ),

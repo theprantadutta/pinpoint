@@ -4,7 +4,7 @@ import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
-import 'package:pinpoint/screens/subscription_screen.dart';
+import 'package:pinpoint/screens/subscription_screen_revcat.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:pinpoint/services/drift_note_service.dart';
@@ -28,7 +28,7 @@ class _AccountScreenState extends State<AccountScreen> {
   String _viewType = 'list';
   String _sortType = 'updatedAt';
   String _sortDirection = 'desc';
-  SharedPreferences? _prefs;
+  SharedPreferences? _preferences;
 
   @override
   void initState() {
@@ -37,16 +37,18 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _loadSettings() async {
-    _prefs = await SharedPreferences.getInstance();
+    _preferences = await SharedPreferences.getInstance();
     setState(() {
-      _viewType = _prefs?.getString(kHomeScreenViewTypeKey) ?? 'list';
-      _sortType = _prefs?.getString(kHomeScreenSortTypeKey) ?? 'updatedAt';
-      _sortDirection = _prefs?.getString(kHomeScreenSortDirectionKey) ?? 'desc';
+      _viewType = _preferences?.getString(kHomeScreenViewTypeKey) ?? 'list';
+      _sortType =
+          _preferences?.getString(kHomeScreenSortTypeKey) ?? 'updatedAt';
+      _sortDirection =
+          _preferences?.getString(kHomeScreenSortDirectionKey) ?? 'desc';
     });
   }
 
   Future<void> _setViewType(String value) async {
-    await _prefs?.setString(kHomeScreenViewTypeKey, value);
+    await _preferences?.setString(kHomeScreenViewTypeKey, value);
     setState(() {
       _viewType = value;
     });
@@ -54,7 +56,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Future<void> _setSortType(String? value) async {
     if (value == null) return;
-    await _prefs?.setString(kHomeScreenSortTypeKey, value);
+    await _preferences?.setString(kHomeScreenSortTypeKey, value);
     setState(() {
       _sortType = value;
     });
@@ -62,7 +64,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Future<void> _setSortDirection(String? value) async {
     if (value == null) return;
-    await _prefs?.setString(kHomeScreenSortDirectionKey, value);
+    await _preferences?.setString(kHomeScreenSortDirectionKey, value);
     setState(() {
       _sortDirection = value;
     });
@@ -84,7 +86,8 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
+        padding:
+            const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
         children: [
           // Profile/Branding Section
           Container(
@@ -143,7 +146,8 @@ class _AccountScreenState extends State<AccountScreen> {
                       Text(
                         'Your thoughts, perfectly organized',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -168,7 +172,9 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   const SizedBox(height: 12),
                   _SettingsTile(
-                    title: subscriptionManager.isPremium ? 'Premium Active' : 'Upgrade to Premium',
+                    title: subscriptionManager.isPremium
+                        ? 'Premium Active'
+                        : 'Upgrade to Premium',
                     subtitle: subscriptionManager.isPremium
                         ? 'Thank you for your support!'
                         : 'Unlock all features',
@@ -186,7 +192,8 @@ class _AccountScreenState extends State<AccountScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              subscriptionManager.subscriptionTier.toUpperCase(),
+                              subscriptionManager.subscriptionTier
+                                  .toUpperCase(),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -197,7 +204,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         : null,
                     onTap: () {
                       PinpointHaptics.medium();
-                      context.push(SubscriptionScreen.kRouteName);
+                      context.push(SubscriptionScreenRevCat.kRouteName);
                     },
                   ),
                   const SizedBox(height: 32),

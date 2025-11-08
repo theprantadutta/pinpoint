@@ -139,7 +139,8 @@ class _TodoScreenState extends State<TodoScreen> {
 
                 return AnimatedListStagger(
                   itemCount: filteredTodos.length,
-                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100),
+                  padding:
+                      const EdgeInsets.only(left: 16, right: 16, bottom: 100),
                   itemBuilder: (context, index) {
                     final todoWithNote = filteredTodos[index];
                     return Padding(
@@ -307,12 +308,9 @@ class _TodoCard extends StatelessWidget {
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.1,
-                        decoration: todo.isDone
-                            ? TextDecoration.lineThrough
-                            : null,
-                        color: todo.isDone
-                            ? cs.onSurface.withAlpha(150)
-                            : null,
+                        decoration:
+                            todo.isDone ? TextDecoration.lineThrough : null,
+                        color: todo.isDone ? cs.onSurface.withAlpha(150) : null,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

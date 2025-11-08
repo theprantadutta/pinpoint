@@ -19,6 +19,7 @@ import '../services/drift_note_folder_service.dart';
 import '../services/drift_note_service.dart';
 import '../services/premium_service.dart';
 import '../widgets/premium_gate_dialog.dart';
+import '../constants/premium_limits.dart';
 import '../util/show_a_toast.dart';
 import '../design_system/design_system.dart';
 
@@ -462,7 +463,21 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                   children: [
                     Icon(Symbols.share, size: 20, color: cs.primary),
                     const SizedBox(width: 12),
-                    const Text('Share'),
+                    Builder(
+                      builder: (context) {
+                        final premiumService = PremiumService();
+                        final isPremium = premiumService.isPremium;
+                        final used = premiumService.getExportsThisMonth();
+                        final total = PremiumLimits.maxExportsPerMonthForFree;
+
+                        String shareText = 'Share';
+                        if (!isPremium) {
+                          shareText = 'Share ($used/$total)';
+                        }
+
+                        return Text(shareText);
+                      },
+                    ),
                   ],
                 ),
               ),
