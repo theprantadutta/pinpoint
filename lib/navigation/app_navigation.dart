@@ -61,7 +61,10 @@ class AppNavigation {
         parentNavigatorKey: rootNavigatorKey,
         path: SubscriptionScreenRevCat.kRouteName,
         name: "Subscription",
-        builder: (context, state) => const SubscriptionScreenRevCat(),
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const SubscriptionScreenRevCat(),
+        ),
       ),
 
       /// MainWrapper
@@ -150,13 +153,16 @@ class AppNavigation {
         parentNavigatorKey: rootNavigatorKey,
         path: '${FolderScreen.kRouteName}/:folderId/:folderTitle',
         name: "Folder Screen",
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final folderId = int.parse(state.pathParameters['folderId']!);
           final folderTitle = state.pathParameters['folderTitle']!;
-          return FolderScreen(
+          return NoTransitionPage(
             key: state.pageKey,
-            folderId: folderId,
-            folderTitle: folderTitle,
+            child: FolderScreen(
+              key: state.pageKey,
+              folderId: folderId,
+              folderTitle: folderTitle,
+            ),
           );
         },
       ),
@@ -164,51 +170,56 @@ class AppNavigation {
         parentNavigatorKey: rootNavigatorKey,
         path: ArchiveScreen.kRouteName,
         name: "Archive Screen",
-        builder: (context, state) {
-          return ArchiveScreen(
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: ArchiveScreen(
             key: state.pageKey,
-          );
-        },
+          ),
+        ),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: TrashScreen.kRouteName,
         name: "Trash Screen",
-        builder: (context, state) {
-          return TrashScreen(
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: TrashScreen(
             key: state.pageKey,
-          );
-        },
+          ),
+        ),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: SyncScreen.kRouteName,
         name: "Sync Screen",
-        builder: (context, state) {
-          return SyncScreen(
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: SyncScreen(
             key: state.pageKey,
-          );
-        },
+          ),
+        ),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: ThemeScreen.kRouteName,
         name: "Theme Screen",
-        builder: (context, state) {
-          return ThemeScreen(
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: ThemeScreen(
             key: state.pageKey,
-          );
-        },
+          ),
+        ),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: MyFoldersScreen.kRouteName,
         name: "My Folders Screen",
-        builder: (context, state) {
-          return MyFoldersScreen(
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: MyFoldersScreen(
             key: state.pageKey,
-          );
-        },
+          ),
+        ),
       ),
     ],
   );
