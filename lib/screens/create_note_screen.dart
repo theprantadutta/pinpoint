@@ -20,6 +20,8 @@ import '../dtos/note_folder_dto.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/drift_note_service.dart';
 import '../services/premium_service.dart';
+import '../services/background_save_queue_service.dart';
+import '../service_locators/init_service_locators.dart';
 import '../widgets/premium_gate_dialog.dart';
 import '../constants/premium_limits.dart';
 import '../util/show_a_toast.dart';
@@ -38,7 +40,8 @@ class CreateNoteScreen extends StatefulWidget {
   State<CreateNoteScreen> createState() => _CreateNoteScreenState();
 }
 
-class _CreateNoteScreenState extends State<CreateNoteScreen> {
+class _CreateNoteScreenState extends State<CreateNoteScreen>
+    with WidgetsBindingObserver {
   String selectedNoteType = kNoteTypes[0];
   late TextEditingController _titleController;
   late TextEditingController _contentController;
@@ -57,10 +60,13 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _contentFocusNode = FocusNode();
   Timer? _autoSaveTimer;
+  late final BackgroundSaveQueueService _saveQueue;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _saveQueue = getIt<BackgroundSaveQueueService>();
     _titleController = TextEditingController();
     _contentController = TextEditingController();
     _reminderDescription = TextEditingController();
@@ -113,9 +119,114 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       return;
     }
 
-    debugPrint('Auto-save executing...');
-    await saveNoteToLocalDb(showToast: false);
-    debugPrint('Auto-save completed');
+    debugPrint('Auto-save executing via background queue...');
+
+    final now = DateTime.now();
+    final noteCompanion = db.NotesCompanion.insert(
+      noteTitle: drift.Value(title),
+      isPinned: drift.Value(false),
+      defaultNoteType: selectedNoteType,
+      content: drift.Value(content), // Store plain text in content field too
+      contentPlainText: drift.Value(content), // Main plain text field
+      reminderDescription: drift.Value(_reminderDescription.text),
+      reminderTime: drift.Value(reminderDateTime),
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    // Enqueue save WITHOUT awaiting - fire and forget for auto-save
+    _saveQueue
+        .enqueueSave(
+      noteCompanion: noteCompanion,
+      previousNoteId: _currentNoteId,
+    )
+        .then((result) async {
+      if (result.success) {
+        debugPrint('Auto-save completed: note ID ${result.noteId}');
+        final noteId = result.noteId;
+
+        // Update current note ID if this was a new note
+        if (_currentNoteId == null && mounted) {
+          setState(() {
+            _currentNoteId = noteId;
+          });
+        }
+
+        // Save todos if this is a todo list note
+        if (selectedNoteType == kNoteTypes[2] && todos.isNotEmpty) {
+          await _saveTodos(noteId);
+        }
+      } else {
+        debugPrint('Auto-save failed: ${result.reason}');
+        // Optionally show subtle error indicator (not intrusive toast)
+      }
+    });
+
+    debugPrint('Auto-save enqueued');
+  }
+
+  Future<void> _saveTodos(int noteId) async {
+    try {
+      debugPrint(
+          '[Auto-save Todos] Saving todos: ${todos.length} total, ${_savedTodos.length} previously saved');
+      final newTodos = todos.where((todo) => todo.id < 0).toList();
+      final existingTodos = todos.where((todo) => todo.id > 0).toList();
+      debugPrint(
+          '[Auto-save Todos] ${newTodos.length} new todos, ${existingTodos.length} existing todos');
+
+      // Delete todos that were removed
+      for (var savedTodo in _savedTodos) {
+        final stillExists = todos.any((t) => t.id == savedTodo.id);
+        if (!stillExists) {
+          debugPrint(
+              '[Auto-save Todos] Deleting todo ${savedTodo.id}: ${savedTodo.todoTitle}');
+          await DriftNoteService.deleteTodoItem(savedTodo.id);
+        }
+      }
+
+      // Insert new todos and update their IDs
+      for (var todo in newTodos) {
+        debugPrint('[Auto-save Todos] Inserting new todo: ${todo.todoTitle}');
+        final insertedTodo = await DriftNoteService.insertTodoItem(
+          noteId: noteId,
+          title: todo.todoTitle,
+        );
+        debugPrint('[Auto-save Todos] Inserted with ID: ${insertedTodo.id}');
+        // Update the todo item with the real ID
+        final index = todos.indexWhere((t) => t.id == todo.id);
+        if (index != -1) {
+          todos[index] = insertedTodo.copyWith(isDone: todo.isDone);
+        }
+      }
+
+      // Update existing todos
+      for (var todo in existingTodos) {
+        final wasPreviouslySaved = _savedTodos.any((t) => t.id == todo.id);
+        if (wasPreviouslySaved) {
+          debugPrint(
+              '[Auto-save Todos] Updating todo ${todo.id}: ${todo.todoTitle}, isDone=${todo.isDone}');
+          await DriftNoteService.updateTodoItemTitle(todo.id, todo.todoTitle);
+          await DriftNoteService.updateTodoItemStatus(todo.id, todo.isDone);
+        } else {
+          debugPrint(
+              '[Auto-save Todos] Unexpected: existing todo ${todo.id} not in saved list, inserting');
+          await DriftNoteService.insertTodoItem(
+            noteId: noteId,
+            title: todo.todoTitle,
+          );
+        }
+      }
+
+      // Update the saved todos list
+      if (mounted) {
+        setState(() {
+          _savedTodos = List<db.NoteTodoItem>.from(todos);
+        });
+      }
+      debugPrint('[Auto-save Todos] Todo save completed successfully');
+    } catch (e) {
+      debugPrint('[Auto-save Todos] Error saving todos: $e');
+    }
   }
 
   void _onTodoChanged(List<db.NoteTodoItem> newTodoItems) {
@@ -135,6 +246,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _autoSaveTimer?.cancel();
     _titleController.removeListener(_scheduleAutoSave);
     _contentController.removeListener(_scheduleAutoSave);
@@ -145,6 +257,81 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     _contentController.dispose();
     _reminderDescription.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      // App going to background or being terminated - trigger save via queue
+      debugPrint('[Lifecycle] App state changed to $state, triggering save via queue');
+
+      // Cancel any pending auto-save timer
+      _autoSaveTimer?.cancel();
+
+      // Trigger save via queue (fire and forget, queue will handle it)
+      _performImmediateSaveViaQueue();
+    }
+  }
+
+  Future<void> _performImmediateSaveViaQueue() async {
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
+
+    // Check if there's any content to save
+    final hasTextContent = title.isNotEmpty || content.isNotEmpty;
+    final hasTodos = selectedNoteType == kNoteTypes[2] && todos.isNotEmpty;
+    final hasReminder =
+        selectedNoteType == kNoteTypes[3] && reminderDateTime != null;
+
+    if (!hasTextContent && !hasTodos && !hasReminder) {
+      debugPrint('[ImmediateSave] No content to save, skipping');
+      return;
+    }
+
+    debugPrint('[ImmediateSave] Saving via queue...');
+
+    try {
+      final now = DateTime.now();
+      final noteCompanion = db.NotesCompanion.insert(
+        noteTitle: drift.Value(title),
+        isPinned: drift.Value(false),
+        defaultNoteType: selectedNoteType,
+        content: drift.Value(content),
+        contentPlainText: drift.Value(content),
+        reminderDescription: drift.Value(_reminderDescription.text),
+        reminderTime: drift.Value(reminderDateTime),
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      // Use queue but AWAIT the result (blocks navigation until complete)
+      final result = await _saveQueue.enqueueSave(
+        noteCompanion: noteCompanion,
+        previousNoteId: _currentNoteId,
+        debounce: false, // No debounce for immediate saves
+      );
+
+      if (result.success) {
+        debugPrint('[ImmediateSave] Save completed: note ID ${result.noteId}');
+        final noteId = result.noteId;
+
+        if (_currentNoteId == null && mounted) {
+          setState(() {
+            _currentNoteId = noteId;
+          });
+        }
+
+        // Save todos if this is a todo list note
+        if (selectedNoteType == kNoteTypes[2] && todos.isNotEmpty) {
+          await _saveTodos(noteId);
+        }
+      } else {
+        debugPrint('[ImmediateSave] Save failed: ${result.reason}');
+      }
+    } catch (e) {
+      debugPrint('[ImmediateSave] Error during save: $e');
+    }
   }
 
   Future<void> saveNoteToLocalDb({bool showToast = true}) async {
@@ -191,16 +378,20 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
         updatedAt: now,
       );
 
-      final noteId = await DriftNoteService.upsertANewTitleContentNote(
-        noteCompanion,
-        _currentNoteId,
+      // For explicit saves, AWAIT the result from the queue
+      final result = await _saveQueue.enqueueSave(
+        noteCompanion: noteCompanion,
+        previousNoteId: _currentNoteId,
+        debounce: false, // No debounce for explicit saves
       );
 
-      if (noteId == 0) {
+      if (!result.success) {
         _showErrorToast('Failed to save Note!',
-            'Something went wrong while saving the note');
+            result.reason ?? 'Something went wrong while saving the note');
         return;
       }
+
+      final noteId = result.noteId;
 
       // Update the current note ID after first save
       if (_currentNoteId == null) {
@@ -270,12 +461,12 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       }
 
       // Save folders
-      final result = await DriftNoteFolderService.upsertNoteFoldersWithNote(
+      final foldersResult = await DriftNoteFolderService.upsertNoteFoldersWithNote(
         selectedFolders,
         noteId,
       );
 
-      if (!result) {
+      if (!foldersResult) {
         _showErrorToast(
             'Failed to save folders!', 'Some folders may not have been saved.');
       }
@@ -323,8 +514,16 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
           isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: BackButtonListener(
         onBackButtonPressed: () async {
-          // Auto-save is handling saves, just allow back navigation
-          return false;
+          debugPrint('[BackButton] Back button pressed, triggering save...');
+
+          // Cancel pending auto-save timer
+          _autoSaveTimer?.cancel();
+
+          // Trigger immediate save via queue
+          await _performImmediateSaveViaQueue();
+
+          debugPrint('[BackButton] Save completed, allowing navigation');
+          return false; // Allow navigation
         },
         child: SafeArea(
           bottom: false,
@@ -385,9 +584,20 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
               minWidth: 48,
               minHeight: 48,
             ),
-            onPressed: () {
+            onPressed: () async {
               PinpointHaptics.light();
-              Navigator.of(context).pop();
+              debugPrint('[HeaderBackButton] Back button clicked, triggering save...');
+
+              // Cancel pending auto-save timer
+              _autoSaveTimer?.cancel();
+
+              // Trigger immediate save via queue
+              await _performImmediateSaveViaQueue();
+
+              debugPrint('[HeaderBackButton] Save completed, navigating back');
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
             },
           ),
 
