@@ -17,3 +17,7 @@ const kDidPopulatedNoteFolder = 'did-populate-note-folder';
 
 // onboarding key
 const kHasCompletedOnboardingKey = 'has_completed_onboarding';
+
+// terms and privacy keys
+const kHasAcceptedTermsKey = 'has_accepted_terms';
+const kTermsAcceptedDateKey = 'terms_accepted_date';

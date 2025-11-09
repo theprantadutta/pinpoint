@@ -5,7 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/shared_preference_keys.dart';
 import '../design_system/design_system.dart';
-import 'auth_screen.dart';
+import 'terms_acceptance_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -78,7 +78,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await preferences.setBool(kHasCompletedOnboardingKey, true);
 
     if (!mounted) return;
-    context.go(AuthScreen.kRouteName);
+    context.go(TermsAcceptanceScreen.kRouteName);
   }
 
   void _nextPage() {

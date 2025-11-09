@@ -7,6 +7,7 @@ import '../services/backend_auth_service.dart';
 import 'auth_screen.dart';
 import 'home_screen.dart';
 import 'onboarding_screen.dart';
+import 'terms_acceptance_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -37,6 +38,18 @@ class _SplashScreenState extends State<SplashScreen> {
     // Navigate to onboarding if not completed
     if (!hasCompletedOnboarding) {
       context.go(OnboardingScreen.kRouteName);
+      return;
+    }
+
+    // Check if user has accepted terms
+    final hasAcceptedTerms =
+        preferences.getBool(kHasAcceptedTermsKey) ?? false;
+
+    if (!mounted) return;
+
+    // Navigate to terms acceptance if not accepted
+    if (!hasAcceptedTerms) {
+      context.go(TermsAcceptanceScreen.kRouteName);
       return;
     }
 
