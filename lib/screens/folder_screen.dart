@@ -4,6 +4,7 @@ import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
+import '../constants/constants.dart';
 import '../design_system/design_system.dart';
 import '../util/note_utils.dart';
 
@@ -91,10 +92,8 @@ class FolderScreen extends StatelessWidget {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: NoteCard(
-                              title: getNoteTitleOrPreview(note.note.noteTitle,
-                                  note.note.contentPlainText),
-                              excerpt:
-                                  hasTitle ? note.note.contentPlainText : null,
+                              title: getNoteTitleOrPreview(note.note.noteTitle, note.textContent),
+                              excerpt: hasTitle ? note.textContent : null,
                               lastModified: note.note.updatedAt,
                               isPinned: note.note.isPinned,
                               tags: note.folders
@@ -108,7 +107,7 @@ class FolderScreen extends StatelessWidget {
                                 context.push(
                                   CreateNoteScreen.kRouteName,
                                   extra: CreateNoteScreenArguments(
-                                    noticeType: note.note.defaultNoteType,
+                                    noticeType: getNoteTypeDisplayName(note.note.noteType),
                                     existingNote: note,
                                   ),
                                 );

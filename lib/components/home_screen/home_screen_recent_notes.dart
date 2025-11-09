@@ -177,8 +177,8 @@ class NoteListItem extends StatelessWidget {
         child: Transform.scale(scale: scale, child: child),
       ),
       child: NoteCard(
-        title: getNoteTitleOrPreview(n.noteTitle, n.contentPlainText),
-        excerpt: hasTitle ? n.contentPlainText : null,
+        title: getNoteTitleOrPreview(n.noteTitle, note.textContent),
+        excerpt: hasTitle ? note.textContent : null,
         lastModified: n.updatedAt,
         isPinned: n.isPinned,
         tags: [
@@ -193,7 +193,7 @@ class NoteListItem extends StatelessWidget {
           context.push(
             CreateNoteScreen.kRouteName,
             extra: CreateNoteScreenArguments(
-              noticeType: n.defaultNoteType,
+              noticeType: n.noteType,
               existingNote: note,
             ),
           );

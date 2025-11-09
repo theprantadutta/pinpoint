@@ -51,6 +51,15 @@ class DriftNoteService {
           ..where((x) => x.noteId.equals(noteId)))
         .get();
 
+    // Get text content if note type is text
+    String? textContent;
+    if (note.noteType == 'text') {
+      final textNote = await (database.select(database.textNotes)
+            ..where((x) => x.noteId.equals(noteId)))
+          .getSingleOrNull();
+      textContent = textNote?.content;
+    }
+
     // Get attachments (empty for now, add if needed)
     final attachments = <NoteAttachmentDto>[];
 
@@ -59,6 +68,7 @@ class DriftNoteService {
       folders: folders,
       attachments: attachments,
       todoItems: todos,
+      textContent: textContent,
     );
   }
 
@@ -72,6 +82,9 @@ class DriftNoteService {
         .watch();
   }
 
+  /// Temporarily kept for backward compatibility
+  /// This method is deprecated and will be removed in the future
+  /// TODO: Replace all calls with type-specific methods
   static Future<int> upsertANewTitleContentNote(
     NotesCompanion note,
     int? previousNoteId,
@@ -79,42 +92,21 @@ class DriftNoteService {
     try {
       final database = getIt<AppDatabase>();
 
-      final encryptedContent = note.content.value != null
-          ? SecureEncryptionService.encrypt(note.content.value!)
-          : null;
-      final encryptedContentPlainText = note.contentPlainText.value != null
-          ? SecureEncryptionService.encrypt(note.contentPlainText.value!)
-          : null;
-
-      final noteToSave = note.copyWith(
-        content: Value(encryptedContent),
-        contentPlainText: Value(encryptedContentPlainText),
-      );
-
+      // For now, only save the base note fields
+      // Type-specific data needs to be saved separately
       if (previousNoteId != null) {
         final existingNote = await getSingleNote(previousNoteId);
         if (existingNote != null) {
           log.d('Updating existing note...');
           await database
               .update(database.notes)
-              .replace(noteToSave.copyWith(id: Value(previousNoteId)));
-          final updatedNoteId = existingNote.id;
-          _handleReminderNotification(
-            updatedNoteId,
-            note.reminderTime.present ? note.reminderTime.value : null,
-            note.noteTitle.present ? note.noteTitle.value : null,
-          );
-          return updatedNoteId;
+              .replace(note.copyWith(id: Value(previousNoteId)));
+          return existingNote.id;
         }
       }
 
       log.d('Adding new note...');
-      final newNoteId = await database.into(database.notes).insert(noteToSave);
-      _handleReminderNotification(
-        newNoteId,
-        note.reminderTime.present ? note.reminderTime.value : null,
-        note.noteTitle.present ? note.noteTitle.value : null,
-      );
+      final newNoteId = await database.into(database.notes).insert(note);
       return newNoteId;
     } catch (e, st) {
       log.e('Failed to insert/update note', e, st);
@@ -185,17 +177,19 @@ class DriftNoteService {
   static Future<NoteTodoItem> insertTodoItem({
     required int noteId,
     required String title,
+    int orderIndex = 0,
   }) async {
     final database = getIt<AppDatabase>();
     final todoCompanion = NoteTodoItemsCompanion(
       noteId: Value(noteId),
       todoTitle: Value(title),
       isDone: Value(false),
+      orderIndex: Value(orderIndex),
     );
     final id =
         await database.into(database.noteTodoItems).insert(todoCompanion);
     return NoteTodoItem(
-        id: id, noteId: noteId, todoTitle: title, isDone: false);
+        id: id, noteId: noteId, todoTitle: title, isDone: false, orderIndex: orderIndex);
   }
 
   static Future<void> updateTodoItemStatus(int todoId, bool isDone) async {
@@ -260,15 +254,19 @@ class DriftNoteService {
     if (isArchived) {
       NotificationService.cancelNotification(noteId);
     } else {
-      final note = await getSingleNote(noteId);
-      if (note != null &&
-          note.reminderTime != null &&
-          note.reminderTime!.isAfter(DateTime.now())) {
+      // Check if this note has a reminder
+      final reminderNote = await (database.select(database.reminderNotes)
+            ..where((x) => x.noteId.equals(noteId)))
+          .getSingleOrNull();
+
+      if (reminderNote != null &&
+          reminderNote.reminderTime.isAfter(DateTime.now())) {
+        final note = await getSingleNote(noteId);
         NotificationService.scheduleNotification(
-          id: note.id,
-          title: note.noteTitle ?? 'Reminder',
+          id: noteId,
+          title: note?.noteTitle ?? 'Reminder',
           body: 'Time for your note!',
-          scheduledDate: note.reminderTime!,
+          scheduledDate: reminderNote.reminderTime,
         );
       }
     }
@@ -283,18 +281,16 @@ class DriftNoteService {
 
   static Future<void> removeReminder(int noteId) async {
     final database = getIt<AppDatabase>();
-    await (database.update(database.notes)
-          ..where((tbl) => tbl.id.equals(noteId)))
-        .write(const NotesCompanion(
-      reminderTime: Value(null),
-      reminderDescription: Value(null),
-    ));
+    // Delete the reminder note data from ReminderNotes table
+    await (database.delete(database.reminderNotes)
+          ..where((tbl) => tbl.noteId.equals(noteId)))
+        .go();
     NotificationService.cancelNotification(noteId);
   }
 
   static Stream<List<NoteWithDetails>> watchArchivedNotes() {
     return (getIt<AppDatabase>().select(getIt<AppDatabase>().notes)
-          ..where((tbl) => tbl.isArchived.equals(true))
+          ..where((tbl) => tbl.isArchived.equals(true) & tbl.noteType.equals('todo').not())
           ..orderBy([
             (t) =>
                 OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)
@@ -306,13 +302,14 @@ class DriftNoteService {
                   folders: const [],
                   attachments: const [],
                   todoItems: const [],
+                  textContent: null, // TODO: Load from TextNotes table
                 ))
             .toList());
   }
 
   static Stream<List<NoteWithDetails>> watchDeletedNotes() {
     return (getIt<AppDatabase>().select(getIt<AppDatabase>().notes)
-          ..where((tbl) => tbl.isDeleted.equals(true))
+          ..where((tbl) => tbl.isDeleted.equals(true) & tbl.noteType.equals('todo').not())
           ..orderBy([
             (t) =>
                 OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)
@@ -324,6 +321,7 @@ class DriftNoteService {
                   folders: const [],
                   attachments: const [],
                   todoItems: const [],
+                  textContent: null, // TODO: Load from TextNotes table
                 ))
             .toList());
   }
@@ -337,11 +335,11 @@ class DriftNoteService {
       log.d(
           '[watchNotesWithDetails] start; query="$searchQuery", sort: $sortType $sortDirection');
 
-      String whereClause = 'WHERE n.is_archived = 0 AND n.is_deleted = 0';
+      String whereClause = 'WHERE n.is_archived = 0 AND n.is_deleted = 0 AND n.note_type != \'todo\'';
       List<dynamic> variables = [];
       if (searchQuery.isNotEmpty) {
         whereClause +=
-            ' AND (n.note_title LIKE ? OR n.content_plain_text LIKE ?)';
+            ' AND (n.note_title LIKE ? OR tn.content LIKE ?)';
         variables = ['%$searchQuery%', '%$searchQuery%'];
       }
 
@@ -362,6 +360,7 @@ class DriftNoteService {
       final sql = '''
     SELECT
       n.*,
+      tn.content AS text_content,
       (
         SELECT json_group_array(json_object(
           'id', f.note_folder_id,
@@ -378,6 +377,7 @@ class DriftNoteService {
       t.todo_title AS todo_title,
       t.is_done AS todo_is_done
     FROM notes n
+    LEFT JOIN text_notes tn ON n.id = tn.note_id
     LEFT JOIN note_attachments a ON n.id = a.note_id
     LEFT JOIN note_todo_items t ON n.id = t.note_id
     $whereClause
@@ -427,22 +427,11 @@ class DriftNoteService {
                             .toList()
                         : <NoteFolderDto>[];
 
-                    final audioFilePath = row.read<String?>('audio_file_path');
-                    final audioDuration = row.read<int?>('audio_duration');
-
                     return NoteWithDetails(
                       note: Note(
                         id: noteId,
                         noteTitle: row.read<String?>('note_title'),
-                        defaultNoteType: row.read<String>('default_note_type'),
-                        content: _safeDecrypt(row.read<String?>('content')),
-                        contentPlainText: _safeDecrypt(
-                            row.read<String?>('content_plain_text')),
-                        audioFilePath: audioFilePath,
-                        audioDuration: audioDuration,
-                        reminderDescription:
-                            row.read<String?>('reminder_description'),
-                        reminderTime: row.read<DateTime?>('reminder_time'),
+                        noteType: row.read<String>('note_type'),
                         isPinned: row.read<bool>('is_pinned'),
                         createdAt: row.read<DateTime>('created_at'),
                         updatedAt: row.read<DateTime>('updated_at'),
@@ -452,6 +441,7 @@ class DriftNoteService {
                       folders: folders,
                       attachments: [],
                       todoItems: [],
+                      textContent: row.read<String?>('text_content'),
                     );
                   });
 
@@ -477,6 +467,7 @@ class DriftNoteService {
                             noteId: noteId,
                             todoTitle: todoTitle,
                             isDone: row.read<bool>('todo_is_done'),
+                            orderIndex: 0, // TODO: Read from database
                           ),
                         );
                   }
@@ -555,15 +546,7 @@ class DriftNoteService {
                   note: Note(
                     id: row.read<int>('id'),
                     noteTitle: row.read<String?>('note_title'),
-                    defaultNoteType: row.read<String>('default_note_type'),
-                    content: _safeDecrypt(row.read<String?>('content')),
-                    contentPlainText:
-                        _safeDecrypt(row.read<String?>('content_plain_text')),
-                    audioFilePath: row.read<String?>('audio_file_path'),
-                    audioDuration: row.read<int?>('audio_duration'),
-                    reminderDescription:
-                        row.read<String?>('reminder_description'),
-                    reminderTime: row.read<DateTime?>('reminder_time'),
+                    noteType: row.read<String>('note_type'),
                     isPinned: row.read<bool>('is_pinned'),
                     createdAt: row.read<DateTime>('created_at'),
                     updatedAt: row.read<DateTime>('updated_at'),
@@ -599,12 +582,13 @@ class DriftNoteService {
           t.todo_title AS todo_title,
           t.is_done AS todo_is_done,
           n.note_title AS note_title,
-          n.content_plain_text AS note_content,
+          tn.content AS note_content,
           n.created_at AS note_created_at,
           n.updated_at AS note_updated_at,
-          n.default_note_type AS note_default_note_type
+          n.note_type AS note_type
         FROM note_todo_items t
         INNER JOIN notes n ON t.note_id = n.id
+        LEFT JOIN text_notes tn ON n.id = tn.note_id
         WHERE n.is_archived = 0 AND n.is_deleted = 0
         ORDER BY n.is_pinned DESC, n.updated_at DESC, t.id ASC
       ''';
@@ -636,12 +620,13 @@ class DriftNoteService {
                     noteId: row.read<int>('todo_note_id'),
                     todoTitle: row.read<String>('todo_title'),
                     isDone: row.read<bool>('todo_is_done'),
+                    orderIndex: 0, // TODO: Read from database
                   ),
                   noteTitle: getNoteTitleOrPreview(noteTitle, noteContent),
                   noteContent: noteContent,
                   noteCreatedAt: row.read<DateTime>('note_created_at'),
                   noteUpdatedAt: row.read<DateTime>('note_updated_at'),
-                  defaultNoteType: row.read<String>('note_default_note_type'),
+                  noteType: row.read<String>('note_type'),
                 );
               } catch (rowErr, st) {
                 log.e('[watchAllTodoItems] row parse error', rowErr, st);
@@ -692,20 +677,27 @@ class DriftNoteService {
 
     final title = noteJson['title'] as String;
     final content = noteJson['content'] as String? ?? '';
-    final plainText = noteJson['plainText'] as String? ?? content;
     final now = DateTime.now();
 
     final noteCompanion = NotesCompanion.insert(
       noteTitle: drift.Value(title),
       isPinned: drift.Value(false),
-      defaultNoteType: 'note',
-      content: drift.Value(content),
-      contentPlainText: drift.Value(plainText),
+      noteType: 'text', // Changed from defaultNoteType to noteType
       createdAt: now,
       updatedAt: now,
     );
 
     final noteId = await database.into(database.notes).insert(noteCompanion);
+
+    // Insert text content into TextNotes table
+    if (content.isNotEmpty) {
+      await database.into(database.textNotes).insert(
+        TextNotesCompanion(
+          noteId: drift.Value(noteId),
+          content: drift.Value(content),
+        ),
+      );
+    }
 
     final folderTitles = noteJson['folders'] as List<dynamic>;
     final folders = <NoteFolderDto>[];

@@ -8,11 +8,13 @@ class NoteWithDetails {
   final List<NoteFolderDto> folders; // List of folders
   final List<NoteAttachmentDto> attachments;
   final List<NoteTodoItem> todoItems;
+  final String? textContent; // Content from TextNotes table
 
   NoteWithDetails({
     required this.note,
     required this.folders,
     required this.attachments,
     required this.todoItems,
+    this.textContent,
   });
 }
