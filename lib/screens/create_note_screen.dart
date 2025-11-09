@@ -391,7 +391,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
           // Title Input in App Bar
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
                 color: isDark
                     ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
