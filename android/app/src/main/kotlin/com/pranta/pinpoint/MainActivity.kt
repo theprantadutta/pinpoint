@@ -1,4 +1,4 @@
-package com.example.pinpoint
+package com.pranta.pinpoint
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
