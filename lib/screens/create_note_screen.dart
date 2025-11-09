@@ -61,6 +61,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
   final FocusNode _contentFocusNode = FocusNode();
   Timer? _autoSaveTimer;
   late final BackgroundSaveQueueService _saveQueue;
+  bool _isSavingTodos = false; // Prevent concurrent todo saves
 
   @override
   void initState() {
@@ -166,17 +167,28 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
   }
 
   Future<void> _saveTodos(int noteId) async {
+    // Prevent concurrent saves
+    if (_isSavingTodos) {
+      debugPrint('[Auto-save Todos] Save already in progress, skipping');
+      return;
+    }
+
+    _isSavingTodos = true;
     try {
       debugPrint(
           '[Auto-save Todos] Saving todos: ${todos.length} total, ${_savedTodos.length} previously saved');
-      final newTodos = todos.where((todo) => todo.id < 0).toList();
-      final existingTodos = todos.where((todo) => todo.id > 0).toList();
+
+      // Snapshot current todos to avoid race conditions
+      final todosSnapshot = List<db.NoteTodoItem>.from(todos);
+      final newTodos = todosSnapshot.where((todo) => todo.id < 0).toList();
+      final existingTodos = todosSnapshot.where((todo) => todo.id > 0).toList();
+
       debugPrint(
           '[Auto-save Todos] ${newTodos.length} new todos, ${existingTodos.length} existing todos');
 
       // Delete todos that were removed
       for (var savedTodo in _savedTodos) {
-        final stillExists = todos.any((t) => t.id == savedTodo.id);
+        final stillExists = todosSnapshot.any((t) => t.id == savedTodo.id);
         if (!stillExists) {
           debugPrint(
               '[Auto-save Todos] Deleting todo ${savedTodo.id}: ${savedTodo.todoTitle}');
@@ -192,7 +204,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
           title: todo.todoTitle,
         );
         debugPrint('[Auto-save Todos] Inserted with ID: ${insertedTodo.id}');
-        // Update the todo item with the real ID
+        // Update the todo item with the real ID in the live list
         final index = todos.indexWhere((t) => t.id == todo.id);
         if (index != -1) {
           todos[index] = insertedTodo.copyWith(isDone: todo.isDone);
@@ -217,7 +229,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
         }
       }
 
-      // Update the saved todos list
+      // Update the saved todos list with the current snapshot
       if (mounted) {
         setState(() {
           _savedTodos = List<db.NoteTodoItem>.from(todos);
@@ -226,6 +238,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       debugPrint('[Auto-save Todos] Todo save completed successfully');
     } catch (e) {
       debugPrint('[Auto-save Todos] Error saving todos: $e');
+    } finally {
+      _isSavingTodos = false;
     }
   }
 
