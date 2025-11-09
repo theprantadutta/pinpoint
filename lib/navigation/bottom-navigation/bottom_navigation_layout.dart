@@ -340,7 +340,7 @@ class _NavBarItem extends StatelessWidget {
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 3),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -352,7 +352,7 @@ class _NavBarItem extends StatelessWidget {
                 curve: Curves.easeOutCubic,
                 child: Icon(
                   icon,
-                  size: 26,
+                  size: 25,
                   color: isSelected
                       ? primaryColor
                       : theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -360,7 +360,7 @@ class _NavBarItem extends StatelessWidget {
                   weight: isSelected ? 600 : 400,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               // Label
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 300),
