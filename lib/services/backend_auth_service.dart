@@ -92,16 +92,24 @@ class BackendAuthService extends ChangeNotifier {
   /// Authenticate with Firebase token (Google Sign-In)
   Future<void> authenticateWithGoogle(String firebaseToken) async {
     try {
+      debugPrint('🔐 [BackendAuthService] Authenticating with Firebase token...');
       final response = await _apiService.authenticateWithFirebase(firebaseToken);
+      debugPrint('✅ [BackendAuthService] Authentication response received');
+      debugPrint('   - Response keys: ${response.keys}');
 
       _userId = response['user_id'];
       _isAuthenticated = true;
+      debugPrint('✅ [BackendAuthService] User authenticated, ID: $_userId');
 
       // Fetch full user info
+      debugPrint('🔐 [BackendAuthService] Fetching full user info...');
       await refreshUserInfo();
+      debugPrint('✅ [BackendAuthService] User info loaded: $_userEmail');
 
       notifyListeners();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('❌ [BackendAuthService] Google authentication failed: $e');
+      debugPrint('❌ [BackendAuthService] Stack trace: $stackTrace');
       throw Exception('Google authentication failed: $e');
     }
   }

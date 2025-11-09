@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Exception thrown when account linking is required
 class AccountLinkingRequiredException implements Exception {
@@ -15,8 +16,7 @@ class AccountLinkingRequiredException implements Exception {
 
 class ApiService {
   // Backend API configuration
-  static const String baseUrl =
-      'http://localhost:8000'; // Change to your production URL
+  static final String baseUrl = dotenv.env['API_BASE_URL']!;
   static const String apiV1 = '/api/v1';
 
   final Dio _dio = Dio();
@@ -54,6 +54,10 @@ class ApiService {
         },
         onError: (error, handler) {
           _logger.e('ERROR[${error.response?.statusCode}] => ${error.message}');
+          if (error.response != null) {
+            _logger.e('ERROR Response Data: ${error.response?.data}');
+            _logger.e('ERROR Response Headers: ${error.response?.headers}');
+          }
           return handler.next(error);
         },
       ),
@@ -152,6 +156,9 @@ class ApiService {
   Future<Map<String, dynamic>> authenticateWithFirebase(
       String firebaseToken) async {
     try {
+      _logger.i('🔐 Authenticating with Firebase token...');
+      _logger.d('Firebase token (first 50 chars): ${firebaseToken.substring(0, firebaseToken.length > 50 ? 50 : firebaseToken.length)}...');
+
       final response = await _dio.post(
         '/auth/firebase',
         data: {
@@ -159,12 +166,23 @@ class ApiService {
         },
       );
 
+      _logger.i('✅ Firebase authentication successful');
+
       // Save token
       final token = response.data['access_token'];
       await saveToken(token);
 
       return response.data;
     } on DioException catch (e) {
+      _logger.e('❌ Firebase authentication failed with status: ${e.response?.statusCode}');
+      _logger.e('Error type: ${e.type}');
+      _logger.e('Error message: ${e.message}');
+
+      if (e.response != null) {
+        _logger.e('Response data: ${e.response?.data}');
+        _logger.e('Response headers: ${e.response?.headers}');
+      }
+
       // Check if this is an account linking conflict (HTTP 409)
       if (e.response?.statusCode == 409) {
         // Return the error with conflict flag for handling
