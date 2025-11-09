@@ -11,6 +11,7 @@ import 'package:pinpoint/screens/subscription_screen_revcat.dart';
 import 'package:pinpoint/screens/my_folders_screen.dart';
 import 'package:pinpoint/screens/auth_screen.dart';
 import 'package:pinpoint/screens/account_linking_screen.dart';
+import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 
 import '../screen_arguments/create_note_screen_arguments.dart';
 import '../screens/account_screen.dart';
@@ -56,6 +57,20 @@ class AppNavigation {
         path: OnboardingScreen.kRouteName,
         name: "Onboarding",
         builder: (context, state) => const OnboardingScreen(),
+      ),
+
+      /// Terms Acceptance Screen
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: TermsAcceptanceScreen.kRouteName,
+        name: "Terms Acceptance",
+        pageBuilder: (context, state) {
+          final isViewOnly = state.extra as bool? ?? false;
+          return NoTransitionPage(
+            key: state.pageKey,
+            child: TermsAcceptanceScreen(isViewOnly: isViewOnly),
+          );
+        },
       ),
 
       /// Authentication Screen

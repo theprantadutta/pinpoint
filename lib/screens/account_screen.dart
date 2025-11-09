@@ -13,6 +13,7 @@ import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/google_sign_in_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
+import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
@@ -376,6 +377,18 @@ class _AccountScreenState extends State<AccountScreen> {
                   );
                 }
               }
+            },
+          ),
+          const SizedBox(height: 8),
+          _SettingsTile(
+            title: 'Terms & Privacy',
+            icon: Icons.policy_rounded,
+            onTap: () {
+              PinpointHaptics.medium();
+              AppNavigation.router.push(
+                TermsAcceptanceScreen.kRouteName,
+                extra: true, // isViewOnly = true
+              );
             },
           ),
 
