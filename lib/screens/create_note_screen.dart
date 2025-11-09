@@ -362,7 +362,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   Widget _buildHeader(BuildContext context, ColorScheme cs, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: isDark
             ? const Color(0xFF1E293B).withValues(alpha: 0.8)
@@ -380,55 +380,50 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
           IconButton(
             icon: Icon(Symbols.arrow_back, color: cs.onSurface),
             iconSize: 24,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 48,
+              minHeight: 48,
+            ),
             onPressed: () {
               PinpointHaptics.light();
               Navigator.of(context).pop();
             },
           ),
 
-          const SizedBox(width: 4),
-
-          // Title Input in App Bar
+          // Title Input - Clean design without background container
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                    : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: cs.outline.withValues(alpha: 0.1),
-                  width: 1,
+            child: TextField(
+              controller: _titleController,
+              decoration: InputDecoration(
+                hintText: 'Untitled',
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                isDense: true,
+                hintStyle: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.35),
+                  fontWeight: FontWeight.w500,
+                  fontSize: 18,
                 ),
               ),
-              child: TextField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: 'Note title...',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                  isDense: true,
-                  hintStyle: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.4),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.1,
-                    ),
-                maxLines: 1,
+              style: TextStyle(
+                color: cs.onSurface,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+                letterSpacing: -0.2,
               ),
+              maxLines: 1,
+              textInputAction: TextInputAction.done,
             ),
           ),
-
-          const SizedBox(width: 4),
 
           // More Options Button
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert_rounded, color: cs.onSurface),
             iconSize: 24,
+            padding: EdgeInsets.zero,
             offset: const Offset(0, 40),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
