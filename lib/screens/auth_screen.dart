@@ -4,6 +4,7 @@ import 'package:pinpoint/services/google_sign_in_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/api_service.dart';
 import 'package:pinpoint/services/firebase_notification_service.dart';
+import 'package:pinpoint/screens/home_screen.dart';
 import 'package:go_router/go_router.dart';
 
 /// Authentication screen with Google Sign-In and email/password options
@@ -42,46 +43,69 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     try {
+      debugPrint('🔵 [Google Sign-In] Starting Google Sign-In flow...');
+
       // Get BackendAuthService before any await
       final backendAuthService = context.read<BackendAuthService>();
 
       // 1. Sign in with Google and get Firebase credential
+      debugPrint('🔵 [Google Sign-In] Step 1: Initiating Google Sign-In...');
       final userCredential = await _googleSignInService.signInWithGoogle();
 
       if (userCredential == null) {
+        debugPrint('❌ [Google Sign-In] User credential is null');
         throw Exception('Google Sign-In was cancelled or failed');
       }
 
+      debugPrint('✅ [Google Sign-In] Step 1 Complete: User signed in');
+      debugPrint('   - User ID: ${userCredential.user?.uid}');
+      debugPrint('   - Email: ${userCredential.user?.email}');
+
       // 2. Get Firebase ID token
+      debugPrint('🔵 [Google Sign-In] Step 2: Getting Firebase ID token...');
       final firebaseToken = await _googleSignInService.getFirebaseIdToken();
 
       if (firebaseToken == null) {
+        debugPrint('❌ [Google Sign-In] Firebase token is null');
         throw Exception('Failed to get Firebase token');
       }
 
+      debugPrint('✅ [Google Sign-In] Step 2 Complete: Got Firebase token');
+      debugPrint('   - Token length: ${firebaseToken.length}');
+      debugPrint('   - Token preview: ${firebaseToken.substring(0, firebaseToken.length > 100 ? 100 : firebaseToken.length)}...');
+
       // 3. Authenticate with backend using Firebase token
+      debugPrint('🔵 [Google Sign-In] Step 3: Authenticating with backend...');
       try {
         await backendAuthService.authenticateWithGoogle(firebaseToken);
+        debugPrint('✅ [Google Sign-In] Step 3 Complete: Backend authentication successful');
 
         // 4. Register FCM token with backend now that user is authenticated
+        debugPrint('🔵 [Google Sign-In] Step 4: Registering FCM token...');
         try {
           final firebaseNotifications = FirebaseNotificationService();
           await firebaseNotifications.registerTokenWithBackend();
+          debugPrint('✅ [Google Sign-In] Step 4 Complete: FCM token registered');
         } catch (e) {
-          debugPrint('⚠️ Failed to register FCM token (non-critical): $e');
+          debugPrint('⚠️ [Google Sign-In] Failed to register FCM token (non-critical): $e');
         }
 
         // Success! Navigate to home
+        debugPrint('🎉 [Google Sign-In] Authentication flow complete! Navigating to home...');
         if (mounted) {
-          context.go('/');
+          context.go(HomeScreen.kRouteName);
         }
-      } on AccountLinkingRequiredException {
+      } on AccountLinkingRequiredException catch (e) {
+        debugPrint('⚠️ [Google Sign-In] Account linking required');
+        debugPrint('   - Message: ${e.message}');
         // Account linking required - navigate to account linking screen
         if (mounted) {
           context.push('/account-linking', extra: firebaseToken);
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('❌ [Google Sign-In] ERROR: $e');
+      debugPrint('❌ [Google Sign-In] Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -131,7 +155,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       // Success! Navigate to home
       if (mounted) {
-        context.go('/');
+        context.go(HomeScreen.kRouteName);
       }
     } catch (e) {
       setState(() {

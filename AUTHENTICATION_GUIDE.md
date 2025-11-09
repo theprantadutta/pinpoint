@@ -112,8 +112,8 @@ The app will:
 
 Already configured in `.env`:
 ```
-FIREBASE_PROJECT_ID=pinpoint-8f6e5
-GOOGLE_WEB_CLIENT_ID=627112690345-71dbomndudu8plt93p2jirbb3pfv3uuv.apps.googleusercontent.com
+FIREBASE_PROJECT_ID=
+GOOGLE_WEB_CLIENT_ID=
 ```
 
 ## ⚠️ Important Notes
