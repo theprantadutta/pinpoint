@@ -391,31 +391,40 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
             },
           ),
 
-          // Title Input - Clean design without background container
+          // Title Input - Pill-shaped with better padding
           Expanded(
-            child: TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                hintText: 'Untitled',
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                isDense: true,
-                hintStyle: TextStyle(
-                  color: cs.onSurface.withValues(alpha: 0.35),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 18,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? cs.surfaceContainerHighest.withValues(alpha: 0.4)
+                    : cs.surfaceContainerHighest.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: TextField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  hintText: 'Untitled',
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                  isDense: true,
+                  hintStyle: TextStyle(
+                    color: cs.onSurface.withValues(alpha: 0.4),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                  ),
                 ),
+                style: TextStyle(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  letterSpacing: -0.2,
+                ),
+                maxLines: 1,
+                textInputAction: TextInputAction.done,
               ),
-              style: TextStyle(
-                color: cs.onSurface,
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-                letterSpacing: -0.2,
-              ),
-              maxLines: 1,
-              textInputAction: TextInputAction.done,
             ),
           ),
 
