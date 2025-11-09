@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:pinpoint/services/google_sign_in_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/api_service.dart';
+import 'package:pinpoint/services/firebase_notification_service.dart';
 import 'package:go_router/go_router.dart';
 
 /// Authentication screen with Google Sign-In and email/password options
@@ -62,6 +63,14 @@ class _AuthScreenState extends State<AuthScreen> {
       try {
         await backendAuthService.authenticateWithGoogle(firebaseToken);
 
+        // 4. Register FCM token with backend now that user is authenticated
+        try {
+          final firebaseNotifications = FirebaseNotificationService();
+          await firebaseNotifications.registerTokenWithBackend();
+        } catch (e) {
+          debugPrint('⚠️ Failed to register FCM token (non-critical): $e');
+        }
+
         // Success! Navigate to home
         if (mounted) {
           context.go('/');
@@ -110,6 +119,14 @@ class _AuthScreenState extends State<AuthScreen> {
           _emailController.text.trim(),
           _passwordController.text,
         );
+      }
+
+      // Register FCM token with backend now that user is authenticated
+      try {
+        final firebaseNotifications = FirebaseNotificationService();
+        await firebaseNotifications.registerTokenWithBackend();
+      } catch (e) {
+        debugPrint('⚠️ Failed to register FCM token (non-critical): $e');
       }
 
       // Success! Navigate to home

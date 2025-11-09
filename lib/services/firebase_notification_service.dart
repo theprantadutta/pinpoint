@@ -84,8 +84,8 @@ class FirebaseNotificationService {
       // Get device ID
       await _getDeviceId();
 
-      // Register token with backend
-      await _registerTokenWithBackend();
+      // Note: FCM token registration with backend happens after user authentication
+      // Call registerTokenWithBackend() manually after successful login
 
       _initialized = true;
       debugPrint('✅ Firebase Notification Service initialized successfully');
@@ -191,7 +191,7 @@ class FirebaseNotificationService {
       _firebaseMessaging.onTokenRefresh.listen((newToken) {
         debugPrint('🔄 FCM Token refreshed: $newToken');
         _fcmToken = newToken;
-        _registerTokenWithBackend();
+        registerTokenWithBackend(); // Auto-register on token refresh
       });
     } catch (e) {
       debugPrint('❌ Error getting FCM token: $e');
@@ -218,7 +218,8 @@ class FirebaseNotificationService {
   }
 
   /// Register FCM token with backend
-  Future<void> _registerTokenWithBackend() async {
+  /// Should be called after successful user authentication
+  Future<void> registerTokenWithBackend() async {
     if (_fcmToken == null || _deviceId == null) {
       debugPrint('⚠️ Cannot register token: Token or Device ID is null');
       return;
@@ -234,7 +235,8 @@ class FirebaseNotificationService {
 
       debugPrint('✅ FCM token registered with backend');
     } catch (e) {
-      debugPrint('❌ Failed to register token with backend: $e');
+      debugPrint('⚠️ Failed to register FCM token with backend: $e');
+      // Don't throw - this is non-critical, token will be registered on next login
     }
   }
 
