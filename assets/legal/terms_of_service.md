@@ -165,7 +165,7 @@ Any disputes not resolved informally shall be resolved through binding arbitrati
 
 For questions about these Terms, please contact us at:
 
-**Email:** [support@pinpoint.app](mailto:support@pinpoint.app)
+**Email:** [prantadutta1997@gmail.com](mailto:prantadutta1997@gmail.com)
 
 ## Severability
 
