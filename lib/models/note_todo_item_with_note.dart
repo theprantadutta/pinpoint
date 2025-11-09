@@ -6,7 +6,7 @@ class NoteTodoItemWithNote {
   final String? noteContent;
   final DateTime noteCreatedAt;
   final DateTime noteUpdatedAt;
-  final String defaultNoteType;
+  final String noteType;
 
   NoteTodoItemWithNote({
     required this.todoItem,
@@ -14,6 +14,6 @@ class NoteTodoItemWithNote {
     this.noteContent,
     required this.noteCreatedAt,
     required this.noteUpdatedAt,
-    required this.defaultNoteType,
+    required this.noteType,
   });
 }

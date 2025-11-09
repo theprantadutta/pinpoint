@@ -91,7 +91,7 @@ class TrashScreen extends StatelessWidget {
                                 context.push(
                                   CreateNoteScreen.kRouteName,
                                   extra: CreateNoteScreenArguments(
-                                    noticeType: n.defaultNoteType,
+                                    noticeType: n.noteType,
                                     existingNote: note,
                                   ),
                                 );
@@ -221,18 +221,19 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
                             letterSpacing: -0.1,
                           ),
                         ),
-                      if ((n.contentPlainText ?? '').isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            n.contentPlainText!,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: cs.onSurface.withAlpha(200),
-                            ),
-                          ),
-                        ),
+                      // TODO: Load and display content from TextNotes table
+                      // if ((content ?? '').isNotEmpty)
+                      //   Padding(
+                      //     padding: const EdgeInsets.only(top: 4),
+                      //     child: Text(
+                      //       content!,
+                      //       maxLines: 2,
+                      //       overflow: TextOverflow.ellipsis,
+                      //       style: theme.textTheme.bodyMedium?.copyWith(
+                      //         color: cs.onSurface.withAlpha(200),
+                      //       ),
+                      //     ),
+                      //   ),
                     ],
                   ),
                 ),

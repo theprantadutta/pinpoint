@@ -24,7 +24,6 @@ class TermsAcceptanceScreen extends StatefulWidget {
 class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _hasScrolledToBottom = false;
   bool _hasAccepted = false;
   String _termsContent = '';
   String _privacyContent = '';
@@ -60,7 +59,7 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
   }
 
   Future<void> _acceptTerms() async {
-    if (!_hasAccepted || !_hasScrolledToBottom) return;
+    if (!_hasAccepted) return;
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -84,19 +83,6 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
           backgroundColor: Colors.red,
         ),
       );
-    }
-  }
-
-  void _onScroll(ScrollNotification notification) {
-    if (notification is ScrollEndNotification) {
-      final metrics = notification.metrics;
-      if (metrics.pixels >= metrics.maxScrollExtent - 50) {
-        if (!_hasScrolledToBottom) {
-          setState(() {
-            _hasScrolledToBottom = true;
-          });
-        }
-      }
     }
   }
 
@@ -165,14 +151,7 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
   }
 
   Widget _buildMarkdownView(String content, bool isDark) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        if (!widget.isViewOnly) {
-          _onScroll(notification);
-        }
-        return true;
-      },
-      child: Container(
+    return Container(
         margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark
@@ -233,7 +212,6 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -255,40 +233,9 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Scroll reminder
-          if (!_hasScrolledToBottom)
-            Container(
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: colorScheme.onPrimaryContainer,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Please scroll to the bottom of each document',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
           // Acceptance checkbox
           CheckboxListTile(
             value: _hasAccepted,
-            enabled: _hasScrolledToBottom,
             onChanged: (value) {
               setState(() {
                 _hasAccepted = value ?? false;
@@ -298,13 +245,9 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
               'I have read and agree to the Terms of Service and Privacy Policy',
               style: TextStyle(
                 fontSize: 14,
-                color: _hasScrolledToBottom
-                    ? (isDark
-                        ? PinpointColors.darkTextPrimary
-                        : PinpointColors.lightTextPrimary)
-                    : (isDark
-                        ? PinpointColors.darkTextSecondary
-                        : PinpointColors.lightTextSecondary),
+                color: isDark
+                    ? PinpointColors.darkTextPrimary
+                    : PinpointColors.lightTextPrimary,
               ),
             ),
             controlAffinity: ListTileControlAffinity.leading,
@@ -318,9 +261,7 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
             width: double.infinity,
             height: 50,
             child: FilledButton(
-              onPressed: (_hasAccepted && _hasScrolledToBottom)
-                  ? _acceptTerms
-                  : null,
+              onPressed: _hasAccepted ? _acceptTerms : null,
               style: FilledButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 shape: RoundedRectangleBorder(

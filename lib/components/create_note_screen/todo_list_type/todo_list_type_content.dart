@@ -33,6 +33,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
             noteId: 0, // Will be updated when note is saved
             todoTitle: controller.text,
             isDone: false,
+            orderIndex: widget.todos.length, // Add orderIndex
           );
 
           widget.onTodoChanged([

@@ -1,27 +1,32 @@
 import 'package:drift/drift.dart';
 
+/// Base table for all notes
+/// Contains only common fields shared across all note types
+/// Type-specific data is stored in separate tables (TextNotes, AudioNotes, TodoNotes, ReminderNotes)
+@DataClassName('Note')
 class Notes extends Table {
+  /// Auto-incrementing primary key
   IntColumn get id => integer().autoIncrement()();
+
+  /// Optional title for the note
   TextColumn get noteTitle => text().nullable()();
-  TextColumn get defaultNoteType => text()();
 
-  // Note Content
-  TextColumn get content => text().nullable()();
-  TextColumn get contentPlainText => text().nullable()();
+  /// The type of note (text, audio, todo, reminder)
+  /// Stored as string for compatibility with NoteType enum
+  TextColumn get noteType => text()();
 
-  // Record Audio
-  TextColumn get audioFilePath => text().nullable()();
-  IntColumn get audioDuration => integer().nullable()();
+  /// Whether the note is pinned to the top of the list
+  BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
 
-  // Todo List Types
+  /// Whether the note is archived (hidden from main view)
+  BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
 
-  // Reminder Type
-  TextColumn get reminderDescription => text().nullable()();
-  DateTimeColumn get reminderTime => dateTime().nullable()();
-
-  BoolColumn get isPinned => boolean().withDefault(Constant(false))();
-  BoolColumn get isArchived => boolean().withDefault(Constant(false))();
+  /// Whether the note is deleted (soft delete)
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+
+  /// When the note was created
   DateTimeColumn get createdAt => dateTime()();
+
+  /// When the note was last updated
   DateTimeColumn get updatedAt => dateTime()();
 }

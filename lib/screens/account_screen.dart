@@ -272,7 +272,21 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+
+                  // Profile Card
+                  if (backendAuth.isAuthenticated) ...[
+                    _ProfileHeaderCard(backendAuth: backendAuth),
+                    const SizedBox(height: 12),
+                  ],
+
                   _LinkedAccountsSection(backendAuth: backendAuth),
+
+                  // Logout Button
+                  if (backendAuth.isAuthenticated) ...[
+                    const SizedBox(height: 12),
+                    _LogoutButton(backendAuth: backendAuth),
+                  ],
+
                   const SizedBox(height: 32),
                 ],
               );
@@ -813,8 +827,264 @@ class _SettingsTile extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            trailing: Icon(Icons.chevron_right_rounded,
-                color: cs.onSurface.withValues(alpha: 0.6)),
+            subtitle: subtitle != null
+                ? Text(
+                    subtitle!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.6),
+                    ),
+                  )
+                : null,
+            trailing: trailing ??
+                Icon(Icons.chevron_right_rounded,
+                    color: cs.onSurface.withValues(alpha: 0.6)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Profile Header Card showing user information
+class _ProfileHeaderCard extends StatelessWidget {
+  final BackendAuthService backendAuth;
+
+  const _ProfileHeaderCard({required this.backendAuth});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Consumer<SubscriptionManager>(
+      builder: (context, subscriptionManager, child) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                cs.primaryContainer.withValues(alpha: 0.3),
+                cs.primaryContainer.withValues(alpha: 0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: cs.primary.withValues(alpha: 0.2),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: cs.primary.withValues(alpha: 0.1),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Avatar
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: cs.primary.withValues(alpha: 0.3),
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  Icons.person_rounded,
+                  color: cs.primary,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // User Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Email
+                    Text(
+                      backendAuth.userEmail ?? 'User',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Account Status
+                    Row(
+                      children: [
+                        Icon(
+                          subscriptionManager.isPremium
+                              ? Icons.workspace_premium
+                              : Icons.account_circle_outlined,
+                          size: 14,
+                          color: subscriptionManager.isPremium
+                              ? PinpointColors.mint
+                              : cs.onSurface.withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          subscriptionManager.isPremium ? 'Premium Member' : 'Free Account',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: subscriptionManager.isPremium
+                                ? PinpointColors.mint
+                                : cs.onSurface.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Logout Button with confirmation dialog
+class _LogoutButton extends StatelessWidget {
+  final BackendAuthService backendAuth;
+
+  const _LogoutButton({required this.backendAuth});
+
+  Future<void> _handleLogout(BuildContext context) async {
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text(
+          'Are you sure you want to sign out? Your notes will remain synced in the cloud.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: PinpointColors.rose,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      // Sign out from Google (if applicable)
+      final googleSignInService = GoogleSignInService();
+      await googleSignInService.signOut();
+
+      // Logout from backend (clears state & token)
+      await backendAuth.logout();
+
+      // Navigate to auth screen
+      if (context.mounted) {
+        PinpointHaptics.success();
+        AppNavigation.router.go('/auth');
+
+        // Show success feedback after navigation
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (context.mounted) {
+            showSuccessToast(
+              context: context,
+              title: 'Signed Out',
+              description: 'You have been signed out successfully.',
+            );
+          }
+        });
+      }
+    } catch (e) {
+      if (context.mounted) {
+        PinpointHaptics.error();
+        showErrorToast(
+          context: context,
+          title: 'Sign Out Failed',
+          description: e.toString().replaceAll('Exception: ', ''),
+        );
+
+        // Still navigate to auth screen even if there was an error
+        AppNavigation.router.go('/auth');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? cs.surface.withValues(alpha: 0.7)
+            : cs.surface.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: PinpointColors.rose.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: PinpointColors.rose.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            PinpointHaptics.medium();
+            _handleLogout(context);
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: ListTile(
+            leading: Icon(
+              Icons.logout_rounded,
+              color: PinpointColors.rose,
+            ),
+            title: Text(
+              'Sign Out',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: PinpointColors.rose,
+              ),
+            ),
+            subtitle: Text(
+              'Sign out of your account',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            trailing: Icon(
+              Icons.chevron_right_rounded,
+              color: PinpointColors.rose.withValues(alpha: 0.6),
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -1011,14 +1281,29 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
     }
 
     final hasGoogle = _providers!['has_google'] ?? false;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          'Linked Accounts',
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: cs.onSurface.withValues(alpha: 0.7),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+
         // Email Provider (always shown if authenticated)
-        _SettingsTile(
-          title: widget.backendAuth.userEmail ?? 'Email',
-          subtitle: 'Email/Password authentication',
+        _AuthProviderCard(
           icon: Icons.email_rounded,
+          iconColor: cs.primary,
+          title: 'Email',
+          subtitle: widget.backendAuth.userEmail ?? 'Email authentication',
+          isLinked: true,
+          isLoading: false,
           onTap: () {
             PinpointHaptics.light();
           },
@@ -1027,24 +1312,202 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
         const SizedBox(height: 8),
 
         // Google Provider
-        _SettingsTile(
-          title: hasGoogle ? 'Google (Linked)' : 'Link Google Account',
+        _AuthProviderCard(
+          icon: Icons.g_mobiledata_rounded,
+          iconColor: hasGoogle ? PinpointColors.mint : cs.onSurface.withValues(alpha: 0.5),
+          title: 'Google',
           subtitle: hasGoogle
-            ? 'Sign in with Google'
-            : 'Link your Google account for easy sign-in',
-          icon: hasGoogle ? Icons.check_circle : Icons.add_link_rounded,
-          trailing: hasGoogle
-            ? IconButton(
-                icon: const Icon(Icons.link_off_rounded),
-                onPressed: _isLoading ? null : _unlinkGoogleAccount,
-                tooltip: 'Unlink Google account',
-              )
-            : null,
+              ? 'Linked to your account'
+              : 'Link for easy sign-in',
+          isLinked: hasGoogle,
+          isLoading: _isLoading,
           onTap: _isLoading
-            ? () {}
-            : (hasGoogle ? () {} : _linkGoogleAccount),
+              ? null
+              : (hasGoogle ? null : _linkGoogleAccount),
+          onUnlink: hasGoogle && !_isLoading ? _unlinkGoogleAccount : null,
         ),
       ],
+    );
+  }
+}
+
+/// Auth Provider Card showing authentication method status
+class _AuthProviderCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final bool isLinked;
+  final bool isLoading;
+  final VoidCallback? onTap;
+  final VoidCallback? onUnlink;
+
+  const _AuthProviderCard({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.isLinked,
+    required this.isLoading,
+    this.onTap,
+    this.onUnlink,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? cs.surface.withValues(alpha: 0.7)
+            : cs.surface.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isLinked
+              ? iconColor.withValues(alpha: 0.3)
+              : cs.outline.withValues(alpha: 0.1),
+          width: isLinked ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isLinked
+                ? iconColor.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap != null && !isLoading
+              ? () {
+                  PinpointHaptics.medium();
+                  onTap!();
+                }
+              : null,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Icon
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: iconColor.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            title,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (isLinked) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: PinpointColors.mint.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: PinpointColors.mint.withValues(alpha: 0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    size: 12,
+                                    color: PinpointColors.mint,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Linked',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: PinpointColors.mint,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurface.withValues(alpha: 0.6),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Actions
+                if (isLoading)
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else if (onUnlink != null)
+                  IconButton(
+                    icon: Icon(
+                      Icons.link_off_rounded,
+                      color: PinpointColors.rose,
+                    ),
+                    onPressed: () {
+                      PinpointHaptics.medium();
+                      onUnlink!();
+                    },
+                    tooltip: 'Unlink account',
+                  )
+                else if (onTap != null && !isLinked)
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: cs.onSurface.withValues(alpha: 0.4),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

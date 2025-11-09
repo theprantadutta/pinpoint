@@ -52,17 +52,18 @@ class TitleContentType extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  if (note.contentPlainText != null)
-                    Text(
-                      note.contentPlainText!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDarkTheme
-                            ? Colors.grey.shade200
-                            : Colors.grey.shade700,
-                      ),
-                    ),
+                  // TODO: Load and display content from TextNotes table
+                  // if (content != null)
+                  //   Text(
+                  //     content!,
+                  //     textAlign: TextAlign.center,
+                  //     style: TextStyle(
+                  //       fontSize: 12,
+                  //       color: isDarkTheme
+                  //           ? Colors.grey.shade200
+                  //           : Colors.grey.shade700,
+                  //     ),
+                  //   ),
                 ],
               ),
             ),

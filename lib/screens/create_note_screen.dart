@@ -81,14 +81,21 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
     if (widget.args?.existingNote != null) {
       final existingNote = widget.args!.existingNote!;
       _currentNoteId = existingNote.note.id;
-      selectedNoteType = existingNote.note.defaultNoteType;
+      selectedNoteType = getNoteTypeDisplayName(existingNote.note.noteType);
       _titleController.text = existingNote.note.noteTitle ?? '';
-      _contentController.text = existingNote.note.contentPlainText ?? '';
+
+      // Load type-specific data
+      if (selectedNoteType == kNoteTypes[0]) {
+        // Text note - load content from TextNotes table
+        _contentController.text = existingNote.textContent ?? '';
+      }
+
       selectedFolders = existingNote.folders;
       todos = List<db.NoteTodoItem>.from(existingNote.todoItems);
       _savedTodos = List<db.NoteTodoItem>.from(existingNote.todoItems);
-      _reminderDescription.text = existingNote.note.reminderDescription ?? '';
-      reminderDateTime = existingNote.note.reminderTime;
+      // TODO: Load reminder data from ReminderNotes table if type is 'reminder'
+      _reminderDescription.text = '';
+      reminderDateTime = null;
     }
   }
 
@@ -126,11 +133,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
     final noteCompanion = db.NotesCompanion.insert(
       noteTitle: drift.Value(title),
       isPinned: drift.Value(false),
-      defaultNoteType: selectedNoteType,
-      content: drift.Value(content), // Store plain text in content field too
-      contentPlainText: drift.Value(content), // Main plain text field
-      reminderDescription: drift.Value(_reminderDescription.text),
-      reminderTime: drift.Value(reminderDateTime),
+      noteType: getNoteTypeDbValue(selectedNoteType),
       createdAt: now,
       updatedAt: now,
     );
@@ -153,10 +156,19 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
           });
         }
 
+        // Save type-specific data
+        // Save text content if this is a text note
+        if (selectedNoteType == kNoteTypes[0] && content.isNotEmpty) {
+          await _saveTextContent(noteId, content);
+        }
+
         // Save todos if this is a todo list note
         if (selectedNoteType == kNoteTypes[2] && todos.isNotEmpty) {
           await _saveTodos(noteId);
         }
+
+        // TODO: Save reminder data if this is a reminder note
+        // TODO: Save audio data if this is an audio note
       } else {
         debugPrint('Auto-save failed: ${result.reason}');
         // Optionally show subtle error indicator (not intrusive toast)
@@ -164,6 +176,43 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
     });
 
     debugPrint('Auto-save enqueued');
+  }
+
+  Future<void> _saveTextContent(int noteId, String content) async {
+    try {
+      debugPrint('[Auto-save Text] Saving text content for note $noteId');
+
+      final database = getIt<db.AppDatabase>();
+
+      // Check if TextNote record already exists
+      final existingTextNote = await (database.select(database.textNotes)
+            ..where((t) => t.noteId.equals(noteId)))
+          .getSingleOrNull();
+
+      if (existingTextNote != null) {
+        // Update existing text content
+        debugPrint('[Auto-save Text] Updating existing text content');
+        await (database.update(database.textNotes)
+              ..where((t) => t.noteId.equals(noteId)))
+            .write(db.TextNotesCompanion(
+          content: drift.Value(content),
+        ));
+      } else {
+        // Insert new text content
+        debugPrint('[Auto-save Text] Inserting new text content');
+        await database.into(database.textNotes).insert(
+              db.TextNotesCompanion(
+                noteId: drift.Value(noteId),
+                content: drift.Value(content),
+              ),
+            );
+      }
+
+      debugPrint('[Auto-save Text] Text content saved successfully');
+    } catch (e, st) {
+      debugPrint('[Auto-save Text] Error saving text content: $e');
+      debugPrint('[Auto-save Text] Stack trace: $st');
+    }
   }
 
   Future<void> _saveTodos(int noteId) async {
@@ -310,11 +359,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       final noteCompanion = db.NotesCompanion.insert(
         noteTitle: drift.Value(title),
         isPinned: drift.Value(false),
-        defaultNoteType: selectedNoteType,
-        content: drift.Value(content),
-        contentPlainText: drift.Value(content),
-        reminderDescription: drift.Value(_reminderDescription.text),
-        reminderTime: drift.Value(reminderDateTime),
+        noteType: getNoteTypeDbValue(selectedNoteType),
         createdAt: now,
         updatedAt: now,
       );
@@ -334,6 +379,12 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
           setState(() {
             _currentNoteId = noteId;
           });
+        }
+
+        // Save type-specific data
+        // Save text content if this is a text note
+        if (selectedNoteType == kNoteTypes[0] && content.isNotEmpty) {
+          await _saveTextContent(noteId, content);
         }
 
         // Save todos if this is a todo list note
@@ -383,11 +434,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       final noteCompanion = db.NotesCompanion.insert(
         noteTitle: drift.Value(title),
         isPinned: drift.Value(false),
-        defaultNoteType: selectedNoteType,
-        content: drift.Value(content), // Store plain text in content field too
-        contentPlainText: drift.Value(content), // Main plain text field
-        reminderDescription: drift.Value(_reminderDescription.text),
-        reminderTime: drift.Value(reminderDateTime),
+        noteType: getNoteTypeDbValue(selectedNoteType),
         createdAt: now,
         updatedAt: now,
       );
@@ -412,6 +459,12 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
         setState(() {
           _currentNoteId = noteId;
         });
+      }
+
+      // Save type-specific data
+      // Save text content if this is a text note
+      if (selectedNoteType == kNoteTypes[0] && content.isNotEmpty) {
+        await _saveTextContent(noteId, content);
       }
 
       // Save todos
@@ -1434,7 +1487,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
             const SizedBox(height: 16),
             _buildInfoItem(
                 'Note Type',
-                _getLabelForNoteType(note.defaultNoteType),
+                _getLabelForNoteType(note.noteType),
                 Icons.category_rounded,
                 cs),
             const SizedBox(height: 16),
