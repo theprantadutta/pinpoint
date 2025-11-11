@@ -19,6 +19,7 @@ import 'services/firebase_notification_service.dart';
 import 'services/google_sign_in_service.dart';
 import 'services/revenue_cat_service.dart';
 import 'services/premium_service.dart';
+import 'services/revenuecat_backend_sync_service.dart';
 import 'sync/sync_manager.dart';
 
 // void main() async {
@@ -143,6 +144,17 @@ Future<void> _initializeCoreServices() async {
   } catch (e, stackTrace) {
     debugPrint('⚠️ [main.dart] PremiumService not initialized: $e');
     debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
+  }
+
+  // Sync RevenueCat with backend on startup
+  try {
+    debugPrint('🔄 [main.dart] Syncing RevenueCat with backend...');
+    await RevenueCatBackendSyncService.syncOnStartup();
+    debugPrint('✅ [main.dart] RevenueCat synced with backend');
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ [main.dart] RevenueCat backend sync failed: $e');
+    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
+    // Continue without sync - app will still work
   }
 
   // Add any other core services here

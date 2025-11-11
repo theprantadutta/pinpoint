@@ -364,6 +364,32 @@ class ApiService {
     }
   }
 
+  /// Sync RevenueCat purchase with backend (no authentication required)
+  Future<Map<String, dynamic>> syncRevenueCatPurchase({
+    String? firebaseUid,
+    String? email,
+    required String productId,
+    required bool isPremium,
+    DateTime? expiresAt,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/subscription/sync-revenuecat',
+        data: {
+          if (firebaseUid != null) 'firebase_uid': firebaseUid,
+          if (email != null) 'email': email,
+          'product_id': productId,
+          'is_premium': isPremium,
+          if (expiresAt != null) 'expires_at': expiresAt.toIso8601String(),
+        },
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ============================================================================
   // Notification Endpoints
   // ============================================================================
