@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:pinpoint/services/revenuecat_backend_sync_service.dart';
 
 /// RevenueCat service for managing subscriptions and entitlements
 class RevenueCatService {
@@ -47,6 +48,16 @@ class RevenueCatService {
     debugPrint('📢 [RevenueCat] Customer info updated');
     debugPrint(
         '   Active entitlements: ${customerInfo.entitlements.active.keys}');
+
+    // Sync with backend when customer info changes
+    // This ensures backend stays in sync even if webhooks fail
+    RevenueCatBackendSyncService.syncWithBackend().then((success) {
+      if (success) {
+        debugPrint('✅ [RevenueCat] Backend synced from listener');
+      } else {
+        debugPrint('⚠️ [RevenueCat] Backend sync failed from listener');
+      }
+    });
   }
 
   /// Check if user has active premium subscription

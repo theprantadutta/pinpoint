@@ -9,6 +9,7 @@ import '../services/revenue_cat_service.dart';
 import '../services/premium_service.dart';
 import '../services/subscription_manager.dart';
 import '../services/notification_service.dart';
+import '../services/revenuecat_backend_sync_service.dart';
 import '../util/show_a_toast.dart';
 
 class SubscriptionScreenRevCat extends StatefulWidget {
@@ -77,6 +78,9 @@ class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
 
         // Only show success if user just became premium (not already premium)
         if (mounted && isPremium && !wasPremium) {
+          // Sync with backend
+          await RevenueCatBackendSyncService.syncAfterPurchase();
+
           // Show success toast
           showSuccessToast(
             context: context,
@@ -130,6 +134,9 @@ class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
             customerInfo.entitlements.active.containsKey('PinPoint Pro');
 
         if (hasActiveEntitlement) {
+          // Sync with backend after successful restore
+          await RevenueCatBackendSyncService.syncAfterRestore();
+
           showSuccessToast(
             context: context,
             title: 'Purchases Restored!',
