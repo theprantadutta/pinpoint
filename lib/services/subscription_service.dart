@@ -6,8 +6,11 @@ import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/services/logger_service.dart';
 
 class SubscriptionService {
+  static final SubscriptionService _instance = SubscriptionService._internal();
+  factory SubscriptionService() => _instance;
+  SubscriptionService._internal();
+
   final InAppPurchase _iap = InAppPurchase.instance;
-  final SubscriptionManager _subscriptionManager;
 
   // Subscription product IDs (must match Google Play Console)
   static const String premiumMonthly = 'pinpoint_premium_monthly';
@@ -27,10 +30,13 @@ class SubscriptionService {
   bool _isAvailable = false;
   bool get isAvailable => _isAvailable;
 
-  SubscriptionService(this._subscriptionManager);
+  /// Static initialize method for use in main.dart
+  static Future<void> initialize() async {
+    await _instance._initialize();
+  }
 
   /// Initialize subscription service
-  Future<void> initialize() async {
+  Future<void> _initialize() async {
     // Check if in-app purchases are available
     _isAvailable = await _iap.isAvailable();
 
@@ -163,7 +169,8 @@ class SubscriptionService {
       }
 
       if (purchaseToken != null) {
-        final verified = await _subscriptionManager.verifyPurchase(
+        final subscriptionManager = SubscriptionManager();
+        final verified = await subscriptionManager.verifyPurchase(
           purchaseToken: purchaseToken,
           productId: purchase.productID,
         );
@@ -180,6 +187,34 @@ class SubscriptionService {
     } catch (e) {
       log.e('Error handling purchase: $e');
     }
+  }
+
+  /// Check if product has trial (monthly and yearly have 7-day trial)
+  bool hasTrialPeriod(String productId) {
+    return productId == premiumMonthly || productId == premiumYearly;
+  }
+
+  /// Get trial period text for UI
+  String getTrialPeriodText(String productId) {
+    if (hasTrialPeriod(productId)) {
+      return '7-day free trial';
+    }
+    return '';
+  }
+
+  /// Get price text with trial info
+  String getPriceTextWithTrial(ProductDetails product) {
+    final basePrice = product.price;
+
+    if (hasTrialPeriod(product.id)) {
+      if (product.id == premiumMonthly) {
+        return 'Free for 7 days, then $basePrice/month';
+      } else if (product.id == premiumYearly) {
+        return 'Free for 7 days, then $basePrice/year';
+      }
+    }
+
+    return basePrice;
   }
 
   /// Dispose subscription

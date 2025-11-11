@@ -3,7 +3,7 @@ import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
-import 'package:pinpoint/screens/subscription_screen_revcat.dart';
+import 'package:pinpoint/screens/subscription_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:pinpoint/services/drift_note_service.dart';
@@ -20,8 +20,7 @@ import '../design_system/design_system.dart';
 import '../services/premium_service.dart';
 import '../constants/premium_limits.dart';
 import '../navigation/app_navigation.dart';
-import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
-import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AccountScreen extends StatefulWidget {
   static const String kRouteName = '/account';
@@ -77,21 +76,20 @@ class _AccountScreenState extends State<AccountScreen> {
     });
   }
 
-  Future<void> _openCustomerCenter() async {
+  Future<void> _openGooglePlaySubscriptions() async {
     try {
-      debugPrint('🎯 [AccountScreen] Opening Customer Center...');
-
-      await RevenueCatUI.presentCustomerCenter();
-
-      debugPrint('✅ [AccountScreen] Customer Center closed');
-    } on PlatformException catch (e) {
-      debugPrint('❌ [AccountScreen] Customer Center error: ${e.message}');
-
+      final uri = Uri.parse('https://play.google.com/store/account/subscriptions');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch subscriptions page';
+      }
+    } catch (e) {
       if (mounted) {
         showErrorToast(
           context: context,
           title: 'Error',
-          description: e.message ?? 'Unable to open subscription management',
+          description: 'Unable to open Google Play subscriptions',
         );
       }
     }
@@ -187,6 +185,9 @@ class _AccountScreenState extends State<AccountScreen> {
           // Subscription Section
           Consumer<SubscriptionManager>(
             builder: (context, subscriptionManager, child) {
+              final premiumService = PremiumService();
+              final gracePeriodMessage = premiumService.getGracePeriodMessage();
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -198,12 +199,52 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+
+                  // Grace Period Warning Banner
+                  if (subscriptionManager.isInGracePeriod && gracePeriodMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              gracePeriodMessage,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: Colors.orange.shade800,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
                   _SettingsTile(
                     title: subscriptionManager.isPremium
-                        ? 'Premium Active'
+                        ? subscriptionManager.isInGracePeriod
+                            ? 'Premium (Grace Period)'
+                            : 'Premium Active'
                         : 'Upgrade to Premium',
                     subtitle: subscriptionManager.isPremium
-                        ? 'Thank you for your support!'
+                        ? subscriptionManager.isInGracePeriod
+                            ? 'Update payment method'
+                            : 'Thank you for your support!'
                         : 'Unlock all features',
                     icon: subscriptionManager.isPremium
                         ? Icons.workspace_premium
@@ -215,7 +256,9 @@ class _AccountScreenState extends State<AccountScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: PinpointColors.mint,
+                              color: subscriptionManager.isInGracePeriod
+                                  ? Colors.orange
+                                  : PinpointColors.mint,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -231,7 +274,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         : null,
                     onTap: () {
                       PinpointHaptics.medium();
-                      AppNavigation.router.push(SubscriptionScreenRevCat.kRouteName);
+                      AppNavigation.router.push(SubscriptionScreen.kRouteName);
                     },
                   ),
                   // Manage Subscription button (only for premium users)
@@ -239,11 +282,11 @@ class _AccountScreenState extends State<AccountScreen> {
                     const SizedBox(height: 8),
                     _SettingsTile(
                       title: 'Manage Subscription',
-                      subtitle: 'Update payment, cancel, or restore',
+                      subtitle: 'View in Google Play Store',
                       icon: Icons.manage_accounts_rounded,
                       onTap: () {
                         PinpointHaptics.medium();
-                        _openCustomerCenter();
+                        _openGooglePlaySubscriptions();
                       },
                     ),
                   ],

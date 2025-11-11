@@ -17,9 +17,8 @@ import 'services/backend_auth_service.dart';
 import 'services/subscription_manager.dart';
 import 'services/firebase_notification_service.dart';
 import 'services/google_sign_in_service.dart';
-import 'services/revenue_cat_service.dart';
 import 'services/premium_service.dart';
-import 'services/revenuecat_backend_sync_service.dart';
+import 'services/subscription_service.dart';
 import 'sync/sync_manager.dart';
 
 // void main() async {
@@ -125,15 +124,15 @@ Future<void> _initializeCoreServices() async {
   final syncManager = getIt<SyncManager>();
   await syncManager.init();
 
-  // Initialize RevenueCat
+  // Initialize Google Play Subscription Service
   try {
-    debugPrint('💎 [main.dart] Initializing RevenueCat...');
-    await RevenueCatService.initialize();
-    debugPrint('✅ [main.dart] RevenueCat initialized');
+    debugPrint('💎 [main.dart] Initializing Subscription Service...');
+    await SubscriptionService.initialize();
+    debugPrint('✅ [main.dart] Subscription Service initialized');
   } catch (e, stackTrace) {
-    debugPrint('⚠️ [main.dart] RevenueCat not initialized: $e');
+    debugPrint('⚠️ [main.dart] Subscription Service not initialized: $e');
     debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
-    // Continue without RevenueCat - app will still work in free mode
+    // Continue without subscription service - app will still work in free mode
   }
 
   // Initialize PremiumService
@@ -144,17 +143,6 @@ Future<void> _initializeCoreServices() async {
   } catch (e, stackTrace) {
     debugPrint('⚠️ [main.dart] PremiumService not initialized: $e');
     debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
-  }
-
-  // Sync RevenueCat with backend on startup
-  try {
-    debugPrint('🔄 [main.dart] Syncing RevenueCat with backend...');
-    await RevenueCatBackendSyncService.syncOnStartup();
-    debugPrint('✅ [main.dart] RevenueCat synced with backend');
-  } catch (e, stackTrace) {
-    debugPrint('⚠️ [main.dart] RevenueCat backend sync failed: $e');
-    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
-    // Continue without sync - app will still work
   }
 
   // Add any other core services here

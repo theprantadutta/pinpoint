@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/premium_limits.dart';
-import 'revenue_cat_service.dart';
+import 'subscription_manager.dart';
+import 'api_service.dart';
 
 /// Service for managing premium features and usage limits
 class PremiumService extends ChangeNotifier {
@@ -11,12 +12,16 @@ class PremiumService extends ChangeNotifier {
 
   SharedPreferences? _prefs;
   bool _isPremium = false;
+  bool _isInGracePeriod = false;
   String _subscriptionType = 'free';
   DateTime? _expiresAt;
+  DateTime? _gracePeriodEndsAt;
 
-  bool get isPremium => _isPremium;
+  bool get isPremium => _isPremium || _isInGracePeriod;
+  bool get isInGracePeriod => _isInGracePeriod;
   String get subscriptionType => _subscriptionType;
   DateTime? get expiresAt => _expiresAt;
+  DateTime? get gracePeriodEndsAt => _gracePeriodEndsAt;
 
   /// Initialize the service
   Future<void> initialize() async {
@@ -25,16 +30,51 @@ class PremiumService extends ChangeNotifier {
     await _checkMonthlyReset();
   }
 
-  /// Load premium status from RevenueCat
+  /// Load premium status from Subscription Manager and backend API
   Future<void> _loadPremiumStatus() async {
     try {
-      _isPremium = await RevenueCatService.isPremium();
-      _subscriptionType =
-          await RevenueCatService.getSubscriptionType() ?? 'free';
-      _expiresAt = await RevenueCatService.getExpirationDate();
+      // First check local subscription manager
+      final subscriptionManager = SubscriptionManager();
+      _isPremium = subscriptionManager.isPremium;
+      _subscriptionType = subscriptionManager.subscriptionType ?? 'free';
+      _expiresAt = subscriptionManager.expirationDate;
+
+      // Then check backend for grace period status
+      try {
+        final apiService = ApiService();
+        final statusResponse = await apiService.getSubscriptionStatus();
+
+        _isInGracePeriod = statusResponse['is_in_grace_period'] ?? false;
+
+        if (statusResponse['grace_period_ends_at'] != null) {
+          _gracePeriodEndsAt = DateTime.parse(statusResponse['grace_period_ends_at']);
+        }
+
+        // Update from backend if available (more authoritative)
+        if (statusResponse['subscription_tier'] != null) {
+          _subscriptionType = statusResponse['subscription_tier'];
+        }
+
+        if (statusResponse['subscription_expires_at'] != null) {
+          _expiresAt = DateTime.parse(statusResponse['subscription_expires_at']);
+        }
+
+        // Check if we're premium based on backend (includes grace period)
+        final isPremiumBackend = statusResponse['is_premium'] ?? false;
+        if (isPremiumBackend && !_isPremium) {
+          _isPremium = isPremiumBackend;
+        }
+      } catch (e) {
+        debugPrint('⚠️ [PremiumService] Could not fetch backend status: $e');
+        // Continue with local status
+      }
 
       debugPrint('💎 [PremiumService] Premium status: $_isPremium');
+      debugPrint('   In grace period: $_isInGracePeriod');
       debugPrint('   Subscription type: $_subscriptionType');
+      if (_gracePeriodEndsAt != null) {
+        debugPrint('   Grace period ends: $_gracePeriodEndsAt');
+      }
 
       notifyListeners();
     } catch (e) {
@@ -299,20 +339,45 @@ class PremiumService extends ChangeNotifier {
   }
 
   /// Get days until expiration (returns null for lifetime)
-  Future<int?> getDaysUntilExpiration() async {
+  int? getDaysUntilExpiration() {
     if (_expiresAt == null) return null;
-    if (await RevenueCatService.isLifetime()) return null;
+    if (_subscriptionType.toLowerCase().contains('lifetime')) return null;
 
     final now = DateTime.now();
     final difference = _expiresAt!.difference(now);
     return difference.inDays;
   }
 
+  /// Get days until grace period ends
+  int? getDaysUntilGracePeriodEnds() {
+    if (_gracePeriodEndsAt == null) return null;
+
+    final now = DateTime.now();
+    final difference = _gracePeriodEndsAt!.difference(now);
+    return difference.inDays;
+  }
+
   /// Check if subscription is expiring soon (within 7 days)
-  Future<bool> isExpiringSoon() async {
-    final days = await getDaysUntilExpiration();
+  bool isExpiringSoon() {
+    final days = getDaysUntilExpiration();
     if (days == null) return false;
 
     return days <= 7 && days > 0;
+  }
+
+  /// Get formatted grace period message for UI
+  String? getGracePeriodMessage() {
+    if (!_isInGracePeriod) return null;
+
+    final daysLeft = getDaysUntilGracePeriodEnds();
+    if (daysLeft == null) return null;
+
+    if (daysLeft <= 0) {
+      return 'Grace period expired. Please renew your subscription.';
+    } else if (daysLeft == 1) {
+      return 'Payment failed. Retry within 1 day to keep premium access.';
+    } else {
+      return 'Payment failed. Retry within $daysLeft days to keep premium access.';
+    }
   }
 }

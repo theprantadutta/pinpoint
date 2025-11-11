@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../design_system/design_system.dart';
-import '../screens/subscription_screen_revcat.dart';
+import '../screens/subscription_screen.dart';
 
 /// Dialog shown when user hits a premium limit
 class PremiumGateDialog extends StatelessWidget {
@@ -113,7 +113,7 @@ class PremiumGateDialog extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    context.push(SubscriptionScreenRevCat.kRouteName);
+                    context.push(SubscriptionScreen.kRouteName);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cs.primary,

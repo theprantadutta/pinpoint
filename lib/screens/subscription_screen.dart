@@ -3,10 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:pinpoint/design_system/design_system.dart';
-import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/services/subscription_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
-import 'package:provider/provider.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -25,9 +23,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final subscriptionManager = context.read<SubscriptionManager>();
-    _subscriptionService = SubscriptionService(subscriptionManager);
-    _subscriptionService.initialize();
+    _subscriptionService = SubscriptionService();
   }
 
   @override
