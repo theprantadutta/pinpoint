@@ -8,6 +8,9 @@ import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:image_picker/image_picker.dart';
 
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
 import '../components/create_note_screen/record_audio_type/record_type_content.dart';
@@ -21,6 +24,7 @@ import '../services/drift_note_folder_service.dart';
 import '../services/drift_note_service.dart';
 import '../services/premium_service.dart';
 import '../services/background_save_queue_service.dart';
+import '../services/ocr_service.dart';
 import '../service_locators/init_service_locators.dart';
 import '../widgets/premium_gate_dialog.dart';
 import '../constants/premium_limits.dart';
@@ -143,6 +147,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
         .enqueueSave(
       noteCompanion: noteCompanion,
       previousNoteId: _currentNoteId,
+      folders: selectedFolders,
     )
         .then((result) async {
       if (result.success) {
@@ -726,6 +731,12 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
                 case 'export_markdown':
                   _handleExportMarkdown(context);
                   break;
+                case 'export_pdf':
+                  _handleExportPdf(context);
+                  break;
+                case 'ocr_scan':
+                  _handleOcrScan(context);
+                  break;
                 case 'info':
                   _showNoteInfoModal(context, cs, isDark);
                   break;
@@ -749,35 +760,47 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
                   children: [
                     Icon(Symbols.share, size: 20, color: cs.primary),
                     const SizedBox(width: 12),
+                    const Text('Share'),
+                  ],
+                ),
+              ),
+              // OCR Scan
+              PopupMenuItem(
+                value: 'ocr_scan',
+                child: Row(
+                  children: [
+                    Icon(Icons.document_scanner_rounded,
+                        size: 20, color: cs.primary),
+                    const SizedBox(width: 12),
                     Builder(
                       builder: (context) {
                         final premiumService = PremiumService();
                         final isPremium = premiumService.isPremium;
-                        final used = premiumService.getExportsThisMonth();
-                        final total = PremiumLimits.maxExportsPerMonthForFree;
+                        final used = premiumService.getOcrScansThisMonth();
+                        final total = PremiumLimits.maxOcrScansPerMonthForFree;
 
-                        String shareText = 'Share';
+                        String ocrText = 'Scan Text from Image';
                         if (!isPremium) {
-                          shareText = 'Share ($used/$total)';
+                          ocrText = 'Scan Text ($used/$total)';
                         }
 
-                        return Text(shareText);
+                        return Text(ocrText);
                       },
                     ),
                   ],
                 ),
               ),
-              // Markdown Export (Premium only)
-              if (PremiumService().isPremium)
-                PopupMenuItem(
-                  value: 'export_markdown',
-                  child: Row(
-                    children: [
-                      Icon(Icons.file_download_rounded,
-                          size: 20, color: cs.primary),
-                      const SizedBox(width: 12),
-                      const Text('Export Markdown'),
-                      const SizedBox(width: 4),
+              // Markdown Export
+              PopupMenuItem(
+                value: 'export_markdown',
+                child: Row(
+                  children: [
+                    Icon(Icons.file_download_rounded,
+                        size: 20, color: cs.primary),
+                    const SizedBox(width: 12),
+                    const Text('Export Markdown'),
+                    const SizedBox(width: 4),
+                    if (!PremiumService().isPremium)
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 6,
@@ -796,9 +819,77 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
+              ),
+              // PDF Export
+              PopupMenuItem(
+                value: 'export_pdf',
+                child: Row(
+                  children: [
+                    Icon(Icons.picture_as_pdf_rounded,
+                        size: 20, color: cs.primary),
+                    const SizedBox(width: 12),
+                    const Text('Export PDF'),
+                    const SizedBox(width: 4),
+                    if (!PremiumService().isPremium)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: PinpointColors.mint.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'PRO',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: PinpointColors.mint,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Encrypted Sharing (Coming Soon)
+              PopupMenuItem(
+                enabled: false,
+                child: Row(
+                  children: [
+                    Icon(Icons.lock_outline_rounded,
+                        size: 20, color: cs.onSurface.withValues(alpha: 0.4)),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Share Encrypted',
+                      style: TextStyle(
+                        color: cs.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: cs.onSurface.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'SOON',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: cs.onSurface.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: 'info',
                 child: Row(
@@ -1310,17 +1401,6 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       return;
     }
 
-    // Check export limits
-    final premiumService = PremiumService();
-    if (!premiumService.canExport()) {
-      PinpointHaptics.error();
-      PremiumGateDialog.showExportLimit(context);
-      return;
-    }
-
-    // Increment export counter
-    await premiumService.incrementExports();
-
     // Share the note
     _sharePlus.share(ShareParams(
       text: '$title\n\n$content',
@@ -1350,6 +1430,17 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
         ),
       );
       return;
+    }
+
+    // Check export limits for free users
+    final premiumService = PremiumService();
+    if (!premiumService.isPremium) {
+      if (!premiumService.canExport()) {
+        if (mounted) {
+          PremiumGateDialog.showExportLimit(context);
+        }
+        return;
+      }
     }
 
     try {
@@ -1398,6 +1489,11 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
         subject: title.isNotEmpty ? title : 'Exported Note',
       );
 
+      // Increment export counter for free users
+      if (!premiumService.isPremium) {
+        await premiumService.incrementExports();
+      }
+
       PinpointHaptics.success();
 
       if (mounted) {
@@ -1416,6 +1512,223 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
           context: context,
           title: 'Export Failed',
           description: 'Unable to export markdown file',
+        );
+      }
+    }
+  }
+
+  Future<void> _handleExportPdf(BuildContext context) async {
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
+
+    if (title.isEmpty && content.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Nothing to Export'),
+          content: const Text('Please add some content before exporting.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Check export limits for free users
+    final premiumService = PremiumService();
+    if (!premiumService.isPremium) {
+      if (!premiumService.canExport()) {
+        if (mounted) {
+          PremiumGateDialog.showExportLimit(context);
+        }
+        return;
+      }
+    }
+
+    try {
+      // Create PDF document
+      final pdf = pw.Document();
+
+      // Add a page with simple text content
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Title
+                if (title.isNotEmpty) ...[
+                  pw.Text(
+                    title,
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.SizedBox(height: 20),
+                ],
+                // Content
+                if (content.isNotEmpty) ...[
+                  pw.Text(
+                    content,
+                    style: const pw.TextStyle(
+                      fontSize: 12,
+                      lineSpacing: 1.5,
+                    ),
+                  ),
+                  pw.SizedBox(height: 20),
+                ],
+                // Metadata
+                pw.Spacer(),
+                pw.Divider(),
+                pw.SizedBox(height: 10),
+                pw.Text(
+                  'Exported from Pinpoint',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontStyle: pw.FontStyle.italic,
+                  ),
+                ),
+                pw.Text(
+                  'Date: ${DateTime.now().toString().split('.')[0]}',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontStyle: pw.FontStyle.italic,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      // Save to file
+      final directory = await getTemporaryDirectory();
+      final fileName = title.isNotEmpty
+          ? '${title.replaceAll(RegExp(r'[^\w\s-]'), '')}.pdf'
+          : 'note_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsBytes(await pdf.save());
+
+      // Share the file
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: title.isNotEmpty ? title : 'Exported Note',
+      );
+
+      // Increment export counter for free users
+      if (!premiumService.isPremium) {
+        await premiumService.incrementExports();
+      }
+
+      PinpointHaptics.success();
+
+      if (mounted) {
+        showSuccessToast(
+          context: context,
+          title: 'Exported!',
+          description: 'PDF file exported successfully',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error exporting PDF: $e');
+      PinpointHaptics.error();
+
+      if (mounted) {
+        showErrorToast(
+          context: context,
+          title: 'Export Failed',
+          description: 'Unable to export PDF file',
+        );
+      }
+    }
+  }
+
+  Future<void> _handleOcrScan(BuildContext context) async {
+    // Check OCR limits
+    final premiumService = PremiumService();
+    if (!premiumService.canPerformOcrScan()) {
+      PinpointHaptics.error();
+      final remaining = premiumService.getRemainingOcrScans();
+      await PremiumGateDialog.showOcrLimit(context, remaining);
+      return;
+    }
+
+    try {
+      // Pick an image
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+      if (image == null) return;
+
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+
+      // Perform OCR
+      final String recognizedText = await OCRService.recognizeText(image.path);
+
+      // Close loading indicator
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (recognizedText.isEmpty) {
+        PinpointHaptics.error();
+        if (mounted) {
+          showErrorToast(
+            context: context,
+            title: 'No Text Found',
+            description: 'Could not detect any text in the image',
+          );
+        }
+        return;
+      }
+
+      // Add recognized text to content
+      final currentText = _contentController.text;
+      final newText = currentText.isEmpty
+          ? recognizedText
+          : '$currentText\n\n$recognizedText';
+      _contentController.text = newText;
+
+      // Increment OCR counter
+      await premiumService.incrementOcrScans();
+
+      PinpointHaptics.success();
+      if (mounted) {
+        showSuccessToast(
+          context: context,
+          title: 'Text Extracted!',
+          description: 'Text from image has been added to your note',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error performing OCR: $e');
+      PinpointHaptics.error();
+
+      // Close loading indicator if still showing
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+
+      if (mounted) {
+        showErrorToast(
+          context: context,
+          title: 'OCR Failed',
+          description: 'Unable to scan text from image',
         );
       }
     }

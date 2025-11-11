@@ -42,6 +42,25 @@ class NoteInputField extends StatelessWidget {
           await getApplicationDocumentsDirectory(); // Safe storage location
 
       for (var media in medias) {
+        // Check file attachment limits for free users
+        final premiumService = PremiumService();
+        if (!premiumService.isPremium) {
+          final currentAttachments = noteAttachments.length;
+          final maxAttachments = PremiumLimits.maxAttachmentsPerNoteForFree;
+
+          if (currentAttachments >= maxAttachments) {
+            if (context.mounted) {
+              PinpointHaptics.error();
+              await PremiumGateDialog.showFileAttachmentLimit(
+                context,
+                currentAttachments,
+                maxAttachments,
+              );
+            }
+            break; // Stop adding more attachments
+          }
+        }
+
         final File originalFile = File(media.path);
         final String newPath = '${appDir.path}/${media.name}';
 

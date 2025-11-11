@@ -3,9 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
+import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
 import '../services/revenue_cat_service.dart';
 import '../services/premium_service.dart';
+import '../services/subscription_manager.dart';
+import '../services/notification_service.dart';
 import '../util/show_a_toast.dart';
 
 class SubscriptionScreenRevCat extends StatefulWidget {
@@ -53,6 +56,9 @@ class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
     try {
       debugPrint('🎨 [SubscriptionScreen] Presenting paywall...');
 
+      // Get premium status before purchase
+      final wasPremium = await RevenueCatService.isPremium();
+
       final paywallResult = await RevenueCatUI.presentPaywallIfNeeded(
         'PinPoint Pro',
       );
@@ -64,14 +70,28 @@ class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
       await PremiumService().refreshPremiumStatus();
 
       if (mounted) {
+        // Also refresh SubscriptionManager to update account section
+        await context.read<SubscriptionManager>().checkSubscriptionStatus();
+
         final isPremium = await RevenueCatService.isPremium();
 
-        if (mounted && isPremium) {
+        // Only show success if user just became premium (not already premium)
+        if (mounted && isPremium && !wasPremium) {
+          // Show success toast
           showSuccessToast(
             context: context,
             title: 'Welcome to Premium!',
             description: 'You now have access to all premium features',
           );
+
+          // Send local notification
+          await NotificationService.showNotification(
+            id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            title: '🎉 Welcome to Premium!',
+            body: 'Thank you for your support! You now have unlimited access to all features.',
+          );
+
+          PinpointHaptics.success();
         }
       }
     } on PlatformException catch (e) {
@@ -103,6 +123,9 @@ class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
       await PremiumService().refreshPremiumStatus();
 
       if (mounted) {
+        // Also refresh SubscriptionManager to update account section
+        await context.read<SubscriptionManager>().checkSubscriptionStatus();
+
         final hasActiveEntitlement =
             customerInfo.entitlements.active.containsKey('PinPoint Pro');
 
@@ -112,6 +135,7 @@ class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
             title: 'Purchases Restored!',
             description: 'Your premium subscription has been restored',
           );
+          PinpointHaptics.success();
         } else {
           showErrorToast(
             context: context,
@@ -188,12 +212,12 @@ class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
         ),
 
         Expanded(
-          child: Center(
+          child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(32.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  const SizedBox(height: 40),
                   // Premium badge
                   Container(
                     width: 120,
@@ -252,6 +276,8 @@ class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
 
                   // Features list
                   ..._buildPremiumFeatures(),
+
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -410,7 +436,7 @@ class _SubscriptionScreenRevCatState extends State<SubscriptionScreenRevCat> {
       {'icon': Icons.palette_rounded, 'title': 'All Premium Themes'},
       {'icon': Icons.file_download_rounded, 'title': 'Export to PDF/Markdown'},
       {'icon': Icons.shield_rounded, 'title': 'Encrypted Sharing'},
-      {'icon': Icons.support_agent_rounded, 'title': 'Priority Support'},
+      {'icon': Icons.support_agent_rounded, 'title': 'Priority Email Support'},
     ];
 
     return features.asMap().entries.map((entry) {
