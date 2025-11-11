@@ -167,7 +167,13 @@ class _TodoScreenState extends State<TodoScreen> {
         child: FloatingActionButton(
           onPressed: () {
             PinpointHaptics.medium();
-            _showAddTodoDialog();
+            // Navigate to create note screen with Todo List pre-selected
+            context.push(
+              CreateNoteScreen.kRouteName,
+              extra: CreateNoteScreenArguments(
+                noticeType: 'Todo List',
+              ),
+            );
           },
           child: const Icon(Icons.add_rounded),
         ),
@@ -211,17 +217,6 @@ class _TodoScreenState extends State<TodoScreen> {
 
   void _toggleTodoStatus(int todoId, bool isDone) {
     DriftNoteService.updateTodoItemStatus(todoId, isDone);
-  }
-
-  Future<void> _showAddTodoDialog() async {
-    await ConfirmSheet.show(
-      context: context,
-      title: 'Add Todo',
-      message:
-          'To add a new todo, you need to create it within a note. Please go to the Notes screen and create a new note with todo list type, or edit an existing note to add todos.',
-      primaryLabel: 'OK',
-      icon: Icons.info_outline_rounded,
-    );
   }
 }
 

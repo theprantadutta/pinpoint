@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:pinpoint/sync/file_sync_service.dart';
 import 'package:pinpoint/sync/sync_service.dart';
 import 'package:pinpoint/services/premium_service.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
@@ -17,21 +16,22 @@ class SyncManager with ChangeNotifier {
   String get lastSyncMessage => _syncService?.lastSyncMessage ?? '';
   int get lastSyncTimestamp => _syncService?.lastSyncTimestamp ?? 0;
 
-  /// Initialize the sync manager
-  Future<void> init() async {
+  /// Initialize the sync manager with a sync service
+  Future<void> init({SyncService? syncService}) async {
     if (_isInitialized) return;
 
-    // For now, we'll use the file sync service
-    // In the future, this could be configured to use different backends
-    _syncService = FileSyncService();
-    await _syncService!.init();
-
-    // Listen to sync service changes
-    if (_syncService is FileSyncService) {
-      (_syncService as FileSyncService).addListener(notifyListeners);
+    if (syncService != null) {
+      _syncService = syncService;
+      await _syncService!.init();
     }
 
     _isInitialized = true;
+    notifyListeners();
+  }
+
+  /// Set the sync service (can be called after initialization)
+  void setSyncService(SyncService syncService) {
+    _syncService = syncService;
     notifyListeners();
   }
 
@@ -117,9 +117,6 @@ class SyncManager with ChangeNotifier {
 
   @override
   void dispose() {
-    if (_syncService is FileSyncService) {
-      (_syncService as FileSyncService).removeListener(notifyListeners);
-    }
     _syncService?.dispose();
     super.dispose();
   }
