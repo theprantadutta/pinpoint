@@ -57,8 +57,10 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.release
-            minifyEnabled true
-            shrinkResources true
+            // Disable R8, ProGuard, and code shrinking
+            minifyEnabled false
+            shrinkResources false
+            // useProguard false  // Not needed, R8 is default (and we disabled it above)
         }
     }
 }
