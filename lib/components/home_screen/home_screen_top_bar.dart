@@ -3,9 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
-import 'package:pinpoint/main.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'dart:async';
 import '../../design_system/design_system.dart';
 
@@ -133,9 +130,6 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
           context.push(ArchiveScreen.kRouteName);
         } else if (value == 'trash') {
           context.push(TrashScreen.kRouteName);
-        } else if (value == 'toggle_biometrics') {
-          final current = MyApp.of(context).isBiometricEnabled;
-          MyApp.of(context).changeBiometricEnabledEnabled(!current);
         }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -146,28 +140,6 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
         const PopupMenuItem<String>(
           value: 'trash',
           child: Text('Trash'),
-        ),
-        const PopupMenuDivider(),
-        PopupMenuItem<String>(
-          value: 'toggle_biometrics',
-          child: InkWell(
-            onTap: () async {
-              if (!context.mounted) return;
-              Navigator.of(context).pop();
-              final preferences = await SharedPreferences.getInstance();
-              final current = preferences.getBool(kBiometricKey) ?? false;
-              await preferences.setBool(kBiometricKey, !current);
-              if (!context.mounted) return;
-              MyApp.of(context).initializeSharedPreferences();
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Biometric lock'),
-                Text(MyApp.of(context).isBiometricEnabled ? 'On' : 'Off'),
-              ],
-            ),
-          ),
         ),
       ],
       child: GlassContainer(

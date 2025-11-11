@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
+import 'package:pinpoint/main.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
@@ -303,7 +305,11 @@ class _AccountScreenState extends State<AccountScreen> {
 
           // Account Section
           Consumer<BackendAuthService>(
-            builder: (context, backendAuth, child) {
+            // Use child parameter to preserve _LinkedAccountsSection across rebuilds
+            child: Consumer<BackendAuthService>(
+              builder: (context, auth, _) => _LinkedAccountsSection(backendAuth: auth),
+            ),
+            builder: (context, backendAuth, linkedAccountsChild) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -322,7 +328,8 @@ class _AccountScreenState extends State<AccountScreen> {
                     const SizedBox(height: 12),
                   ],
 
-                  _LinkedAccountsSection(backendAuth: backendAuth),
+                  // Reuse the preserved child widget
+                  if (linkedAccountsChild != null) linkedAccountsChild,
 
                   // Logout Button
                   if (backendAuth.isAuthenticated) ...[
@@ -382,6 +389,24 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
           const SizedBox(height: 8),
           _SettingsTile(
+            title: 'Biometric Lock',
+            subtitle: MyApp.of(context).isBiometricEnabled ? 'Enabled' : 'Disabled',
+            icon: Icons.fingerprint_rounded,
+            trailing: Switch(
+              value: MyApp.of(context).isBiometricEnabled,
+              onChanged: (value) {
+                PinpointHaptics.light();
+                MyApp.of(context).changeBiometricEnabledEnabled(value);
+              },
+            ),
+            onTap: () {
+              PinpointHaptics.light();
+              final current = MyApp.of(context).isBiometricEnabled;
+              MyApp.of(context).changeBiometricEnabledEnabled(!current);
+            },
+          ),
+          const SizedBox(height: 8),
+          _SettingsTile(
             title: 'Import Note',
             icon: Icons.file_upload_rounded,
             onTap: () async {
@@ -406,37 +431,40 @@ class _AccountScreenState extends State<AccountScreen> {
               }
             },
           ),
-          const SizedBox(height: 8),
-          _SettingsTile(
-            title: 'Test Notification',
-            subtitle: 'Send a test push notification',
-            icon: Icons.notifications_active_rounded,
-            onTap: () async {
-              PinpointHaptics.medium();
-              try {
-                final notificationService = FirebaseNotificationService();
-                await notificationService.sendTestNotification();
-                final ctx = context;
-                if (ctx.mounted) {
-                  showSuccessToast(
-                    context: ctx,
-                    title: '🔔 Test Notification Sent!',
-                    description: 'Check your notification tray',
-                  );
+          // Test notification - only in debug mode
+          if (kDebugMode) ...[
+            const SizedBox(height: 8),
+            _SettingsTile(
+              title: 'Test Notification',
+              subtitle: 'Send a test push notification',
+              icon: Icons.notifications_active_rounded,
+              onTap: () async {
+                PinpointHaptics.medium();
+                try {
+                  final notificationService = FirebaseNotificationService();
+                  await notificationService.sendTestNotification();
+                  final ctx = context;
+                  if (ctx.mounted) {
+                    showSuccessToast(
+                      context: ctx,
+                      title: '🔔 Test Notification Sent!',
+                      description: 'Check your notification tray',
+                    );
+                  }
+                } catch (e) {
+                  final ctx = context;
+                  if (ctx.mounted) {
+                    showErrorToast(
+                      context: ctx,
+                      title: 'Failed',
+                      description: 'Error: ${e.toString()}',
+                    );
+                  }
                 }
-              } catch (e) {
-                final ctx = context;
-                if (ctx.mounted) {
-                  showErrorToast(
-                    context: ctx,
-                    title: 'Failed',
-                    description: 'Error: ${e.toString()}',
-                  );
-                }
-              }
-            },
-          ),
-          const SizedBox(height: 8),
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
           _SettingsTile(
             title: 'Terms & Privacy',
             icon: Icons.policy_rounded,
@@ -1151,16 +1179,48 @@ class _LinkedAccountsSection extends StatefulWidget {
 class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
   bool _isLoading = false;
   Map<String, dynamic>? _providers;
+  bool _hasLoadedOnce = false;
 
   @override
   void initState() {
     super.initState();
-    _loadProviders();
+    _loadProviders(showLoading: true);
   }
 
-  Future<void> _loadProviders() async {
+  @override
+  void didUpdateWidget(_LinkedAccountsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only reload if authentication status changed
+    if (widget.backendAuth.isAuthenticated != oldWidget.backendAuth.isAuthenticated) {
+      _loadProviders(showLoading: true);
+    }
+  }
+
+  Future<void> _loadProviders({bool showLoading = false}) async {
     if (!widget.backendAuth.isAuthenticated) {
       return;
+    }
+
+    // If we already have data and not explicitly showing loading, do silent refresh
+    if (_hasLoadedOnce && !showLoading) {
+      try {
+        final providers = await widget.backendAuth.getAuthProviders();
+        if (mounted) {
+          setState(() {
+            _providers = providers;
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading auth providers: $e');
+      }
+      return;
+    }
+
+    // Show loading for first load or explicit reload
+    if (showLoading && mounted) {
+      setState(() {
+        _isLoading = true;
+      });
     }
 
     try {
@@ -1168,10 +1228,17 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
       if (mounted) {
         setState(() {
           _providers = providers;
+          _isLoading = false;
+          _hasLoadedOnce = true;
         });
       }
     } catch (e) {
       debugPrint('Error loading auth providers: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -1215,8 +1282,8 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
         password: password,
       );
 
-      // 5. Reload providers
-      await _loadProviders();
+      // 5. Reload providers (silent refresh)
+      await _loadProviders(showLoading: false);
 
       if (mounted) {
         PinpointHaptics.success();
@@ -1276,8 +1343,8 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
     try {
       await widget.backendAuth.unlinkGoogleAccount();
 
-      // Reload providers
-      await _loadProviders();
+      // Reload providers (silent refresh)
+      await _loadProviders(showLoading: false);
 
       if (mounted) {
         PinpointHaptics.success();

@@ -100,6 +100,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       // TODO: Load reminder data from ReminderNotes table if type is 'reminder'
       _reminderDescription.text = '';
       reminderDateTime = null;
+    } else if (widget.args?.noticeType != null) {
+      // Pre-select note type for new notes (e.g., from Todo screen)
+      selectedNoteType = widget.args!.noticeType;
     }
   }
 
@@ -213,6 +216,14 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
             );
       }
 
+      // CRITICAL: Update parent note's updated_at timestamp
+      // This triggers Drift streams watching the notes table to refresh UI
+      await (database.update(database.notes)
+            ..where((n) => n.id.equals(noteId)))
+          .write(db.NotesCompanion(
+        updatedAt: drift.Value(DateTime.now()),
+      ));
+
       debugPrint('[Auto-save Text] Text content saved successfully');
     } catch (e, st) {
       debugPrint('[Auto-save Text] Error saving text content: $e');
@@ -289,6 +300,16 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
           _savedTodos = List<db.NoteTodoItem>.from(todos);
         });
       }
+
+      // CRITICAL: Update parent note's updated_at timestamp
+      // This triggers Drift streams watching the notes table to refresh UI
+      final database = getIt<db.AppDatabase>();
+      await (database.update(database.notes)
+            ..where((n) => n.id.equals(noteId)))
+          .write(db.NotesCompanion(
+        updatedAt: drift.Value(DateTime.now()),
+      ));
+
       debugPrint('[Auto-save Todos] Todo save completed successfully');
     } catch (e) {
       debugPrint('[Auto-save Todos] Error saving todos: $e');

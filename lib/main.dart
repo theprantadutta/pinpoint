@@ -7,9 +7,11 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'constants/shared_preference_keys.dart';
+import 'database/database.dart';
 import 'design_system/design_system.dart';
 import 'navigation/app_navigation.dart';
 import 'service_locators/init_service_locators.dart';
+import 'services/api_service.dart';
 import 'services/encryption_service.dart';
 import 'services/notification_service.dart';
 import 'services/auth_service.dart';
@@ -20,6 +22,7 @@ import 'services/google_sign_in_service.dart';
 import 'services/premium_service.dart';
 import 'services/subscription_service.dart';
 import 'sync/sync_manager.dart';
+import 'sync/api_sync_service.dart';
 
 // void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
@@ -120,9 +123,26 @@ Future<void> _initializeCoreServices() async {
     // Continue without Google Sign-In - users can still use email/password
   }
 
-  // Initialize sync manager
-  final syncManager = getIt<SyncManager>();
-  await syncManager.init();
+  // Initialize sync manager with API sync service
+  try {
+    debugPrint('🔄 [main.dart] Initializing Sync Manager...');
+    final syncManager = getIt<SyncManager>();
+    final database = getIt<AppDatabase>();
+
+    // Create API sync service
+    final apiSyncService = ApiSyncService(
+      apiService: ApiService(),
+      database: database,
+    );
+
+    // Initialize sync manager with the API sync service
+    await syncManager.init(syncService: apiSyncService);
+    debugPrint('✅ [main.dart] Sync Manager initialized');
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ [main.dart] Sync Manager not initialized: $e');
+    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
+    // Continue without sync - app will still work offline
+  }
 
   // Initialize Google Play Subscription Service
   try {
