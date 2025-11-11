@@ -7,7 +7,7 @@ import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
 import 'package:pinpoint/screens/splash_screen.dart';
 import 'package:pinpoint/screens/onboarding_screen.dart';
-import 'package:pinpoint/screens/subscription_screen_revcat.dart';
+import 'package:pinpoint/screens/subscription_screen.dart';
 import 'package:pinpoint/screens/my_folders_screen.dart';
 import 'package:pinpoint/screens/auth_screen.dart';
 import 'package:pinpoint/screens/account_linking_screen.dart';
@@ -104,11 +104,11 @@ class AppNavigation {
       /// Subscription Screen
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
-        path: SubscriptionScreenRevCat.kRouteName,
+        path: SubscriptionScreen.kRouteName,
         name: "Subscription",
         pageBuilder: (context, state) => NoTransitionPage(
           key: state.pageKey,
-          child: const SubscriptionScreenRevCat(),
+          child: const SubscriptionScreen(),
         ),
       ),
 

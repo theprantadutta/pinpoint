@@ -10,18 +10,27 @@ class SubscriptionManager extends ChangeNotifier {
   final ApiService _apiService = ApiService();
 
   bool _isPremium = false;
+  bool _isInGracePeriod = false;
   String _subscriptionTier = 'free';
+  String? _subscriptionType;
   DateTime? _subscriptionExpiresAt;
+  DateTime? _gracePeriodEndsAt;
   String? _deviceId;
 
-  bool get isPremium => _isPremium;
+  bool get isPremium => _isPremium || _isInGracePeriod;
+  bool get isInGracePeriod => _isInGracePeriod;
   String get subscriptionTier => _subscriptionTier;
-  DateTime? get subscriptionExpiresAt => _subscriptionExpiresAt;
+  String? get subscriptionType => _subscriptionType;
+  DateTime? get expirationDate => _subscriptionExpiresAt;
+  DateTime? get gracePeriodEndsAt => _gracePeriodEndsAt;
   String? get deviceId => _deviceId;
 
   static const String _premiumKey = 'is_premium';
+  static const String _gracePeriodKey = 'is_in_grace_period';
   static const String _tierKey = 'subscription_tier';
+  static const String _typeKey = 'subscription_type';
   static const String _expiryKey = 'subscription_expires_at';
+  static const String _gracePeriodExpiryKey = 'grace_period_ends_at';
   static const String _deviceIdKey = 'device_id';
 
   /// Initialize subscription manager
@@ -77,15 +86,32 @@ class SubscriptionManager extends ChangeNotifier {
       final preferences = await SharedPreferences.getInstance();
 
       _isPremium = preferences.getBool(_premiumKey) ?? false;
+      _isInGracePeriod = preferences.getBool(_gracePeriodKey) ?? false;
       _subscriptionTier = preferences.getString(_tierKey) ?? 'free';
+      _subscriptionType = preferences.getString(_typeKey);
 
       final expiryString = preferences.getString(_expiryKey);
       if (expiryString != null) {
         _subscriptionExpiresAt = DateTime.parse(expiryString);
 
-        // Check if expired
+        // Check if expired (but still check grace period)
         if (_subscriptionExpiresAt!.isBefore(DateTime.now())) {
           _isPremium = false;
+          // Don't reset tier yet if in grace period
+          if (!_isInGracePeriod) {
+            _subscriptionTier = 'free';
+          }
+        }
+      }
+
+      final gracePeriodString = preferences.getString(_gracePeriodExpiryKey);
+      if (gracePeriodString != null) {
+        _gracePeriodEndsAt = DateTime.parse(gracePeriodString);
+
+        // Check if grace period expired
+        if (_gracePeriodEndsAt!.isBefore(DateTime.now())) {
+          _isInGracePeriod = false;
+          _gracePeriodEndsAt = null;
           _subscriptionTier = 'free';
         }
       }
@@ -102,11 +128,23 @@ class SubscriptionManager extends ChangeNotifier {
       final preferences = await SharedPreferences.getInstance();
 
       await preferences.setBool(_premiumKey, _isPremium);
+      await preferences.setBool(_gracePeriodKey, _isInGracePeriod);
       await preferences.setString(_tierKey, _subscriptionTier);
+
+      if (_subscriptionType != null) {
+        await preferences.setString(_typeKey, _subscriptionType!);
+      }
 
       if (_subscriptionExpiresAt != null) {
         await preferences.setString(
             _expiryKey, _subscriptionExpiresAt!.toIso8601String());
+      }
+
+      if (_gracePeriodEndsAt != null) {
+        await preferences.setString(
+            _gracePeriodExpiryKey, _gracePeriodEndsAt!.toIso8601String());
+      } else {
+        await preferences.remove(_gracePeriodExpiryKey);
       }
     } catch (e) {
       debugPrint('Error saving subscription status: $e');
@@ -122,10 +160,18 @@ class SubscriptionManager extends ChangeNotifier {
           await _apiService.getSubscriptionStatusByDevice(_deviceId!);
 
       _isPremium = status['is_premium'] ?? false;
+      _isInGracePeriod = status['is_in_grace_period'] ?? false;
       _subscriptionTier = status['tier'] ?? 'free';
+      _subscriptionType = status['subscription_type'];
 
       if (status['expires_at'] != null) {
         _subscriptionExpiresAt = DateTime.parse(status['expires_at']);
+      }
+
+      if (status['grace_period_ends_at'] != null) {
+        _gracePeriodEndsAt = DateTime.parse(status['grace_period_ends_at']);
+      } else {
+        _gracePeriodEndsAt = null;
       }
 
       await _saveLocalSubscriptionStatus();
