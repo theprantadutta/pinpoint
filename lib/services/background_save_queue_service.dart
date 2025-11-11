@@ -3,6 +3,8 @@ import 'package:async_queue/async_queue.dart';
 import 'package:flutter/foundation.dart';
 
 import '../database/database.dart' as db;
+import '../dtos/note_folder_dto.dart';
+import 'drift_note_folder_service.dart';
 import 'drift_note_service.dart';
 
 /// Result of a save operation
@@ -62,6 +64,7 @@ class BackgroundSaveQueueService {
   Future<SaveResult> enqueueSave({
     required db.NotesCompanion noteCompanion,
     required int? previousNoteId,
+    List<NoteFolderDto>? folders,
     bool debounce = true,
   }) async {
     // Generate unique key for this note
@@ -103,6 +106,15 @@ class BackgroundSaveQueueService {
               noteId: 0,
               reason: 'Database save returned 0'));
         } else {
+          // Save folder assignments if provided
+          if (folders != null && folders.isNotEmpty) {
+            debugPrint('[SaveQueue] Saving folder assignments for note: $noteKey');
+            await DriftNoteFolderService.upsertNoteFoldersWithNote(
+              folders,
+              noteId,
+            );
+          }
+
           debugPrint(
               '[SaveQueue] Successfully saved note: $noteKey (ID: $noteId)');
           _totalSucceeded++;

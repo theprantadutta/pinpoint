@@ -258,6 +258,21 @@ class PremiumGateDialog extends StatelessWidget {
     );
   }
 
+  /// Show premium gate dialog for file attachment limit
+  static Future<void> showFileAttachmentLimit(
+      BuildContext context, int current, int max) {
+    return showDialog(
+      context: context,
+      builder: (context) => PremiumGateDialog(
+        title: 'Attachment Limit Reached',
+        message: 'You\'ve reached the limit of $max attachments per note. '
+            'Upgrade to Premium for unlimited file attachments.',
+        icon: Icons.attach_file_rounded,
+        ctaText: 'Unlock Unlimited Attachments',
+      ),
+    );
+  }
+
   /// Show premium gate for markdown export
   static Future<void> showMarkdownExportPremium(BuildContext context) {
     return showDialog(

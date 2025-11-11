@@ -215,7 +215,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       _Feature(Symbols.palette, 'All premium themes'),
       _Feature(Symbols.file_download, 'Export to PDF/Markdown'),
       _Feature(Symbols.share, 'Encrypted sharing'),
-      _Feature(Symbols.support_agent, 'Priority support'),
+      _Feature(Symbols.support_agent, 'Priority email support'),
     ];
 
     return Column(
