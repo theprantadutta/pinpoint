@@ -5,6 +5,9 @@ import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/api_service.dart';
 import 'package:pinpoint/services/firebase_notification_service.dart';
 import 'package:pinpoint/screens/home_screen.dart';
+import 'package:pinpoint/sync/sync_manager.dart';
+import 'package:pinpoint/service_locators/init_service_locators.dart';
+import 'package:pinpoint/services/encryption_service.dart';
 import 'package:go_router/go_router.dart';
 
 /// Authentication screen with Google Sign-In and email/password options
@@ -34,6 +37,118 @@ class _AuthScreenState extends State<AuthScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// Performs initial sync after login to restore cloud data
+  Future<bool> _performInitialSync() async {
+    try {
+      debugPrint('🔄 [Auth] Starting initial sync to restore data...');
+
+      final syncManager = getIt<SyncManager>();
+
+      // Show loading dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Restoring your notes...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Perform bidirectional sync to both upload and download
+      final result = await syncManager.sync();
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (result.success) {
+        debugPrint('✅ [Auth] Initial sync successful: ${result.message}');
+        if (result.notesSynced > 0) {
+          debugPrint('   - Restored ${result.notesSynced} notes from cloud');
+        }
+        return true;
+      } else {
+        debugPrint('⚠️ [Auth] Initial sync failed: ${result.message}');
+
+        // Show error dialog with retry option
+        if (mounted) {
+          final retry = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Sync Failed'),
+              content: Text(
+                'Unable to restore your notes from cloud:\n${result.message}\n\n'
+                'You can continue without syncing, or try again.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Continue Anyway'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+
+          if (retry == true) {
+            return await _performInitialSync(); // Recursive retry
+          }
+        }
+
+        return false; // User chose to continue without sync
+      }
+    } catch (e) {
+      debugPrint('❌ [Auth] Initial sync error: $e');
+
+      // Close loading dialog if open
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      // Show error with option to continue
+      if (mounted) {
+        final continueAnyway = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Sync Error'),
+            content: Text(
+              'Failed to restore your notes:\n${e.toString()}\n\n'
+              'You can continue without syncing, or try again.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Continue Anyway'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+
+        if (continueAnyway != true) {
+          return await _performInitialSync(); // Retry
+        }
+      }
+
+      return false; // Continue without sync
+    }
   }
 
   Future<void> _handleGoogleSignIn() async {
@@ -89,6 +204,21 @@ class _AuthScreenState extends State<AuthScreen> {
         } catch (e) {
           debugPrint('⚠️ [Google Sign-In] Failed to register FCM token (non-critical): $e');
         }
+
+        // 5. Force sync encryption key from cloud
+        debugPrint('🔵 [Google Sign-In] Step 5: Syncing encryption key from cloud...');
+        try {
+          final apiService = ApiService();
+          await SecureEncryptionService.syncKeyFromCloud(apiService);
+          debugPrint('✅ [Google Sign-In] Step 5 Complete: Encryption key synced');
+        } catch (e) {
+          debugPrint('⚠️ [Google Sign-In] Failed to sync encryption key (non-critical): $e');
+        }
+
+        // 6. Perform initial sync to restore cloud data
+        debugPrint('🔵 [Google Sign-In] Step 6: Syncing cloud data...');
+        await _performInitialSync();
+        debugPrint('✅ [Google Sign-In] Step 6 Complete: Sync finished');
 
         // Success! Navigate to home
         debugPrint('🎉 [Google Sign-In] Authentication flow complete! Navigating to home...');
@@ -152,6 +282,21 @@ class _AuthScreenState extends State<AuthScreen> {
       } catch (e) {
         debugPrint('⚠️ Failed to register FCM token (non-critical): $e');
       }
+
+      // Force sync encryption key from cloud
+      debugPrint('🔵 [Email Auth] Syncing encryption key from cloud...');
+      try {
+        final apiService = ApiService();
+        await SecureEncryptionService.syncKeyFromCloud(apiService);
+        debugPrint('✅ [Email Auth] Encryption key synced');
+      } catch (e) {
+        debugPrint('⚠️ [Email Auth] Failed to sync encryption key (non-critical): $e');
+      }
+
+      // Perform initial sync to restore cloud data
+      debugPrint('🔄 [Email Auth] Syncing cloud data...');
+      await _performInitialSync();
+      debugPrint('✅ [Email Auth] Sync finished');
 
       // Success! Navigate to home
       if (mounted) {

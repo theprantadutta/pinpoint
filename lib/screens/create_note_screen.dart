@@ -26,6 +26,7 @@ import '../services/premium_service.dart';
 import '../services/background_save_queue_service.dart';
 import '../services/ocr_service.dart';
 import '../service_locators/init_service_locators.dart';
+import '../sync/sync_manager.dart';
 import '../widgets/premium_gate_dialog.dart';
 import '../constants/premium_limits.dart';
 import '../util/show_a_toast.dart';
@@ -177,6 +178,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
 
         // TODO: Save reminder data if this is a reminder note
         // TODO: Save audio data if this is an audio note
+
+        // Upload to cloud after save completes
+        _uploadToCloudInBackground();
       } else {
         debugPrint('Auto-save failed: ${result.reason}');
         // Optionally show subtle error indicator (not intrusive toast)
@@ -184,6 +188,32 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
     });
 
     debugPrint('Auto-save enqueued');
+  }
+
+  /// Upload note to cloud in background (non-blocking)
+  Future<void> _uploadToCloudInBackground() async {
+    try {
+      if (_currentNoteId == null) {
+        debugPrint('☁️ [Auto-Upload] Skipping upload: no note ID yet');
+        return;
+      }
+
+      final syncManager = getIt<SyncManager>();
+      debugPrint('☁️ [Auto-Upload] Uploading note $_currentNoteId to cloud...');
+
+      // Fire and forget - don't block UI or wait for result
+      syncManager.upload().then((result) {
+        if (result.success) {
+          debugPrint('✅ [Auto-Upload] Note uploaded successfully: ${result.message}');
+        } else {
+          debugPrint('⚠️ [Auto-Upload] Upload failed: ${result.message}');
+        }
+      }).catchError((e) {
+        debugPrint('❌ [Auto-Upload] Upload error: $e');
+      });
+    } catch (e) {
+      debugPrint('❌ [Auto-Upload] Exception during upload: $e');
+    }
   }
 
   Future<void> _saveTextContent(int noteId, String content) async {
@@ -394,6 +424,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       final result = await _saveQueue.enqueueSave(
         noteCompanion: noteCompanion,
         previousNoteId: _currentNoteId,
+        folders: selectedFolders, // Save folders too!
         debounce: false, // No debounce for immediate saves
       );
 
@@ -417,6 +448,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
         if (selectedNoteType == kNoteTypes[2] && todos.isNotEmpty) {
           await _saveTodos(noteId);
         }
+
+        // Upload to cloud after save completes
+        _uploadToCloudInBackground();
       } else {
         debugPrint('[ImmediateSave] Save failed: ${result.reason}');
       }
