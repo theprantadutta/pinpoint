@@ -423,6 +423,27 @@ class ApiSyncService extends SyncService {
         break;
     }
 
+    // Update folder relationships
+    if (noteData.containsKey('folderIds')) {
+      final folderIds = (noteData['folderIds'] as List).cast<int>();
+
+      // Delete existing folder relations
+      await (_database.delete(_database.noteFolderRelations)
+            ..where((tbl) => tbl.noteId.equals(noteId)))
+          .go();
+
+      // Create new folder relations
+      for (final folderId in folderIds) {
+        await _database.into(_database.noteFolderRelations).insert(
+          NoteFolderRelationsCompanion(
+            noteId: Value(noteId),
+            noteFolderId: Value(folderId),
+          ),
+        );
+      }
+      debugPrint('✅ [ApiSync] Updated ${folderIds.length} folder relations for note $noteId');
+    }
+
     debugPrint('✅ [ApiSync] Updated note $noteId');
   }
 
@@ -516,6 +537,21 @@ class ApiSyncService extends SyncService {
             );
           }
           break;
+      }
+
+      // Create folder relationships
+      if (noteData.containsKey('folderIds')) {
+        final folderIds = (noteData['folderIds'] as List).cast<int>();
+
+        for (final folderId in folderIds) {
+          await _database.into(_database.noteFolderRelations).insert(
+            NoteFolderRelationsCompanion(
+              noteId: Value(noteId),
+              noteFolderId: Value(folderId),
+            ),
+          );
+        }
+        debugPrint('✅ [ApiSync] Created ${folderIds.length} folder relations for note $noteId');
       }
 
       debugPrint('✅ [ApiSync] Created note $noteId (from server client_id: $clientNoteId)');

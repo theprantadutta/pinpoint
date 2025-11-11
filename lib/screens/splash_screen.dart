@@ -4,6 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/shared_preference_keys.dart';
 import '../services/backend_auth_service.dart';
+import '../services/drift_note_service.dart';
+import '../services/encryption_service.dart';
+import '../services/api_service.dart';
+import '../sync/sync_manager.dart';
+import '../service_locators/init_service_locators.dart';
 import 'auth_screen.dart';
 import 'home_screen.dart';
 import 'onboarding_screen.dart';
@@ -75,10 +80,74 @@ class _SplashScreenState extends State<SplashScreen> {
     // Navigate based on authentication status
     debugPrint('🔵 [Splash] Authentication status: ${backendAuth.isAuthenticated}');
     if (backendAuth.isAuthenticated) {
-      debugPrint('✅ [Splash] User is authenticated, navigating to home');
+      debugPrint('✅ [Splash] User is authenticated');
+
+      // Initialize encryption service with cloud sync (CRITICAL: Do this BEFORE any sync)
+      debugPrint('🔑 [Splash] Initializing encryption service with cloud sync...');
+      try {
+        final apiService = ApiService();
+
+        // First check if encryption is already initialized
+        if (!SecureEncryptionService.isInitialized) {
+          debugPrint('🔑 [Splash] Encryption not initialized, fetching from cloud...');
+          await SecureEncryptionService.syncKeyFromCloud(apiService);
+          debugPrint('✅ [Splash] Encryption initialized with cloud key');
+        } else {
+          debugPrint('⚠️ [Splash] Encryption already initialized, syncing from cloud anyway...');
+          await SecureEncryptionService.syncKeyFromCloud(apiService);
+        }
+      } catch (e) {
+        debugPrint('❌ [Splash] Failed to initialize encryption: $e');
+        // Try to initialize without cloud sync as fallback
+        if (!SecureEncryptionService.isInitialized) {
+          debugPrint('🔑 [Splash] Falling back to local-only encryption initialization');
+          await SecureEncryptionService.initialize();
+        }
+      }
+
+      // Check if local database is empty (fresh install or cleared data)
+      try {
+        final notes = await DriftNoteService.watchNotesWithDetails().first;
+        debugPrint('🔵 [Splash] Found ${notes.length} local notes');
+
+        if (notes.isEmpty) {
+          // No local notes - attempt to restore from cloud
+          debugPrint('🔄 [Splash] No local notes found, attempting cloud sync...');
+
+          if (!mounted) return;
+
+          // Show loading with message
+          setState(() {}); // Trigger rebuild to show "Restoring..." text
+
+          final syncManager = getIt<SyncManager>();
+          // Use bidirectional sync to both upload and download
+          final result = await syncManager.sync();
+
+          if (result.success && result.notesSynced > 0) {
+            debugPrint('✅ [Splash] Synced ${result.notesSynced} notes from cloud');
+          } else {
+            debugPrint('ℹ️ [Splash] No notes to sync from cloud');
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ [Splash] Error checking/restoring notes: $e');
+        // Continue to home even if sync fails
+      }
+
+      if (!mounted) return;
+
+      debugPrint('✅ [Splash] Navigating to home');
       context.go(HomeScreen.kRouteName);
     } else {
       debugPrint('⚠️ [Splash] User is not authenticated, navigating to auth screen');
+
+      // Initialize encryption without cloud sync (will be synced after login)
+      if (!SecureEncryptionService.isInitialized) {
+        debugPrint('🔑 [Splash] Initializing encryption for unauthenticated user');
+        await SecureEncryptionService.initialize();
+      }
+
+      if (!mounted) return;
       context.go(AuthScreen.kRouteName);
     }
   }

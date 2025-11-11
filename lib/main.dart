@@ -68,8 +68,11 @@ void main() async {
       }
     }
 
-    // Initialize encryption service after authentication
-    await SecureEncryptionService.initialize();
+    // DON'T initialize encryption here - wait until after authentication check
+    // Encryption will be initialized in:
+    // 1. Splash screen (if authenticated)
+    // 2. Auth screen (after successful login)
+    debugPrint('🔑 [main.dart] Skipping encryption initialization - will initialize after auth check');
 
     // Run the main app
     runApp(const MyApp());
@@ -237,7 +240,7 @@ class AuthenticationFailedApp extends StatelessWidget {
   void _retryAuthentication() async {
     final isAuthenticated = await _handleBiometricAuth();
     if (isAuthenticated) {
-      await SecureEncryptionService.initialize();
+      // Don't initialize encryption here - it will be done in splash screen
       runApp(const MyApp());
     }
   }

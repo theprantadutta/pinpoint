@@ -398,6 +398,44 @@ class ApiService {
   }
 
   // ============================================================================
+  // Encryption Key Management
+  // ============================================================================
+
+  /// Get encryption key from cloud
+  Future<String?> getEncryptionKey() async {
+    try {
+      final response = await _dio.get('/encryption/key');
+      if (response.statusCode == 200) {
+        return response.data['encryption_key'] as String;
+      }
+      return null;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        // Key not found in cloud - this is normal for new users
+        _logger.d('No encryption key found in cloud (new user)');
+        return null;
+      }
+      _logger.e('Get encryption key error: ${_handleError(e)}');
+      throw Exception(_handleError(e));
+    }
+  }
+
+  /// Store encryption key in cloud
+  Future<void> storeEncryptionKey(String encryptionKey) async {
+    try {
+      await _dio.post(
+        '/encryption/key',
+        data: {
+          'encryption_key': encryptionKey,
+        },
+      );
+    } on DioException catch (e) {
+      _logger.e('Store encryption key error: ${_handleError(e)}');
+      throw Exception(_handleError(e));
+    }
+  }
+
+  // ============================================================================
   // Error Handling
   // ============================================================================
 
