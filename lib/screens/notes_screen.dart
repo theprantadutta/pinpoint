@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen.dart';
@@ -10,6 +11,7 @@ import '../constants/constants.dart';
 import '../design_system/design_system.dart';
 import '../services/filter_service.dart';
 import '../util/note_utils.dart';
+import '../widgets/filter_bottom_sheet.dart';
 
 class NotesScreen extends StatefulWidget {
   static const String kRouteName = '/notes';
@@ -90,6 +92,33 @@ class _NotesScreenState extends State<NotesScreen> {
           ],
         ),
         actions: [
+          // Filter button with badge
+          Consumer<FilterService>(
+            builder: (context, filterService, _) {
+              final hasFilters = filterService.hasActiveFilters;
+              final filterCount = filterService.activeFilterCount;
+
+              return Badge(
+                isLabelVisible: hasFilters,
+                label: Text(filterCount.toString()),
+                child: IconButton(
+                  icon: Icon(
+                    hasFilters ? Symbols.filter_alt : Symbols.filter_alt,
+                    fill: hasFilters ? 1 : 0,
+                  ),
+                  tooltip: 'Filters',
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => const FilterBottomSheet(),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
             onPressed: () {
