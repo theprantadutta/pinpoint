@@ -74,8 +74,11 @@ class _AuthScreenState extends State<AuthScreen> {
 
       if (result.success) {
         debugPrint('✅ [Auth] Initial sync successful: ${result.message}');
+        debugPrint('   - Notes synced count: ${result.notesSynced}');
         if (result.notesSynced > 0) {
-          debugPrint('   - Restored ${result.notesSynced} notes from cloud');
+          debugPrint('   - ✅ Restored ${result.notesSynced} notes from cloud');
+        } else {
+          debugPrint('   - ⚠️ No notes were synced (cloud might be empty or decryption failed)');
         }
         return true;
       } else {
@@ -209,10 +212,27 @@ class _AuthScreenState extends State<AuthScreen> {
         debugPrint('🔵 [Google Sign-In] Step 5: Syncing encryption key from cloud...');
         try {
           final apiService = ApiService();
-          await SecureEncryptionService.syncKeyFromCloud(apiService);
-          debugPrint('✅ [Google Sign-In] Step 5 Complete: Encryption key synced');
+          final syncSuccess = await SecureEncryptionService.syncKeyFromCloud(apiService);
+
+          if (syncSuccess) {
+            debugPrint('✅ [Google Sign-In] Step 5 Complete: Encryption key synced from cloud');
+          } else {
+            debugPrint('⚠️ [Google Sign-In] Cloud key sync returned false, initializing encryption locally...');
+            // Fallback: Initialize encryption locally
+            // This ensures encryption is initialized even if cloud sync fails
+            if (!SecureEncryptionService.isInitialized) {
+              await SecureEncryptionService.initialize(apiService: apiService);
+              debugPrint('✅ [Google Sign-In] Encryption initialized locally as fallback');
+            }
+          }
         } catch (e) {
-          debugPrint('⚠️ [Google Sign-In] Failed to sync encryption key (non-critical): $e');
+          debugPrint('❌ [Google Sign-In] Encryption key sync failed with exception: $e');
+          // Critical fallback: Initialize encryption locally
+          if (!SecureEncryptionService.isInitialized) {
+            debugPrint('🔑 [Google Sign-In] Initializing encryption locally after failure...');
+            await SecureEncryptionService.initialize(apiService: ApiService());
+            debugPrint('✅ [Google Sign-In] Encryption initialized locally');
+          }
         }
 
         // 6. Perform initial sync to restore cloud data
@@ -287,10 +307,27 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint('🔵 [Email Auth] Syncing encryption key from cloud...');
       try {
         final apiService = ApiService();
-        await SecureEncryptionService.syncKeyFromCloud(apiService);
-        debugPrint('✅ [Email Auth] Encryption key synced');
+        final syncSuccess = await SecureEncryptionService.syncKeyFromCloud(apiService);
+
+        if (syncSuccess) {
+          debugPrint('✅ [Email Auth] Encryption key synced from cloud');
+        } else {
+          debugPrint('⚠️ [Email Auth] Cloud key sync returned false, initializing encryption locally...');
+          // Fallback: Initialize encryption locally
+          // This ensures encryption is initialized even if cloud sync fails
+          if (!SecureEncryptionService.isInitialized) {
+            await SecureEncryptionService.initialize(apiService: apiService);
+            debugPrint('✅ [Email Auth] Encryption initialized locally as fallback');
+          }
+        }
       } catch (e) {
-        debugPrint('⚠️ [Email Auth] Failed to sync encryption key (non-critical): $e');
+        debugPrint('❌ [Email Auth] Encryption key sync failed with exception: $e');
+        // Critical fallback: Initialize encryption locally
+        if (!SecureEncryptionService.isInitialized) {
+          debugPrint('🔑 [Email Auth] Initializing encryption locally after failure...');
+          await SecureEncryptionService.initialize(apiService: ApiService());
+          debugPrint('✅ [Email Auth] Encryption initialized locally');
+        }
       }
 
       // Perform initial sync to restore cloud data
