@@ -75,8 +75,13 @@ class SyncManager with ChangeNotifier {
   Future<void> _syncUsageStatsWithBackend() async {
     try {
       final premiumService = PremiumService();
+
+      // Fetch latest usage stats
       await premiumService.syncUsageWithBackend();
       debugPrint('✅ [SyncManager] Synced usage stats with backend');
+
+      // Auto-reconcile if needed (once per day)
+      await premiumService.autoReconcileIfNeeded();
     } catch (e) {
       debugPrint('⚠️ [SyncManager] Could not sync usage stats: $e');
       // Don't fail the sync if usage stats sync fails
