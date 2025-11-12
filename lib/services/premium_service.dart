@@ -28,6 +28,15 @@ class PremiumService extends ChangeNotifier {
     _prefs = await SharedPreferences.getInstance();
     await _loadPremiumStatus();
     await _checkMonthlyReset();
+
+    // Auto-reconcile on app startup if needed (once per day)
+    // This catches first-time migrations and periodic drift fixes
+    try {
+      await autoReconcileIfNeeded();
+    } catch (e) {
+      debugPrint('⚠️ [PremiumService] Initial auto-reconcile failed: $e');
+      // Don't block initialization if reconcile fails
+    }
   }
 
   /// Load premium status from Subscription Manager and backend API
@@ -201,6 +210,58 @@ class PremiumService extends ChangeNotifier {
     // Refresh if older than 1 hour
     final hoursSinceSync = DateTime.now().difference(lastSync).inHours;
     return hoursSinceSync >= 1;
+  }
+
+  /// Get last time usage was reconciled
+  DateTime? getLastReconciliation() {
+    final lastReconcileString = _prefs?.getString('usage_last_reconcile');
+    if (lastReconcileString == null) return null;
+    return DateTime.parse(lastReconcileString);
+  }
+
+  /// Check if reconciliation is needed (once per day)
+  bool shouldReconcile() {
+    final lastReconcile = getLastReconciliation();
+    if (lastReconcile == null) return true; // Never reconciled
+
+    // Reconcile if more than 24 hours have passed
+    final hoursSinceReconcile = DateTime.now().difference(lastReconcile).inHours;
+    return hoursSinceReconcile >= 24;
+  }
+
+  /// Auto-reconcile usage if needed (called periodically)
+  Future<void> autoReconcileIfNeeded() async {
+    if (!shouldReconcile()) {
+      debugPrint('⏭️ [PremiumService] Skipping reconcile - last reconciled ${getLastReconciliation()}');
+      return;
+    }
+
+    debugPrint('🔄 [PremiumService] Auto-reconciling usage (24h+ since last reconcile)');
+
+    try {
+      final result = await reconcileUsageWithBackend();
+
+      if (result != null) {
+        // Store reconciliation timestamp
+        await _prefs?.setString(
+          'usage_last_reconcile',
+          DateTime.now().toIso8601String(),
+        );
+
+        final reconciled = result['reconciled'] as bool;
+        final oldCount = result['old_count'] as int;
+        final newCount = result['new_count'] as int;
+
+        if (reconciled) {
+          debugPrint('✅ [PremiumService] Auto-reconciled: $oldCount → $newCount notes');
+        } else {
+          debugPrint('✓ [PremiumService] Already in sync: $newCount notes');
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ [PremiumService] Auto-reconcile failed: $e');
+      // Don't throw - reconciliation is not critical
+    }
   }
 
   /// Check if monthly limits need to be reset
