@@ -468,7 +468,7 @@ class _AccountScreenState extends State<AccountScreen> {
             const SizedBox(height: 8),
           ],
           // Admin Panel - only visible to admin email
-          if (backendAuth.userEmail == 'prantadutta1997@gmail.com') ...[
+          if (context.read<BackendAuthService>().userEmail == 'prantadutta1997@gmail.com') ...[
             _SettingsTile(
               title: 'Admin Panel',
               subtitle: 'Debug sync issues',

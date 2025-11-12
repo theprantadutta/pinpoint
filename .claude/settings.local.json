@@ -4,7 +4,9 @@
       "Bash(dir:*)",
       "Bash(flutter analyze:*)",
       "Bash(flutter pub get:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(\"./venv/Scripts/python.exe\" -m alembic current)",
+      "Bash(\"./venv/Scripts/python.exe\":*)"
     ],
     "deny": [],
     "ask": []

@@ -26,6 +26,7 @@ class GlassAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool pinned;
   final bool snap;
   final double? expandedHeight;
+  final PreferredSizeWidget? bottom;
 
   const GlassAppBar({
     super.key,
@@ -41,13 +42,16 @@ class GlassAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.pinned = true,
     this.snap = false,
     this.expandedHeight,
+    this.bottom,
   });
 
   @override
   State<GlassAppBar> createState() => _GlassAppBarState();
 
   @override
-  Size get preferredSize => Size.fromHeight(expandedHeight ?? kToolbarHeight);
+  Size get preferredSize => Size.fromHeight(
+    (expandedHeight ?? kToolbarHeight) + (bottom?.preferredSize.height ?? 0.0),
+  );
 }
 
 class _GlassAppBarState extends State<GlassAppBar> {
@@ -105,6 +109,7 @@ class _GlassAppBarState extends State<GlassAppBar> {
       leading: widget.leading,
       title: widget.title,
       actions: widget.actions,
+      bottom: widget.bottom,
       flexibleSpace: ClipRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(

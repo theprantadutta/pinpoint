@@ -72,8 +72,6 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     if (_isLoading || _userDetails == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('User Details')),
