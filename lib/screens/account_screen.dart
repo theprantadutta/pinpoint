@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/main.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
@@ -18,7 +17,6 @@ import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 import 'package:pinpoint/screens/admin_panel_screen.dart';
 import 'package:pinpoint/widgets/admin_password_dialog.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
 import '../services/premium_service.dart';
@@ -35,50 +33,6 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
-  String _viewType = 'list';
-  String _sortType = 'updatedAt';
-  String _sortDirection = 'desc';
-  SharedPreferences? _preferences;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    _preferences = await SharedPreferences.getInstance();
-    setState(() {
-      _viewType = _preferences?.getString(kHomeScreenViewTypeKey) ?? 'list';
-      _sortType =
-          _preferences?.getString(kHomeScreenSortTypeKey) ?? 'updatedAt';
-      _sortDirection =
-          _preferences?.getString(kHomeScreenSortDirectionKey) ?? 'desc';
-    });
-  }
-
-  Future<void> _setViewType(String value) async {
-    await _preferences?.setString(kHomeScreenViewTypeKey, value);
-    setState(() {
-      _viewType = value;
-    });
-  }
-
-  Future<void> _setSortType(String? value) async {
-    if (value == null) return;
-    await _preferences?.setString(kHomeScreenSortTypeKey, value);
-    setState(() {
-      _sortType = value;
-    });
-  }
-
-  Future<void> _setSortDirection(String? value) async {
-    if (value == null) return;
-    await _preferences?.setString(kHomeScreenSortDirectionKey, value);
-    setState(() {
-      _sortDirection = value;
-    });
-  }
 
   Future<void> _openGooglePlaySubscriptions() async {
     try {
@@ -305,6 +259,26 @@ class _AccountScreenState extends State<AccountScreen> {
 
           const SizedBox(height: 32),
 
+          // Appearance Section
+          Text(
+            'Appearance',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _SettingsTile(
+            title: 'Theme',
+            icon: Icons.color_lens_rounded,
+            onTap: () {
+              PinpointHaptics.medium();
+              AppNavigation.router.push(ThemeScreen.kRouteName);
+            },
+          ),
+
+          const SizedBox(height: 32),
+
           // Account Section
           Consumer<BackendAuthService>(
             // Use child parameter to preserve _LinkedAccountsSection across rebuilds
@@ -499,146 +473,6 @@ class _AccountScreenState extends State<AccountScreen> {
                 extra: true, // isViewOnly = true
               );
             },
-          ),
-
-          const SizedBox(height: 32),
-
-          // Appearance Section
-          Text(
-            'Appearance',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.1,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _SettingsTile(
-            title: 'Theme',
-            icon: Icons.color_lens_rounded,
-            onTap: () {
-              PinpointHaptics.medium();
-              AppNavigation.router.push(ThemeScreen.kRouteName);
-            },
-          ),
-
-          const SizedBox(height: 32),
-
-          // Home Screen Section
-          Text(
-            'Home Screen',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.1,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: theme.brightness == Brightness.dark
-                  ? cs.surface.withValues(alpha: 0.7)
-                  : cs.surface.withValues(alpha: 0.95),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: cs.outline.withValues(alpha: 0.1),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(
-                      alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: SwitchListTile(
-              title: const Text('Use Grid View'),
-              value: _viewType == 'grid',
-              onChanged: (value) {
-                PinpointHaptics.light();
-                _setViewType(value ? 'grid' : 'list');
-              },
-              secondary: Icon(Icons.grid_view_rounded, color: cs.primary),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: theme.brightness == Brightness.dark
-                  ? cs.surface.withValues(alpha: 0.7)
-                  : cs.surface.withValues(alpha: 0.95),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: cs.outline.withValues(alpha: 0.1),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(
-                      alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ListTile(
-              leading: Icon(Icons.sort_rounded, color: cs.primary),
-              title: const Text('Sort by'),
-              trailing: DropdownButton<String>(
-                value: _sortType,
-                items: const [
-                  DropdownMenuItem(
-                      value: 'updatedAt', child: Text('Last Modified')),
-                  DropdownMenuItem(
-                      value: 'createdAt', child: Text('Date Created')),
-                  DropdownMenuItem(value: 'title', child: Text('Title')),
-                ],
-                onChanged: (value) {
-                  PinpointHaptics.selection();
-                  _setSortType(value);
-                },
-                borderRadius: BorderRadius.circular(14),
-                underline: Container(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: theme.brightness == Brightness.dark
-                  ? cs.surface.withValues(alpha: 0.7)
-                  : cs.surface.withValues(alpha: 0.95),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: cs.outline.withValues(alpha: 0.1),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(
-                      alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ListTile(
-              leading: Icon(Icons.sort_by_alpha_rounded, color: cs.primary),
-              title: const Text('Sort Direction'),
-              trailing: DropdownButton<String>(
-                value: _sortDirection,
-                items: const [
-                  DropdownMenuItem(value: 'desc', child: Text('Descending')),
-                  DropdownMenuItem(value: 'asc', child: Text('Ascending')),
-                ],
-                onChanged: (value) {
-                  PinpointHaptics.selection();
-                  _setSortDirection(value);
-                },
-                borderRadius: BorderRadius.circular(14),
-                underline: Container(),
-              ),
-            ),
           ),
         ],
       ),
