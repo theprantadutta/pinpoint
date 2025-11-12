@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
 import '../services/premium_service.dart';
 
@@ -15,12 +14,31 @@ class UsageStatsBottomSheet extends StatefulWidget {
 
 class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
   bool _isRefreshing = false;
+  final _premiumService = PremiumService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to premium service changes
+    _premiumService.addListener(_onPremiumServiceChanged);
+  }
+
+  @override
+  void dispose() {
+    _premiumService.removeListener(_onPremiumServiceChanged);
+    super.dispose();
+  }
+
+  void _onPremiumServiceChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   Future<void> _refreshUsageStats() async {
     setState(() => _isRefreshing = true);
     try {
-      final premiumService = Provider.of<PremiumService>(context, listen: false);
-      await premiumService.fetchUsageStatsFromBackend();
+      await _premiumService.fetchUsageStatsFromBackend();
     } finally {
       if (mounted) {
         setState(() => _isRefreshing = false);
@@ -33,165 +51,160 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final isPremium = _premiumService.isPremium;
 
-    return Consumer<PremiumService>(
-      builder: (context, premiumService, _) {
-        final isPremium = premiumService.isPremium;
-
-        return Container(
-          decoration: BoxDecoration(
-            gradient: isDark
-                ? PinpointGradients.crescentInk
-                : PinpointGradients.oceanQuartz,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDark
+            ? PinpointGradients.crescentInk
+            : PinpointGradients.oceanQuartz,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
                 children: [
-                  // Header
-                  Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: cs.primary.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Icon(
-                          Icons.analytics_outlined,
-                          color: cs.primary,
-                          size: 24,
-                        ),
-                      )
-                          .animate()
-                          .scale(
-                            duration: 500.ms,
-                            curve: Curves.elasticOut,
-                          )
-                          .shimmer(
-                              duration: 1500.ms,
-                              color: cs.primary.withValues(alpha: 0.3)),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Usage Statistics',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: isDark
-                                    ? PinpointColors.darkTextPrimary
-                                    : PinpointColors.lightTextPrimary,
-                              ),
-                            ),
-                            Text(
-                              premiumService.getSubscriptionStatusText(),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: isPremium
-                                    ? cs.primary
-                                    : (isDark
-                                        ? PinpointColors.darkTextSecondary
-                                        : PinpointColors.lightTextSecondary),
-                                fontWeight: isPremium ? FontWeight.w600 : null,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Refresh button
-                      IconButton(
-                        onPressed: _isRefreshing ? null : _refreshUsageStats,
-                        icon: _isRefreshing
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: cs.primary,
-                                ),
-                              )
-                            : Icon(
-                                Icons.refresh,
-                                color: cs.primary,
-                              ),
-                      ),
-                    ],
-                  )
-                      .animate(delay: 100.ms)
-                      .fadeIn(duration: 400.ms)
-                      .slideY(begin: 0.2, end: 0),
-
-                  const SizedBox(height: 32),
-
-                  // Usage Cards
-                  if (isPremium)
-                    _PremiumUnlimitedCard()
-                        .animate(delay: 200.ms)
-                        .fadeIn(duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0)
-                  else ...[
-                    // Synced Notes
-                    _UsageCard(
-                      icon: Icons.cloud_sync,
-                      title: 'Synced Notes',
-                      current: premiumService.getSyncedNotesCount(),
-                      limit: 50,
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: cs.primary.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Icon(
+                      Icons.analytics_outlined,
                       color: cs.primary,
-                    )
-                        .animate(delay: 200.ms)
-                        .fadeIn(duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0),
-
-                    const SizedBox(height: 16),
-
-                    // OCR Scans
-                    _UsageCard(
-                      icon: Icons.document_scanner,
-                      title: 'OCR Scans',
-                      current: premiumService.getOcrScansThisMonth(),
-                      limit: 20,
-                      color: cs.secondary,
-                      resetsMonthly: true,
-                    )
-                        .animate(delay: 300.ms)
-                        .fadeIn(duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0),
-
-                    const SizedBox(height: 16),
-
-                    // Exports
-                    _UsageCard(
-                      icon: Icons.download,
-                      title: 'Exports',
-                      current: premiumService.getExportsThisMonth(),
-                      limit: 10,
-                      color: cs.tertiary,
-                      resetsMonthly: true,
-                    )
-                        .animate(delay: 400.ms)
-                        .fadeIn(duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0),
-
-                    const SizedBox(height: 24),
-
-                    // Upgrade CTA
-                    _UpgradeButton()
-                        .animate(delay: 500.ms)
-                        .fadeIn(duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0),
-                  ],
+                      size: 24,
+                    ),
+                  )
+                      .animate()
+                      .scale(
+                        duration: 500.ms,
+                        curve: Curves.elasticOut,
+                      )
+                      .shimmer(
+                          duration: 1500.ms,
+                          color: cs.primary.withValues(alpha: 0.3)),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Usage Statistics',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? PinpointColors.darkTextPrimary
+                                : PinpointColors.lightTextPrimary,
+                          ),
+                        ),
+                        Text(
+                          _premiumService.getSubscriptionStatusText(),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: isPremium
+                                ? cs.primary
+                                : (isDark
+                                    ? PinpointColors.darkTextSecondary
+                                    : PinpointColors.lightTextSecondary),
+                            fontWeight: isPremium ? FontWeight.w600 : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Refresh button
+                  IconButton(
+                    onPressed: _isRefreshing ? null : _refreshUsageStats,
+                    icon: _isRefreshing
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: cs.primary,
+                            ),
+                          )
+                        : Icon(
+                            Icons.refresh,
+                            color: cs.primary,
+                          ),
+                  ),
                 ],
-              ),
-            ),
+              )
+                  .animate(delay: 100.ms)
+                  .fadeIn(duration: 400.ms)
+                  .slideY(begin: 0.2, end: 0),
+
+              const SizedBox(height: 32),
+
+              // Usage Cards
+              if (isPremium)
+                _PremiumUnlimitedCard()
+                    .animate(delay: 200.ms)
+                    .fadeIn(duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0)
+              else ...[
+                // Synced Notes
+                _UsageCard(
+                  icon: Icons.cloud_sync,
+                  title: 'Synced Notes',
+                  current: _premiumService.getSyncedNotesCount(),
+                  limit: 50,
+                  color: cs.primary,
+                )
+                    .animate(delay: 200.ms)
+                    .fadeIn(duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0),
+
+                const SizedBox(height: 16),
+
+                // OCR Scans
+                _UsageCard(
+                  icon: Icons.document_scanner,
+                  title: 'OCR Scans',
+                  current: _premiumService.getOcrScansThisMonth(),
+                  limit: 20,
+                  color: cs.secondary,
+                  resetsMonthly: true,
+                )
+                    .animate(delay: 300.ms)
+                    .fadeIn(duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0),
+
+                const SizedBox(height: 16),
+
+                // Exports
+                _UsageCard(
+                  icon: Icons.download,
+                  title: 'Exports',
+                  current: _premiumService.getExportsThisMonth(),
+                  limit: 10,
+                  color: cs.tertiary,
+                  resetsMonthly: true,
+                )
+                    .animate(delay: 400.ms)
+                    .fadeIn(duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0),
+
+                const SizedBox(height: 24),
+
+                // Upgrade CTA
+                _UpgradeButton()
+                    .animate(delay: 500.ms)
+                    .fadeIn(duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0),
+              ],
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
