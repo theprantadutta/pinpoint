@@ -16,6 +16,8 @@ import 'package:pinpoint/services/google_sign_in_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
+import 'package:pinpoint/screens/admin_panel_screen.dart';
+import 'package:pinpoint/widgets/admin_password_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
@@ -460,6 +462,28 @@ class _AccountScreenState extends State<AccountScreen> {
                       description: 'Error: ${e.toString()}',
                     );
                   }
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+          // Admin Panel - only visible to admin email
+          if (backendAuth.userEmail == 'prantadutta1997@gmail.com') ...[
+            _SettingsTile(
+              title: 'Admin Panel',
+              subtitle: 'Debug sync issues',
+              icon: Icons.admin_panel_settings,
+              onTap: () async {
+                PinpointHaptics.medium();
+
+                // Import required
+                final authenticated = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => const AdminPasswordDialog(),
+                );
+
+                if (authenticated == true && mounted) {
+                  AppNavigation.router.push(AdminPanelScreen.kRouteName);
                 }
               },
             ),

@@ -12,6 +12,8 @@ import 'package:pinpoint/screens/my_folders_screen.dart';
 import 'package:pinpoint/screens/auth_screen.dart';
 import 'package:pinpoint/screens/account_linking_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
+import 'package:pinpoint/screens/admin_panel_screen.dart';
+import 'package:pinpoint/screens/admin_user_details_screen.dart';
 
 import '../screen_arguments/create_note_screen_arguments.dart';
 import '../screens/account_screen.dart';
@@ -265,6 +267,28 @@ class AppNavigation {
             key: state.pageKey,
           ),
         ),
+      ),
+      // Admin Panel Routes
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AdminPanelScreen.kRouteName,
+        name: "Admin Panel",
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const AdminPanelScreen(),
+        ),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: '${AdminUserDetailsScreen.kRouteName}/:userId',
+        name: "Admin User Details",
+        pageBuilder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return NoTransitionPage(
+            key: state.pageKey,
+            child: AdminUserDetailsScreen(userId: userId),
+          );
+        },
       ),
     ],
   );
