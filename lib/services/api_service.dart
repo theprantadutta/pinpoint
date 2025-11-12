@@ -436,6 +436,30 @@ class ApiService {
   }
 
   // ============================================================================
+  // Usage Tracking Endpoints
+  // ============================================================================
+
+  /// Get comprehensive usage statistics for the authenticated user
+  Future<Map<String, dynamic>> getUsageStats() async {
+    try {
+      final response = await _dio.get('/usage/stats');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Reconcile synced notes count with actual database count
+  Future<Map<String, dynamic>> reconcileUsage() async {
+    try {
+      final response = await _dio.post('/usage/reconcile');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ============================================================================
   // Error Handling
   // ============================================================================
 

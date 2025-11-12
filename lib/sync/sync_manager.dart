@@ -59,9 +59,28 @@ class SyncManager with ChangeNotifier {
       }
     }
 
+    // Perform the actual sync
     final result = await _syncService!.sync(direction: direction);
+
+    // After successful sync, update usage stats from backend
+    if (result.success) {
+      await _syncUsageStatsWithBackend();
+    }
+
     notifyListeners();
     return result;
+  }
+
+  /// Sync usage stats with backend after sync operation
+  Future<void> _syncUsageStatsWithBackend() async {
+    try {
+      final premiumService = PremiumService();
+      await premiumService.syncUsageWithBackend();
+      debugPrint('✅ [SyncManager] Synced usage stats with backend');
+    } catch (e) {
+      debugPrint('⚠️ [SyncManager] Could not sync usage stats: $e');
+      // Don't fail the sync if usage stats sync fails
+    }
   }
 
   /// Check if user can sync based on premium limits

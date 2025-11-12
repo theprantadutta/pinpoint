@@ -87,6 +87,122 @@ class PremiumService extends ChangeNotifier {
     await _loadPremiumStatus();
   }
 
+  /// Fetch and cache usage stats from backend
+  Future<Map<String, dynamic>?> fetchUsageStatsFromBackend() async {
+    try {
+      final apiService = ApiService();
+      final stats = await apiService.getUsageStats();
+
+      // Cache the backend stats locally for offline use
+      await _cacheUsageStats(stats);
+
+      debugPrint('📊 [PremiumService] Fetched usage stats from backend');
+      debugPrint('   Synced notes: ${stats['synced_notes']['current']}/${stats['synced_notes']['limit']}');
+      debugPrint('   OCR scans: ${stats['ocr_scans']['current']}/${stats['ocr_scans']['limit']}');
+      debugPrint('   Exports: ${stats['exports']['current']}/${stats['exports']['limit']}');
+
+      return stats;
+    } catch (e) {
+      debugPrint('⚠️ [PremiumService] Could not fetch usage stats from backend: $e');
+      return null;
+    }
+  }
+
+  /// Cache usage stats from backend response
+  Future<void> _cacheUsageStats(Map<String, dynamic> stats) async {
+    if (_prefs == null) return;
+
+    try {
+      // Update synced notes count from backend
+      final syncedNotes = stats['synced_notes'];
+      if (syncedNotes != null && syncedNotes['current'] != null) {
+        await _prefs!.setInt(
+          UsageTrackingKeys.syncedNotesCount,
+          syncedNotes['current'] as int,
+        );
+      }
+
+      // Update OCR scans count from backend
+      final ocrScans = stats['ocr_scans'];
+      if (ocrScans != null && ocrScans['current'] != null) {
+        await _prefs!.setInt(
+          UsageTrackingKeys.ocrScansThisMonth,
+          ocrScans['current'] as int,
+        );
+      }
+
+      // Update exports count from backend
+      final exports = stats['exports'];
+      if (exports != null && exports['current'] != null) {
+        await _prefs!.setInt(
+          UsageTrackingKeys.exportsThisMonth,
+          exports['current'] as int,
+        );
+      }
+
+      // Cache last update timestamp
+      await _prefs!.setString(
+        'usage_stats_last_updated',
+        DateTime.now().toIso8601String(),
+      );
+
+      debugPrint('✅ [PremiumService] Cached usage stats locally');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ [PremiumService] Error caching usage stats: $e');
+    }
+  }
+
+  /// Reconcile usage counts with backend
+  /// This fixes any discrepancies between local and server counts
+  Future<Map<String, dynamic>?> reconcileUsageWithBackend() async {
+    try {
+      final apiService = ApiService();
+      final result = await apiService.reconcileUsage();
+
+      debugPrint('🔄 [PremiumService] Reconciliation result:');
+      debugPrint('   Old count: ${result['old_count']}');
+      debugPrint('   New count: ${result['new_count']}');
+      debugPrint('   Reconciled: ${result['reconciled']}');
+
+      // Update local count with reconciled value
+      if (result['new_count'] != null) {
+        await _prefs?.setInt(
+          UsageTrackingKeys.syncedNotesCount,
+          result['new_count'] as int,
+        );
+        notifyListeners();
+      }
+
+      return result;
+    } catch (e) {
+      debugPrint('⚠️ [PremiumService] Could not reconcile usage: $e');
+      return null;
+    }
+  }
+
+  /// Sync usage stats with backend (call after sync operations)
+  Future<void> syncUsageWithBackend() async {
+    await fetchUsageStatsFromBackend();
+  }
+
+  /// Get last time usage stats were synced with backend
+  DateTime? getLastUsageSync() {
+    final lastSyncString = _prefs?.getString('usage_stats_last_updated');
+    if (lastSyncString == null) return null;
+    return DateTime.parse(lastSyncString);
+  }
+
+  /// Check if usage stats are stale and need refreshing
+  bool shouldRefreshUsageStats() {
+    final lastSync = getLastUsageSync();
+    if (lastSync == null) return true;
+
+    // Refresh if older than 1 hour
+    final hoursSinceSync = DateTime.now().difference(lastSync).inHours;
+    return hoursSinceSync >= 1;
+  }
+
   /// Check if monthly limits need to be reset
   Future<void> _checkMonthlyReset() async {
     if (_prefs == null) return;

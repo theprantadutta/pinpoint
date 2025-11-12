@@ -28,6 +28,7 @@ import '../services/ocr_service.dart';
 import '../service_locators/init_service_locators.dart';
 import '../sync/sync_manager.dart';
 import '../widgets/premium_gate_dialog.dart';
+import '../widgets/usage_stats_bottom_sheet.dart';
 import '../constants/premium_limits.dart';
 import '../util/show_a_toast.dart';
 import '../design_system/design_system.dart';
@@ -793,6 +794,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
                 case 'ocr_scan':
                   _handleOcrScan(context);
                   break;
+                case 'usage':
+                  _showUsageStats(context);
+                  break;
                 case 'info':
                   _showNoteInfoModal(context, cs, isDark);
                   break;
@@ -943,6 +947,18 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
                         ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              // Usage Stats
+              PopupMenuItem(
+                value: 'usage',
+                child: Row(
+                  children: [
+                    Icon(Icons.analytics_outlined,
+                        size: 20, color: cs.primary),
+                    const SizedBox(width: 12),
+                    const Text('Usage'),
                   ],
                 ),
               ),
@@ -1788,6 +1804,15 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
         );
       }
     }
+  }
+
+  void _showUsageStats(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const UsageStatsBottomSheet(),
+    );
   }
 
   void _showNoteInfoModal(BuildContext context, ColorScheme cs, bool isDark) {
