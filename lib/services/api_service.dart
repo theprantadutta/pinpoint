@@ -452,7 +452,10 @@ class ApiService {
   /// Reconcile synced notes count with actual database count
   Future<Map<String, dynamic>> reconcileUsage() async {
     try {
-      final response = await _dio.post('/usage/reconcile');
+      final response = await _dio.post(
+        '/usage/reconcile',
+        data: {}, // Empty body required by backend
+      );
       return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
