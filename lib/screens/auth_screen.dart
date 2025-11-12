@@ -6,10 +6,12 @@ import 'package:pinpoint/services/api_service.dart';
 import 'package:pinpoint/services/firebase_notification_service.dart';
 import 'package:pinpoint/screens/home_screen.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
+import 'package:pinpoint/sync/sync_service.dart';
 import 'package:pinpoint/sync/api_sync_service.dart';
 import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/encryption_service.dart';
+import 'package:pinpoint/design_system/colors.dart';
 import 'package:go_router/go_router.dart';
 
 /// Authentication screen with Google Sign-In and email/password options
@@ -61,31 +63,39 @@ class _AuthScreenState extends State<AuthScreen> {
       await syncManager.init(syncService: apiSyncService);
       debugPrint('✅ [Auth] Sync Manager initialized with authenticated API service');
 
-      // Show loading dialog
+      SyncResult? result;
+
+      // Show loading dialog with animated progress
       if (mounted) {
-        showDialog(
+        // Use a completer to track sync completion
+        result = await showDialog<SyncResult>(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Restoring your notes...'),
-              ],
-            ),
-          ),
+          builder: (dialogContext) {
+            // Start the sync and update progress
+            Future.delayed(Duration.zero, () async {
+              try {
+                final syncResult = await syncManager.sync();
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop(syncResult);
+                }
+              } catch (e) {
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop(SyncResult(
+                    success: false,
+                    message: e.toString(),
+                  ));
+                }
+              }
+            });
+
+            return const _SyncProgressDialog();
+          },
         );
       }
 
-      // Perform bidirectional sync to both upload and download
-      final result = await syncManager.sync();
-
-      // Close loading dialog
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
+      // Use the result from the dialog
+      result ??= SyncResult(success: false, message: 'Sync cancelled');
 
       if (result.success) {
         debugPrint('✅ [Auth] Initial sync successful: ${result.message}');
@@ -106,7 +116,7 @@ class _AuthScreenState extends State<AuthScreen> {
             builder: (context) => AlertDialog(
               title: const Text('Sync Failed'),
               content: Text(
-                'Unable to restore your notes from cloud:\n${result.message}\n\n'
+                'Unable to restore your notes from cloud:\n${result?.message ?? 'Unknown error'}\n\n'
                 'You can continue without syncing, or try again.',
               ),
               actions: [
@@ -656,6 +666,147 @@ class _AuthScreenState extends State<AuthScreen> {
               width: 1,
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated sync progress dialog
+class _SyncProgressDialog extends StatefulWidget {
+  const _SyncProgressDialog();
+
+  @override
+  State<_SyncProgressDialog> createState() => _SyncProgressDialogState();
+}
+
+class _SyncProgressDialogState extends State<_SyncProgressDialog>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _progressAnimation;
+  String _statusMessage = 'Preparing to sync...';
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+
+    _progressAnimation = Tween<double>(begin: 0.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+
+    _controller.forward();
+
+    // Animate status messages
+    _animateStatusMessages();
+  }
+
+  void _animateStatusMessages() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (mounted) {
+      setState(() => _statusMessage = 'Downloading your notes...');
+    }
+
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (mounted) {
+      setState(() => _statusMessage = 'Decrypting data...');
+    }
+
+    await Future.delayed(const Duration(milliseconds: 1000));
+    if (mounted) {
+      setState(() => _statusMessage = 'Almost done...');
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final brightness = theme.brightness;
+
+    return Dialog(
+      backgroundColor: brightness == Brightness.dark
+          ? PinpointColors.darkSurface1
+          : PinpointColors.lightSurface1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon
+            Icon(
+              Icons.cloud_download_outlined,
+              size: 48,
+              color: colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+
+            // Title
+            Text(
+              'Restoring Your Notes',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Animated Progress Bar
+            AnimatedBuilder(
+              animation: _progressAnimation,
+              builder: (context, child) {
+                return Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: _progressAnimation.value,
+                        minHeight: 8,
+                        backgroundColor: colorScheme.surfaceContainerHighest,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${(_progressAnimation.value * 100).toInt()}%',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Status message
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Text(
+                _statusMessage,
+                key: ValueKey(_statusMessage),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
         ),
       ),
     );

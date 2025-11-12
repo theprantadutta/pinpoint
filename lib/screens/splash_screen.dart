@@ -26,10 +26,21 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  String _statusMessage = 'Loading...';
+  double? _syncProgress; // null = indeterminate, 0-1 = progress
+
   @override
   void initState() {
     super.initState();
     _checkAndNavigate();
+  }
+
+  void _updateStatus(String message, {double? progress}) {
+    if (!mounted) return;
+    setState(() {
+      _statusMessage = message;
+      _syncProgress = progress;
+    });
   }
 
   Future<void> _checkAndNavigate() async {
@@ -65,6 +76,7 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     // Check authentication status
+    _updateStatus('Checking authentication...');
     debugPrint('🔵 [Splash] Checking authentication status...');
     final backendAuth = context.read<BackendAuthService>();
 
@@ -85,6 +97,7 @@ class _SplashScreenState extends State<SplashScreen> {
       debugPrint('✅ [Splash] User is authenticated');
 
       // Initialize encryption service with cloud sync (CRITICAL: Do this BEFORE any sync)
+      _updateStatus('Setting up encryption...');
       debugPrint('🔑 [Splash] Initializing encryption service with cloud sync...');
       try {
         final apiService = ApiService();
@@ -108,6 +121,7 @@ class _SplashScreenState extends State<SplashScreen> {
       }
 
       // Initialize sync manager with authenticated API service
+      _updateStatus('Initializing sync...');
       debugPrint('🔄 [Splash] Initializing Sync Manager with authenticated API service...');
       try {
         final syncManager = getIt<SyncManager>();
@@ -128,14 +142,14 @@ class _SplashScreenState extends State<SplashScreen> {
         final notes = await DriftNoteService.watchNotesWithDetails().first;
         final database = getIt<AppDatabase>();
 
-        // Count unsynced notes
+        // Count unsynced notes (including deleted ones that need to be synced)
         final unsyncedNotes = await (database.select(database.notes)
-              ..where((tbl) => tbl.isSynced.equals(false))
-              ..where((tbl) => tbl.isDeleted.equals(false)))
+              ..where((tbl) => tbl.isSynced.equals(false)))
             .get();
         final unsyncedCount = unsyncedNotes.length;
+        final deletedCount = unsyncedNotes.where((n) => n.isDeleted).length;
 
-        debugPrint('🔵 [Splash] Found ${notes.length} local notes ($unsyncedCount unsynced)');
+        debugPrint('🔵 [Splash] Found ${notes.length} local notes ($unsyncedCount unsynced, $deletedCount deleted)');
 
         if (notes.isEmpty || unsyncedCount > 0) {
           // No local notes OR unsynced notes - attempt sync
@@ -143,17 +157,49 @@ class _SplashScreenState extends State<SplashScreen> {
 
           if (!mounted) return;
 
-          // Show loading with message
-          setState(() {}); // Trigger rebuild to show "Syncing..." text
-
+          // Show sync progress UI
           final syncManager = getIt<SyncManager>();
-          // Use bidirectional sync to both upload and download
-          final result = await syncManager.sync();
 
-          if (result.success && result.notesSynced > 0) {
-            debugPrint('✅ [Splash] Synced ${result.notesSynced} notes from cloud');
+          // Simulate progress for better UX (since we don't have real-time progress from API)
+          if (notes.isEmpty) {
+            // Restoring notes
+            _updateStatus('Restoring your notes...', progress: 0.0);
+            await Future.delayed(const Duration(milliseconds: 100));
+
+            _updateStatus('Downloading from cloud...', progress: 0.3);
+            final result = await syncManager.sync();
+
+            _updateStatus('Almost done...', progress: 0.9);
+            await Future.delayed(const Duration(milliseconds: 200));
+
+            if (result.success && result.notesSynced > 0) {
+              _updateStatus('Restored ${result.notesSynced} notes', progress: 1.0);
+              debugPrint('✅ [Splash] Synced ${result.notesSynced} notes from cloud');
+              await Future.delayed(const Duration(milliseconds: 500));
+            } else {
+              debugPrint('ℹ️ [Splash] No notes to sync from cloud');
+            }
           } else {
-            debugPrint('ℹ️ [Splash] No notes to sync from cloud');
+            // Syncing changes
+            _updateStatus('Syncing your changes...', progress: 0.0);
+            await Future.delayed(const Duration(milliseconds: 100));
+
+            _updateStatus('Uploading $unsyncedCount notes...', progress: 0.5);
+            final result = await syncManager.sync();
+
+            if (result.success) {
+              _updateStatus('Sync complete', progress: 1.0);
+              debugPrint('✅ [Splash] Sync completed');
+              await Future.delayed(const Duration(milliseconds: 300));
+            }
+          }
+
+          // Reset progress indicator
+          if (mounted) {
+            setState(() {
+              _syncProgress = null;
+              _statusMessage = 'Loading...';
+            });
           }
         }
       } catch (e) {
@@ -163,6 +209,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
       if (!mounted) return;
 
+      _updateStatus('Opening app...');
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!mounted) return;
       debugPrint('✅ [Splash] Navigating to home');
       context.go(HomeScreen.kRouteName);
     } else {
@@ -257,27 +307,60 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const Spacer(flex: 3),
 
-                // Loading indicator - Centered
-                Center(
-                  child: SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        colorScheme.primary,
+                // Loading/Sync indicator
+                if (_syncProgress != null) ...[
+                  // Progress bar for sync
+                  Container(
+                    constraints: const BoxConstraints(maxWidth: 280),
+                    child: Column(
+                      children: [
+                        // Progress bar
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: _syncProgress,
+                            minHeight: 8,
+                            backgroundColor: colorScheme.surfaceContainerHighest,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Percentage text
+                        Text(
+                          '${(_syncProgress! * 100).toInt()}%',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  // Circular indicator for general loading
+                  Center(
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.primary,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
 
                 const SizedBox(height: 24),
 
-                // Loading text - Centered
+                // Status message
                 Center(
                   child: Text(
-                    'Loading...',
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    _statusMessage,
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
