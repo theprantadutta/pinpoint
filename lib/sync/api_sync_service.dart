@@ -88,6 +88,15 @@ class ApiSyncService extends SyncService {
 
       final syncedCount = response['synced_count'] ?? 0;
       debugPrint('✅ [ApiSync] Uploaded $syncedCount notes successfully');
+
+      // Mark all uploaded notes as synced
+      for (final note in notesToSync) {
+        await (_database.update(_database.notes)
+              ..where((tbl) => tbl.id.equals(note.id)))
+            .write(const NotesCompanion(isSynced: Value(true)));
+        debugPrint('  ✓ Marked note ${note.id} as synced');
+      }
+
       debugPrint('🔼 [ApiSync] ========== UPLOAD COMPLETE ==========\n');
 
       return SyncResult(
@@ -208,15 +217,15 @@ class ApiSyncService extends SyncService {
     }
   }
 
-  /// Get all notes that need to be uploaded
+  /// Get all notes that need to be uploaded (not yet synced)
   Future<List<Note>> _getNotesToUpload() async {
-    // Get all non-deleted notes
-    // TODO: In future, only get notes modified since last sync (using dirty flag)
-    final allNotes = await (_database.select(_database.notes)
-          ..where((tbl) => tbl.isDeleted.equals(false)))
+    // Only get notes that haven't been synced yet
+    final unsyncedNotes = await (_database.select(_database.notes)
+          ..where((tbl) => tbl.isSynced.equals(false) & tbl.isDeleted.equals(false)))
         .get();
 
-    return allNotes;
+    debugPrint('🔼 [ApiSync] Found ${unsyncedNotes.length} unsynced notes to upload');
+    return unsyncedNotes;
   }
 
   /// Serialize note and encrypt for upload
