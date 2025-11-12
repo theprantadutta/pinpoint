@@ -1,15 +1,50 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
+import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
+import '../services/filter_service.dart';
 
-class TrashScreen extends StatelessWidget {
+class TrashScreen extends StatefulWidget {
   static const String kRouteName = '/trash';
 
   const TrashScreen({super.key});
+
+  @override
+  State<TrashScreen> createState() => _TrashScreenState();
+}
+
+class _TrashScreenState extends State<TrashScreen> {
+  String _searchQuery = '';
+  bool _isSearchActive = false;
+  final _searchController = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchInputChanged);
+  }
+
+  void _onSearchInputChanged() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 280), () {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,16 +53,38 @@ class TrashScreen extends StatelessWidget {
 
     return GradientScaffold(
       appBar: GlassAppBar(
-        title: Row(
-          children: [
-            Icon(Icons.delete_rounded, color: cs.error, size: 20),
-            const SizedBox(width: 8),
-            const Text('Trash'),
-          ],
-        ),
+        title: _isSearchActive
+            ? SearchBarSticky(
+                controller: _searchController,
+                hint: 'Search trash...',
+                onSearch: (query) {
+                  setState(() => _searchQuery = query);
+                },
+                autoFocus: true,
+              )
+            : Row(
+                children: [
+                  Icon(Icons.delete_rounded, color: cs.error, size: 20),
+                  const SizedBox(width: 8),
+                  const Text('Trash'),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    tooltip: 'Search',
+                    onPressed: () {
+                      setState(() => _isSearchActive = !_isSearchActive);
+                    },
+                  ),
+                ],
+              ),
       ),
-      body: StreamBuilder<List<NoteWithDetails>>(
-        stream: DriftNoteService.watchDeletedNotes(),
+      body: Consumer<FilterService>(
+        builder: (context, filterService, _) {
+          return StreamBuilder<List<NoteWithDetails>>(
+            stream: DriftNoteService.watchDeletedNotes(
+              searchQuery: _searchQuery,
+              filterOptions: filterService.filterOptions,
+            ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -123,6 +180,8 @@ class TrashScreen extends StatelessWidget {
                       ),
               ),
             ],
+          );
+        },
           );
         },
       ),

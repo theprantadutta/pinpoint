@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
+import 'package:provider/provider.dart';
 import '../constants/constants.dart';
 import '../design_system/design_system.dart';
+import '../services/filter_service.dart';
 import '../util/note_utils.dart';
 
 class NotesScreen extends StatefulWidget {
@@ -23,9 +26,28 @@ class _NotesScreenState extends State<NotesScreen> {
   String _sortBy = 'updatedAt';
   String _sortDirection = 'desc';
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchInputChanged);
+  }
+
+  void _onSearchInputChanged() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 280), () {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -42,12 +64,15 @@ class _NotesScreenState extends State<NotesScreen> {
           children: [
             const Text('Notes'),
             const SizedBox(width: 8),
-            StreamBuilder<List<NoteWithDetails>>(
-              stream: DriftNoteService.watchNotesWithDetails(
-                _searchQuery,
-                _sortBy,
-                _sortDirection,
-              ),
+            Consumer<FilterService>(
+              builder: (context, filterService, _) {
+                return StreamBuilder<List<NoteWithDetails>>(
+                  stream: DriftNoteService.watchNotesWithDetails(
+                    searchQuery: _searchQuery,
+                    sortType: _sortBy,
+                    sortDirection: _sortDirection,
+                    filterOptions: filterService.filterOptions,
+                  ),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const SizedBox();
@@ -57,6 +82,8 @@ class _NotesScreenState extends State<NotesScreen> {
                   label: '${notes.length}',
                   color: cs.primary,
                   size: TagChipSize.small,
+                );
+              },
                 );
               },
             ),
@@ -122,23 +149,25 @@ class _NotesScreenState extends State<NotesScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: SearchBarSticky(
+              controller: _searchController,
               hint: 'Search notes...',
               onSearch: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
+                // Debouncing is handled by _onSearchInputChanged
               },
             ),
           ),
 
           // Content
           Expanded(
-            child: StreamBuilder<List<NoteWithDetails>>(
-              stream: DriftNoteService.watchNotesWithDetails(
-                _searchQuery,
-                _sortBy,
-                _sortDirection,
-              ),
+            child: Consumer<FilterService>(
+              builder: (context, filterService, _) {
+                return StreamBuilder<List<NoteWithDetails>>(
+                  stream: DriftNoteService.watchNotesWithDetails(
+                    searchQuery: _searchQuery,
+                    sortType: _sortBy,
+                    sortDirection: _sortDirection,
+                    filterOptions: filterService.filterOptions,
+                  ),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -167,6 +196,8 @@ class _NotesScreenState extends State<NotesScreen> {
                 return _isGridView
                     ? _buildGridView(notes)
                     : _buildListView(notes);
+              },
+                );
               },
             ),
           ),

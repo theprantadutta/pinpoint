@@ -18,6 +18,7 @@ import 'services/firebase_notification_service.dart';
 import 'services/google_sign_in_service.dart';
 import 'services/premium_service.dart';
 import 'services/subscription_service.dart';
+import 'services/filter_service.dart';
 
 // void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
@@ -143,6 +144,17 @@ Future<void> _initializeCoreServices() async {
     debugPrint('✅ [main.dart] PremiumService initialized');
   } catch (e, stackTrace) {
     debugPrint('⚠️ [main.dart] PremiumService not initialized: $e');
+    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
+  }
+
+  // Initialize FilterService
+  try {
+    debugPrint('🔍 [main.dart] Initializing FilterService...');
+    final filterService = FilterService();
+    await filterService.initialize();
+    debugPrint('✅ [main.dart] FilterService initialized');
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ [main.dart] FilterService not initialized: $e');
     debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
   }
 
@@ -409,6 +421,9 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(
           create: (_) => BackendAuthService()..initialize(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => FilterService(),
         ),
       ],
       child: MaterialApp.router(

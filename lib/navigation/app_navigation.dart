@@ -16,7 +16,7 @@ import 'package:pinpoint/screens/admin_panel_screen.dart';
 import 'package:pinpoint/screens/admin_user_details_screen.dart';
 
 import '../screen_arguments/create_note_screen_arguments.dart';
-import '../screens/account_screen.dart';
+import '../screens/settings_screen.dart';
 import '../screens/create_note_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/notes_screen.dart';
@@ -169,11 +169,11 @@ class AppNavigation {
             navigatorKey: _shellNavigatorAccount,
             routes: <RouteBase>[
               GoRoute(
-                path: AccountScreen.kRouteName,
+                path: SettingsScreen.kRouteName,
                 name: "Account",
                 pageBuilder: (context, state) => reusableTransitionPage(
                   state: state,
-                  child: const AccountScreen(),
+                  child: const SettingsScreen(),
                 ),
               ),
             ],

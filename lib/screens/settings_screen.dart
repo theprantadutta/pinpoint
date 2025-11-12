@@ -24,19 +24,19 @@ import '../constants/premium_limits.dart';
 import '../navigation/app_navigation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class AccountScreen extends StatefulWidget {
-  static const String kRouteName = '/account';
-  const AccountScreen({super.key});
+class SettingsScreen extends StatefulWidget {
+  static const String kRouteName = '/settings';
+  const SettingsScreen({super.key});
 
   @override
-  State<AccountScreen> createState() => _AccountScreenState();
+  State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _AccountScreenState extends State<AccountScreen> {
-
+class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _openGooglePlaySubscriptions() async {
     try {
-      final uri = Uri.parse('https://play.google.com/store/account/subscriptions');
+      final uri =
+          Uri.parse('https://play.google.com/store/account/subscriptions');
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
@@ -159,7 +159,8 @@ class _AccountScreenState extends State<AccountScreen> {
                   const SizedBox(height: 12),
 
                   // Grace Period Warning Banner
-                  if (subscriptionManager.isInGracePeriod && gracePeriodMessage != null) ...[
+                  if (subscriptionManager.isInGracePeriod &&
+                      gracePeriodMessage != null) ...[
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -283,7 +284,8 @@ class _AccountScreenState extends State<AccountScreen> {
           Consumer<BackendAuthService>(
             // Use child parameter to preserve _LinkedAccountsSection across rebuilds
             child: Consumer<BackendAuthService>(
-              builder: (context, auth, _) => _LinkedAccountsSection(backendAuth: auth),
+              builder: (context, auth, _) =>
+                  _LinkedAccountsSection(backendAuth: auth),
             ),
             builder: (context, backendAuth, linkedAccountsChild) {
               return Column(
@@ -366,7 +368,8 @@ class _AccountScreenState extends State<AccountScreen> {
           const SizedBox(height: 8),
           _SettingsTile(
             title: 'Biometric Lock',
-            subtitle: MyApp.of(context).isBiometricEnabled ? 'Enabled' : 'Disabled',
+            subtitle:
+                MyApp.of(context).isBiometricEnabled ? 'Enabled' : 'Disabled',
             icon: Icons.fingerprint_rounded,
             trailing: Switch(
               value: MyApp.of(context).isBiometricEnabled,
@@ -442,7 +445,8 @@ class _AccountScreenState extends State<AccountScreen> {
             const SizedBox(height: 8),
           ],
           // Admin Panel - only visible to admin email
-          if (context.read<BackendAuthService>().userEmail == 'prantadutta1997@gmail.com') ...[
+          if (context.read<BackendAuthService>().userEmail ==
+              'prantadutta1997@gmail.com') ...[
             _SettingsTile(
               title: 'Admin Panel',
               subtitle: 'Debug sync issues',
@@ -867,7 +871,9 @@ class _ProfileHeaderCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          subscriptionManager.isPremium ? 'Premium Member' : 'Free Account',
+                          subscriptionManager.isPremium
+                              ? 'Premium Member'
+                              : 'Free Account',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: subscriptionManager.isPremium
                                 ? PinpointColors.mint
@@ -1049,7 +1055,8 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
   void didUpdateWidget(_LinkedAccountsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Only reload if authentication status changed
-    if (widget.backendAuth.isAuthenticated != oldWidget.backendAuth.isAuthenticated) {
+    if (widget.backendAuth.isAuthenticated !=
+        oldWidget.backendAuth.isAuthenticated) {
       _loadProviders(showLoading: true);
     }
   }
@@ -1282,16 +1289,15 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
         // Google Provider
         _AuthProviderCard(
           icon: Icons.g_mobiledata_rounded,
-          iconColor: hasGoogle ? PinpointColors.mint : cs.onSurface.withValues(alpha: 0.5),
+          iconColor: hasGoogle
+              ? PinpointColors.mint
+              : cs.onSurface.withValues(alpha: 0.5),
           title: 'Google',
-          subtitle: hasGoogle
-              ? 'Linked to your account'
-              : 'Link for easy sign-in',
+          subtitle:
+              hasGoogle ? 'Linked to your account' : 'Link for easy sign-in',
           isLinked: hasGoogle,
           isLoading: _isLoading,
-          onTap: _isLoading
-              ? null
-              : (hasGoogle ? null : _linkGoogleAccount),
+          onTap: _isLoading ? null : (hasGoogle ? null : _linkGoogleAccount),
           onUnlink: hasGoogle && !_isLoading ? _unlinkGoogleAccount : null,
         ),
       ],
@@ -1404,10 +1410,12 @@ class _AuthProviderCard extends StatelessWidget {
                                 vertical: 3,
                               ),
                               decoration: BoxDecoration(
-                                color: PinpointColors.mint.withValues(alpha: 0.2),
+                                color:
+                                    PinpointColors.mint.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: PinpointColors.mint.withValues(alpha: 0.3),
+                                  color: PinpointColors.mint
+                                      .withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -1518,8 +1526,8 @@ class _PasswordDialogState extends State<_PasswordDialog> {
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                 ),
                 onPressed: () {
                   setState(() {

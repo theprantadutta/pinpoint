@@ -252,13 +252,15 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
                                     end: Alignment.bottomRight,
                                     colors: [
                                       PinpointColors.mint,
-                                      PinpointColors.mint.withValues(alpha: 0.8),
+                                      PinpointColors.mint
+                                          .withValues(alpha: 0.8),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: PinpointColors.mint.withValues(alpha: 0.4),
+                                      color: PinpointColors.mint
+                                          .withValues(alpha: 0.4),
                                       blurRadius: 16,
                                       offset: const Offset(0, 4),
                                     ),
@@ -293,8 +295,8 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
                                 },
                               ),
                               _NavBarItem(
-                                icon: Symbols.account_circle,
-                                label: 'Account',
+                                icon: Symbols.settings,
+                                label: 'Settings',
                                 isSelected: selectedIndex == 3,
                                 onTap: () {
                                   PinpointHaptics.light();

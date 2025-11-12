@@ -15,7 +15,7 @@ const kBottomDestinations = <Widget>[
     label: 'Todo',
   ),
   NavigationDestination(
-    icon: Icon(Icons.person_2_outlined),
-    label: 'Account',
+    icon: Icon(Icons.settings_outlined),
+    label: 'Settings',
   ),
 ];
