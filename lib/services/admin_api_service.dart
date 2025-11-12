@@ -57,6 +57,12 @@ class AdminApiService {
   /// Rate limited to 5 attempts per minute
   Future<Map<String, dynamic>> adminLogin(String email, String password) async {
     try {
+      // DEBUG: Log password details
+      debugPrint('[AdminAPI] Login attempt with email: $email');
+      debugPrint('[AdminAPI] Password length: ${password.length}');
+      debugPrint('[AdminAPI] Password (first 3 chars): ${password.substring(0, password.length > 3 ? 3 : password.length)}...');
+      debugPrint('[AdminAPI] Password (last 3 chars): ...${password.substring(password.length > 3 ? password.length - 3 : 0)}');
+
       final response = await _dio.post(
         '/admin/auth',
         data: {

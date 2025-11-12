@@ -12,7 +12,6 @@ import 'design_system/design_system.dart';
 import 'navigation/app_navigation.dart';
 import 'service_locators/init_service_locators.dart';
 import 'services/api_service.dart';
-import 'services/encryption_service.dart';
 import 'services/notification_service.dart';
 import 'services/auth_service.dart';
 import 'services/backend_auth_service.dart';

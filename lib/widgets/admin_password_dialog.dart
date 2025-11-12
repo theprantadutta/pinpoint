@@ -43,7 +43,12 @@ class _AdminPasswordDialogState extends State<AdminPasswordDialog> {
 
     try {
       final adminApi = AdminApiService();
-      await adminApi.adminLogin(adminEmail, _passwordController.text);
+      final password = _passwordController.text.trim();
+
+      // DEBUG: Print what we're about to send
+      print('[AdminDialog] Attempting login with password length: ${password.length}');
+
+      await adminApi.adminLogin(adminEmail, password);
 
       if (mounted) {
         Navigator.of(context).pop(true); // Success
@@ -107,7 +112,7 @@ class _AdminPasswordDialogState extends State<AdminPasswordDialog> {
               errorText: _errorMessage,
               errorMaxLines: 3,
             ),
-            onSubmitted: (_) => _handleSubmit(),
+            onFieldSubmitted: (_) => _handleSubmit(),
           ),
         ],
       ),
