@@ -246,12 +246,13 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
             );
       }
 
-      // CRITICAL: Update parent note's updated_at timestamp
+      // CRITICAL: Update parent note's updated_at timestamp and mark as unsynced
       // This triggers Drift streams watching the notes table to refresh UI
       await (database.update(database.notes)
             ..where((n) => n.id.equals(noteId)))
           .write(db.NotesCompanion(
         updatedAt: drift.Value(DateTime.now()),
+        isSynced: drift.Value(false), // Mark as needing upload
       ));
 
       debugPrint('[Auto-save Text] Text content saved successfully');

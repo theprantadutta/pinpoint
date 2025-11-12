@@ -24,6 +24,10 @@ class Notes extends Table {
   /// Whether the note is deleted (soft delete)
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
 
+  /// Whether the note has been synced to the cloud
+  /// false = needs upload, true = successfully uploaded
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
+
   /// When the note was created
   DateTimeColumn get createdAt => dateTime()();
 

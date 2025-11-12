@@ -100,12 +100,16 @@ class DriftNoteService {
           log.d('Updating existing note...');
           await database
               .update(database.notes)
-              .replace(note.copyWith(id: Value(previousNoteId)));
+              .replace(note.copyWith(
+                id: Value(previousNoteId),
+                isSynced: Value(false), // Mark as needing upload
+              ));
           return existingNote.id;
         }
       }
 
       log.d('Adding new note...');
+      // isSynced defaults to false for new notes
       final newNoteId = await database.into(database.notes).insert(note);
       return newNoteId;
     } catch (e, st) {
@@ -217,7 +221,10 @@ class DriftNoteService {
     final database = getIt<AppDatabase>();
     await (database.update(database.notes)
           ..where((tbl) => tbl.id.equals(noteId)))
-        .write(NotesCompanion(isDeleted: Value(true)));
+        .write(NotesCompanion(
+          isDeleted: Value(true),
+          isSynced: Value(false), // Mark as needing upload
+        ));
     NotificationService.cancelNotification(noteId);
     log.i("Note with ID $noteId soft-deleted successfully.");
   }
@@ -226,7 +233,10 @@ class DriftNoteService {
     final database = getIt<AppDatabase>();
     await (database.update(database.notes)
           ..where((tbl) => tbl.id.equals(noteId)))
-        .write(NotesCompanion(isDeleted: Value(false)));
+        .write(NotesCompanion(
+          isDeleted: Value(false),
+          isSynced: Value(false), // Mark as needing upload
+        ));
     log.i("Note with ID $noteId restored successfully.");
   }
 

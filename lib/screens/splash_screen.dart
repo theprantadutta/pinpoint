@@ -123,19 +123,27 @@ class _SplashScreenState extends State<SplashScreen> {
         debugPrint('⚠️ [Splash] Failed to initialize sync manager: $e');
       }
 
-      // Check if local database is empty (fresh install or cleared data)
+      // Check if local database is empty OR has unsynced notes
       try {
         final notes = await DriftNoteService.watchNotesWithDetails().first;
-        debugPrint('🔵 [Splash] Found ${notes.length} local notes');
+        final database = getIt<AppDatabase>();
 
-        if (notes.isEmpty) {
-          // No local notes - attempt to restore from cloud
-          debugPrint('🔄 [Splash] No local notes found, attempting cloud sync...');
+        // Count unsynced notes
+        final unsyncedCount = await (database.select(database.notes)
+              ..where((tbl) => tbl.isSynced.equals(false) & tbl.isDeleted.equals(false)))
+            .get()
+            .then((list) => list.length);
+
+        debugPrint('🔵 [Splash] Found ${notes.length} local notes ($unsyncedCount unsynced)');
+
+        if (notes.isEmpty || unsyncedCount > 0) {
+          // No local notes OR unsynced notes - attempt sync
+          debugPrint('🔄 [Splash] Syncing ${notes.isEmpty ? "from" : "with"} cloud (${unsyncedCount} unsynced)...');
 
           if (!mounted) return;
 
           // Show loading with message
-          setState(() {}); // Trigger rebuild to show "Restoring..." text
+          setState(() {}); // Trigger rebuild to show "Syncing..." text
 
           final syncManager = getIt<SyncManager>();
           // Use bidirectional sync to both upload and download
