@@ -46,6 +46,47 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
     }
   }
 
+  Future<void> _reconcileUsageStats(BuildContext context) async {
+    setState(() => _isRefreshing = true);
+    try {
+      final result = await _premiumService.reconcileUsageWithBackend();
+
+      if (mounted && result != null) {
+        final reconciled = result['reconciled'] as bool;
+        final oldCount = result['old_count'] as int;
+        final newCount = result['new_count'] as int;
+
+        if (reconciled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ Reconciled: Updated from $oldCount to $newCount notes'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✓ Already in sync: $newCount notes'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to reconcile: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -119,22 +160,30 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
                       ],
                     ),
                   ),
-                  // Refresh button
-                  IconButton(
-                    onPressed: _isRefreshing ? null : _refreshUsageStats,
-                    icon: _isRefreshing
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: cs.primary,
-                            ),
-                          )
-                        : Icon(
-                            Icons.refresh,
-                            color: cs.primary,
-                          ),
+                  // Refresh button (long-press to reconcile)
+                  Tooltip(
+                    message: 'Tap to refresh\nLong-press to reconcile',
+                    child: InkWell(
+                      onTap: _isRefreshing ? null : _refreshUsageStats,
+                      onLongPress: _isRefreshing ? null : () => _reconcileUsageStats(context),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: _isRefreshing
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: cs.primary,
+                                ),
+                              )
+                            : Icon(
+                                Icons.refresh,
+                                color: cs.primary,
+                              ),
+                      ),
+                    ),
                   ),
                 ],
               )
