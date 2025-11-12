@@ -6,6 +6,8 @@ import 'package:pinpoint/services/api_service.dart';
 import 'package:pinpoint/services/firebase_notification_service.dart';
 import 'package:pinpoint/screens/home_screen.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
+import 'package:pinpoint/sync/api_sync_service.dart';
+import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/encryption_service.dart';
 import 'package:go_router/go_router.dart';
@@ -44,7 +46,20 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       debugPrint('🔄 [Auth] Starting initial sync to restore data...');
 
+      // Initialize sync manager with API sync service (now that we're authenticated)
+      debugPrint('🔄 [Auth] Initializing Sync Manager with authenticated API service...');
       final syncManager = getIt<SyncManager>();
+      final database = getIt<AppDatabase>();
+
+      final apiSyncService = ApiSyncService(
+        apiService: ApiService(),
+        database: database,
+      );
+
+      // Set the sync service (allows re-initialization on subsequent logins)
+      syncManager.setSyncService(apiSyncService);
+      await syncManager.init(syncService: apiSyncService);
+      debugPrint('✅ [Auth] Sync Manager initialized with authenticated API service');
 
       // Show loading dialog
       if (mounted) {
