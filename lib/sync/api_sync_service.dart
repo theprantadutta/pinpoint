@@ -179,10 +179,20 @@ class ApiSyncService extends SyncService {
           debugPrint('✅ [ApiSync] Decryption successful');
 
           if (isDeleted) {
-            // Delete the note locally
+            // Soft-delete the note locally (mark as deleted but keep record)
             if (existingNote != null) {
-              await DriftNoteService.permanentlyDeleteNoteById(clientNoteId);
+              debugPrint('🗑️ [ApiSync] Soft-deleting note $clientNoteId locally');
+              await (_database.update(_database.notes)
+                    ..where((tbl) => tbl.id.equals(clientNoteId)))
+                  .write(NotesCompanion(
+                isDeleted: Value(true),
+                updatedAt: Value(serverUpdatedAt),
+                isSynced: Value(true), // Mark as synced since we got it from server
+              ));
               successCount++;
+            } else {
+              // Note doesn't exist locally, nothing to delete
+              debugPrint('ℹ️ [ApiSync] Note $clientNoteId doesn\'t exist locally, skipping deletion');
             }
           } else {
             // Update or create the note
@@ -221,13 +231,13 @@ class ApiSyncService extends SyncService {
 
   /// Get all notes that need to be uploaded (not yet synced)
   Future<List<Note>> _getNotesToUpload() async {
-    // Only get notes that haven't been synced yet
+    // Get ALL notes that haven't been synced yet (including deleted ones)
+    // Deleted notes need to be uploaded so the server knows they were deleted
     final unsyncedNotes = await (_database.select(_database.notes)
-          ..where((tbl) => tbl.isSynced.equals(false))
-          ..where((tbl) => tbl.isDeleted.equals(false)))
+          ..where((tbl) => tbl.isSynced.equals(false)))
         .get();
 
-    debugPrint('🔼 [ApiSync] Found ${unsyncedNotes.length} unsynced notes to upload');
+    debugPrint('🔼 [ApiSync] Found ${unsyncedNotes.length} unsynced notes to upload (including ${unsyncedNotes.where((n) => n.isDeleted).length} deleted)');
     return unsyncedNotes;
   }
 
@@ -380,6 +390,7 @@ class ApiSyncService extends SyncService {
         isArchived: Value(noteData['isArchived'] as bool),
         isDeleted: Value(noteData['isDeleted'] as bool),
         updatedAt: Value(serverUpdatedAt),
+        isSynced: Value(true), // Mark as synced since we got it from server
       ),
     );
 
@@ -483,6 +494,7 @@ class ApiSyncService extends SyncService {
           isDeleted: Value(noteData['isDeleted'] as bool? ?? false),
           createdAt: Value(DateTime.parse(noteData['createdAt'] as String)),
           updatedAt: Value(DateTime.parse(noteData['updatedAt'] as String)),
+          isSynced: Value(true), // Mark as synced since we got it from server
         ),
       );
 
