@@ -41,17 +41,7 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (m, from, to) async {
-        // App not released yet - just recreate everything
-        await m.deleteTable('notes');
-        await m.deleteTable('text_notes');
-        await m.deleteTable('audio_notes');
-        await m.deleteTable('todo_notes');
-        await m.deleteTable('reminder_notes');
-        await m.deleteTable('note_todo_items');
-        await m.deleteTable('note_folders');
-        await m.deleteTable('note_folder_relations');
-        await m.deleteTable('note_attachments');
-        await m.createAll();
+        // Add new migrations here
       },
     );
   }

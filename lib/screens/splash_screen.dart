@@ -129,16 +129,17 @@ class _SplashScreenState extends State<SplashScreen> {
         final database = getIt<AppDatabase>();
 
         // Count unsynced notes
-        final unsyncedCount = await (database.select(database.notes)
-              ..where((tbl) => tbl.isSynced.equals(false) & tbl.isDeleted.equals(false)))
-            .get()
-            .then((list) => list.length);
+        final unsyncedNotes = await (database.select(database.notes)
+              ..where((tbl) => tbl.isSynced.equals(false))
+              ..where((tbl) => tbl.isDeleted.equals(false)))
+            .get();
+        final unsyncedCount = unsyncedNotes.length;
 
         debugPrint('🔵 [Splash] Found ${notes.length} local notes ($unsyncedCount unsynced)');
 
         if (notes.isEmpty || unsyncedCount > 0) {
           // No local notes OR unsynced notes - attempt sync
-          debugPrint('🔄 [Splash] Syncing ${notes.isEmpty ? "from" : "with"} cloud (${unsyncedCount} unsynced)...');
+          debugPrint('🔄 [Splash] Syncing ${notes.isEmpty ? "from" : "with"} cloud ($unsyncedCount unsynced)...');
 
           if (!mounted) return;
 

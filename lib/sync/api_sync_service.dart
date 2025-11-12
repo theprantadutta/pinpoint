@@ -221,7 +221,8 @@ class ApiSyncService extends SyncService {
   Future<List<Note>> _getNotesToUpload() async {
     // Only get notes that haven't been synced yet
     final unsyncedNotes = await (_database.select(_database.notes)
-          ..where((tbl) => tbl.isSynced.equals(false) & tbl.isDeleted.equals(false)))
+          ..where((tbl) => tbl.isSynced.equals(false))
+          ..where((tbl) => tbl.isDeleted.equals(false)))
         .get();
 
     debugPrint('🔼 [ApiSync] Found ${unsyncedNotes.length} unsynced notes to upload');
