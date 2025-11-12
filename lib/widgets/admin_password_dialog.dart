@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:pinpoint/services/admin_api_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
@@ -46,7 +47,7 @@ class _AdminPasswordDialogState extends State<AdminPasswordDialog> {
       final password = _passwordController.text.trim();
 
       // DEBUG: Print what we're about to send
-      print('[AdminDialog] Attempting login with password length: ${password.length}');
+      debugPrint('[AdminDialog] Attempting login with password length: ${password.length}');
 
       await adminApi.adminLogin(adminEmail, password);
 

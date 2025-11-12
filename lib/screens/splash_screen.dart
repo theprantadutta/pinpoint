@@ -3,11 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/shared_preference_keys.dart';
+import '../database/database.dart';
 import '../services/backend_auth_service.dart';
 import '../services/drift_note_service.dart';
 import '../services/encryption_service.dart';
 import '../services/api_service.dart';
 import '../sync/sync_manager.dart';
+import '../sync/api_sync_service.dart';
 import '../service_locators/init_service_locators.dart';
 import 'auth_screen.dart';
 import 'home_screen.dart';
@@ -103,6 +105,22 @@ class _SplashScreenState extends State<SplashScreen> {
           debugPrint('🔑 [Splash] Falling back to local-only encryption initialization');
           await SecureEncryptionService.initialize();
         }
+      }
+
+      // Initialize sync manager with authenticated API service
+      debugPrint('🔄 [Splash] Initializing Sync Manager with authenticated API service...');
+      try {
+        final syncManager = getIt<SyncManager>();
+        final database = getIt<AppDatabase>();
+        final apiSyncService = ApiSyncService(
+          apiService: ApiService(),
+          database: database,
+        );
+        syncManager.setSyncService(apiSyncService);
+        await syncManager.init(syncService: apiSyncService);
+        debugPrint('✅ [Splash] Sync Manager initialized');
+      } catch (e) {
+        debugPrint('⚠️ [Splash] Failed to initialize sync manager: $e');
       }
 
       // Check if local database is empty (fresh install or cleared data)
