@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../design_system/design_system.dart';
 import '../../models/note_with_details.dart';
 import '../../services/drift_note_service.dart';
+import '../../services/filter_service.dart';
 import '../../screens/create_note_screen.dart' show CreateNoteScreen;
 import '../../util/note_utils.dart';
 
@@ -90,14 +92,20 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
             const SizedBox(height: 6),
             // Content
             Expanded(
-              child: StreamBuilder<List<NoteWithDetails>>(
-                stream: DriftNoteService.watchNotesWithDetails(
-                    widget.searchQuery, _sortType, _sortDirection),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
+              child: Consumer<FilterService>(
+                builder: (context, filterService, _) {
+                  return StreamBuilder<List<NoteWithDetails>>(
+                    stream: DriftNoteService.watchNotesWithDetails(
+                      searchQuery: widget.searchQuery,
+                      sortType: _sortType,
+                      sortDirection: _sortDirection,
+                      filterOptions: filterService.filterOptions,
+                    ),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
                     return EmptyState(
                       icon: Icons.error_outline_rounded,
                       title: 'Something went wrong',
@@ -137,6 +145,8 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
                       },
                     );
                   }
+                },
+              );
                 },
               ),
             ),

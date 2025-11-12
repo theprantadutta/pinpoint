@@ -3,8 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
+import 'package:provider/provider.dart';
 import 'dart:async';
 import '../../design_system/design_system.dart';
+import '../../services/filter_service.dart';
+import '../../widgets/filter_bottom_sheet.dart';
 
 class HomeScreenTopBar extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
@@ -45,7 +48,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -92,13 +95,47 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
                 ],
               ),
 
-              // Search toggle button
-              IconButton(
-                icon: const Icon(Symbols.search),
-                tooltip: 'Search',
-                onPressed: () {
-                  setState(() => _isSearchActive = !_isSearchActive);
-                },
+              // Filter and Search buttons
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Filter button with badge
+                  Consumer<FilterService>(
+                    builder: (context, filterService, _) {
+                      final hasFilters = filterService.hasActiveFilters;
+                      final filterCount = filterService.activeFilterCount;
+
+                      return Badge(
+                        isLabelVisible: hasFilters,
+                        label: Text(filterCount.toString()),
+                        child: IconButton(
+                          icon: Icon(
+                            hasFilters ? Symbols.filter_alt : Symbols.filter_alt,
+                            fill: hasFilters ? 1 : 0,
+                          ),
+                          tooltip: 'Filters',
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => const FilterBottomSheet(),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+
+                  // Search toggle button
+                  IconButton(
+                    icon: const Icon(Symbols.search),
+                    tooltip: 'Search',
+                    onPressed: () {
+                      setState(() => _isSearchActive = !_isSearchActive);
+                    },
+                  ),
+                ],
               ),
             ],
           ),

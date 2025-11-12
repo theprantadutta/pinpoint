@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/dtos/note_attachment_dto.dart';
 import 'package:pinpoint/dtos/note_folder_dto.dart';
+import 'package:pinpoint/models/filter_options.dart';
 import 'package:pinpoint/models/note_todo_item_with_note.dart';
 import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
@@ -299,59 +300,420 @@ class DriftNoteService {
     NotificationService.cancelNotification(noteId);
   }
 
-  static Stream<List<NoteWithDetails>> watchArchivedNotes() {
-    return (getIt<AppDatabase>().select(getIt<AppDatabase>().notes)
-          ..where((tbl) => tbl.isArchived.equals(true) & tbl.noteType.equals('todo').not())
-          ..orderBy([
-            (t) =>
-                OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)
-          ]))
-        .watch()
-        .map((notes) => notes
-            .map((note) => NoteWithDetails(
-                  note: note,
-                  folders: const [],
-                  attachments: const [],
-                  todoItems: const [],
-                  textContent: null, // TODO: Load from TextNotes table
-                ))
-            .toList());
-  }
-
-  static Stream<List<NoteWithDetails>> watchDeletedNotes() {
-    return (getIt<AppDatabase>().select(getIt<AppDatabase>().notes)
-          ..where((tbl) => tbl.isDeleted.equals(true) & tbl.noteType.equals('todo').not())
-          ..orderBy([
-            (t) =>
-                OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)
-          ]))
-        .watch()
-        .map((notes) => notes
-            .map((note) => NoteWithDetails(
-                  note: note,
-                  folders: const [],
-                  attachments: const [],
-                  todoItems: const [],
-                  textContent: null, // TODO: Load from TextNotes table
-                ))
-            .toList());
-  }
-
-  static Stream<List<NoteWithDetails>> watchNotesWithDetails(
-      [String searchQuery = '',
-      String sortType = 'updatedAt',
-      String sortDirection = 'desc']) {
+  static Stream<List<NoteWithDetails>> watchArchivedNotes({
+    String searchQuery = '',
+    FilterOptions? filterOptions,
+  }) {
     try {
       final database = getIt<AppDatabase>();
+      final filters = filterOptions ?? FilterOptions.empty;
+      log.d('[watchArchivedNotes] start; query="$searchQuery", filters: $filters');
+
+      String whereClause = 'WHERE n.is_archived = 1 AND n.is_deleted = 0 AND n.note_type != \'todo\'';
+      List<dynamic> variables = [];
+
+      // Search in title, content, todo items, folder names, and attachment names (case-insensitive)
+      if (searchQuery.isNotEmpty) {
+        whereClause +=
+            ' AND (n.note_title LIKE ? COLLATE NOCASE'
+            ' OR tn.content LIKE ? COLLATE NOCASE'
+            ' OR EXISTS (SELECT 1 FROM note_todo_items t WHERE t.note_id = n.id AND t.todo_title LIKE ? COLLATE NOCASE)'
+            ' OR EXISTS (SELECT 1 FROM note_folder_relations r INNER JOIN note_folders f ON r.note_folder_id = f.note_folder_id WHERE r.note_id = n.id AND f.note_folder_title LIKE ? COLLATE NOCASE)'
+            ' OR EXISTS (SELECT 1 FROM note_attachments a WHERE a.note_id = n.id AND a.attachment_name LIKE ? COLLATE NOCASE))';
+        final searchPattern = '%$searchQuery%';
+        variables = [searchPattern, searchPattern, searchPattern, searchPattern, searchPattern];
+      }
+
+      // Filter by folder IDs
+      if (filters.folderIds.isNotEmpty) {
+        final placeholders = List.filled(filters.folderIds.length, '?').join(',');
+        whereClause += ' AND EXISTS (SELECT 1 FROM note_folder_relations r WHERE r.note_id = n.id AND r.note_folder_id IN ($placeholders))';
+        variables.addAll(filters.folderIds);
+      }
+
+      // Filter by note types
+      if (filters.noteTypes.isNotEmpty) {
+        final placeholders = List.filled(filters.noteTypes.length, '?').join(',');
+        whereClause += ' AND n.note_type IN ($placeholders)';
+        variables.addAll(filters.noteTypes);
+      }
+
+      // Filter by date range
+      if (filters.dateRangeStart != null) {
+        whereClause += ' AND n.created_at >= ?';
+        variables.add(filters.dateRangeStart!.millisecondsSinceEpoch ~/ 1000);
+      }
+      if (filters.dateRangeEnd != null) {
+        final endDate = filters.dateRangeEnd!.add(const Duration(days: 1));
+        whereClause += ' AND n.created_at < ?';
+        variables.add(endDate.millisecondsSinceEpoch ~/ 1000);
+      }
+
+      // Filter by pins only
+      if (filters.pinsOnly) {
+        whereClause += ' AND n.is_pinned = 1';
+      }
+
+      final sql = '''
+    SELECT
+      n.*,
+      tn.content AS text_content,
+      (
+        SELECT json_group_array(json_object(
+          'id', f.note_folder_id,
+          'title', f.note_folder_title
+        ))
+        FROM note_folders f
+        INNER JOIN note_folder_relations r ON f.note_folder_id = r.note_folder_id
+        WHERE r.note_id = n.id
+      ) AS folders,
+      a.attachment_mime_type AS attachment_mime_type,
+      a.attachment_path AS attachment_path,
+      a.attachment_name AS attachment_name,
+      t.id AS todo_id,
+      t.todo_title AS todo_title,
+      t.is_done AS todo_is_done
+    FROM notes n
+    LEFT JOIN text_notes tn ON n.id = tn.note_id
+    LEFT JOIN note_attachments a ON n.id = a.note_id
+    LEFT JOIN note_todo_items t ON n.id = t.note_id
+    $whereClause
+    GROUP BY n.id
+    ORDER BY n.is_pinned DESC, n.updated_at DESC
+    ''';
+
+      log.d('[watchArchivedNotes] SQL: $sql');
+      log.d('[watchArchivedNotes] vars: $variables');
+
+      return database
+          .customSelect(
+            sql,
+            variables: variables.map((e) => Variable(e)).toList(),
+            readsFrom: {
+              database.notes,
+              database.noteFolderRelations,
+              database.noteFolders,
+              database.noteAttachments,
+              database.noteTodoItems,
+            },
+          )
+          .watch()
+          .handleError((e, st) {
+            log.e('[watchArchivedNotes] stream error', e, st);
+          })
+          .map((rows) {
+            log.d('[watchArchivedNotes] rows: ${rows.length}');
+            final notesMap = <int, NoteWithDetails>{};
+
+            for (final row in rows) {
+              try {
+                final noteId = row.read<int>('id');
+                notesMap.putIfAbsent(noteId, () {
+                  // Folders
+                  final foldersJson = row.read<String?>('folders');
+                  final List<NoteFolderDto> folders = foldersJson != null
+                      ? (jsonDecode(foldersJson) as List<dynamic>)
+                          .map((f) => NoteFolderDto(
+                                id: f['id'],
+                                title: f['title'],
+                              ))
+                          .toList()
+                      : <NoteFolderDto>[];
+
+                  return NoteWithDetails(
+                    note: Note(
+                      id: noteId,
+                      noteTitle: row.read<String?>('note_title'),
+                      noteType: row.read<String>('note_type'),
+                      isPinned: row.read<bool>('is_pinned'),
+                      createdAt: row.read<DateTime>('created_at'),
+                      updatedAt: row.read<DateTime>('updated_at'),
+                      isArchived: row.read<bool?>('is_archived') ?? false,
+                      isDeleted: row.read<bool?>('is_deleted') ?? false,
+                      isSynced: row.read<bool?>('is_synced') ?? false,
+                    ),
+                    folders: folders,
+                    attachments: [],
+                    todoItems: [],
+                    textContent: row.read<String?>('text_content'),
+                  );
+                });
+
+                // Attachments
+                final attachmentName = row.read<String?>('attachment_name');
+                if (attachmentName != null) {
+                  notesMap[noteId]!.attachments.add(
+                        NoteAttachmentDto(
+                          mimeType: row.read<String?>('attachment_mime_type'),
+                          path: row.read<String>('attachment_path'),
+                          name: attachmentName,
+                        ),
+                      );
+                }
+
+                // Todos
+                final todoTitle = row.read<String?>('todo_title');
+                final todoId = row.read<int?>('todo_id');
+                if (todoTitle != null && todoId != null) {
+                  notesMap[noteId]!.todoItems.add(
+                        NoteTodoItem(
+                          id: todoId,
+                          noteId: noteId,
+                          todoTitle: todoTitle,
+                          isDone: row.read<bool>('todo_is_done'),
+                          orderIndex: 0,
+                        ),
+                      );
+                }
+              } catch (rowErr, st) {
+                log.e('[watchArchivedNotes] row parse error', rowErr, st);
+              }
+            }
+
+            log.d('[watchArchivedNotes] parsed notes: ${notesMap.length}');
+            return notesMap.values.toList();
+          });
+    } catch (e, st) {
+      log.e('[watchArchivedNotes] fatal error', e, st);
+      rethrow;
+    }
+  }
+
+  static Stream<List<NoteWithDetails>> watchDeletedNotes({
+    String searchQuery = '',
+    FilterOptions? filterOptions,
+  }) {
+    try {
+      final database = getIt<AppDatabase>();
+      final filters = filterOptions ?? FilterOptions.empty;
+      log.d('[watchDeletedNotes] start; query="$searchQuery", filters: $filters');
+
+      String whereClause = 'WHERE n.is_deleted = 1 AND n.note_type != \'todo\'';
+      List<dynamic> variables = [];
+
+      // Search in title, content, todo items, folder names, and attachment names (case-insensitive)
+      if (searchQuery.isNotEmpty) {
+        whereClause +=
+            ' AND (n.note_title LIKE ? COLLATE NOCASE'
+            ' OR tn.content LIKE ? COLLATE NOCASE'
+            ' OR EXISTS (SELECT 1 FROM note_todo_items t WHERE t.note_id = n.id AND t.todo_title LIKE ? COLLATE NOCASE)'
+            ' OR EXISTS (SELECT 1 FROM note_folder_relations r INNER JOIN note_folders f ON r.note_folder_id = f.note_folder_id WHERE r.note_id = n.id AND f.note_folder_title LIKE ? COLLATE NOCASE)'
+            ' OR EXISTS (SELECT 1 FROM note_attachments a WHERE a.note_id = n.id AND a.attachment_name LIKE ? COLLATE NOCASE))';
+        final searchPattern = '%$searchQuery%';
+        variables = [searchPattern, searchPattern, searchPattern, searchPattern, searchPattern];
+      }
+
+      // Filter by folder IDs
+      if (filters.folderIds.isNotEmpty) {
+        final placeholders = List.filled(filters.folderIds.length, '?').join(',');
+        whereClause += ' AND EXISTS (SELECT 1 FROM note_folder_relations r WHERE r.note_id = n.id AND r.note_folder_id IN ($placeholders))';
+        variables.addAll(filters.folderIds);
+      }
+
+      // Filter by note types
+      if (filters.noteTypes.isNotEmpty) {
+        final placeholders = List.filled(filters.noteTypes.length, '?').join(',');
+        whereClause += ' AND n.note_type IN ($placeholders)';
+        variables.addAll(filters.noteTypes);
+      }
+
+      // Filter by date range
+      if (filters.dateRangeStart != null) {
+        whereClause += ' AND n.created_at >= ?';
+        variables.add(filters.dateRangeStart!.millisecondsSinceEpoch ~/ 1000);
+      }
+      if (filters.dateRangeEnd != null) {
+        final endDate = filters.dateRangeEnd!.add(const Duration(days: 1));
+        whereClause += ' AND n.created_at < ?';
+        variables.add(endDate.millisecondsSinceEpoch ~/ 1000);
+      }
+
+      // Filter by pins only
+      if (filters.pinsOnly) {
+        whereClause += ' AND n.is_pinned = 1';
+      }
+
+      final sql = '''
+    SELECT
+      n.*,
+      tn.content AS text_content,
+      (
+        SELECT json_group_array(json_object(
+          'id', f.note_folder_id,
+          'title', f.note_folder_title
+        ))
+        FROM note_folders f
+        INNER JOIN note_folder_relations r ON f.note_folder_id = r.note_folder_id
+        WHERE r.note_id = n.id
+      ) AS folders,
+      a.attachment_mime_type AS attachment_mime_type,
+      a.attachment_path AS attachment_path,
+      a.attachment_name AS attachment_name,
+      t.id AS todo_id,
+      t.todo_title AS todo_title,
+      t.is_done AS todo_is_done
+    FROM notes n
+    LEFT JOIN text_notes tn ON n.id = tn.note_id
+    LEFT JOIN note_attachments a ON n.id = a.note_id
+    LEFT JOIN note_todo_items t ON n.id = t.note_id
+    $whereClause
+    GROUP BY n.id
+    ORDER BY n.is_pinned DESC, n.updated_at DESC
+    ''';
+
+      log.d('[watchDeletedNotes] SQL: $sql');
+      log.d('[watchDeletedNotes] vars: $variables');
+
+      return database
+          .customSelect(
+            sql,
+            variables: variables.map((e) => Variable(e)).toList(),
+            readsFrom: {
+              database.notes,
+              database.noteFolderRelations,
+              database.noteFolders,
+              database.noteAttachments,
+              database.noteTodoItems,
+            },
+          )
+          .watch()
+          .handleError((e, st) {
+            log.e('[watchDeletedNotes] stream error', e, st);
+          })
+          .map((rows) {
+            log.d('[watchDeletedNotes] rows: ${rows.length}');
+            final notesMap = <int, NoteWithDetails>{};
+
+            for (final row in rows) {
+              try {
+                final noteId = row.read<int>('id');
+                notesMap.putIfAbsent(noteId, () {
+                  // Folders
+                  final foldersJson = row.read<String?>('folders');
+                  final List<NoteFolderDto> folders = foldersJson != null
+                      ? (jsonDecode(foldersJson) as List<dynamic>)
+                          .map((f) => NoteFolderDto(
+                                id: f['id'],
+                                title: f['title'],
+                              ))
+                          .toList()
+                      : <NoteFolderDto>[];
+
+                  return NoteWithDetails(
+                    note: Note(
+                      id: noteId,
+                      noteTitle: row.read<String?>('note_title'),
+                      noteType: row.read<String>('note_type'),
+                      isPinned: row.read<bool>('is_pinned'),
+                      createdAt: row.read<DateTime>('created_at'),
+                      updatedAt: row.read<DateTime>('updated_at'),
+                      isArchived: row.read<bool?>('is_archived') ?? false,
+                      isDeleted: row.read<bool?>('is_deleted') ?? false,
+                      isSynced: row.read<bool?>('is_synced') ?? false,
+                    ),
+                    folders: folders,
+                    attachments: [],
+                    todoItems: [],
+                    textContent: row.read<String?>('text_content'),
+                  );
+                });
+
+                // Attachments
+                final attachmentName = row.read<String?>('attachment_name');
+                if (attachmentName != null) {
+                  notesMap[noteId]!.attachments.add(
+                        NoteAttachmentDto(
+                          mimeType: row.read<String?>('attachment_mime_type'),
+                          path: row.read<String>('attachment_path'),
+                          name: attachmentName,
+                        ),
+                      );
+                }
+
+                // Todos
+                final todoTitle = row.read<String?>('todo_title');
+                final todoId = row.read<int?>('todo_id');
+                if (todoTitle != null && todoId != null) {
+                  notesMap[noteId]!.todoItems.add(
+                        NoteTodoItem(
+                          id: todoId,
+                          noteId: noteId,
+                          todoTitle: todoTitle,
+                          isDone: row.read<bool>('todo_is_done'),
+                          orderIndex: 0,
+                        ),
+                      );
+                }
+              } catch (rowErr, st) {
+                log.e('[watchDeletedNotes] row parse error', rowErr, st);
+              }
+            }
+
+            log.d('[watchDeletedNotes] parsed notes: ${notesMap.length}');
+            return notesMap.values.toList();
+          });
+    } catch (e, st) {
+      log.e('[watchDeletedNotes] fatal error', e, st);
+      rethrow;
+    }
+  }
+
+  static Stream<List<NoteWithDetails>> watchNotesWithDetails({
+    String searchQuery = '',
+    String sortType = 'updatedAt',
+    String sortDirection = 'desc',
+    FilterOptions? filterOptions,
+  }) {
+    try {
+      final database = getIt<AppDatabase>();
+      final filters = filterOptions ?? FilterOptions.empty;
       log.d(
-          '[watchNotesWithDetails] start; query="$searchQuery", sort: $sortType $sortDirection');
+          '[watchNotesWithDetails] start; query="$searchQuery", sort: $sortType $sortDirection, filters: $filters');
 
       String whereClause = 'WHERE n.is_archived = 0 AND n.is_deleted = 0 AND n.note_type != \'todo\'';
       List<dynamic> variables = [];
+
+      // Search in title, content, todo items, folder names, and attachment names (case-insensitive)
       if (searchQuery.isNotEmpty) {
         whereClause +=
-            ' AND (n.note_title LIKE ? OR tn.content LIKE ?)';
-        variables = ['%$searchQuery%', '%$searchQuery%'];
+            ' AND (n.note_title LIKE ? COLLATE NOCASE'
+            ' OR tn.content LIKE ? COLLATE NOCASE'
+            ' OR EXISTS (SELECT 1 FROM note_todo_items t WHERE t.note_id = n.id AND t.todo_title LIKE ? COLLATE NOCASE)'
+            ' OR EXISTS (SELECT 1 FROM note_folder_relations r INNER JOIN note_folders f ON r.note_folder_id = f.note_folder_id WHERE r.note_id = n.id AND f.note_folder_title LIKE ? COLLATE NOCASE)'
+            ' OR EXISTS (SELECT 1 FROM note_attachments a WHERE a.note_id = n.id AND a.attachment_name LIKE ? COLLATE NOCASE))';
+        final searchPattern = '%$searchQuery%';
+        variables = [searchPattern, searchPattern, searchPattern, searchPattern, searchPattern];
+      }
+
+      // Filter by folder IDs
+      if (filters.folderIds.isNotEmpty) {
+        final placeholders = List.filled(filters.folderIds.length, '?').join(',');
+        whereClause += ' AND EXISTS (SELECT 1 FROM note_folder_relations r WHERE r.note_id = n.id AND r.note_folder_id IN ($placeholders))';
+        variables.addAll(filters.folderIds);
+      }
+
+      // Filter by note types
+      if (filters.noteTypes.isNotEmpty) {
+        final placeholders = List.filled(filters.noteTypes.length, '?').join(',');
+        whereClause += ' AND n.note_type IN ($placeholders)';
+        variables.addAll(filters.noteTypes);
+      }
+
+      // Filter by date range
+      if (filters.dateRangeStart != null) {
+        whereClause += ' AND n.created_at >= ?';
+        variables.add(filters.dateRangeStart!.millisecondsSinceEpoch ~/ 1000);
+      }
+      if (filters.dateRangeEnd != null) {
+        // Add 1 day to include the entire end date
+        final endDate = filters.dateRangeEnd!.add(const Duration(days: 1));
+        whereClause += ' AND n.created_at < ?';
+        variables.add(endDate.millisecondsSinceEpoch ~/ 1000);
+      }
+
+      // Filter by pins only
+      if (filters.pinsOnly) {
+        whereClause += ' AND n.is_pinned = 1';
       }
 
       String orderBy;
@@ -498,15 +860,58 @@ class DriftNoteService {
     }
   }
 
-  static Stream<List<NoteWithDetails>> watchNotesWithDetailsByFolder(
-      int folderId) {
+  static Stream<List<NoteWithDetails>> watchNotesWithDetailsByFolder({
+    required int folderId,
+    String searchQuery = '',
+    FilterOptions? filterOptions,
+  }) {
     try {
       final database = getIt<AppDatabase>();
-      log.d('[watchNotesWithDetailsByFolder] start; folderId=$folderId');
+      final filters = filterOptions ?? FilterOptions.empty;
+      log.d('[watchNotesWithDetailsByFolder] start; folderId=$folderId, query="$searchQuery", filters: $filters');
+
+      String whereClause = 'WHERE r.note_folder_id = ? AND n.is_archived = 0 AND n.is_deleted = 0';
+      List<dynamic> variables = [folderId];
+
+      // Search in title, content, todo items, folder names, and attachment names (case-insensitive)
+      if (searchQuery.isNotEmpty) {
+        whereClause +=
+            ' AND (n.note_title LIKE ? COLLATE NOCASE'
+            ' OR tn.content LIKE ? COLLATE NOCASE'
+            ' OR EXISTS (SELECT 1 FROM note_todo_items t WHERE t.note_id = n.id AND t.todo_title LIKE ? COLLATE NOCASE)'
+            ' OR EXISTS (SELECT 1 FROM note_folder_relations r2 INNER JOIN note_folders f2 ON r2.note_folder_id = f2.note_folder_id WHERE r2.note_id = n.id AND f2.note_folder_title LIKE ? COLLATE NOCASE)'
+            ' OR EXISTS (SELECT 1 FROM note_attachments a WHERE a.note_id = n.id AND a.attachment_name LIKE ? COLLATE NOCASE))';
+        final searchPattern = '%$searchQuery%';
+        variables.addAll([searchPattern, searchPattern, searchPattern, searchPattern, searchPattern]);
+      }
+
+      // Filter by note types
+      if (filters.noteTypes.isNotEmpty) {
+        final placeholders = List.filled(filters.noteTypes.length, '?').join(',');
+        whereClause += ' AND n.note_type IN ($placeholders)';
+        variables.addAll(filters.noteTypes);
+      }
+
+      // Filter by date range
+      if (filters.dateRangeStart != null) {
+        whereClause += ' AND n.created_at >= ?';
+        variables.add(filters.dateRangeStart!.millisecondsSinceEpoch ~/ 1000);
+      }
+      if (filters.dateRangeEnd != null) {
+        final endDate = filters.dateRangeEnd!.add(const Duration(days: 1));
+        whereClause += ' AND n.created_at < ?';
+        variables.add(endDate.millisecondsSinceEpoch ~/ 1000);
+      }
+
+      // Filter by pins only
+      if (filters.pinsOnly) {
+        whereClause += ' AND n.is_pinned = 1';
+      }
 
       final sql = '''
         SELECT
           n.*,
+          tn.content AS text_content,
           (
             SELECT json_group_array(json_object(
               'id', f.note_folder_id,
@@ -515,24 +920,36 @@ class DriftNoteService {
             FROM note_folders f
             INNER JOIN note_folder_relations r_inner ON f.note_folder_id = r_inner.note_folder_id
             WHERE r_inner.note_id = n.id
-          ) AS folders
+          ) AS folders,
+          a.attachment_mime_type AS attachment_mime_type,
+          a.attachment_path AS attachment_path,
+          a.attachment_name AS attachment_name,
+          t.id AS todo_id,
+          t.todo_title AS todo_title,
+          t.is_done AS todo_is_done
         FROM notes n
         INNER JOIN note_folder_relations r ON n.id = r.note_id
-        WHERE r.note_folder_id = ? AND n.is_archived = 0 AND n.is_deleted = 0
+        LEFT JOIN text_notes tn ON n.id = tn.note_id
+        LEFT JOIN note_attachments a ON n.id = a.note_id
+        LEFT JOIN note_todo_items t ON n.id = t.note_id
+        $whereClause
         GROUP BY n.id
         ORDER BY n.is_pinned DESC, n.updated_at DESC
       ''';
 
       log.d('[watchNotesWithDetailsByFolder] SQL: $sql');
+      log.d('[watchNotesWithDetailsByFolder] vars: $variables');
 
       return database
           .customSelect(
             sql,
-            variables: [Variable.withInt(folderId)],
+            variables: variables.map((e) => Variable(e)).toList(),
             readsFrom: {
               database.notes,
               database.noteFolderRelations,
               database.noteFolders,
+              database.noteAttachments,
+              database.noteTodoItems,
             },
           )
           .watch()
@@ -540,42 +957,76 @@ class DriftNoteService {
             log.e('[watchNotesWithDetailsByFolder] stream error', e, st);
           })
           .map((rows) {
-            log.d(
-                '[watchNotesWithDetailsByFolder] rows: ${rows.length} for folderId=$folderId');
-            return rows.map((row) {
-              try {
-                final foldersJson = row.read<String?>('folders');
-                final List<NoteFolderDto> folders = foldersJson != null
-                    ? (jsonDecode(foldersJson) as List<dynamic>)
-                        .map((folder) => NoteFolderDto(
-                              id: folder['id'],
-                              title: folder['title'],
-                            ))
-                        .toList()
-                    : <NoteFolderDto>[];
+            log.d('[watchNotesWithDetailsByFolder] rows: ${rows.length} for folderId=$folderId');
+            final notesMap = <int, NoteWithDetails>{};
 
-                return NoteWithDetails(
-                  note: Note(
-                    id: row.read<int>('id'),
-                    noteTitle: row.read<String?>('note_title'),
-                    noteType: row.read<String>('note_type'),
-                    isPinned: row.read<bool>('is_pinned'),
-                    createdAt: row.read<DateTime>('created_at'),
-                    updatedAt: row.read<DateTime>('updated_at'),
-                    isArchived: row.read<bool?>('is_archived') ?? false,
-                    isDeleted: row.read<bool?>('is_deleted') ?? false,
-                    isSynced: row.read<bool?>('is_synced') ?? false,
-                  ),
-                  folders: folders,
-                  attachments: [],
-                  todoItems: [],
-                );
+            for (final row in rows) {
+              try {
+                final noteId = row.read<int>('id');
+                notesMap.putIfAbsent(noteId, () {
+                  // Folders
+                  final foldersJson = row.read<String?>('folders');
+                  final List<NoteFolderDto> folders = foldersJson != null
+                      ? (jsonDecode(foldersJson) as List<dynamic>)
+                          .map((f) => NoteFolderDto(
+                                id: f['id'],
+                                title: f['title'],
+                              ))
+                          .toList()
+                      : <NoteFolderDto>[];
+
+                  return NoteWithDetails(
+                    note: Note(
+                      id: noteId,
+                      noteTitle: row.read<String?>('note_title'),
+                      noteType: row.read<String>('note_type'),
+                      isPinned: row.read<bool>('is_pinned'),
+                      createdAt: row.read<DateTime>('created_at'),
+                      updatedAt: row.read<DateTime>('updated_at'),
+                      isArchived: row.read<bool?>('is_archived') ?? false,
+                      isDeleted: row.read<bool?>('is_deleted') ?? false,
+                      isSynced: row.read<bool?>('is_synced') ?? false,
+                    ),
+                    folders: folders,
+                    attachments: [],
+                    todoItems: [],
+                    textContent: row.read<String?>('text_content'),
+                  );
+                });
+
+                // Attachments
+                final attachmentName = row.read<String?>('attachment_name');
+                if (attachmentName != null) {
+                  notesMap[noteId]!.attachments.add(
+                        NoteAttachmentDto(
+                          mimeType: row.read<String?>('attachment_mime_type'),
+                          path: row.read<String>('attachment_path'),
+                          name: attachmentName,
+                        ),
+                      );
+                }
+
+                // Todos
+                final todoTitle = row.read<String?>('todo_title');
+                final todoId = row.read<int?>('todo_id');
+                if (todoTitle != null && todoId != null) {
+                  notesMap[noteId]!.todoItems.add(
+                        NoteTodoItem(
+                          id: todoId,
+                          noteId: noteId,
+                          todoTitle: todoTitle,
+                          isDone: row.read<bool>('todo_is_done'),
+                          orderIndex: 0,
+                        ),
+                      );
+                }
               } catch (rowErr, st) {
-                log.e('[watchNotesWithDetailsByFolder] row parse error', rowErr,
-                    st);
-                rethrow;
+                log.e('[watchNotesWithDetailsByFolder] row parse error', rowErr, st);
               }
-            }).toList();
+            }
+
+            log.d('[watchNotesWithDetailsByFolder] parsed notes: ${notesMap.length}');
+            return notesMap.values.toList();
           });
     } catch (e, st) {
       log.e('[watchNotesWithDetailsByFolder] fatal error', e, st);

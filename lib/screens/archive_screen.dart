@@ -1,15 +1,50 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
+import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
+import '../services/filter_service.dart';
 
-class ArchiveScreen extends StatelessWidget {
+class ArchiveScreen extends StatefulWidget {
   static const String kRouteName = '/archive';
 
   const ArchiveScreen({super.key});
+
+  @override
+  State<ArchiveScreen> createState() => _ArchiveScreenState();
+}
+
+class _ArchiveScreenState extends State<ArchiveScreen> {
+  String _searchQuery = '';
+  bool _isSearchActive = false;
+  final _searchController = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchInputChanged);
+  }
+
+  void _onSearchInputChanged() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 280), () {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,16 +53,38 @@ class ArchiveScreen extends StatelessWidget {
 
     return GradientScaffold(
       appBar: GlassAppBar(
-        title: Row(
-          children: [
-            Icon(Icons.archive_rounded, color: cs.primary, size: 20),
-            const SizedBox(width: 8),
-            const Text('Archive'),
-          ],
-        ),
+        title: _isSearchActive
+            ? SearchBarSticky(
+                controller: _searchController,
+                hint: 'Search archived notes...',
+                onSearch: (query) {
+                  setState(() => _searchQuery = query);
+                },
+                autoFocus: true,
+              )
+            : Row(
+                children: [
+                  Icon(Icons.archive_rounded, color: cs.primary, size: 20),
+                  const SizedBox(width: 8),
+                  const Text('Archive'),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    tooltip: 'Search',
+                    onPressed: () {
+                      setState(() => _isSearchActive = !_isSearchActive);
+                    },
+                  ),
+                ],
+              ),
       ),
-      body: StreamBuilder<List<NoteWithDetails>>(
-        stream: DriftNoteService.watchArchivedNotes(),
+      body: Consumer<FilterService>(
+        builder: (context, filterService, _) {
+          return StreamBuilder<List<NoteWithDetails>>(
+            stream: DriftNoteService.watchArchivedNotes(
+              searchQuery: _searchQuery,
+              filterOptions: filterService.filterOptions,
+            ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -125,6 +182,8 @@ class ArchiveScreen extends StatelessWidget {
                       ),
               ),
             ],
+          );
+        },
           );
         },
       ),
