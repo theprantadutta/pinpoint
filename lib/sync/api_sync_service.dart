@@ -37,7 +37,8 @@ class ApiSyncService extends SyncService {
     }
   }
 
-  Future<SyncResult> _uploadChanges() async {
+  @override
+  Future<SyncResult> uploadChanges() async {
     try {
       debugPrint('\n🔼 [ApiSync] ========== STARTING UPLOAD ==========');
 
@@ -113,7 +114,8 @@ class ApiSyncService extends SyncService {
     }
   }
 
-  Future<SyncResult> _downloadChanges() async {
+  @override
+  Future<SyncResult> downloadChanges() async {
     try {
       debugPrint('\n🔽 [ApiSync] ========== STARTING DOWNLOAD ==========');
       debugPrint('🔽 [ApiSync] Last sync time: $_lastSyncTime');

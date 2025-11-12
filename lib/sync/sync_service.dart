@@ -62,18 +62,18 @@ abstract class SyncService {
 
       switch (direction) {
         case SyncDirection.upload:
-          result = await _uploadChanges();
+          result = await uploadChanges();
           break;
         case SyncDirection.download:
-          result = await _downloadChanges();
+          result = await downloadChanges();
           break;
         case SyncDirection.both:
-          final uploadResult = await _uploadChanges();
+          final uploadResult = await uploadChanges();
           if (!uploadResult.success) {
             throw Exception('Upload failed: ${uploadResult.message}');
           }
 
-          final downloadResult = await _downloadChanges();
+          final downloadResult = await downloadChanges();
           if (!downloadResult.success) {
             throw Exception('Download failed: ${downloadResult.message}');
           }
@@ -108,7 +108,8 @@ abstract class SyncService {
   }
 
   /// Upload local changes to cloud
-  Future<SyncResult> _uploadChanges() async {
+  /// Subclasses should override this method to implement actual upload logic
+  Future<SyncResult> uploadChanges() async {
     // This should be implemented by subclasses
     return SyncResult(
       success: true,
@@ -117,7 +118,8 @@ abstract class SyncService {
   }
 
   /// Download changes from cloud
-  Future<SyncResult> _downloadChanges() async {
+  /// Subclasses should override this method to implement actual download logic
+  Future<SyncResult> downloadChanges() async {
     // This should be implemented by subclasses
     return SyncResult(
       success: true,
