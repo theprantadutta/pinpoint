@@ -103,6 +103,7 @@ class DriftNoteService {
               .replace(note.copyWith(
                 id: Value(previousNoteId),
                 isSynced: Value(false), // Mark as needing upload
+                isDeleted: Value(existingNote.isDeleted), // IMPORTANT: Preserve isDeleted flag
               ));
           return existingNote.id;
         }
