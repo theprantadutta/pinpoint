@@ -1435,6 +1435,10 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
           ),
           TextButton(
             onPressed: () async {
+              // IMPORTANT: Cancel auto-save timer BEFORE deleting
+              // to prevent race condition where auto-save overwrites isDeleted flag
+              _autoSaveTimer?.cancel();
+
               // Delete the note if it has an ID (i.e., it's been saved)
               if (widget.args?.existingNote != null) {
                 final noteId = widget.args!.existingNote!.note.id;
