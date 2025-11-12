@@ -16,6 +16,7 @@ class PremiumService extends ChangeNotifier {
   String _subscriptionType = 'free';
   DateTime? _expiresAt;
   DateTime? _gracePeriodEndsAt;
+  bool _isInitialized = false;
 
   bool get isPremium => _isPremium || _isInGracePeriod;
   bool get isInGracePeriod => _isInGracePeriod;
@@ -25,6 +26,12 @@ class PremiumService extends ChangeNotifier {
 
   /// Initialize the service
   Future<void> initialize() async {
+    // Prevent multiple initializations
+    if (_isInitialized) {
+      debugPrint('⏭️ [PremiumService] Already initialized, skipping...');
+      return;
+    }
+
     _prefs = await SharedPreferences.getInstance();
     await _loadPremiumStatus();
     await _checkMonthlyReset();
@@ -37,6 +44,9 @@ class PremiumService extends ChangeNotifier {
       debugPrint('⚠️ [PremiumService] Initial auto-reconcile failed: $e');
       // Don't block initialization if reconcile fails
     }
+
+    _isInitialized = true;
+    debugPrint('✅ [PremiumService] Initialization complete');
   }
 
   /// Load premium status from Subscription Manager and backend API
@@ -93,6 +103,7 @@ class PremiumService extends ChangeNotifier {
 
   /// Refresh premium status (call after purchase/restore)
   Future<void> refreshPremiumStatus() async {
+    debugPrint('🔄 [PremiumService] Manually refreshing premium status...');
     await _loadPremiumStatus();
   }
 
