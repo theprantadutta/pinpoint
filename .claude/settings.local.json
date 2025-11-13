@@ -1,13 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)",
-      "Bash(flutter analyze:*)",
-      "Bash(flutter pub get:*)",
-      "Bash(cat:*)",
-      "Bash(\"./venv/Scripts/python.exe\" -m alembic current)",
-      "Bash(\"./venv/Scripts/python.exe\":*)",
-      "Bash(dart run build_runner build:*)"
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

@@ -3,11 +3,15 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
+import 'package:pinpoint/screens/my_folders_screen.dart';
+import 'package:pinpoint/screens/subscription_screen.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import '../../design_system/design_system.dart';
 import '../../services/filter_service.dart';
 import '../../widgets/filter_bottom_sheet.dart';
+import '../../sync/sync_manager.dart';
+import '../../service_locators/init_service_locators.dart';
 
 class HomeScreenTopBar extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
@@ -158,27 +162,70 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
   }
 
   Widget _buildMenuButton(BuildContext context, ThemeData theme) {
+    final cs = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+
     return PopupMenuButton<String>(
       tooltip: 'More',
       position: PopupMenuPosition.under,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
       ),
-      onSelected: (value) {
+      color: dark
+          ? cs.surfaceContainerHighest.withValues(alpha: 0.95)
+          : cs.surface.withValues(alpha: 0.98),
+      elevation: 8,
+      onSelected: (value) async {
         if (value == 'archive') {
           context.push(ArchiveScreen.kRouteName);
         } else if (value == 'trash') {
           context.push(TrashScreen.kRouteName);
+        } else if (value == 'folders') {
+          context.push(MyFoldersScreen.kRouteName);
+        } else if (value == 'sync') {
+          // Trigger manual sync
+          await _performManualSync(context);
+        } else if (value == 'premium') {
+          context.push(SubscriptionScreen.kRouteName);
         }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-        const PopupMenuItem<String>(
-          value: 'archive',
-          child: Text('Archived'),
+        _buildMenuItem(
+          context: context,
+          value: 'folders',
+          icon: Symbols.folder,
+          label: 'My Folders',
+          color: cs.primary,
         ),
-        const PopupMenuItem<String>(
+        _buildMenuItem(
+          context: context,
+          value: 'archive',
+          icon: Symbols.archive,
+          label: 'Archived',
+          color: cs.tertiary,
+        ),
+        _buildMenuItem(
+          context: context,
           value: 'trash',
-          child: Text('Trash'),
+          icon: Symbols.delete,
+          label: 'Trash',
+          color: cs.error,
+        ),
+        const PopupMenuDivider(),
+        _buildMenuItem(
+          context: context,
+          value: 'sync',
+          icon: Symbols.sync,
+          label: 'Sync Now',
+          color: cs.secondary,
+        ),
+        _buildMenuItem(
+          context: context,
+          value: 'premium',
+          icon: Symbols.workspace_premium,
+          label: 'Upgrade to Premium',
+          color: Color(0xFFFFD700), // Gold color
+          fill: 1,
         ),
       ],
       child: GlassContainer(
@@ -187,5 +234,143 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
         child: const Icon(Symbols.menu),
       ),
     );
+  }
+
+  PopupMenuItem<String> _buildMenuItem({
+    required BuildContext context,
+    required String value,
+    required IconData icon,
+    required String label,
+    required Color color,
+    double fill = 0,
+  }) {
+    final theme = Theme.of(context);
+
+    return PopupMenuItem<String>(
+      value: value,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: color.withValues(alpha: 0.15),
+            ),
+            child: Center(
+              child: Icon(
+                icon,
+                color: color,
+                size: 20,
+                fill: fill,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performManualSync(BuildContext context) async {
+    if (!context.mounted) return;
+
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Show loading indicator
+    messenger.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(cs.onInverseSurface),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('Syncing...'),
+          ],
+        ),
+        duration: const Duration(seconds: 10),
+        backgroundColor: cs.inverseSurface,
+      ),
+    );
+
+    try {
+      final syncManager = getIt<SyncManager>();
+      final result = await syncManager.sync();
+
+      if (!context.mounted) return;
+
+      // Hide loading snackbar
+      messenger.hideCurrentSnackBar();
+
+      final totalSynced =
+          result.notesSynced + result.foldersSynced + result.tagsSynced;
+
+      // Show success message
+      messenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Symbols.check_circle,
+                color: cs.onInverseSurface,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                result.success
+                    ? (totalSynced > 0
+                        ? 'Synced ${result.notesSynced} notes, ${result.foldersSynced} folders'
+                        : 'Already up to date')
+                    : result.message,
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 3),
+          backgroundColor: cs.inverseSurface,
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      // Hide loading snackbar
+      messenger.hideCurrentSnackBar();
+
+      // Show error message
+      messenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Symbols.error,
+                color: cs.onErrorContainer,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('Sync failed: ${e.toString()}'),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 4),
+          backgroundColor: cs.errorContainer,
+        ),
+      );
+    }
   }
 }
