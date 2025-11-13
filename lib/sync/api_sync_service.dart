@@ -4,7 +4,6 @@ import 'package:drift/drift.dart';
 import '../database/database.dart';
 import '../services/api_service.dart';
 import '../services/encryption_service.dart';
-import '../services/drift_note_service.dart';
 import 'sync_service.dart';
 
 /// Cloud-based sync service using API backend
@@ -60,7 +59,8 @@ class ApiSyncService extends SyncService {
 
       for (final note in notesToSync) {
         try {
-          debugPrint('🔼 [ApiSync] Encrypting note ${note.id} (${note.noteType}): "${note.noteTitle}"');
+          debugPrint(
+              '🔼 [ApiSync] Encrypting note ${note.id} (${note.noteType}): "${note.noteTitle}"');
           final encryptedNote = await _serializeAndEncryptNote(note);
           encryptedNotes.add(encryptedNote);
           debugPrint('✅ [ApiSync] Note ${note.id} encrypted successfully');
@@ -136,7 +136,8 @@ class ApiSyncService extends SyncService {
         );
       }
 
-      debugPrint('📥 [ApiSync] Downloaded ${response.length} notes from server');
+      debugPrint(
+          '📥 [ApiSync] Downloaded ${response.length} notes from server');
 
       int successCount = 0;
       int conflictCount = 0;
@@ -144,33 +145,39 @@ class ApiSyncService extends SyncService {
       // Process each note
       for (final encryptedNote in response) {
         try {
-          final clientNoteId = encryptedNote['client_note_id'] as int;
+          final clientNoteUuid = encryptedNote['client_note_uuid'] as String;
           final encryptedData = encryptedNote['encrypted_data'] as String;
           final isDeleted = encryptedNote['is_deleted'] as bool? ?? false;
           final serverUpdatedAt = DateTime.parse(encryptedNote['updated_at']);
 
-          debugPrint('\n🔽 [ApiSync] Processing note $clientNoteId (deleted: $isDeleted)');
+          debugPrint(
+              '\n🔽 [ApiSync] Processing note $clientNoteUuid (deleted: $isDeleted)');
           debugPrint('🔽 [ApiSync] Server updated_at: $serverUpdatedAt');
 
-          // Check if note exists locally
-          final existingNote = await DriftNoteService.getSingleNote(clientNoteId);
-          debugPrint('🔽 [ApiSync] Local note ${existingNote != null ? "EXISTS" : "NOT FOUND"} (local updated: ${existingNote?.updatedAt})');
+          // Check if note exists locally by UUID
+          final existingNote = await _getNoteByUuid(clientNoteUuid);
+          debugPrint(
+              '🔽 [ApiSync] Local note ${existingNote != null ? "EXISTS" : "NOT FOUND"} (local updated: ${existingNote?.updatedAt})');
 
           if (existingNote != null) {
             // Conflict detection: compare timestamps
             // Only skip if local was modified AFTER the server version
             // AND local is more than 1 second newer (to account for clock skew)
-            final timeDiff = existingNote.updatedAt.difference(serverUpdatedAt).inSeconds;
+            final timeDiff =
+                existingNote.updatedAt.difference(serverUpdatedAt).inSeconds;
             if (timeDiff > 1) {
-              debugPrint('⚠️ [ApiSync] CONFLICT: local is ${timeDiff}s newer - keeping local version');
+              debugPrint(
+                  '⚠️ [ApiSync] CONFLICT: local is ${timeDiff}s newer - keeping local version');
               conflictCount++;
               // Keep local version (local wins)
               continue;
             } else {
-              debugPrint('✅ [ApiSync] Server version is newer or same - will update local');
+              debugPrint(
+                  '✅ [ApiSync] Server version is newer or same - will update local');
             }
           } else {
-            debugPrint('📝 [ApiSync] Note does not exist locally - will create new');
+            debugPrint(
+                '📝 [ApiSync] Note does not exist locally - will create new');
           }
 
           // Decrypt and deserialize note
@@ -181,22 +188,25 @@ class ApiSyncService extends SyncService {
           if (isDeleted) {
             // Soft-delete the note locally (mark as deleted but keep record)
             if (existingNote != null) {
-              debugPrint('🗑️ [ApiSync] Soft-deleting note $clientNoteId locally');
+              debugPrint(
+                  '🗑️ [ApiSync] Soft-deleting note $clientNoteUuid locally');
               await (_database.update(_database.notes)
-                    ..where((tbl) => tbl.id.equals(clientNoteId)))
+                    ..where((tbl) => tbl.uuid.equals(clientNoteUuid)))
                   .write(NotesCompanion(
                 isDeleted: Value(true),
                 updatedAt: Value(serverUpdatedAt),
-                isSynced: Value(true), // Mark as synced since we got it from server
+                isSynced:
+                    Value(true), // Mark as synced since we got it from server
               ));
               successCount++;
             } else {
               // Note doesn't exist locally, nothing to delete
-              debugPrint('ℹ️ [ApiSync] Note $clientNoteId doesn\'t exist locally, skipping deletion');
+              debugPrint(
+                  'ℹ️ [ApiSync] Note $clientNoteUuid doesn\'t exist locally, skipping deletion');
             }
           } else {
             // Update or create the note
-            await _applyNoteToDatabase(clientNoteId, noteData, serverUpdatedAt);
+            await _applyNoteToDatabase(clientNoteUuid, noteData, serverUpdatedAt);
             successCount++;
           }
         } catch (e) {
@@ -237,7 +247,8 @@ class ApiSyncService extends SyncService {
           ..where((tbl) => tbl.isSynced.equals(false)))
         .get();
 
-    debugPrint('🔼 [ApiSync] Found ${unsyncedNotes.length} unsynced notes to upload (including ${unsyncedNotes.where((n) => n.isDeleted).length} deleted)');
+    debugPrint(
+        '🔼 [ApiSync] Found ${unsyncedNotes.length} unsynced notes to upload (including ${unsyncedNotes.where((n) => n.isDeleted).length} deleted)');
     return unsyncedNotes;
   }
 
@@ -263,7 +274,7 @@ class ApiSyncService extends SyncService {
     };
 
     return {
-      'client_note_id': note.id,
+      'client_note_uuid': note.uuid,
       'encrypted_data': encryptedData,
       'metadata': metadata,
       'version': 1,
@@ -273,7 +284,7 @@ class ApiSyncService extends SyncService {
   /// Build complete note data structure with all related data
   Future<Map<String, dynamic>> _buildNoteDataStructure(Note note) async {
     final data = <String, dynamic>{
-      'id': note.id,
+      'uuid': note.uuid,
       'noteTitle': note.noteTitle,
       'noteType': note.noteType,
       'isPinned': note.isPinned,
@@ -313,7 +324,7 @@ class ApiSyncService extends SyncService {
 
         data['todoItems'] = todoItems
             .map((item) => {
-                  'id': item.id,
+                  'uuid': item.uuid,
                   'text': item.todoTitle,
                   'isDone': item.isDone,
                   'orderIndex': item.orderIndex,
@@ -332,20 +343,32 @@ class ApiSyncService extends SyncService {
         break;
     }
 
-    // Add folder relationships
-    final folderRelations = await (_database.select(_database.noteFolderRelations)
-          ..where((tbl) => tbl.noteId.equals(note.id)))
-        .get();
+    // Add folder relationships (using folder UUIDs)
+    final folderRelations =
+        await (_database.select(_database.noteFolderRelations)
+              ..where((tbl) => tbl.noteId.equals(note.id)))
+            .get();
 
     if (folderRelations.isNotEmpty) {
-      data['folderIds'] = folderRelations.map((rel) => rel.noteFolderId).toList();
+      // Get folder UUIDs for each relation
+      final folderUuids = <String>[];
+      for (final rel in folderRelations) {
+        final folder = await (_database.select(_database.noteFolders)
+              ..where((tbl) => tbl.noteFolderId.equals(rel.noteFolderId)))
+            .getSingleOrNull();
+        if (folder != null) {
+          folderUuids.add(folder.uuid);
+        }
+      }
+      data['folderUuids'] = folderUuids;
     }
 
     return data;
   }
 
   /// Decrypt and deserialize note from encrypted data
-  Future<Map<String, dynamic>> _decryptAndDeserializeNote(String encryptedData) async {
+  Future<Map<String, dynamic>> _decryptAndDeserializeNote(
+      String encryptedData) async {
     // Decrypt the data
     final jsonString = SecureEncryptionService.decrypt(encryptedData);
 
@@ -357,31 +380,36 @@ class ApiSyncService extends SyncService {
 
   /// Apply downloaded note to local database
   Future<void> _applyNoteToDatabase(
-    int clientNoteId,
+    String clientNoteUuid,
     Map<String, dynamic> noteData,
     DateTime serverUpdatedAt,
   ) async {
-    // Check if note exists
-    final existingNote = await DriftNoteService.getSingleNote(clientNoteId);
+    // Check if note exists by UUID
+    final existingNote = await _getNoteByUuid(clientNoteUuid);
 
     if (existingNote != null) {
       // Update existing note
-      await _updateExistingNote(clientNoteId, noteData, serverUpdatedAt);
+      await _updateExistingNote(clientNoteUuid, noteData, serverUpdatedAt);
     } else {
-      // Create new note with the client_note_id
-      await _createNoteFromData(clientNoteId, noteData);
+      // Create new note with the UUID
+      await _createNoteFromData(clientNoteUuid, noteData);
     }
   }
 
   /// Update existing note with downloaded data
   Future<void> _updateExistingNote(
-    int noteId,
+    String noteUuid,
     Map<String, dynamic> noteData,
     DateTime serverUpdatedAt,
   ) async {
-    // Update base note
+    // Get note ID from UUID for updating related tables
+    final note = await _getNoteByUuid(noteUuid);
+    if (note == null) return;
+    final noteId = note.id;
+
+    // Update base note by UUID
     await (_database.update(_database.notes)
-          ..where((tbl) => tbl.id.equals(noteId)))
+          ..where((tbl) => tbl.uuid.equals(noteUuid)))
         .write(
       NotesCompanion(
         noteTitle: Value(noteData['noteTitle'] as String?),
@@ -417,12 +445,14 @@ class ApiSyncService extends SyncService {
                 ..where((tbl) => tbl.noteId.equals(noteId)))
               .go();
 
-          // Insert new todo items
+          // Insert new todo items with UUIDs
           final items = noteData['todoItems'] as List;
           for (final item in items) {
             await _database.into(_database.noteTodoItems).insert(
                   NoteTodoItemsCompanion(
+                    uuid: Value(item['uuid'] as String),
                     noteId: Value(noteId),
+                    noteUuid: Value(noteUuid),
                     todoTitle: Value(item['text'] as String),
                     isDone: Value(item['isDone'] as bool),
                     orderIndex: Value(item['orderIndex'] as int),
@@ -439,113 +469,123 @@ class ApiSyncService extends SyncService {
               .write(
             ReminderNotesCompanion(
               description: Value(noteData['reminderDescription'] as String),
-              reminderTime: Value(DateTime.parse(noteData['reminderTime'] as String)),
+              reminderTime:
+                  Value(DateTime.parse(noteData['reminderTime'] as String)),
             ),
           );
         }
         break;
     }
 
-    // Update folder relationships
-    if (noteData.containsKey('folderIds')) {
-      final folderIds = (noteData['folderIds'] as List).cast<int>();
+    // Update folder relationships (using folder UUIDs)
+    if (noteData.containsKey('folderUuids')) {
+      final folderUuids = (noteData['folderUuids'] as List).cast<String>();
 
       // Delete existing folder relations
       await (_database.delete(_database.noteFolderRelations)
             ..where((tbl) => tbl.noteId.equals(noteId)))
           .go();
 
-      // Create new folder relations
-      for (final folderId in folderIds) {
-        await _database.into(_database.noteFolderRelations).insert(
-          NoteFolderRelationsCompanion(
-            noteId: Value(noteId),
-            noteFolderId: Value(folderId),
-          ),
-        );
+      // Create new folder relations by looking up folder IDs from UUIDs
+      for (final folderUuid in folderUuids) {
+        final folder = await (_database.select(_database.noteFolders)
+              ..where((tbl) => tbl.uuid.equals(folderUuid)))
+            .getSingleOrNull();
+
+        if (folder != null) {
+          await _database.into(_database.noteFolderRelations).insert(
+                NoteFolderRelationsCompanion(
+                  noteId: Value(noteId),
+                  noteFolderId: Value(folder.noteFolderId),
+                ),
+              );
+        }
       }
-      debugPrint('✅ [ApiSync] Updated ${folderIds.length} folder relations for note $noteId');
+      debugPrint(
+          '✅ [ApiSync] Updated ${folderUuids.length} folder relations for note $noteUuid');
     }
 
-    debugPrint('✅ [ApiSync] Updated note $noteId');
+    debugPrint('✅ [ApiSync] Updated note $noteUuid');
   }
 
   /// Create new note from downloaded data
   Future<void> _createNoteFromData(
-    int clientNoteId,
+    String clientNoteUuid,
     Map<String, dynamic> noteData,
   ) async {
     try {
-      debugPrint('📝 [ApiSync] Creating new note from server data (client_id: $clientNoteId)');
+      debugPrint(
+          '📝 [ApiSync] Creating new note from server data (uuid: $clientNoteUuid)');
 
       final noteType = noteData['noteType'] as String;
 
-      // WARNING: This creates a note with a NEW local ID, not the original client_note_id
-      // This means the same note will have different IDs on different devices
-      // For proper multi-device sync, we need UUID-based identifiers instead of autoincrement
-
-      // Create base note
+      // Create base note with the UUID from server
       final noteId = await _database.into(_database.notes).insert(
-        NotesCompanion(
-          noteTitle: Value(noteData['noteTitle'] as String?),
-          noteType: Value(noteType),
-          isPinned: Value(noteData['isPinned'] as bool? ?? false),
-          isArchived: Value(noteData['isArchived'] as bool? ?? false),
-          isDeleted: Value(noteData['isDeleted'] as bool? ?? false),
-          createdAt: Value(DateTime.parse(noteData['createdAt'] as String)),
-          updatedAt: Value(DateTime.parse(noteData['updatedAt'] as String)),
-          isSynced: Value(true), // Mark as synced since we got it from server
-        ),
-      );
+            NotesCompanion(
+              uuid: Value(clientNoteUuid),
+              noteTitle: Value(noteData['noteTitle'] as String?),
+              noteType: Value(noteType),
+              isPinned: Value(noteData['isPinned'] as bool? ?? false),
+              isArchived: Value(noteData['isArchived'] as bool? ?? false),
+              isDeleted: Value(noteData['isDeleted'] as bool? ?? false),
+              createdAt: Value(DateTime.parse(noteData['createdAt'] as String)),
+              updatedAt: Value(DateTime.parse(noteData['updatedAt'] as String)),
+              isSynced:
+                  Value(true), // Mark as synced since we got it from server
+            ),
+          );
 
       // Create type-specific data
       switch (noteType) {
         case 'text':
           if (noteData.containsKey('content')) {
             await _database.into(_database.textNotes).insert(
-              TextNotesCompanion(
-                noteId: Value(noteId),
-                content: Value(noteData['content'] as String?),
-              ),
-            );
+                  TextNotesCompanion(
+                    noteId: Value(noteId),
+                    content: Value(noteData['content'] as String?),
+                  ),
+                );
           }
           break;
 
         case 'audio':
           if (noteData.containsKey('audioFilePath')) {
             await _database.into(_database.audioNotes).insert(
-              AudioNotesCompanion(
-                noteId: Value(noteId),
-                audioFilePath: Value(noteData['audioFilePath'] as String),
-                durationSeconds: Value(noteData['audioDuration'] as int?),
-                recordedAt: Value(DateTime.parse(noteData['createdAt'] as String)),
-              ),
-            );
+                  AudioNotesCompanion(
+                    noteId: Value(noteId),
+                    audioFilePath: Value(noteData['audioFilePath'] as String),
+                    durationSeconds: Value(noteData['audioDuration'] as int?),
+                    recordedAt:
+                        Value(DateTime.parse(noteData['createdAt'] as String)),
+                  ),
+                );
           }
           break;
 
         case 'todo':
           // Create todo note entry
           await _database.into(_database.todoNotes).insert(
-            TodoNotesCompanion(
-              noteId: Value(noteId),
-              totalItems: Value(0),
-              completedItems: Value(0),
-            ),
-          );
+                TodoNotesCompanion(
+                  noteId: Value(noteId),
+                  totalItems: Value(0),
+                  completedItems: Value(0),
+                ),
+              );
 
-          // Create todo items
+          // Create todo items with UUIDs
           if (noteData.containsKey('todoItems')) {
             final items = noteData['todoItems'] as List;
             for (final item in items) {
               await _database.into(_database.noteTodoItems).insert(
-                NoteTodoItemsCompanion(
-                  noteId: Value(noteId),
-                  todoTitle: Value(item['text'] as String),
-                  isDone: Value(item['isDone'] as bool),
-                  orderIndex: Value(item['orderIndex'] as int),
-                ),
-              );
+                    NoteTodoItemsCompanion(
+                      uuid: Value(item['uuid'] as String),
+                      noteId: Value(noteId),
+                      noteUuid: Value(clientNoteUuid),
+                      todoTitle: Value(item['text'] as String),
+                      isDone: Value(item['isDone'] as bool),
+                      orderIndex: Value(item['orderIndex'] as int),
+                    ),
+                  );
             }
           }
           break;
@@ -553,32 +593,43 @@ class ApiSyncService extends SyncService {
         case 'reminder':
           if (noteData.containsKey('reminderTime')) {
             await _database.into(_database.reminderNotes).insert(
-              ReminderNotesCompanion(
-                noteId: Value(noteId),
-                description: Value(noteData['reminderDescription'] as String?),
-                reminderTime: Value(DateTime.parse(noteData['reminderTime'] as String)),
-              ),
-            );
+                  ReminderNotesCompanion(
+                    noteId: Value(noteId),
+                    description:
+                        Value(noteData['reminderDescription'] as String?),
+                    reminderTime: Value(
+                        DateTime.parse(noteData['reminderTime'] as String)),
+                  ),
+                );
           }
           break;
       }
 
-      // Create folder relationships
-      if (noteData.containsKey('folderIds')) {
-        final folderIds = (noteData['folderIds'] as List).cast<int>();
+      // Create folder relationships (using folder UUIDs)
+      if (noteData.containsKey('folderUuids')) {
+        final folderUuids = (noteData['folderUuids'] as List).cast<String>();
 
-        for (final folderId in folderIds) {
-          await _database.into(_database.noteFolderRelations).insert(
-            NoteFolderRelationsCompanion(
-              noteId: Value(noteId),
-              noteFolderId: Value(folderId),
-            ),
-          );
+        for (final folderUuid in folderUuids) {
+          // Look up folder ID from UUID
+          final folder = await (_database.select(_database.noteFolders)
+                ..where((tbl) => tbl.uuid.equals(folderUuid)))
+              .getSingleOrNull();
+
+          if (folder != null) {
+            await _database.into(_database.noteFolderRelations).insert(
+                  NoteFolderRelationsCompanion(
+                    noteId: Value(noteId),
+                    noteFolderId: Value(folder.noteFolderId),
+                  ),
+                );
+          }
         }
-        debugPrint('✅ [ApiSync] Created ${folderIds.length} folder relations for note $noteId');
+        debugPrint(
+            '✅ [ApiSync] Created ${folderUuids.length} folder relations for note $clientNoteUuid');
       }
 
-      debugPrint('✅ [ApiSync] Created note $noteId (from server client_id: $clientNoteId)');
+      debugPrint(
+          '✅ [ApiSync] Created note $clientNoteUuid');
     } catch (e, stackTrace) {
       debugPrint('❌ [ApiSync] Failed to create note: $e');
       debugPrint('Stack trace: $stackTrace');
@@ -590,5 +641,12 @@ class ApiSyncService extends SyncService {
     // Try to get from subscription manager or generate one
     // For now, use a simple approach
     return 'flutter_device_${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  /// Get note by UUID
+  Future<Note?> _getNoteByUuid(String uuid) async {
+    return await (_database.select(_database.notes)
+          ..where((tbl) => tbl.uuid.equals(uuid)))
+        .getSingleOrNull();
   }
 }

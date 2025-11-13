@@ -5,8 +5,12 @@ import 'package:drift/drift.dart';
 /// Type-specific data is stored in separate tables (TextNotes, AudioNotes, TodoNotes, ReminderNotes)
 @DataClassName('Note')
 class Notes extends Table {
-  /// Auto-incrementing primary key
+  /// Auto-incrementing primary key (for local use only)
   IntColumn get id => integer().autoIncrement()();
+
+  /// Globally unique identifier for sync
+  /// This UUID is generated on the client and used for cross-device sync
+  TextColumn get uuid => text().unique()();
 
   /// Optional title for the note
   TextColumn get noteTitle => text().nullable()();

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 import '../constants/shared_preference_keys.dart';
 import '../database/database.dart';
@@ -37,6 +38,7 @@ class DriftNoteFolderService {
 
     final now = Value(DateTime.now());
     final database = getIt<AppDatabase>();
+    const uuid = Uuid();
 
     await database.batch(
       (batch) {
@@ -44,6 +46,7 @@ class DriftNoteFolderService {
           database.noteFolders,
           _noteFolders.map(
             (folder) => NoteFoldersCompanion(
+              uuid: Value(uuid.v4()),
               noteFolderTitle: Value(folder),
               createdAt: now,
               updatedAt: now,
@@ -96,7 +99,9 @@ class DriftNoteFolderService {
     final database = getIt<AppDatabase>();
 
     final now = Value(DateTime.now());
+    const uuid = Uuid();
     final noteFolder = NoteFoldersCompanion(
+      uuid: Value(uuid.v4()),
       noteFolderTitle: Value(text),
       createdAt: now,
       updatedAt: now,

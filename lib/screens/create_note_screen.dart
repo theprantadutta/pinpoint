@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
 
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
 import '../components/create_note_screen/record_audio_type/record_type_content.dart';
@@ -139,7 +140,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
     debugPrint('Auto-save executing via background queue...');
 
     final now = DateTime.now();
+    const uuid = Uuid();
     final noteCompanion = db.NotesCompanion.insert(
+      uuid: uuid.v4(),
       noteTitle: drift.Value(title),
       isPinned: drift.Value(false),
       noteType: getNoteTypeDbValue(selectedNoteType),
@@ -205,7 +208,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       // Fire and forget - don't block UI or wait for result
       syncManager.upload().then((result) {
         if (result.success) {
-          debugPrint('✅ [Auto-Upload] Note uploaded successfully: ${result.message}');
+          debugPrint(
+              '✅ [Auto-Upload] Note uploaded successfully: ${result.message}');
         } else {
           debugPrint('⚠️ [Auto-Upload] Upload failed: ${result.message}');
         }
@@ -249,8 +253,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
 
       // CRITICAL: Update parent note's updated_at timestamp and mark as unsynced
       // This triggers Drift streams watching the notes table to refresh UI
-      await (database.update(database.notes)
-            ..where((n) => n.id.equals(noteId)))
+      await (database.update(database.notes)..where((n) => n.id.equals(noteId)))
           .write(db.NotesCompanion(
         updatedAt: drift.Value(DateTime.now()),
         isSynced: drift.Value(false), // Mark as needing upload
@@ -336,8 +339,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       // CRITICAL: Update parent note's updated_at timestamp
       // This triggers Drift streams watching the notes table to refresh UI
       final database = getIt<db.AppDatabase>();
-      await (database.update(database.notes)
-            ..where((n) => n.id.equals(noteId)))
+      await (database.update(database.notes)..where((n) => n.id.equals(noteId)))
           .write(db.NotesCompanion(
         updatedAt: drift.Value(DateTime.now()),
       ));
@@ -385,7 +387,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       // App going to background or being terminated - trigger save via queue
-      debugPrint('[Lifecycle] App state changed to $state, triggering save via queue');
+      debugPrint(
+          '[Lifecycle] App state changed to $state, triggering save via queue');
 
       // Cancel any pending auto-save timer
       _autoSaveTimer?.cancel();
@@ -414,7 +417,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
 
     try {
       final now = DateTime.now();
+      const uuid = Uuid();
       final noteCompanion = db.NotesCompanion.insert(
+        uuid: uuid.v4(),
         noteTitle: drift.Value(title),
         isPinned: drift.Value(false),
         noteType: getNoteTypeDbValue(selectedNoteType),
@@ -493,7 +498,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       }
 
       final now = DateTime.now();
+      const uuid = Uuid();
       final noteCompanion = db.NotesCompanion.insert(
+        uuid: uuid.v4(),
         noteTitle: drift.Value(title),
         isPinned: drift.Value(false),
         noteType: getNoteTypeDbValue(selectedNoteType),
@@ -590,7 +597,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       }
 
       // Save folders
-      final foldersResult = await DriftNoteFolderService.upsertNoteFoldersWithNote(
+      final foldersResult =
+          await DriftNoteFolderService.upsertNoteFoldersWithNote(
         selectedFolders,
         noteId,
       );
@@ -715,7 +723,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
             ),
             onPressed: () async {
               PinpointHaptics.light();
-              debugPrint('[HeaderBackButton] Back button clicked, triggering save...');
+              debugPrint(
+                  '[HeaderBackButton] Back button clicked, triggering save...');
 
               // Cancel pending auto-save timer
               _autoSaveTimer?.cancel();
@@ -955,8 +964,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
                 value: 'usage',
                 child: Row(
                   children: [
-                    Icon(Icons.analytics_outlined,
-                        size: 20, color: cs.primary),
+                    Icon(Icons.analytics_outlined, size: 20, color: cs.primary),
                     const SizedBox(width: 12),
                     const Text('Usage'),
                   ],
@@ -1883,11 +1891,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
             _buildInfoItem('Last Modified', _formatDateTime(note.updatedAt),
                 Icons.update_rounded, cs),
             const SizedBox(height: 16),
-            _buildInfoItem(
-                'Note Type',
-                _getLabelForNoteType(note.noteType),
-                Icons.category_rounded,
-                cs),
+            _buildInfoItem('Note Type', _getLabelForNoteType(note.noteType),
+                Icons.category_rounded, cs),
             const SizedBox(height: 16),
             _buildInfoItem('Folders', '${selectedFolders.length}',
                 Icons.folder_rounded, cs),
