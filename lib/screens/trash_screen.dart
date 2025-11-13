@@ -6,6 +6,7 @@ import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../design_system/design_system.dart';
 import '../services/filter_service.dart';
 
@@ -155,9 +156,21 @@ class _TrashScreenState extends State<TrashScreen> {
                                     );
                                   },
                                   onRestore: () async {
-                                    PinpointHaptics.light();
-                                    await DriftNoteService.restoreNoteById(
-                                        n.id);
+                                    final confirmed = await ConfirmSheet.show(
+                                      context: context,
+                                      title: 'Restore note?',
+                                      message:
+                                          'This note will be moved back to your notes.',
+                                      primaryLabel: 'Restore',
+                                      secondaryLabel: 'Cancel',
+                                      isDestructive: false,
+                                      icon: Icons.restore_from_trash_rounded,
+                                    );
+                                    if (confirmed == true) {
+                                      PinpointHaptics.light();
+                                      await DriftNoteService.restoreNoteById(
+                                          n.id);
+                                    }
                                   },
                                   onDelete: () async {
                                     final confirmed = await ConfirmSheet.show(
@@ -211,6 +224,42 @@ class _TrashedNoteCard extends StatefulWidget {
 class _TrashedNoteCardState extends State<_TrashedNoteCard> {
   bool _pressed = false;
 
+  IconData _getNoteTypeIcon(String noteType) {
+    switch (noteType) {
+      case 'title_content':
+        return Icons.description_rounded;
+      case 'todo_list':
+        return Icons.checklist_rounded;
+      case 'voice_recording':
+        return Icons.mic_rounded;
+      case 'reminder':
+        return Icons.alarm_rounded;
+      case 'drawing':
+        return Icons.brush_rounded;
+      default:
+        return Icons.note_rounded;
+    }
+  }
+
+  String _getRelativeTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inSeconds < 60) {
+      return 'just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inDays < 30) {
+      return '${(difference.inDays / 7).floor()}w ago';
+    } else {
+      return DateFormat('MMM d').format(dateTime);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -249,8 +298,8 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        cs.error.withAlpha(dark ? 56 : 40),
-                        cs.error.withAlpha(dark ? 25 : 20),
+                        cs.surfaceContainerHighest.withAlpha(dark ? 80 : 120),
+                        cs.surfaceContainerHighest.withAlpha(dark ? 40 : 60),
                       ],
                     ),
                     border: Border.all(
@@ -259,8 +308,8 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
                   ),
                   child: Center(
                     child: Icon(
-                      Icons.delete_rounded,
-                      color: cs.error,
+                      _getNoteTypeIcon(n.noteType),
+                      color: cs.onSurfaceVariant,
                       size: 22,
                     ),
                   ),
@@ -272,6 +321,7 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Title
                       if ((n.noteTitle ?? '').isNotEmpty)
                         Text(
                           n.noteTitle!,
@@ -282,19 +332,94 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
                             letterSpacing: -0.1,
                           ),
                         ),
-                      // TODO: Load and display content from TextNotes table
-                      // if ((content ?? '').isNotEmpty)
-                      //   Padding(
-                      //     padding: const EdgeInsets.only(top: 4),
-                      //     child: Text(
-                      //       content!,
-                      //       maxLines: 2,
-                      //       overflow: TextOverflow.ellipsis,
-                      //       style: theme.textTheme.bodyMedium?.copyWith(
-                      //         color: cs.onSurface.withAlpha(200),
-                      //       ),
-                      //     ),
-                      //   ),
+
+                      // Content preview
+                      if ((widget.note.textContent ?? '').isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            widget.note.textContent!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: cs.onSurface.withAlpha(180),
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+
+                      // Metadata row
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Wrap(
+                          spacing: 12,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            // Deletion timestamp
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 13,
+                                  color: cs.error.withAlpha(180),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Deleted ${_getRelativeTime(n.updatedAt)}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: cs.error.withAlpha(180),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            // Todo items count
+                            if (widget.note.todoItems.isNotEmpty)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.checklist_rounded,
+                                    size: 13,
+                                    color: cs.onSurface.withAlpha(120),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${widget.note.todoItems.length}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: cs.onSurface.withAlpha(120),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                            // Attachments count
+                            if (widget.note.attachments.isNotEmpty)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.attach_file_rounded,
+                                    size: 13,
+                                    color: cs.onSurface.withAlpha(120),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${widget.note.attachments.length}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: cs.onSurface.withAlpha(120),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
