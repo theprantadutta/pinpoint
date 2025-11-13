@@ -92,8 +92,10 @@ class BackendAuthService extends ChangeNotifier {
   /// Authenticate with Firebase token (Google Sign-In)
   Future<void> authenticateWithGoogle(String firebaseToken) async {
     try {
-      debugPrint('🔐 [BackendAuthService] Authenticating with Firebase token...');
-      final response = await _apiService.authenticateWithFirebase(firebaseToken);
+      debugPrint(
+          '🔐 [BackendAuthService] Authenticating with Firebase token...');
+      final response =
+          await _apiService.authenticateWithFirebase(firebaseToken);
       debugPrint('✅ [BackendAuthService] Authentication response received');
       debugPrint('   - Response keys: ${response.keys}');
 

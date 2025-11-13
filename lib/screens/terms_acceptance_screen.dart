@@ -142,7 +142,8 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
                     ),
 
                     // Acceptance section (only if not view-only mode)
-                    if (!widget.isViewOnly) _buildAcceptanceSection(colorScheme, isDark),
+                    if (!widget.isViewOnly)
+                      _buildAcceptanceSection(colorScheme, isDark),
                   ],
                 ),
         ),
@@ -152,66 +153,66 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
 
   Widget _buildMarkdownView(String content, bool isDark) {
     return Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.black.withValues(alpha: 0.3)
+            : Colors.white.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
           color: isDark
-              ? Colors.black.withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.1),
-          ),
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.1),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Markdown(
-            data: content,
-            padding: const EdgeInsets.all(20),
-            styleSheet: MarkdownStyleSheet(
-              h1: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: isDark
-                    ? PinpointColors.darkTextPrimary
-                    : PinpointColors.lightTextPrimary,
-              ),
-              h2: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDark
-                    ? PinpointColors.darkTextPrimary
-                    : PinpointColors.lightTextPrimary,
-              ),
-              h3: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? PinpointColors.darkTextPrimary
-                    : PinpointColors.lightTextPrimary,
-              ),
-              p: TextStyle(
-                fontSize: 14,
-                height: 1.6,
-                color: isDark
-                    ? PinpointColors.darkTextSecondary
-                    : PinpointColors.lightTextSecondary,
-              ),
-              listBullet: TextStyle(
-                color: isDark
-                    ? PinpointColors.darkTextSecondary
-                    : PinpointColors.lightTextSecondary,
-              ),
-              strong: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isDark
-                    ? PinpointColors.darkTextPrimary
-                    : PinpointColors.lightTextPrimary,
-              ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Markdown(
+          data: content,
+          padding: const EdgeInsets.all(20),
+          styleSheet: MarkdownStyleSheet(
+            h1: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: isDark
+                  ? PinpointColors.darkTextPrimary
+                  : PinpointColors.lightTextPrimary,
+            ),
+            h2: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: isDark
+                  ? PinpointColors.darkTextPrimary
+                  : PinpointColors.lightTextPrimary,
+            ),
+            h3: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: isDark
+                  ? PinpointColors.darkTextPrimary
+                  : PinpointColors.lightTextPrimary,
+            ),
+            p: TextStyle(
+              fontSize: 14,
+              height: 1.6,
+              color: isDark
+                  ? PinpointColors.darkTextSecondary
+                  : PinpointColors.lightTextSecondary,
+            ),
+            listBullet: TextStyle(
+              color: isDark
+                  ? PinpointColors.darkTextSecondary
+                  : PinpointColors.lightTextSecondary,
+            ),
+            strong: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isDark
+                  ? PinpointColors.darkTextPrimary
+                  : PinpointColors.lightTextPrimary,
             ),
           ),
         ),
+      ),
     );
   }
 

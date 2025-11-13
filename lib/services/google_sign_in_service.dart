@@ -53,7 +53,8 @@ class GoogleSignInService {
       // Check if authentication is supported on this platform
       if (_googleSignIn.supportsAuthenticate()) {
         // Use authenticate method for supported platforms
-        final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
+        final GoogleSignInAccount googleUser =
+            await _googleSignIn.authenticate();
 
         log.i('Google user signed in: ${googleUser.email}');
 
@@ -73,7 +74,8 @@ class GoogleSignInService {
         log.i('Creating Firebase credential...');
 
         // Sign in to Firebase with the credential
-        final UserCredential result = await _auth.signInWithCredential(credential);
+        final UserCredential result =
+            await _auth.signInWithCredential(credential);
 
         if (result.user != null) {
           log.i('Firebase sign-in successful: ${result.user!.uid}');
@@ -85,7 +87,8 @@ class GoogleSignInService {
         return null;
       }
     } on FirebaseAuthException catch (e) {
-      log.e('Firebase Auth error during Google Sign-In: ${e.code} - ${e.message}');
+      log.e(
+          'Firebase Auth error during Google Sign-In: ${e.code} - ${e.message}');
       rethrow;
     } catch (e, stackTrace) {
       log.e('Error signing in with Google', e, stackTrace);

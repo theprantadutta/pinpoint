@@ -49,7 +49,8 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint('🔄 [Auth] Starting initial sync to restore data...');
 
       // Initialize sync manager with API sync service (now that we're authenticated)
-      debugPrint('🔄 [Auth] Initializing Sync Manager with authenticated API service...');
+      debugPrint(
+          '🔄 [Auth] Initializing Sync Manager with authenticated API service...');
       final syncManager = getIt<SyncManager>();
       final database = getIt<AppDatabase>();
 
@@ -61,7 +62,8 @@ class _AuthScreenState extends State<AuthScreen> {
       // Set the sync service (allows re-initialization on subsequent logins)
       syncManager.setSyncService(apiSyncService);
       await syncManager.init(syncService: apiSyncService);
-      debugPrint('✅ [Auth] Sync Manager initialized with authenticated API service');
+      debugPrint(
+          '✅ [Auth] Sync Manager initialized with authenticated API service');
 
       SyncResult? result;
 
@@ -103,7 +105,8 @@ class _AuthScreenState extends State<AuthScreen> {
         if (result.notesSynced > 0) {
           debugPrint('   - ✅ Restored ${result.notesSynced} notes from cloud');
         } else {
-          debugPrint('   - ⚠️ No notes were synced (cloud might be empty or decryption failed)');
+          debugPrint(
+              '   - ⚠️ No notes were synced (cloud might be empty or decryption failed)');
         }
         return true;
       } else {
@@ -215,46 +218,57 @@ class _AuthScreenState extends State<AuthScreen> {
 
       debugPrint('✅ [Google Sign-In] Step 2 Complete: Got Firebase token');
       debugPrint('   - Token length: ${firebaseToken.length}');
-      debugPrint('   - Token preview: ${firebaseToken.substring(0, firebaseToken.length > 100 ? 100 : firebaseToken.length)}...');
+      debugPrint(
+          '   - Token preview: ${firebaseToken.substring(0, firebaseToken.length > 100 ? 100 : firebaseToken.length)}...');
 
       // 3. Authenticate with backend using Firebase token
       debugPrint('🔵 [Google Sign-In] Step 3: Authenticating with backend...');
       try {
         await backendAuthService.authenticateWithGoogle(firebaseToken);
-        debugPrint('✅ [Google Sign-In] Step 3 Complete: Backend authentication successful');
+        debugPrint(
+            '✅ [Google Sign-In] Step 3 Complete: Backend authentication successful');
 
         // 4. Register FCM token with backend now that user is authenticated
         debugPrint('🔵 [Google Sign-In] Step 4: Registering FCM token...');
         try {
           final firebaseNotifications = FirebaseNotificationService();
           await firebaseNotifications.registerTokenWithBackend();
-          debugPrint('✅ [Google Sign-In] Step 4 Complete: FCM token registered');
+          debugPrint(
+              '✅ [Google Sign-In] Step 4 Complete: FCM token registered');
         } catch (e) {
-          debugPrint('⚠️ [Google Sign-In] Failed to register FCM token (non-critical): $e');
+          debugPrint(
+              '⚠️ [Google Sign-In] Failed to register FCM token (non-critical): $e');
         }
 
         // 5. Force sync encryption key from cloud
-        debugPrint('🔵 [Google Sign-In] Step 5: Syncing encryption key from cloud...');
+        debugPrint(
+            '🔵 [Google Sign-In] Step 5: Syncing encryption key from cloud...');
         try {
           final apiService = ApiService();
-          final syncSuccess = await SecureEncryptionService.syncKeyFromCloud(apiService);
+          final syncSuccess =
+              await SecureEncryptionService.syncKeyFromCloud(apiService);
 
           if (syncSuccess) {
-            debugPrint('✅ [Google Sign-In] Step 5 Complete: Encryption key synced from cloud');
+            debugPrint(
+                '✅ [Google Sign-In] Step 5 Complete: Encryption key synced from cloud');
           } else {
-            debugPrint('⚠️ [Google Sign-In] Cloud key sync returned false, initializing encryption locally...');
+            debugPrint(
+                '⚠️ [Google Sign-In] Cloud key sync returned false, initializing encryption locally...');
             // Fallback: Initialize encryption locally
             // This ensures encryption is initialized even if cloud sync fails
             if (!SecureEncryptionService.isInitialized) {
               await SecureEncryptionService.initialize(apiService: apiService);
-              debugPrint('✅ [Google Sign-In] Encryption initialized locally as fallback');
+              debugPrint(
+                  '✅ [Google Sign-In] Encryption initialized locally as fallback');
             }
           }
         } catch (e) {
-          debugPrint('❌ [Google Sign-In] Encryption key sync failed with exception: $e');
+          debugPrint(
+              '❌ [Google Sign-In] Encryption key sync failed with exception: $e');
           // Critical fallback: Initialize encryption locally
           if (!SecureEncryptionService.isInitialized) {
-            debugPrint('🔑 [Google Sign-In] Initializing encryption locally after failure...');
+            debugPrint(
+                '🔑 [Google Sign-In] Initializing encryption locally after failure...');
             await SecureEncryptionService.initialize(apiService: ApiService());
             debugPrint('✅ [Google Sign-In] Encryption initialized locally');
           }
@@ -266,7 +280,8 @@ class _AuthScreenState extends State<AuthScreen> {
         debugPrint('✅ [Google Sign-In] Step 6 Complete: Sync finished');
 
         // Success! Navigate to home
-        debugPrint('🎉 [Google Sign-In] Authentication flow complete! Navigating to home...');
+        debugPrint(
+            '🎉 [Google Sign-In] Authentication flow complete! Navigating to home...');
         if (mounted) {
           context.go(HomeScreen.kRouteName);
         }
@@ -332,24 +347,29 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint('🔵 [Email Auth] Syncing encryption key from cloud...');
       try {
         final apiService = ApiService();
-        final syncSuccess = await SecureEncryptionService.syncKeyFromCloud(apiService);
+        final syncSuccess =
+            await SecureEncryptionService.syncKeyFromCloud(apiService);
 
         if (syncSuccess) {
           debugPrint('✅ [Email Auth] Encryption key synced from cloud');
         } else {
-          debugPrint('⚠️ [Email Auth] Cloud key sync returned false, initializing encryption locally...');
+          debugPrint(
+              '⚠️ [Email Auth] Cloud key sync returned false, initializing encryption locally...');
           // Fallback: Initialize encryption locally
           // This ensures encryption is initialized even if cloud sync fails
           if (!SecureEncryptionService.isInitialized) {
             await SecureEncryptionService.initialize(apiService: apiService);
-            debugPrint('✅ [Email Auth] Encryption initialized locally as fallback');
+            debugPrint(
+                '✅ [Email Auth] Encryption initialized locally as fallback');
           }
         }
       } catch (e) {
-        debugPrint('❌ [Email Auth] Encryption key sync failed with exception: $e');
+        debugPrint(
+            '❌ [Email Auth] Encryption key sync failed with exception: $e');
         // Critical fallback: Initialize encryption locally
         if (!SecureEncryptionService.isInitialized) {
-          debugPrint('🔑 [Email Auth] Initializing encryption locally after failure...');
+          debugPrint(
+              '🔑 [Email Auth] Initializing encryption locally after failure...');
           await SecureEncryptionService.initialize(apiService: ApiService());
           debugPrint('✅ [Email Auth] Encryption initialized locally');
         }
@@ -495,8 +515,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
                           ),
                           onPressed: () {
                             setState(() {
@@ -560,20 +580,20 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       ),
                       child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              _isLogin ? 'Log In' : 'Sign Up',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          )
-                        : Text(
-                            _isLogin ? 'Log In' : 'Sign Up',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                     ),
                   ],
                 ),
@@ -587,21 +607,21 @@ class _AuthScreenState extends State<AuthScreen> {
                 children: [
                   Text(
                     _isLogin
-                      ? "Don't have an account? "
-                      : 'Already have an account? ',
+                        ? "Don't have an account? "
+                        : 'Already have an account? ',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: cs.onSurfaceVariant,
                     ),
                   ),
                   TextButton(
                     onPressed: _isLoading
-                      ? null
-                      : () {
-                          setState(() {
-                            _isLogin = !_isLogin;
-                            _errorMessage = null;
-                          });
-                        },
+                        ? null
+                        : () {
+                            setState(() {
+                              _isLogin = !_isLogin;
+                              _errorMessage = null;
+                            });
+                          },
                     child: Text(
                       _isLogin ? 'Sign Up' : 'Log In',
                       style: TextStyle(
@@ -634,20 +654,20 @@ class _AuthScreenState extends State<AuthScreen> {
       child: FilledButton.tonalIcon(
         onPressed: _isLoading ? null : _handleGoogleSignIn,
         icon: _isLoading
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Image.asset(
-              'assets/images/google_logo.png',
-              height: 24,
-              width: 24,
-              errorBuilder: (context, error, stackTrace) {
-                // Fallback to icon if image not found
-                return const Icon(Icons.g_mobiledata, size: 24);
-              },
-            ),
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Image.asset(
+                'assets/images/google_logo.png',
+                height: 24,
+                width: 24,
+                errorBuilder: (context, error, stackTrace) {
+                  // Fallback to icon if image not found
+                  return const Icon(Icons.g_mobiledata, size: 24);
+                },
+              ),
         label: Text(
           'Continue with Google',
           style: const TextStyle(

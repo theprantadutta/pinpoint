@@ -8,7 +8,8 @@ import 'note.dart';
 class TextNotes extends Table {
   /// Foreign key to Notes table
   /// CASCADE DELETE: When note is deleted, this text note data is also deleted
-  IntColumn get noteId => integer().references(Notes, #id, onDelete: KeyAction.cascade)();
+  IntColumn get noteId =>
+      integer().references(Notes, #id, onDelete: KeyAction.cascade)();
 
   /// The actual text content of the note
   TextColumn get content => text().nullable()();

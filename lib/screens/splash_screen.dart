@@ -57,20 +57,21 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Navigate to onboarding if not completed
     if (!hasCompletedOnboarding) {
-      debugPrint('🔵 [Splash] User has not completed onboarding, navigating to onboarding screen');
+      debugPrint(
+          '🔵 [Splash] User has not completed onboarding, navigating to onboarding screen');
       context.go(OnboardingScreen.kRouteName);
       return;
     }
 
     // Check if user has accepted terms
-    final hasAcceptedTerms =
-        preferences.getBool(kHasAcceptedTermsKey) ?? false;
+    final hasAcceptedTerms = preferences.getBool(kHasAcceptedTermsKey) ?? false;
 
     if (!mounted) return;
 
     // Navigate to terms acceptance if not accepted
     if (!hasAcceptedTerms) {
-      debugPrint('🔵 [Splash] User has not accepted terms, navigating to terms screen');
+      debugPrint(
+          '🔵 [Splash] User has not accepted terms, navigating to terms screen');
       context.go(TermsAcceptanceScreen.kRouteName);
       return;
     }
@@ -92,37 +93,43 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     // Navigate based on authentication status
-    debugPrint('🔵 [Splash] Authentication status: ${backendAuth.isAuthenticated}');
+    debugPrint(
+        '🔵 [Splash] Authentication status: ${backendAuth.isAuthenticated}');
     if (backendAuth.isAuthenticated) {
       debugPrint('✅ [Splash] User is authenticated');
 
       // Initialize encryption service with cloud sync (CRITICAL: Do this BEFORE any sync)
       _updateStatus('Setting up encryption...');
-      debugPrint('🔑 [Splash] Initializing encryption service with cloud sync...');
+      debugPrint(
+          '🔑 [Splash] Initializing encryption service with cloud sync...');
       try {
         final apiService = ApiService();
 
         // First check if encryption is already initialized
         if (!SecureEncryptionService.isInitialized) {
-          debugPrint('🔑 [Splash] Encryption not initialized, fetching from cloud...');
+          debugPrint(
+              '🔑 [Splash] Encryption not initialized, fetching from cloud...');
           await SecureEncryptionService.syncKeyFromCloud(apiService);
           debugPrint('✅ [Splash] Encryption initialized with cloud key');
         } else {
-          debugPrint('⚠️ [Splash] Encryption already initialized, syncing from cloud anyway...');
+          debugPrint(
+              '⚠️ [Splash] Encryption already initialized, syncing from cloud anyway...');
           await SecureEncryptionService.syncKeyFromCloud(apiService);
         }
       } catch (e) {
         debugPrint('❌ [Splash] Failed to initialize encryption: $e');
         // Try to initialize without cloud sync as fallback
         if (!SecureEncryptionService.isInitialized) {
-          debugPrint('🔑 [Splash] Falling back to local-only encryption initialization');
+          debugPrint(
+              '🔑 [Splash] Falling back to local-only encryption initialization');
           await SecureEncryptionService.initialize();
         }
       }
 
       // Initialize sync manager with authenticated API service
       _updateStatus('Initializing sync...');
-      debugPrint('🔄 [Splash] Initializing Sync Manager with authenticated API service...');
+      debugPrint(
+          '🔄 [Splash] Initializing Sync Manager with authenticated API service...');
       try {
         final syncManager = getIt<SyncManager>();
         final database = getIt<AppDatabase>();
@@ -149,11 +156,13 @@ class _SplashScreenState extends State<SplashScreen> {
         final unsyncedCount = unsyncedNotes.length;
         final deletedCount = unsyncedNotes.where((n) => n.isDeleted).length;
 
-        debugPrint('🔵 [Splash] Found ${notes.length} local notes ($unsyncedCount unsynced, $deletedCount deleted)');
+        debugPrint(
+            '🔵 [Splash] Found ${notes.length} local notes ($unsyncedCount unsynced, $deletedCount deleted)');
 
         if (notes.isEmpty || unsyncedCount > 0) {
           // No local notes OR unsynced notes - attempt sync
-          debugPrint('🔄 [Splash] Syncing ${notes.isEmpty ? "from" : "with"} cloud ($unsyncedCount unsynced)...');
+          debugPrint(
+              '🔄 [Splash] Syncing ${notes.isEmpty ? "from" : "with"} cloud ($unsyncedCount unsynced)...');
 
           if (!mounted) return;
 
@@ -173,8 +182,10 @@ class _SplashScreenState extends State<SplashScreen> {
             await Future.delayed(const Duration(milliseconds: 200));
 
             if (result.success && result.notesSynced > 0) {
-              _updateStatus('Restored ${result.notesSynced} notes', progress: 1.0);
-              debugPrint('✅ [Splash] Synced ${result.notesSynced} notes from cloud');
+              _updateStatus('Restored ${result.notesSynced} notes',
+                  progress: 1.0);
+              debugPrint(
+                  '✅ [Splash] Synced ${result.notesSynced} notes from cloud');
               await Future.delayed(const Duration(milliseconds: 500));
             } else {
               debugPrint('ℹ️ [Splash] No notes to sync from cloud');
@@ -216,11 +227,13 @@ class _SplashScreenState extends State<SplashScreen> {
       debugPrint('✅ [Splash] Navigating to home');
       context.go(HomeScreen.kRouteName);
     } else {
-      debugPrint('⚠️ [Splash] User is not authenticated, navigating to auth screen');
+      debugPrint(
+          '⚠️ [Splash] User is not authenticated, navigating to auth screen');
 
       // Initialize encryption without cloud sync (will be synced after login)
       if (!SecureEncryptionService.isInitialized) {
-        debugPrint('🔑 [Splash] Initializing encryption for unauthenticated user');
+        debugPrint(
+            '🔑 [Splash] Initializing encryption for unauthenticated user');
         await SecureEncryptionService.initialize();
       }
 
@@ -258,7 +271,7 @@ class _SplashScreenState extends State<SplashScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: colorScheme.primary.withOpacity(0.2),
+                            color: colorScheme.primary.withValues(alpha: 0.2),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -320,7 +333,8 @@ class _SplashScreenState extends State<SplashScreen> {
                           child: LinearProgressIndicator(
                             value: _syncProgress,
                             minHeight: 8,
-                            backgroundColor: colorScheme.surfaceContainerHighest,
+                            backgroundColor:
+                                colorScheme.surfaceContainerHighest,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               colorScheme.primary,
                             ),

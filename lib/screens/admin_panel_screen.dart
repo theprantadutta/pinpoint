@@ -207,7 +207,8 @@ class _UserCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: isPremium ? PinpointColors.mint : cs.primaryContainer,
+          backgroundColor:
+              isPremium ? PinpointColors.mint : cs.primaryContainer,
           child: Icon(
             isPremium ? Icons.workspace_premium : Icons.person,
             color: isPremium ? Colors.white : cs.onPrimaryContainer,
@@ -264,9 +265,8 @@ class _PaginationControls extends StatelessWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.chevron_left),
-            onPressed: currentPage > 1
-                ? () => onPageChanged(currentPage - 1)
-                : null,
+            onPressed:
+                currentPage > 1 ? () => onPageChanged(currentPage - 1) : null,
           ),
           const SizedBox(width: 16),
           Text('Page $currentPage of $totalPages'),

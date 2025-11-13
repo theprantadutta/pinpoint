@@ -102,13 +102,12 @@ class BackgroundSaveQueueService {
           debugPrint('[SaveQueue] Save failed for note: $noteKey');
           _totalFailed++;
           completer.complete(SaveResult(
-              success: false,
-              noteId: 0,
-              reason: 'Database save returned 0'));
+              success: false, noteId: 0, reason: 'Database save returned 0'));
         } else {
           // Save folder assignments if provided
           if (folders != null && folders.isNotEmpty) {
-            debugPrint('[SaveQueue] Saving folder assignments for note: $noteKey');
+            debugPrint(
+                '[SaveQueue] Saving folder assignments for note: $noteKey');
             await DriftNoteFolderService.upsertNoteFoldersWithNote(
               folders,
               noteId,

@@ -157,7 +157,8 @@ class ApiService {
       String firebaseToken) async {
     try {
       _logger.i('🔐 Authenticating with Firebase token...');
-      _logger.d('Firebase token (first 50 chars): ${firebaseToken.substring(0, firebaseToken.length > 50 ? 50 : firebaseToken.length)}...');
+      _logger.d(
+          'Firebase token (first 50 chars): ${firebaseToken.substring(0, firebaseToken.length > 50 ? 50 : firebaseToken.length)}...');
 
       final response = await _dio.post(
         '/auth/firebase',
@@ -174,7 +175,8 @@ class ApiService {
 
       return response.data;
     } on DioException catch (e) {
-      _logger.e('❌ Firebase authentication failed with status: ${e.response?.statusCode}');
+      _logger.e(
+          '❌ Firebase authentication failed with status: ${e.response?.statusCode}');
       _logger.e('Error type: ${e.type}');
       _logger.e('Error message: ${e.message}');
 

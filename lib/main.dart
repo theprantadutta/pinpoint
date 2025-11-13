@@ -68,7 +68,8 @@ void main() async {
     // Encryption will be initialized in:
     // 1. Splash screen (if authenticated)
     // 2. Auth screen (after successful login)
-    debugPrint('🔑 [main.dart] Skipping encryption initialization - will initialize after auth check');
+    debugPrint(
+        '🔑 [main.dart] Skipping encryption initialization - will initialize after auth check');
 
     // Run the main app
     runApp(const MyApp());

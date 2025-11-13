@@ -66,7 +66,8 @@ class PremiumService extends ChangeNotifier {
         _isInGracePeriod = statusResponse['is_in_grace_period'] ?? false;
 
         if (statusResponse['grace_period_ends_at'] != null) {
-          _gracePeriodEndsAt = DateTime.parse(statusResponse['grace_period_ends_at']);
+          _gracePeriodEndsAt =
+              DateTime.parse(statusResponse['grace_period_ends_at']);
         }
 
         // Update from backend if available (more authoritative)
@@ -75,7 +76,8 @@ class PremiumService extends ChangeNotifier {
         }
 
         if (statusResponse['subscription_expires_at'] != null) {
-          _expiresAt = DateTime.parse(statusResponse['subscription_expires_at']);
+          _expiresAt =
+              DateTime.parse(statusResponse['subscription_expires_at']);
         }
 
         // Check if we're premium based on backend (includes grace period)
@@ -117,13 +119,17 @@ class PremiumService extends ChangeNotifier {
       await _cacheUsageStats(stats);
 
       debugPrint('📊 [PremiumService] Fetched usage stats from backend');
-      debugPrint('   Synced notes: ${stats['synced_notes']['current']}/${stats['synced_notes']['limit']}');
-      debugPrint('   OCR scans: ${stats['ocr_scans']['current']}/${stats['ocr_scans']['limit']}');
-      debugPrint('   Exports: ${stats['exports']['current']}/${stats['exports']['limit']}');
+      debugPrint(
+          '   Synced notes: ${stats['synced_notes']['current']}/${stats['synced_notes']['limit']}');
+      debugPrint(
+          '   OCR scans: ${stats['ocr_scans']['current']}/${stats['ocr_scans']['limit']}');
+      debugPrint(
+          '   Exports: ${stats['exports']['current']}/${stats['exports']['limit']}');
 
       return stats;
     } catch (e) {
-      debugPrint('⚠️ [PremiumService] Could not fetch usage stats from backend: $e');
+      debugPrint(
+          '⚠️ [PremiumService] Could not fetch usage stats from backend: $e');
       return null;
     }
   }
@@ -236,18 +242,21 @@ class PremiumService extends ChangeNotifier {
     if (lastReconcile == null) return true; // Never reconciled
 
     // Reconcile if more than 24 hours have passed
-    final hoursSinceReconcile = DateTime.now().difference(lastReconcile).inHours;
+    final hoursSinceReconcile =
+        DateTime.now().difference(lastReconcile).inHours;
     return hoursSinceReconcile >= 24;
   }
 
   /// Auto-reconcile usage if needed (called periodically)
   Future<void> autoReconcileIfNeeded() async {
     if (!shouldReconcile()) {
-      debugPrint('⏭️ [PremiumService] Skipping reconcile - last reconciled ${getLastReconciliation()}');
+      debugPrint(
+          '⏭️ [PremiumService] Skipping reconcile - last reconciled ${getLastReconciliation()}');
       return;
     }
 
-    debugPrint('🔄 [PremiumService] Auto-reconciling usage (24h+ since last reconcile)');
+    debugPrint(
+        '🔄 [PremiumService] Auto-reconciling usage (24h+ since last reconcile)');
 
     try {
       final result = await reconcileUsageWithBackend();
@@ -264,7 +273,8 @@ class PremiumService extends ChangeNotifier {
         final newCount = result['new_count'] as int;
 
         if (reconciled) {
-          debugPrint('✅ [PremiumService] Auto-reconciled: $oldCount → $newCount notes');
+          debugPrint(
+              '✅ [PremiumService] Auto-reconciled: $oldCount → $newCount notes');
         } else {
           debugPrint('✓ [PremiumService] Already in sync: $newCount notes');
         }

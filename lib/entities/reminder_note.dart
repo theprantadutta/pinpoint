@@ -8,7 +8,8 @@ import 'note.dart';
 class ReminderNotes extends Table {
   /// Foreign key to Notes table
   /// CASCADE DELETE: When note is deleted, this reminder note data is also deleted
-  IntColumn get noteId => integer().references(Notes, #id, onDelete: KeyAction.cascade)();
+  IntColumn get noteId =>
+      integer().references(Notes, #id, onDelete: KeyAction.cascade)();
 
   /// The date and time when the reminder should trigger
   DateTimeColumn get reminderTime => dateTime()();
