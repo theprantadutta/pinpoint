@@ -138,8 +138,8 @@ class _BrutalistCardState extends State<BrutalistCard>
                   color: widget.customColor ?? cardStyle.backgroundColor,
                   border: cardStyle.borderWidth > 0
                       ? Border.all(
-                          color: widget.customBorderColor ??
-                              cardStyle.borderColor,
+                          color:
+                              widget.customBorderColor ?? cardStyle.borderColor,
                           width: cardStyle.borderWidth,
                         )
                       : null,

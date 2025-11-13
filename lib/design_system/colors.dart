@@ -123,10 +123,12 @@ class PinpointColors {
 
   static const Color darkBorder = Color(0xFF2D3748);
   static const Color darkBorderSubtle = Color(0xFF1A202C);
-  static const Color darkBorderBold = Color(0xFF4A5568); // Bold borders for brutalist style
+  static const Color darkBorderBold =
+      Color(0xFF4A5568); // Bold borders for brutalist style
   static const Color lightBorder = Color(0xFFE5E7EB);
   static const Color lightBorderSubtle = Color(0xFFF3F4F6);
-  static const Color lightBorderBold = Color(0xFF9CA3AF); // Bold borders for brutalist style
+  static const Color lightBorderBold =
+      Color(0xFF9CA3AF); // Bold borders for brutalist style
 
   // ============================================
   // Shadow Colors

@@ -110,7 +110,8 @@ class _EmptyStateState extends State<EmptyState>
                           child: Icon(
                             widget.icon,
                             size: iconContentSize,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.8),
                           ),
                         ),
                       ),
@@ -140,7 +141,8 @@ class _EmptyStateState extends State<EmptyState>
                       ],
 
                       // Action button
-                      if (widget.actionLabel != null && widget.onAction != null) ...[
+                      if (widget.actionLabel != null &&
+                          widget.onAction != null) ...[
                         const SizedBox(height: 24),
                         FilledButton.icon(
                           onPressed: () {
