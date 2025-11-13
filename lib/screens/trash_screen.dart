@@ -207,8 +207,8 @@ class _TrashScreenState extends State<TrashScreen> {
 class _TrashedNoteCard extends StatefulWidget {
   final NoteWithDetails note;
   final VoidCallback onTap;
-  final VoidCallback onRestore;
-  final VoidCallback onDelete;
+  final Future<void> Function() onRestore;
+  final Future<void> Function() onDelete;
 
   const _TrashedNoteCard({
     required this.note,
@@ -223,6 +223,7 @@ class _TrashedNoteCard extends StatefulWidget {
 
 class _TrashedNoteCardState extends State<_TrashedNoteCard> {
   bool _pressed = false;
+  bool _isLoading = false;
 
   IconData _getNoteTypeIcon(String noteType) {
     switch (noteType) {
@@ -268,12 +269,14 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
     final n = widget.note.note;
 
     return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
+      onTapDown: _isLoading ? null : (_) => setState(() => _pressed = true),
       onTapCancel: () => setState(() => _pressed = false),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
+      onTapUp: _isLoading
+          ? null
+          : (_) {
+              setState(() => _pressed = false);
+              widget.onTap();
+            },
       child: AnimatedScale(
         scale: _pressed ? 0.98 : 1.0,
         duration: PinpointAnimations.durationFast,
@@ -426,36 +429,63 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
                 const SizedBox(width: 12),
 
                 // Actions
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: widget.onRestore,
-                      child: GlassContainer(
-                        padding: const EdgeInsets.all(10),
-                        borderRadius: 12,
-                        child: Icon(
-                          Icons.restore_from_trash_rounded,
-                          color: cs.primary,
-                          size: 20,
+                _isLoading
+                    ? SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
                         ),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GestureDetector(
+                            onTap: () async {
+                              setState(() => _isLoading = true);
+                              try {
+                                await widget.onRestore();
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _isLoading = false);
+                                }
+                              }
+                            },
+                            child: GlassContainer(
+                              padding: const EdgeInsets.all(10),
+                              borderRadius: 12,
+                              child: Icon(
+                                Icons.restore_from_trash_rounded,
+                                color: cs.primary,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () async {
+                              setState(() => _isLoading = true);
+                              try {
+                                await widget.onDelete();
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _isLoading = false);
+                                }
+                              }
+                            },
+                            child: GlassContainer(
+                              padding: const EdgeInsets.all(10),
+                              borderRadius: 12,
+                              child: Icon(
+                                Icons.delete_forever_rounded,
+                                color: cs.error,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: widget.onDelete,
-                      child: GlassContainer(
-                        padding: const EdgeInsets.all(10),
-                        borderRadius: 12,
-                        child: Icon(
-                          Icons.delete_forever_rounded,
-                          color: cs.error,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
