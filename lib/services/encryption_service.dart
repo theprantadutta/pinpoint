@@ -29,7 +29,8 @@ class SecureEncryptionService {
     // 2. Try to fetch key from cloud if apiService is provided and user is authenticated
     if (apiService != null) {
       try {
-        debugPrint('🔑 [Encryption] No local key found, fetching from cloud...');
+        debugPrint(
+            '🔑 [Encryption] No local key found, fetching from cloud...');
         final cloudKey = await apiService.getEncryptionKey();
         if (cloudKey != null) {
           debugPrint('✅ [Encryption] Retrieved encryption key from cloud');
@@ -91,7 +92,8 @@ class SecureEncryptionService {
       final cloudKey = await apiService.getEncryptionKey();
 
       if (cloudKey != null) {
-        debugPrint('✅ [Encryption] Retrieved key from cloud, replacing local key');
+        debugPrint(
+            '✅ [Encryption] Retrieved key from cloud, replacing local key');
 
         // Replace local key with cloud key
         await _storage.write(key: _keyStorageKey, value: cloudKey);

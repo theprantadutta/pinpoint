@@ -371,7 +371,9 @@ class _EncryptionTabState extends State<_EncryptionTab> {
                     Row(
                       children: [
                         IconButton(
-                          icon: Icon(_showKey ? Icons.visibility_off : Icons.visibility),
+                          icon: Icon(_showKey
+                              ? Icons.visibility_off
+                              : Icons.visibility),
                           onPressed: () {
                             setState(() {
                               _showKey = !_showKey;
@@ -381,7 +383,8 @@ class _EncryptionTabState extends State<_EncryptionTab> {
                         IconButton(
                           icon: const Icon(Icons.copy),
                           onPressed: () {
-                            widget.onCopy(_encryptionKey!['encryption_key'], 'Encryption Key');
+                            widget.onCopy(_encryptionKey!['encryption_key'],
+                                'Encryption Key');
                           },
                         ),
                       ],
@@ -390,7 +393,9 @@ class _EncryptionTabState extends State<_EncryptionTab> {
                 ),
                 const SizedBox(height: 8),
                 SelectableText(
-                  _showKey ? _encryptionKey!['encryption_key'] : '••••••••••••••••',
+                  _showKey
+                      ? _encryptionKey!['encryption_key']
+                      : '••••••••••••••••',
                   style: const TextStyle(fontFamily: 'monospace'),
                 ),
               ],

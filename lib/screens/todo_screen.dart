@@ -375,4 +375,3 @@ class _TodoItem extends StatelessWidget {
     );
   }
 }
-

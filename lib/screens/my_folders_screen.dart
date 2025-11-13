@@ -135,12 +135,11 @@ class MyFoldersScreen extends StatelessWidget {
                 onRename: (newTitle) async {
                   final text = newTitle.trim();
                   if (text.isEmpty) return;
-                  final all = await DriftNoteFolderService
-                      .watchAllNoteFoldersStream()
-                      .first;
+                  final all =
+                      await DriftNoteFolderService.watchAllNoteFoldersStream()
+                          .first;
                   if (all.any((x) =>
-                      x.noteFolderTitle.toLowerCase() ==
-                          text.toLowerCase() &&
+                      x.noteFolderTitle.toLowerCase() == text.toLowerCase() &&
                       x.noteFolderId != folder.noteFolderId)) {
                     if (!context.mounted) return;
                     showErrorToast(

@@ -46,7 +46,8 @@ class _AdminPasswordDialogState extends State<AdminPasswordDialog> {
       final password = _passwordController.text.trim();
 
       // DEBUG: Print what we're about to send
-      debugPrint('[AdminDialog] Attempting login with password length: ${password.length}');
+      debugPrint(
+          '[AdminDialog] Attempting login with password length: ${password.length}');
 
       await adminApi.adminLogin(adminEmail, password);
 
@@ -85,7 +86,6 @@ class _AdminPasswordDialogState extends State<AdminPasswordDialog> {
             ),
           ),
           const SizedBox(height: 20),
-
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,

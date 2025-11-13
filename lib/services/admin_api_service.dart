@@ -41,7 +41,8 @@ class AdminApiService {
           return handler.next(response);
         },
         onError: (error, handler) {
-          debugPrint('[AdminAPI] ERROR[${error.response?.statusCode}] => ${error.message}');
+          debugPrint(
+              '[AdminAPI] ERROR[${error.response?.statusCode}] => ${error.message}');
           return handler.next(error);
         },
       ),
@@ -60,8 +61,10 @@ class AdminApiService {
       // DEBUG: Log password details
       debugPrint('[AdminAPI] Login attempt with email: $email');
       debugPrint('[AdminAPI] Password length: ${password.length}');
-      debugPrint('[AdminAPI] Password (first 3 chars): ${password.substring(0, password.length > 3 ? 3 : password.length)}...');
-      debugPrint('[AdminAPI] Password (last 3 chars): ...${password.substring(password.length > 3 ? password.length - 3 : 0)}');
+      debugPrint(
+          '[AdminAPI] Password (first 3 chars): ${password.substring(0, password.length > 3 ? 3 : password.length)}...');
+      debugPrint(
+          '[AdminAPI] Password (last 3 chars): ...${password.substring(password.length > 3 ? password.length - 3 : 0)}');
 
       final response = await _dio.post(
         '/admin/auth',
@@ -72,7 +75,8 @@ class AdminApiService {
       );
 
       _adminToken = response.data['access_token'];
-      debugPrint('[AdminAPI] Login successful, token expires in ${response.data['expires_in']}s');
+      debugPrint(
+          '[AdminAPI] Login successful, token expires in ${response.data['expires_in']}s');
 
       return response.data;
     } on DioException catch (e) {
@@ -181,7 +185,8 @@ class AdminApiService {
   /// Get user's sync event history
   ///
   /// Useful for debugging sync issues
-  Future<Map<String, dynamic>> getUserSyncEvents(String userId, {int limit = 50}) async {
+  Future<Map<String, dynamic>> getUserSyncEvents(String userId,
+      {int limit = 50}) async {
     try {
       final response = await _dio.get(
         '/admin/users/$userId/sync-events',
@@ -198,7 +203,8 @@ class AdminApiService {
   }
 
   /// Get user's subscription event history
-  Future<Map<String, dynamic>> getUserSubscriptionEvents(String userId, {int limit = 20}) async {
+  Future<Map<String, dynamic>> getUserSubscriptionEvents(String userId,
+      {int limit = 20}) async {
     try {
       final response = await _dio.get(
         '/admin/users/$userId/subscription-events',
@@ -233,6 +239,7 @@ class AdminApiService {
     } else if (e.response?.statusCode == 404) {
       throw Exception('Resource not found');
     }
-    throw Exception(e.response?.data['detail'] ?? 'Request failed: ${e.message}');
+    throw Exception(
+        e.response?.data['detail'] ?? 'Request failed: ${e.message}');
   }
 }

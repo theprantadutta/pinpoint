@@ -8,7 +8,8 @@ import 'note.dart';
 class AudioNotes extends Table {
   /// Foreign key to Notes table
   /// CASCADE DELETE: When note is deleted, this audio note data is also deleted
-  IntColumn get noteId => integer().references(Notes, #id, onDelete: KeyAction.cascade)();
+  IntColumn get noteId =>
+      integer().references(Notes, #id, onDelete: KeyAction.cascade)();
 
   /// Path to the audio file (local storage or cloud URL)
   TextColumn get audioFilePath => text()();

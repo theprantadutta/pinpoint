@@ -59,7 +59,8 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
         if (reconciled) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('✅ Reconciled: Updated from $oldCount to $newCount notes'),
+              content: Text(
+                  '✅ Reconciled: Updated from $oldCount to $newCount notes'),
               backgroundColor: Colors.green,
             ),
           );
@@ -165,7 +166,9 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
                     message: 'Tap to refresh\nLong-press to reconcile',
                     child: InkWell(
                       onTap: _isRefreshing ? null : _refreshUsageStats,
-                      onLongPress: _isRefreshing ? null : () => _reconcileUsageStats(context),
+                      onLongPress: _isRefreshing
+                          ? null
+                          : () => _reconcileUsageStats(context),
                       borderRadius: BorderRadius.circular(20),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
