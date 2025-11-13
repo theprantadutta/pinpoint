@@ -16,8 +16,6 @@ import 'services/backend_auth_service.dart';
 import 'services/subscription_manager.dart';
 import 'services/firebase_notification_service.dart';
 import 'services/google_sign_in_service.dart';
-import 'services/premium_service.dart';
-import 'services/subscription_service.dart';
 import 'services/filter_service.dart';
 
 // void main() async {
@@ -127,26 +125,10 @@ Future<void> _initializeCoreServices() async {
   // It needs to happen AFTER authentication, not at app startup
   // See auth_screen.dart -> _performInitialSync()
 
-  // Initialize Google Play Subscription Service
-  try {
-    debugPrint('💎 [main.dart] Initializing Subscription Service...');
-    await SubscriptionService.initialize();
-    debugPrint('✅ [main.dart] Subscription Service initialized');
-  } catch (e, stackTrace) {
-    debugPrint('⚠️ [main.dart] Subscription Service not initialized: $e');
-    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
-    // Continue without subscription service - app will still work in free mode
-  }
-
-  // Initialize PremiumService
-  try {
-    debugPrint('💎 [main.dart] Initializing PremiumService...');
-    await PremiumService().initialize();
-    debugPrint('✅ [main.dart] PremiumService initialized');
-  } catch (e, stackTrace) {
-    debugPrint('⚠️ [main.dart] PremiumService not initialized: $e');
-    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
-  }
+  // NOTE: SubscriptionService and PremiumService initialization moved to home_screen.dart
+  // These services make API calls that require authentication, so they should only
+  // initialize after the user has logged in.
+  // See home_screen.dart -> _initializeAuthenticatedServices()
 
   // Initialize FilterService
   try {
