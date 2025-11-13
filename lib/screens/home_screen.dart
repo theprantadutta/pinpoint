@@ -5,6 +5,9 @@ import '../components/home_screen/home_screen_my_folders.dart';
 import '../components/home_screen/home_screen_recent_notes.dart';
 import '../components/home_screen/home_screen_top_bar.dart';
 import '../services/notification_service.dart';
+import '../services/subscription_service.dart';
+import '../services/premium_service.dart';
+import '../services/firebase_notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String kRouteName = '/home';
@@ -21,8 +24,43 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Request notification permission after user logs in
-    _requestNotificationPermissionIfNeeded();
+    // Initialize authenticated services after user logs in
+    _initializeAuthenticatedServices();
+  }
+
+  /// Initialize services that require authentication
+  /// This includes notification permissions, subscriptions, and premium features
+  Future<void> _initializeAuthenticatedServices() async {
+    // Request notification permission (only once)
+    await _requestNotificationPermissionIfNeeded();
+
+    // Initialize Subscription Service
+    try {
+      debugPrint('💎 [HomeScreen] Initializing Subscription Service...');
+      await SubscriptionService.initialize();
+      debugPrint('✅ [HomeScreen] Subscription Service initialized');
+    } catch (e) {
+      debugPrint('⚠️ [HomeScreen] Subscription Service not initialized: $e');
+    }
+
+    // Initialize Premium Service
+    try {
+      debugPrint('💎 [HomeScreen] Initializing PremiumService...');
+      await PremiumService().initialize();
+      debugPrint('✅ [HomeScreen] PremiumService initialized');
+    } catch (e) {
+      debugPrint('⚠️ [HomeScreen] PremiumService not initialized: $e');
+    }
+
+    // Register FCM token with backend now that user is authenticated
+    try {
+      debugPrint('📱 [HomeScreen] Registering FCM token with backend...');
+      final firebaseNotifications = FirebaseNotificationService();
+      await firebaseNotifications.registerTokenWithBackend();
+      debugPrint('✅ [HomeScreen] FCM token registered');
+    } catch (e) {
+      debugPrint('⚠️ [HomeScreen] FCM token registration failed: $e');
+    }
   }
 
   @override
