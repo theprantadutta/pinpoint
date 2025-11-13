@@ -30,7 +30,9 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
           // Create a temporary todo item with a negative ID to indicate it's not yet saved
           final newTodo = NoteTodoItem(
             id: -(widget.todos.length + 1), // Negative ID for temporary items
+            uuid: '', // Will be generated when saved to database
             noteId: 0, // Will be updated when note is saved
+            noteUuid: '', // Will be updated when note is saved
             todoTitle: controller.text,
             isDone: false,
             orderIndex: widget.todos.length, // Add orderIndex

@@ -14,6 +14,7 @@ import 'package:pinpoint/services/logger_service.dart';
 import 'package:pinpoint/services/notification_service.dart';
 import 'package:pinpoint/util/note_utils.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:uuid/uuid.dart';
 
 class DriftNoteService {
   DriftNoteService._();
@@ -99,20 +100,24 @@ class DriftNoteService {
         final existingNote = await getSingleNote(previousNoteId);
         if (existingNote != null) {
           log.d('Updating existing note...');
-          await database
-              .update(database.notes)
-              .replace(note.copyWith(
+          await database.update(database.notes).replace(note.copyWith(
                 id: Value(previousNoteId),
                 isSynced: Value(false), // Mark as needing upload
-                isDeleted: Value(existingNote.isDeleted), // IMPORTANT: Preserve isDeleted flag
+                isDeleted: Value(existingNote
+                    .isDeleted), // IMPORTANT: Preserve isDeleted flag
               ));
           return existingNote.id;
         }
       }
 
       log.d('Adding new note...');
+      // Generate UUID for new note
+      const uuid = Uuid();
+      final noteWithUuid = note.copyWith(
+        uuid: Value(uuid.v4()),
+      );
       // isSynced defaults to false for new notes
-      final newNoteId = await database.into(database.notes).insert(note);
+      final newNoteId = await database.into(database.notes).insert(noteWithUuid);
       return newNoteId;
     } catch (e, st) {
       log.e('Failed to insert/update note', e, st);
@@ -186,8 +191,19 @@ class DriftNoteService {
     int orderIndex = 0,
   }) async {
     final database = getIt<AppDatabase>();
+
+    // Get the note's UUID
+    final note = await getSingleNote(noteId);
+    if (note == null) {
+      throw Exception('Note not found for ID: $noteId');
+    }
+
+    // Generate UUID for todo item
+    const uuid = Uuid();
     final todoCompanion = NoteTodoItemsCompanion(
+      uuid: Value(uuid.v4()),
       noteId: Value(noteId),
+      noteUuid: Value(note.uuid),
       todoTitle: Value(title),
       isDone: Value(false),
       orderIndex: Value(orderIndex),
@@ -195,7 +211,13 @@ class DriftNoteService {
     final id =
         await database.into(database.noteTodoItems).insert(todoCompanion);
     return NoteTodoItem(
-        id: id, noteId: noteId, todoTitle: title, isDone: false, orderIndex: orderIndex);
+        id: id,
+        uuid: todoCompanion.uuid.value,
+        noteId: noteId,
+        noteUuid: note.uuid,
+        todoTitle: title,
+        isDone: false,
+        orderIndex: orderIndex);
   }
 
   static Future<void> updateTodoItemStatus(int todoId, bool isDone) async {
@@ -224,9 +246,9 @@ class DriftNoteService {
     await (database.update(database.notes)
           ..where((tbl) => tbl.id.equals(noteId)))
         .write(NotesCompanion(
-          isDeleted: Value(true),
-          isSynced: Value(false), // Mark as needing upload
-        ));
+      isDeleted: Value(true),
+      isSynced: Value(false), // Mark as needing upload
+    ));
     NotificationService.cancelNotification(noteId);
     log.i("Note with ID $noteId soft-deleted successfully.");
   }
@@ -236,9 +258,9 @@ class DriftNoteService {
     await (database.update(database.notes)
           ..where((tbl) => tbl.id.equals(noteId)))
         .write(NotesCompanion(
-          isDeleted: Value(false),
-          isSynced: Value(false), // Mark as needing upload
-        ));
+      isDeleted: Value(false),
+      isSynced: Value(false), // Mark as needing upload
+    ));
     log.i("Note with ID $noteId restored successfully.");
   }
 
@@ -307,33 +329,43 @@ class DriftNoteService {
     try {
       final database = getIt<AppDatabase>();
       final filters = filterOptions ?? FilterOptions.empty;
-      log.d('[watchArchivedNotes] start; query="$searchQuery", filters: $filters');
+      log.d(
+          '[watchArchivedNotes] start; query="$searchQuery", filters: $filters');
 
-      String whereClause = 'WHERE n.is_archived = 1 AND n.is_deleted = 0 AND n.note_type != \'todo\'';
+      String whereClause =
+          'WHERE n.is_archived = 1 AND n.is_deleted = 0 AND n.note_type != \'todo\'';
       List<dynamic> variables = [];
 
       // Search in title, content, todo items, folder names, and attachment names (case-insensitive)
       if (searchQuery.isNotEmpty) {
-        whereClause +=
-            ' AND (n.note_title LIKE ? COLLATE NOCASE'
+        whereClause += ' AND (n.note_title LIKE ? COLLATE NOCASE'
             ' OR tn.content LIKE ? COLLATE NOCASE'
             ' OR EXISTS (SELECT 1 FROM note_todo_items t WHERE t.note_id = n.id AND t.todo_title LIKE ? COLLATE NOCASE)'
             ' OR EXISTS (SELECT 1 FROM note_folder_relations r INNER JOIN note_folders f ON r.note_folder_id = f.note_folder_id WHERE r.note_id = n.id AND f.note_folder_title LIKE ? COLLATE NOCASE)'
             ' OR EXISTS (SELECT 1 FROM note_attachments a WHERE a.note_id = n.id AND a.attachment_name LIKE ? COLLATE NOCASE))';
         final searchPattern = '%$searchQuery%';
-        variables = [searchPattern, searchPattern, searchPattern, searchPattern, searchPattern];
+        variables = [
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern
+        ];
       }
 
       // Filter by folder IDs
       if (filters.folderIds.isNotEmpty) {
-        final placeholders = List.filled(filters.folderIds.length, '?').join(',');
-        whereClause += ' AND EXISTS (SELECT 1 FROM note_folder_relations r WHERE r.note_id = n.id AND r.note_folder_id IN ($placeholders))';
+        final placeholders =
+            List.filled(filters.folderIds.length, '?').join(',');
+        whereClause +=
+            ' AND EXISTS (SELECT 1 FROM note_folder_relations r WHERE r.note_id = n.id AND r.note_folder_id IN ($placeholders))';
         variables.addAll(filters.folderIds);
       }
 
       // Filter by note types
       if (filters.noteTypes.isNotEmpty) {
-        final placeholders = List.filled(filters.noteTypes.length, '?').join(',');
+        final placeholders =
+            List.filled(filters.noteTypes.length, '?').join(',');
         whereClause += ' AND n.note_type IN ($placeholders)';
         variables.addAll(filters.noteTypes);
       }
@@ -423,6 +455,7 @@ class DriftNoteService {
                   return NoteWithDetails(
                     note: Note(
                       id: noteId,
+                      uuid: row.read<String>('uuid'),
                       noteTitle: row.read<String?>('note_title'),
                       noteType: row.read<String>('note_type'),
                       isPinned: row.read<bool>('is_pinned'),
@@ -458,7 +491,9 @@ class DriftNoteService {
                   notesMap[noteId]!.todoItems.add(
                         NoteTodoItem(
                           id: todoId,
+                          uuid: row.read<String>('todo_uuid'),
                           noteId: noteId,
+                          noteUuid: row.read<String>('note_uuid'),
                           todoTitle: todoTitle,
                           isDone: row.read<bool>('todo_is_done'),
                           orderIndex: 0,
@@ -486,33 +521,42 @@ class DriftNoteService {
     try {
       final database = getIt<AppDatabase>();
       final filters = filterOptions ?? FilterOptions.empty;
-      log.d('[watchDeletedNotes] start; query="$searchQuery", filters: $filters');
+      log.d(
+          '[watchDeletedNotes] start; query="$searchQuery", filters: $filters');
 
       String whereClause = 'WHERE n.is_deleted = 1 AND n.note_type != \'todo\'';
       List<dynamic> variables = [];
 
       // Search in title, content, todo items, folder names, and attachment names (case-insensitive)
       if (searchQuery.isNotEmpty) {
-        whereClause +=
-            ' AND (n.note_title LIKE ? COLLATE NOCASE'
+        whereClause += ' AND (n.note_title LIKE ? COLLATE NOCASE'
             ' OR tn.content LIKE ? COLLATE NOCASE'
             ' OR EXISTS (SELECT 1 FROM note_todo_items t WHERE t.note_id = n.id AND t.todo_title LIKE ? COLLATE NOCASE)'
             ' OR EXISTS (SELECT 1 FROM note_folder_relations r INNER JOIN note_folders f ON r.note_folder_id = f.note_folder_id WHERE r.note_id = n.id AND f.note_folder_title LIKE ? COLLATE NOCASE)'
             ' OR EXISTS (SELECT 1 FROM note_attachments a WHERE a.note_id = n.id AND a.attachment_name LIKE ? COLLATE NOCASE))';
         final searchPattern = '%$searchQuery%';
-        variables = [searchPattern, searchPattern, searchPattern, searchPattern, searchPattern];
+        variables = [
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern
+        ];
       }
 
       // Filter by folder IDs
       if (filters.folderIds.isNotEmpty) {
-        final placeholders = List.filled(filters.folderIds.length, '?').join(',');
-        whereClause += ' AND EXISTS (SELECT 1 FROM note_folder_relations r WHERE r.note_id = n.id AND r.note_folder_id IN ($placeholders))';
+        final placeholders =
+            List.filled(filters.folderIds.length, '?').join(',');
+        whereClause +=
+            ' AND EXISTS (SELECT 1 FROM note_folder_relations r WHERE r.note_id = n.id AND r.note_folder_id IN ($placeholders))';
         variables.addAll(filters.folderIds);
       }
 
       // Filter by note types
       if (filters.noteTypes.isNotEmpty) {
-        final placeholders = List.filled(filters.noteTypes.length, '?').join(',');
+        final placeholders =
+            List.filled(filters.noteTypes.length, '?').join(',');
         whereClause += ' AND n.note_type IN ($placeholders)';
         variables.addAll(filters.noteTypes);
       }
@@ -602,6 +646,7 @@ class DriftNoteService {
                   return NoteWithDetails(
                     note: Note(
                       id: noteId,
+                      uuid: row.read<String>('uuid'),
                       noteTitle: row.read<String?>('note_title'),
                       noteType: row.read<String>('note_type'),
                       isPinned: row.read<bool>('is_pinned'),
@@ -637,7 +682,9 @@ class DriftNoteService {
                   notesMap[noteId]!.todoItems.add(
                         NoteTodoItem(
                           id: todoId,
+                          uuid: row.read<String>('todo_uuid'),
                           noteId: noteId,
+                          noteUuid: row.read<String>('note_uuid'),
                           todoTitle: todoTitle,
                           isDone: row.read<bool>('todo_is_done'),
                           orderIndex: 0,
@@ -670,31 +717,40 @@ class DriftNoteService {
       log.d(
           '[watchNotesWithDetails] start; query="$searchQuery", sort: $sortType $sortDirection, filters: $filters');
 
-      String whereClause = 'WHERE n.is_archived = 0 AND n.is_deleted = 0 AND n.note_type != \'todo\'';
+      String whereClause =
+          'WHERE n.is_archived = 0 AND n.is_deleted = 0 AND n.note_type != \'todo\'';
       List<dynamic> variables = [];
 
       // Search in title, content, todo items, folder names, and attachment names (case-insensitive)
       if (searchQuery.isNotEmpty) {
-        whereClause +=
-            ' AND (n.note_title LIKE ? COLLATE NOCASE'
+        whereClause += ' AND (n.note_title LIKE ? COLLATE NOCASE'
             ' OR tn.content LIKE ? COLLATE NOCASE'
             ' OR EXISTS (SELECT 1 FROM note_todo_items t WHERE t.note_id = n.id AND t.todo_title LIKE ? COLLATE NOCASE)'
             ' OR EXISTS (SELECT 1 FROM note_folder_relations r INNER JOIN note_folders f ON r.note_folder_id = f.note_folder_id WHERE r.note_id = n.id AND f.note_folder_title LIKE ? COLLATE NOCASE)'
             ' OR EXISTS (SELECT 1 FROM note_attachments a WHERE a.note_id = n.id AND a.attachment_name LIKE ? COLLATE NOCASE))';
         final searchPattern = '%$searchQuery%';
-        variables = [searchPattern, searchPattern, searchPattern, searchPattern, searchPattern];
+        variables = [
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern
+        ];
       }
 
       // Filter by folder IDs
       if (filters.folderIds.isNotEmpty) {
-        final placeholders = List.filled(filters.folderIds.length, '?').join(',');
-        whereClause += ' AND EXISTS (SELECT 1 FROM note_folder_relations r WHERE r.note_id = n.id AND r.note_folder_id IN ($placeholders))';
+        final placeholders =
+            List.filled(filters.folderIds.length, '?').join(',');
+        whereClause +=
+            ' AND EXISTS (SELECT 1 FROM note_folder_relations r WHERE r.note_id = n.id AND r.note_folder_id IN ($placeholders))';
         variables.addAll(filters.folderIds);
       }
 
       // Filter by note types
       if (filters.noteTypes.isNotEmpty) {
-        final placeholders = List.filled(filters.noteTypes.length, '?').join(',');
+        final placeholders =
+            List.filled(filters.noteTypes.length, '?').join(',');
         whereClause += ' AND n.note_type IN ($placeholders)';
         variables.addAll(filters.noteTypes);
       }
@@ -803,6 +859,7 @@ class DriftNoteService {
                     return NoteWithDetails(
                       note: Note(
                         id: noteId,
+                        uuid: row.read<String>('uuid'),
                         noteTitle: row.read<String?>('note_title'),
                         noteType: row.read<String>('note_type'),
                         isPinned: row.read<bool>('is_pinned'),
@@ -838,7 +895,9 @@ class DriftNoteService {
                     notesMap[noteId]!.todoItems.add(
                           NoteTodoItem(
                             id: todoId,
+                            uuid: row.read<String>('todo_uuid'),
                             noteId: noteId,
+                            noteUuid: row.read<String>('note_uuid'),
                             todoTitle: todoTitle,
                             isDone: row.read<bool>('todo_is_done'),
                             orderIndex: 0, // TODO: Read from database
@@ -868,26 +927,34 @@ class DriftNoteService {
     try {
       final database = getIt<AppDatabase>();
       final filters = filterOptions ?? FilterOptions.empty;
-      log.d('[watchNotesWithDetailsByFolder] start; folderId=$folderId, query="$searchQuery", filters: $filters');
+      log.d(
+          '[watchNotesWithDetailsByFolder] start; folderId=$folderId, query="$searchQuery", filters: $filters');
 
-      String whereClause = 'WHERE r.note_folder_id = ? AND n.is_archived = 0 AND n.is_deleted = 0';
+      String whereClause =
+          'WHERE r.note_folder_id = ? AND n.is_archived = 0 AND n.is_deleted = 0';
       List<dynamic> variables = [folderId];
 
       // Search in title, content, todo items, folder names, and attachment names (case-insensitive)
       if (searchQuery.isNotEmpty) {
-        whereClause +=
-            ' AND (n.note_title LIKE ? COLLATE NOCASE'
+        whereClause += ' AND (n.note_title LIKE ? COLLATE NOCASE'
             ' OR tn.content LIKE ? COLLATE NOCASE'
             ' OR EXISTS (SELECT 1 FROM note_todo_items t WHERE t.note_id = n.id AND t.todo_title LIKE ? COLLATE NOCASE)'
             ' OR EXISTS (SELECT 1 FROM note_folder_relations r2 INNER JOIN note_folders f2 ON r2.note_folder_id = f2.note_folder_id WHERE r2.note_id = n.id AND f2.note_folder_title LIKE ? COLLATE NOCASE)'
             ' OR EXISTS (SELECT 1 FROM note_attachments a WHERE a.note_id = n.id AND a.attachment_name LIKE ? COLLATE NOCASE))';
         final searchPattern = '%$searchQuery%';
-        variables.addAll([searchPattern, searchPattern, searchPattern, searchPattern, searchPattern]);
+        variables.addAll([
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern,
+          searchPattern
+        ]);
       }
 
       // Filter by note types
       if (filters.noteTypes.isNotEmpty) {
-        final placeholders = List.filled(filters.noteTypes.length, '?').join(',');
+        final placeholders =
+            List.filled(filters.noteTypes.length, '?').join(',');
         whereClause += ' AND n.note_type IN ($placeholders)';
         variables.addAll(filters.noteTypes);
       }
@@ -957,7 +1024,8 @@ class DriftNoteService {
             log.e('[watchNotesWithDetailsByFolder] stream error', e, st);
           })
           .map((rows) {
-            log.d('[watchNotesWithDetailsByFolder] rows: ${rows.length} for folderId=$folderId');
+            log.d(
+                '[watchNotesWithDetailsByFolder] rows: ${rows.length} for folderId=$folderId');
             final notesMap = <int, NoteWithDetails>{};
 
             for (final row in rows) {
@@ -978,6 +1046,7 @@ class DriftNoteService {
                   return NoteWithDetails(
                     note: Note(
                       id: noteId,
+                      uuid: row.read<String>('uuid'),
                       noteTitle: row.read<String?>('note_title'),
                       noteType: row.read<String>('note_type'),
                       isPinned: row.read<bool>('is_pinned'),
@@ -1013,7 +1082,9 @@ class DriftNoteService {
                   notesMap[noteId]!.todoItems.add(
                         NoteTodoItem(
                           id: todoId,
+                          uuid: row.read<String>('todo_uuid'),
                           noteId: noteId,
+                          noteUuid: row.read<String>('note_uuid'),
                           todoTitle: todoTitle,
                           isDone: row.read<bool>('todo_is_done'),
                           orderIndex: 0,
@@ -1021,11 +1092,13 @@ class DriftNoteService {
                       );
                 }
               } catch (rowErr, st) {
-                log.e('[watchNotesWithDetailsByFolder] row parse error', rowErr, st);
+                log.e('[watchNotesWithDetailsByFolder] row parse error', rowErr,
+                    st);
               }
             }
 
-            log.d('[watchNotesWithDetailsByFolder] parsed notes: ${notesMap.length}');
+            log.d(
+                '[watchNotesWithDetailsByFolder] parsed notes: ${notesMap.length}');
             return notesMap.values.toList();
           });
     } catch (e, st) {
@@ -1081,7 +1154,9 @@ class DriftNoteService {
                 return NoteTodoItemWithNote(
                   todoItem: NoteTodoItem(
                     id: row.read<int>('todo_id'),
+                    uuid: row.read<String>('todo_uuid'),
                     noteId: row.read<int>('todo_note_id'),
+                    noteUuid: row.read<String>('note_uuid'),
                     todoTitle: row.read<String>('todo_title'),
                     isDone: row.read<bool>('todo_is_done'),
                     orderIndex: 0, // TODO: Read from database
@@ -1143,7 +1218,10 @@ class DriftNoteService {
     final content = noteJson['content'] as String? ?? '';
     final now = DateTime.now();
 
+    // Generate UUID for imported note
+    const uuid = Uuid();
     final noteCompanion = NotesCompanion.insert(
+      uuid: uuid.v4(),
       noteTitle: drift.Value(title),
       isPinned: drift.Value(false),
       noteType: 'text', // Changed from defaultNoteType to noteType
@@ -1156,11 +1234,11 @@ class DriftNoteService {
     // Insert text content into TextNotes table
     if (content.isNotEmpty) {
       await database.into(database.textNotes).insert(
-        TextNotesCompanion(
-          noteId: drift.Value(noteId),
-          content: drift.Value(content),
-        ),
-      );
+            TextNotesCompanion(
+              noteId: drift.Value(noteId),
+              content: drift.Value(content),
+            ),
+          );
     }
 
     final folderTitles = noteJson['folders'] as List<dynamic>;
@@ -1176,7 +1254,10 @@ class DriftNoteService {
       } else {
         final newFolderId = await database.into(database.noteFolders).insert(
             NoteFoldersCompanion.insert(
-                noteFolderTitle: title, createdAt: now, updatedAt: now));
+                uuid: uuid.v4(),
+                noteFolderTitle: title,
+                createdAt: now,
+                updatedAt: now));
         folders.add(NoteFolderDto(id: newFolderId, title: title));
       }
     }
