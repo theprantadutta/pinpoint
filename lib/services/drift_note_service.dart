@@ -15,6 +15,7 @@ import 'package:pinpoint/services/notification_service.dart';
 import 'package:pinpoint/util/note_utils.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
+import 'package:pinpoint/sync/sync_manager.dart';
 
 class DriftNoteService {
   DriftNoteService._();
@@ -251,6 +252,16 @@ class DriftNoteService {
     ));
     NotificationService.cancelNotification(noteId);
     log.i("Note with ID $noteId soft-deleted successfully.");
+
+    // Trigger sync to upload the deletion to cloud
+    try {
+      final syncManager = getIt<SyncManager>();
+      await syncManager.sync();
+      log.i("Soft delete synced to cloud for note $noteId");
+    } catch (e) {
+      log.w("Failed to sync deletion to cloud: $e");
+      // Continue anyway - sync will happen on next app launch
+    }
   }
 
   static Future<void> restoreNoteById(int noteId) async {
@@ -262,11 +273,35 @@ class DriftNoteService {
       isSynced: Value(false), // Mark as needing upload
     ));
     log.i("Note with ID $noteId restored successfully.");
+
+    // Trigger sync to upload the restored note to cloud
+    try {
+      final syncManager = getIt<SyncManager>();
+      await syncManager.sync();
+      log.i("Restore synced to cloud for note $noteId");
+    } catch (e) {
+      log.w("Failed to sync restored note to cloud: $e");
+      // Continue anyway - sync will happen on next app launch
+    }
   }
 
   static Future<void> permanentlyDeleteNoteById(int noteId) async {
     final database = getIt<AppDatabase>();
     NotificationService.cancelNotification(noteId);
+
+    // IMPORTANT: Sync the deleted note to cloud BEFORE deleting locally
+    // The note should already be marked as isDeleted=true and isSynced=false
+    // This ensures the server knows it was deleted
+    try {
+      final syncManager = getIt<SyncManager>();
+      log.i("Syncing deleted note $noteId to cloud before permanent deletion...");
+      await syncManager.sync();
+      log.i("Delete synced to cloud for note $noteId");
+    } catch (e) {
+      log.w("Failed to sync deletion to cloud: $e");
+      // Continue anyway - user explicitly wants to delete
+    }
+
     // Delete attachments first to maintain referential integrity
     await (database.delete(database.noteAttachments)
           ..where((tbl) => tbl.noteId.equals(noteId)))
