@@ -75,7 +75,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      initialDateRange: _tempFilters.dateRangeStart != null && _tempFilters.dateRangeEnd != null
+      initialDateRange: _tempFilters.dateRangeStart != null &&
+              _tempFilters.dateRangeEnd != null
           ? DateTimeRange(
               start: _tempFilters.dateRangeStart!,
               end: _tempFilters.dateRangeEnd!,
@@ -119,7 +120,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),
@@ -133,14 +134,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: cs.onSurface.withOpacity(0.3),
+                  color: cs.onSurface.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
 
               // Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Row(
                   children: [
                     Icon(Icons.filter_list, color: cs.primary),
@@ -182,7 +184,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                         ),
                         value: _tempFilters.pinsOnly,
                         onChanged: (value) {
-                          _updateFilters(_tempFilters.copyWith(pinsOnly: value));
+                          _updateFilters(
+                              _tempFilters.copyWith(pinsOnly: value));
                         },
                       ),
                     ),
@@ -201,7 +204,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     Card(
                       child: Column(
                         children: _noteTypeLabels.entries.map((entry) {
-                          final isSelected = _tempFilters.noteTypes.contains(entry.key);
+                          final isSelected =
+                              _tempFilters.noteTypes.contains(entry.key);
                           return CheckboxListTile(
                             title: Row(
                               children: [
@@ -216,13 +220,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                             ),
                             value: isSelected,
                             onChanged: (checked) {
-                              final newTypes = List<String>.from(_tempFilters.noteTypes);
+                              final newTypes =
+                                  List<String>.from(_tempFilters.noteTypes);
                               if (checked == true) {
                                 newTypes.add(entry.key);
                               } else {
                                 newTypes.remove(entry.key);
                               }
-                              _updateFilters(_tempFilters.copyWith(noteTypes: newTypes));
+                              _updateFilters(
+                                  _tempFilters.copyWith(noteTypes: newTypes));
                             },
                           );
                         }).toList(),
@@ -244,7 +250,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       child: ListTile(
                         leading: Icon(Icons.calendar_today, color: cs.primary),
                         title: Text(
-                          _tempFilters.dateRangeStart != null && _tempFilters.dateRangeEnd != null
+                          _tempFilters.dateRangeStart != null &&
+                                  _tempFilters.dateRangeEnd != null
                               ? '${_formatDate(_tempFilters.dateRangeStart!)} - ${_formatDate(_tempFilters.dateRangeEnd!)}'
                               : 'Select date range',
                         ),
@@ -255,7 +262,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                             ? IconButton(
                                 icon: const Icon(Icons.clear, size: 20),
                                 onPressed: () {
-                                  _updateFilters(_tempFilters.copyWith(clearDateRange: true));
+                                  _updateFilters(_tempFilters.copyWith(
+                                      clearDateRange: true));
                                 },
                               )
                             : const Icon(Icons.chevron_right),
@@ -287,11 +295,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           padding: const EdgeInsets.all(16),
                           child: Row(
                             children: [
-                              Icon(Icons.folder_outlined, color: cs.onSurface.withOpacity(0.5)),
+                              Icon(Icons.folder_outlined,
+                                  color: cs.onSurface.withValues(alpha: 0.5)),
                               const SizedBox(width: 12),
                               Text(
                                 'No folders available',
-                                style: TextStyle(color: cs.onSurface.withOpacity(0.5)),
+                                style: TextStyle(
+                                    color: cs.onSurface.withValues(alpha: 0.5)),
                               ),
                             ],
                           ),
@@ -302,7 +312,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                         spacing: 8,
                         runSpacing: 8,
                         children: _availableFolders.map((folder) {
-                          final isSelected = _tempFilters.folderIds.contains(folder.noteFolderId);
+                          final isSelected = _tempFilters.folderIds
+                              .contains(folder.noteFolderId);
                           return FilterChip(
                             avatar: Icon(
                               Icons.folder,
@@ -312,13 +323,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                             label: Text(folder.noteFolderTitle),
                             selected: isSelected,
                             onSelected: (selected) {
-                              final newFolderIds = List<int>.from(_tempFilters.folderIds);
+                              final newFolderIds =
+                                  List<int>.from(_tempFilters.folderIds);
                               if (selected) {
                                 newFolderIds.add(folder.noteFolderId);
                               } else {
                                 newFolderIds.remove(folder.noteFolderId);
                               }
-                              _updateFilters(_tempFilters.copyWith(folderIds: newFolderIds));
+                              _updateFilters(_tempFilters.copyWith(
+                                  folderIds: newFolderIds));
                             },
                           );
                         }).toList(),
@@ -335,7 +348,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 decoration: BoxDecoration(
                   color: cs.surface,
                   border: Border(
-                    top: BorderSide(color: cs.outline.withOpacity(0.2)),
+                    top: BorderSide(color: cs.outline.withValues(alpha: 0.2)),
                   ),
                 ),
                 child: FilledButton(

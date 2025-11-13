@@ -85,105 +85,105 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
               searchQuery: _searchQuery,
               filterOptions: filterService.filterOptions,
             ),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return EmptyState(
-              icon: Icons.error_outline_rounded,
-              title: 'Error loading archived notes',
-              message: 'Please try again later',
-            );
-          }
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return EmptyState(
+                  icon: Icons.error_outline_rounded,
+                  title: 'Error loading archived notes',
+                  message: 'Please try again later',
+                );
+              }
 
-          final notes = snapshot.data ?? [];
+              final notes = snapshot.data ?? [];
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Text(
-                      'Archive',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                      ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Archive',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TagChip(
+                          label: '${notes.length}',
+                          color: cs.primary,
+                          size: TagChipSize.small,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    TagChip(
-                      label: '${notes.length}',
-                      color: cs.primary,
-                      size: TagChipSize.small,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // Content
-              Expanded(
-                child: notes.isEmpty
-                    ? EmptyState(
-                        icon: Icons.archive_outlined,
-                        title: 'No archived notes',
-                        message:
-                            'Notes you archive will appear here for safekeeping',
-                      )
-                    : AnimatedListStagger(
-                        itemCount: notes.length,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemBuilder: (context, index) {
-                          final note = notes[index];
-                          final n = note.note;
+                  // Content
+                  Expanded(
+                    child: notes.isEmpty
+                        ? EmptyState(
+                            icon: Icons.archive_outlined,
+                            title: 'No archived notes',
+                            message:
+                                'Notes you archive will appear here for safekeeping',
+                          )
+                        : AnimatedListStagger(
+                            itemCount: notes.length,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemBuilder: (context, index) {
+                              final note = notes[index];
+                              final n = note.note;
 
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _ArchivedNoteCard(
-                              note: note,
-                              onTap: () {
-                                PinpointHaptics.medium();
-                                context.push(
-                                  CreateNoteScreen.kRouteName,
-                                  extra: CreateNoteScreenArguments(
-                                    noticeType: n.noteType,
-                                    existingNote: note,
-                                  ),
-                                );
-                              },
-                              onUnarchive: () async {
-                                PinpointHaptics.light();
-                                await DriftNoteService.toggleArchiveStatus(
-                                    n.id, false);
-                              },
-                              onDelete: () async {
-                                final confirmed = await ConfirmSheet.show(
-                                  context: context,
-                                  title: 'Delete permanently?',
-                                  message:
-                                      'This action cannot be undone. The note and its attachments will be removed forever.',
-                                  primaryLabel: 'Delete forever',
-                                  secondaryLabel: 'Cancel',
-                                  isDestructive: true,
-                                  icon: Icons.delete_forever_rounded,
-                                );
-                                if (confirmed == true) {
-                                  PinpointHaptics.success();
-                                  await DriftNoteService
-                                      .permanentlyDeleteNoteById(n.id);
-                                }
-                              },
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        },
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _ArchivedNoteCard(
+                                  note: note,
+                                  onTap: () {
+                                    PinpointHaptics.medium();
+                                    context.push(
+                                      CreateNoteScreen.kRouteName,
+                                      extra: CreateNoteScreenArguments(
+                                        noticeType: n.noteType,
+                                        existingNote: note,
+                                      ),
+                                    );
+                                  },
+                                  onUnarchive: () async {
+                                    PinpointHaptics.light();
+                                    await DriftNoteService.toggleArchiveStatus(
+                                        n.id, false);
+                                  },
+                                  onDelete: () async {
+                                    final confirmed = await ConfirmSheet.show(
+                                      context: context,
+                                      title: 'Delete permanently?',
+                                      message:
+                                          'This action cannot be undone. The note and its attachments will be removed forever.',
+                                      primaryLabel: 'Delete forever',
+                                      secondaryLabel: 'Cancel',
+                                      isDestructive: true,
+                                      icon: Icons.delete_forever_rounded,
+                                    );
+                                    if (confirmed == true) {
+                                      PinpointHaptics.success();
+                                      await DriftNoteService
+                                          .permanentlyDeleteNoteById(n.id);
+                                    }
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
