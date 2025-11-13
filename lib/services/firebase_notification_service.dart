@@ -5,7 +5,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pinpoint/services/api_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:pinpoint/firebase_options.dart';
 import 'dart:io';
 
@@ -65,14 +64,11 @@ class FirebaseNotificationService {
       _firebaseMessaging = FirebaseMessaging.instance;
       debugPrint('✅ FirebaseMessaging instance created');
 
-      // Request notification permissions
-      final permitted = await _requestPermissions();
-      if (!permitted) {
-        debugPrint('⚠️ Notification permissions denied');
-        return;
-      }
+      // NOTE: Permissions are requested separately on HomeScreen after login
+      // Firebase can still get tokens and receive messages without explicit permission request here
+      // The permission will be granted when NotificationService.requestBasicNotificationPermission() is called
 
-      // Initialize local notifications
+      // Initialize local notifications (without requesting permissions)
       await _initializeLocalNotifications();
 
       // Get FCM token
@@ -96,56 +92,14 @@ class FirebaseNotificationService {
     }
   }
 
-  /// Request notification permissions
-  Future<bool> _requestPermissions() async {
-    try {
-      // For Android 13+ (API 33+), request POST_NOTIFICATIONS permission
-      if (Platform.isAndroid) {
-        final deviceInfo = DeviceInfoPlugin();
-        final androidInfo = await deviceInfo.androidInfo;
-
-        if (androidInfo.version.sdkInt >= 33) {
-          final status = await Permission.notification.request();
-
-          if (status.isDenied || status.isPermanentlyDenied) {
-            debugPrint('⚠️ Android 13+ notification permission denied');
-            return false;
-          }
-
-          debugPrint('✅ Android 13+ notification permission granted');
-        }
-      }
-
-      // Request FCM permissions (iOS and additional Android settings)
-      final settings = await _firebaseMessaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
-
-      debugPrint(
-          '📋 Notification permission status: ${settings.authorizationStatus}');
-
-      return settings.authorizationStatus == AuthorizationStatus.authorized ||
-          settings.authorizationStatus == AuthorizationStatus.provisional;
-    } catch (e) {
-      debugPrint('❌ Error requesting permissions: $e');
-      return false;
-    }
-  }
-
   /// Initialize local notifications for showing notifications
   Future<void> _initializeLocalNotifications() async {
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     const initSettings = InitializationSettings(
