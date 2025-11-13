@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../services/notification_service.dart';
 
 class ReminderTypeContent extends StatefulWidget {
   final TextEditingController descriptionController;
@@ -21,6 +23,44 @@ class ReminderTypeContent extends StatefulWidget {
 
 class _ReminderTypeContentState extends State<ReminderTypeContent> {
   Future<void> _pickDateTime() async {
+    // Check if exact alarm permission is needed (Android only)
+    final prefs = await SharedPreferences.getInstance();
+    final hasAskedExactAlarm =
+        prefs.getBool('exact_alarm_permission_requested') ?? false;
+
+    if (!hasAskedExactAlarm && mounted) {
+      // Show explanation dialog for exact alarm permission
+      final shouldRequest = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Enable Precise Reminders'),
+          content: const Text(
+            'To ensure your reminders arrive exactly on time, '
+            'we need permission to schedule precise alarms.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Skip'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Enable'),
+            ),
+          ],
+        ),
+      );
+
+      // Mark as asked regardless of user choice
+      await prefs.setBool('exact_alarm_permission_requested', true);
+
+      // Request permission if user agreed
+      if (shouldRequest == true) {
+        await NotificationService.requestScheduleExactAlarmPermission();
+      }
+    }
+
+    // Continue with date/time picker
     DateTime now = DateTime.now();
     DateTime? pickedDate = await showDatePicker(
       context: context,
