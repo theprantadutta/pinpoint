@@ -78,8 +78,9 @@ class NotificationService {
             _onDidReceiveBackgroundNotificationResponse,
       );
 
-      // Request permissions on Android 13+ and iOS
-      await _requestPermissions();
+      // NOTE: Permissions are requested separately:
+      // - Basic notification permission: on home screen after login
+      // - Schedule exact alarm permission: when creating a reminder
     } catch (e) {
       debugPrint('Error initializing notifications: $e');
     }
@@ -99,43 +100,104 @@ class NotificationService {
     // Handle background notification actions
   }
 
-  // Request permissions for notifications
-  static Future<void> _requestPermissions() async {
-    // Request permissions on Android 13+
-    final androidPlugin =
-        _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+  /// Request basic notification permissions (iOS/Android)
+  /// Should be called on home screen after login
+  static Future<bool> requestBasicNotificationPermission() async {
+    try {
+      // Request permissions on Android 13+
+      final androidPlugin =
+          _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
 
-    if (androidPlugin != null) {
-      await androidPlugin.requestNotificationsPermission();
-      // Optionally request exact alarm permission for scheduled notifications
-      await androidPlugin.requestExactAlarmsPermission();
+      if (androidPlugin != null) {
+        final granted = await androidPlugin.requestNotificationsPermission();
+        debugPrint(granted == true
+            ? '✅ Android notification permission granted'
+            : '⚠️ Android notification permission denied');
+        return granted == true;
+      }
+
+      // Request permissions on iOS
+      final iosPlugin =
+          _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+
+      if (iosPlugin != null) {
+        final granted = await iosPlugin.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        debugPrint(granted == true
+            ? '✅ iOS notification permission granted'
+            : '⚠️ iOS notification permission denied');
+        return granted == true;
+      }
+
+      // Request permissions on macOS
+      final macosPlugin =
+          _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+              MacOSFlutterLocalNotificationsPlugin>();
+
+      if (macosPlugin != null) {
+        final granted = await macosPlugin.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        debugPrint(granted == true
+            ? '✅ macOS notification permission granted'
+            : '⚠️ macOS notification permission denied');
+        return granted == true;
+      }
+
+      return true; // No permissions needed on other platforms
+    } catch (e) {
+      debugPrint('❌ Error requesting notification permission: $e');
+      return false;
     }
+  }
 
-    // Request permissions on iOS
-    final iosPlugin =
-        _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>();
+  /// Request exact alarm permission for scheduled notifications (Android)
+  /// Should be called when user creates a reminder
+  static Future<bool> requestScheduleExactAlarmPermission() async {
+    try {
+      final androidPlugin =
+          _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
 
-    if (iosPlugin != null) {
-      await iosPlugin.requestPermissions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      if (androidPlugin != null) {
+        final granted = await androidPlugin.requestExactAlarmsPermission();
+        debugPrint(granted == true
+            ? '✅ Android exact alarm permission granted'
+            : '⚠️ Android exact alarm permission denied');
+        return granted == true;
+      }
+
+      return true; // iOS doesn't need this permission
+    } catch (e) {
+      debugPrint('❌ Error requesting exact alarm permission: $e');
+      return false;
     }
+  }
 
-    // Request permissions on macOS
-    final macosPlugin =
-        _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            MacOSFlutterLocalNotificationsPlugin>();
+  /// Check if basic notification permissions are granted
+  static Future<bool> areNotificationsEnabled() async {
+    try {
+      final androidPlugin =
+          _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
 
-    if (macosPlugin != null) {
-      await macosPlugin.requestPermissions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      if (androidPlugin != null) {
+        final granted = await androidPlugin.areNotificationsEnabled();
+        return granted ?? false;
+      }
+
+      // For iOS/macOS, we assume they're enabled if we've requested before
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error checking notification status: $e');
+      return false;
     }
   }
 
@@ -322,29 +384,6 @@ class NotificationService {
   // Get active notifications (Android 6+, iOS 10+, macOS 10.14+)
   static Future<List<ActiveNotification>> getActiveNotifications() async {
     return await _flutterLocalNotificationsPlugin.getActiveNotifications();
-  }
-
-  // Check if notifications are enabled
-  static Future<bool?> areNotificationsEnabled() async {
-    final androidPlugin =
-        _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-
-    if (androidPlugin != null) {
-      return await androidPlugin.areNotificationsEnabled();
-    }
-
-    final iosPlugin =
-        _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>();
-
-    if (iosPlugin != null) {
-      return await iosPlugin
-          .checkPermissions()
-          .then((permissions) => permissions?.isEnabled);
-    }
-
-    return null;
   }
 
   // Get notification app launch details
