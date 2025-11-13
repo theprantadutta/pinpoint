@@ -85,103 +85,105 @@ class _TrashScreenState extends State<TrashScreen> {
               searchQuery: _searchQuery,
               filterOptions: filterService.filterOptions,
             ),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return EmptyState(
-              icon: Icons.error_outline_rounded,
-              title: 'Error loading trash',
-              message: 'Please try again later',
-            );
-          }
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return EmptyState(
+                  icon: Icons.error_outline_rounded,
+                  title: 'Error loading trash',
+                  message: 'Please try again later',
+                );
+              }
 
-          final notes = snapshot.data ?? [];
+              final notes = snapshot.data ?? [];
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Text(
-                      'Trash',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                      ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Trash',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TagChip(
+                          label: '${notes.length}',
+                          color: cs.error,
+                          size: TagChipSize.small,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    TagChip(
-                      label: '${notes.length}',
-                      color: cs.error,
-                      size: TagChipSize.small,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // Content
-              Expanded(
-                child: notes.isEmpty
-                    ? EmptyState(
-                        icon: Icons.delete_outline_rounded,
-                        title: 'Trash is empty',
-                        message: 'Deleted notes will appear here temporarily',
-                      )
-                    : AnimatedListStagger(
-                        itemCount: notes.length,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemBuilder: (context, index) {
-                          final note = notes[index];
-                          final n = note.note;
+                  // Content
+                  Expanded(
+                    child: notes.isEmpty
+                        ? EmptyState(
+                            icon: Icons.delete_outline_rounded,
+                            title: 'Trash is empty',
+                            message:
+                                'Deleted notes will appear here temporarily',
+                          )
+                        : AnimatedListStagger(
+                            itemCount: notes.length,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemBuilder: (context, index) {
+                              final note = notes[index];
+                              final n = note.note;
 
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _TrashedNoteCard(
-                              note: note,
-                              onTap: () {
-                                PinpointHaptics.medium();
-                                context.push(
-                                  CreateNoteScreen.kRouteName,
-                                  extra: CreateNoteScreenArguments(
-                                    noticeType: n.noteType,
-                                    existingNote: note,
-                                  ),
-                                );
-                              },
-                              onRestore: () async {
-                                PinpointHaptics.light();
-                                await DriftNoteService.restoreNoteById(n.id);
-                              },
-                              onDelete: () async {
-                                final confirmed = await ConfirmSheet.show(
-                                  context: context,
-                                  title: 'Delete permanently?',
-                                  message:
-                                      'This action cannot be undone. The note and its attachments will be removed forever.',
-                                  primaryLabel: 'Delete forever',
-                                  secondaryLabel: 'Cancel',
-                                  isDestructive: true,
-                                  icon: Icons.delete_forever_rounded,
-                                );
-                                if (confirmed == true) {
-                                  PinpointHaptics.success();
-                                  await DriftNoteService
-                                      .permanentlyDeleteNoteById(n.id);
-                                }
-                              },
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        },
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _TrashedNoteCard(
+                                  note: note,
+                                  onTap: () {
+                                    PinpointHaptics.medium();
+                                    context.push(
+                                      CreateNoteScreen.kRouteName,
+                                      extra: CreateNoteScreenArguments(
+                                        noticeType: n.noteType,
+                                        existingNote: note,
+                                      ),
+                                    );
+                                  },
+                                  onRestore: () async {
+                                    PinpointHaptics.light();
+                                    await DriftNoteService.restoreNoteById(
+                                        n.id);
+                                  },
+                                  onDelete: () async {
+                                    final confirmed = await ConfirmSheet.show(
+                                      context: context,
+                                      title: 'Delete permanently?',
+                                      message:
+                                          'This action cannot be undone. The note and its attachments will be removed forever.',
+                                      primaryLabel: 'Delete forever',
+                                      secondaryLabel: 'Cancel',
+                                      isDestructive: true,
+                                      icon: Icons.delete_forever_rounded,
+                                    );
+                                    if (confirmed == true) {
+                                      PinpointHaptics.success();
+                                      await DriftNoteService
+                                          .permanentlyDeleteNoteById(n.id);
+                                    }
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),

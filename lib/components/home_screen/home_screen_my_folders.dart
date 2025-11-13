@@ -87,7 +87,8 @@ class HomeScreenMyFolders extends StatelessWidget {
                     icon: const Icon(Icons.arrow_forward_rounded, size: 16),
                     label: const Text('View All'),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -118,7 +119,8 @@ class HomeScreenMyFolders extends StatelessWidget {
               stream: DriftNoteFolderService.watchAllNoteFoldersStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator.adaptive());
+                  return const Center(
+                      child: CircularProgressIndicator.adaptive());
                 }
                 if (snapshot.hasError) {
                   log.e('[folders] stream error', snapshot.error);
@@ -135,7 +137,8 @@ class HomeScreenMyFolders extends StatelessWidget {
                     child: Text(
                       'No folders yet. Tap + to create one.',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   );

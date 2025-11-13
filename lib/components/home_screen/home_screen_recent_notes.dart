@@ -59,99 +59,98 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
-          children: [
-            // Header
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  'Recent notes',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.2,
-                  ),
+        children: [
+          // Header
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'Recent notes',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: (dark ? Colors.white : Colors.black)
-                        .withAlpha(dark ? 15 : 20),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    'Live',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            // Content
-            Expanded(
-              child: Consumer<FilterService>(
-                builder: (context, filterService, _) {
-                  return StreamBuilder<List<NoteWithDetails>>(
-                    stream: DriftNoteService.watchNotesWithDetails(
-                      searchQuery: widget.searchQuery,
-                      sortType: _sortType,
-                      sortDirection: _sortDirection,
-                      filterOptions: filterService.filterOptions,
-                    ),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (snapshot.hasError) {
-                    return EmptyState(
-                      icon: Icons.error_outline_rounded,
-                      title: 'Something went wrong',
-                      message: 'Please try again later',
-                    );
-                  }
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return EmptyState(
-                      icon: Icons.note_add_rounded,
-                      title: 'No notes yet',
-                      message: 'Create your first note to get started',
-                    );
-                  }
-
-                  final data = snapshot.data!;
-
-                  if (_viewType == 'grid') {
-                    return MasonryGridView.count(
-                      controller: widget.scrollController,
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      padding: const EdgeInsets.only(bottom: 100),
-                      itemCount: data.length,
-                      itemBuilder: (context, i) {
-                        return NoteListItem(note: data[i], showActions: true);
-                      },
-                    );
-                  } else {
-                    return ListView.separated(
-                      controller: widget.scrollController,
-                      padding: const EdgeInsets.only(top: 8, bottom: 100),
-                      itemCount: data.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, i) {
-                        return NoteListItem(note: data[i], showActions: true);
-                      },
-                    );
-                  }
-                },
-              );
-                },
               ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (dark ? Colors.white : Colors.black)
+                      .withAlpha(dark ? 15 : 20),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'Live',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // Content
+          Expanded(
+            child: Consumer<FilterService>(
+              builder: (context, filterService, _) {
+                return StreamBuilder<List<NoteWithDetails>>(
+                  stream: DriftNoteService.watchNotesWithDetails(
+                    searchQuery: widget.searchQuery,
+                    sortType: _sortType,
+                    sortDirection: _sortDirection,
+                    filterOptions: filterService.filterOptions,
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return EmptyState(
+                        icon: Icons.error_outline_rounded,
+                        title: 'Something went wrong',
+                        message: 'Please try again later',
+                      );
+                    }
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return EmptyState(
+                        icon: Icons.note_add_rounded,
+                        title: 'No notes yet',
+                        message: 'Create your first note to get started',
+                      );
+                    }
+
+                    final data = snapshot.data!;
+
+                    if (_viewType == 'grid') {
+                      return MasonryGridView.count(
+                        controller: widget.scrollController,
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        padding: const EdgeInsets.only(bottom: 100),
+                        itemCount: data.length,
+                        itemBuilder: (context, i) {
+                          return NoteListItem(note: data[i], showActions: true);
+                        },
+                      );
+                    } else {
+                      return ListView.separated(
+                        controller: widget.scrollController,
+                        padding: const EdgeInsets.only(top: 8, bottom: 100),
+                        itemCount: data.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, i) {
+                          return NoteListItem(note: data[i], showActions: true);
+                        },
+                      );
+                    }
+                  },
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -217,7 +216,6 @@ class NoteListItem extends StatelessWidget {
   }
 }
 
-
 class _MiniActionPro extends StatefulWidget {
   final String tooltip;
   final IconData icon;
@@ -278,4 +276,3 @@ class _MiniActionProState extends State<_MiniActionPro>
     );
   }
 }
-

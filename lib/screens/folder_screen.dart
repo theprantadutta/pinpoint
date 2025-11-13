@@ -94,97 +94,100 @@ class _FolderScreenState extends State<FolderScreen> {
               searchQuery: _searchQuery,
               filterOptions: filterService.filterOptions,
             ),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return EmptyState(
-              icon: Icons.error_outline_rounded,
-              title: 'Error loading notes',
-              message: 'Please try again later',
-            );
-          }
-          final notes = snapshot.data ?? [];
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return EmptyState(
+                  icon: Icons.error_outline_rounded,
+                  title: 'Error loading notes',
+                  message: 'Please try again later',
+                );
+              }
+              final notes = snapshot.data ?? [];
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Text(
-                      widget.folderTitle,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                      ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Text(
+                          widget.folderTitle,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TagChip(
+                          label: '${notes.length}',
+                          color: cs.primary,
+                          size: TagChipSize.small,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    TagChip(
-                      label: '${notes.length}',
-                      color: cs.primary,
-                      size: TagChipSize.small,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // Content
-              Expanded(
-                child: notes.isEmpty
-                    ? EmptyState(
-                        icon: Icons.folder_open_rounded,
-                        title: 'No notes in this folder',
-                        message: 'Add notes to this folder to see them here',
-                      )
-                    : AnimatedListStagger(
-                        itemCount: notes.length,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemBuilder: (context, index) {
-                          final note = notes[index];
-                          final hasTitle = note.note.noteTitle != null &&
-                              note.note.noteTitle!.trim().isNotEmpty;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: NoteCard(
-                              title: getNoteTitleOrPreview(note.note.noteTitle, note.textContent),
-                              excerpt: hasTitle ? note.textContent : null,
-                              lastModified: note.note.updatedAt,
-                              isPinned: note.note.isPinned,
-                              tags: note.folders
-                                  .map((f) => CardNoteTag(
-                                        label: f.title,
-                                        color: theme.colorScheme.primary,
-                                      ))
-                                  .toList(),
-                              onTap: () {
-                                PinpointHaptics.medium();
-                                context.push(
-                                  CreateNoteScreen.kRouteName,
-                                  extra: CreateNoteScreenArguments(
-                                    noticeType: getNoteTypeDisplayName(note.note.noteType),
-                                    existingNote: note,
-                                  ),
-                                );
-                              },
-                              onPinToggle: () {
-                                PinpointHaptics.light();
-                                DriftNoteService.togglePinStatus(
-                                  note.note.id,
-                                  !note.note.isPinned,
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        },
+                  // Content
+                  Expanded(
+                    child: notes.isEmpty
+                        ? EmptyState(
+                            icon: Icons.folder_open_rounded,
+                            title: 'No notes in this folder',
+                            message:
+                                'Add notes to this folder to see them here',
+                          )
+                        : AnimatedListStagger(
+                            itemCount: notes.length,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemBuilder: (context, index) {
+                              final note = notes[index];
+                              final hasTitle = note.note.noteTitle != null &&
+                                  note.note.noteTitle!.trim().isNotEmpty;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: NoteCard(
+                                  title: getNoteTitleOrPreview(
+                                      note.note.noteTitle, note.textContent),
+                                  excerpt: hasTitle ? note.textContent : null,
+                                  lastModified: note.note.updatedAt,
+                                  isPinned: note.note.isPinned,
+                                  tags: note.folders
+                                      .map((f) => CardNoteTag(
+                                            label: f.title,
+                                            color: theme.colorScheme.primary,
+                                          ))
+                                      .toList(),
+                                  onTap: () {
+                                    PinpointHaptics.medium();
+                                    context.push(
+                                      CreateNoteScreen.kRouteName,
+                                      extra: CreateNoteScreenArguments(
+                                        noticeType: getNoteTypeDisplayName(
+                                            note.note.noteType),
+                                        existingNote: note,
+                                      ),
+                                    );
+                                  },
+                                  onPinToggle: () {
+                                    PinpointHaptics.light();
+                                    DriftNoteService.togglePinStatus(
+                                      note.note.id,
+                                      !note.note.isPinned,
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),

@@ -50,7 +50,8 @@ class FilterOptions {
     return FilterOptions(
       folderIds: folderIds ?? this.folderIds,
       noteTypes: noteTypes ?? this.noteTypes,
-      dateRangeStart: clearDateRange ? null : (dateRangeStart ?? this.dateRangeStart),
+      dateRangeStart:
+          clearDateRange ? null : (dateRangeStart ?? this.dateRangeStart),
       dateRangeEnd: clearDateRange ? null : (dateRangeEnd ?? this.dateRangeEnd),
       pinsOnly: pinsOnly ?? this.pinsOnly,
     );

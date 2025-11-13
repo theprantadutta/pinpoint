@@ -110,7 +110,9 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
                         label: Text(filterCount.toString()),
                         child: IconButton(
                           icon: Icon(
-                            hasFilters ? Symbols.filter_alt : Symbols.filter_alt,
+                            hasFilters
+                                ? Symbols.filter_alt
+                                : Symbols.filter_alt,
                             fill: hasFilters ? 1 : 0,
                           ),
                           tooltip: 'Filters',

@@ -75,17 +75,17 @@ class _NotesScreenState extends State<NotesScreen> {
                     sortDirection: _sortDirection,
                     filterOptions: filterService.filterOptions,
                   ),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox();
-                }
-                final notes = snapshot.data ?? [];
-                return TagChip(
-                  label: '${notes.length}',
-                  color: cs.primary,
-                  size: TagChipSize.small,
-                );
-              },
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SizedBox();
+                    }
+                    final notes = snapshot.data ?? [];
+                    return TagChip(
+                      label: '${notes.length}',
+                      color: cs.primary,
+                      size: TagChipSize.small,
+                    );
+                  },
                 );
               },
             ),
@@ -197,35 +197,35 @@ class _NotesScreenState extends State<NotesScreen> {
                     sortDirection: _sortDirection,
                     filterOptions: filterService.filterOptions,
                   ),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                if (snapshot.hasError) {
-                  return EmptyState(
-                    icon: Icons.error_outline_rounded,
-                    title: 'Error loading notes',
-                    message: 'Please try again later',
-                  );
-                }
+                    if (snapshot.hasError) {
+                      return EmptyState(
+                        icon: Icons.error_outline_rounded,
+                        title: 'Error loading notes',
+                        message: 'Please try again later',
+                      );
+                    }
 
-                final notes = snapshot.data ?? [];
+                    final notes = snapshot.data ?? [];
 
-                if (notes.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.note_alt_outlined,
-                    title: 'No notes found',
-                    message: _searchQuery.isEmpty
-                        ? 'Create your first note to get started'
-                        : 'Try a different search',
-                  );
-                }
+                    if (notes.isEmpty) {
+                      return EmptyState(
+                        icon: Icons.note_alt_outlined,
+                        title: 'No notes found',
+                        message: _searchQuery.isEmpty
+                            ? 'Create your first note to get started'
+                            : 'Try a different search',
+                      );
+                    }
 
-                return _isGridView
-                    ? _buildGridView(notes)
-                    : _buildListView(notes);
-              },
+                    return _isGridView
+                        ? _buildGridView(notes)
+                        : _buildListView(notes);
+                  },
                 );
               },
             ),
