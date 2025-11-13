@@ -12,6 +12,7 @@ import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/services/firebase_notification_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/google_sign_in_service.dart';
+import 'package:pinpoint/services/logout_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
@@ -164,10 +165,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
+                        color: Colors.orange.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.orange.withOpacity(0.3),
+                          color: Colors.orange.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),
@@ -895,12 +896,24 @@ class _ProfileHeaderCard extends StatelessWidget {
 }
 
 /// Logout Button with confirmation dialog
-class _LogoutButton extends StatelessWidget {
+class _LogoutButton extends StatefulWidget {
   final BackendAuthService backendAuth;
 
   const _LogoutButton({required this.backendAuth});
 
+  @override
+  State<_LogoutButton> createState() => _LogoutButtonState();
+}
+
+class _LogoutButtonState extends State<_LogoutButton> {
+  bool _isLoggingOut = false;
+  String _logoutStatus = 'Preparing...';
+  LogoutService? _logoutService;
+
   Future<void> _handleLogout(BuildContext context) async {
+    // Prevent multiple simultaneous logout attempts
+    if (_isLoggingOut) return;
+
     // Show confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
@@ -927,16 +940,57 @@ class _LogoutButton extends StatelessWidget {
 
     if (confirm != true) return;
 
+    // Initialize logout service
+    _logoutService = LogoutService.fromServiceLocator(
+      backendAuthService: widget.backendAuth,
+      googleSignInService: GoogleSignInService(),
+    );
+
+    // Set up phase change listener
+    _logoutService!.onPhaseChanged = (phase) {
+      if (mounted) {
+        setState(() {
+          _logoutStatus = _getPhaseMessage(phase);
+        });
+      }
+    };
+
+    // Set loading state
+    setState(() {
+      _isLoggingOut = true;
+      _logoutStatus = 'Validating...';
+    });
+
     try {
-      // Sign out from Google (if applicable)
-      final googleSignInService = GoogleSignInService();
-      await googleSignInService.signOut();
+      // Phase 1: Validation
+      final validation = await _logoutService!.validateLogout();
 
-      // Logout from backend (clears state & token)
-      await backendAuth.logout();
+      if (!validation.canProceed) {
+        // Show validation error dialog
+        if (mounted) {
+          await _showValidationErrorDialog(context, validation);
 
-      // Navigate to auth screen
-      if (context.mounted) {
+          setState(() {
+            _isLoggingOut = false;
+          });
+        }
+        return;
+      }
+
+      // Check for unsynced notes and warn user
+      final unsyncedCount = await _logoutService!.getUnsyncedNotesCount();
+      if (unsyncedCount > 0) {
+        setState(() {
+          _logoutStatus =
+              'Syncing $unsyncedCount note${unsyncedCount > 1 ? 's' : ''}...';
+        });
+      }
+
+      // Phase 2-5: Perform logout
+      final success = await _logoutService!.performLogout();
+
+      if (success && context.mounted) {
+        // Navigate to auth screen
         PinpointHaptics.success();
         AppNavigation.router.go('/auth');
 
@@ -953,17 +1007,123 @@ class _LogoutButton extends StatelessWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        PinpointHaptics.error();
-        showErrorToast(
-          context: context,
-          title: 'Sign Out Failed',
-          description: e.toString().replaceAll('Exception: ', ''),
-        );
+        // Check if sync failed
+        if (e.toString().contains('Sync failed') ||
+            e.toString().contains('sync') ||
+            e.toString().contains('network')) {
+          final forceLogout = await _showSyncErrorDialog(context, e.toString());
 
-        // Still navigate to auth screen even if there was an error
-        AppNavigation.router.go('/auth');
+          if (forceLogout == true) {
+            // User chose to force logout, navigate to auth
+            PinpointHaptics.warning();
+            AppNavigation.router.go('/auth');
+
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (context.mounted) {
+                showWarningToast(
+                  context: context,
+                  title: 'Signed Out',
+                  description: 'Signed out with unsynced changes.',
+                );
+              }
+            });
+          }
+        } else {
+          // Other errors
+          PinpointHaptics.error();
+          showErrorToast(
+            context: context,
+            title: 'Sign Out Failed',
+            description: e.toString().replaceAll('Exception: ', ''),
+          );
+        }
+      }
+    } finally {
+      // Clear loading state if still mounted
+      if (mounted) {
+        setState(() {
+          _isLoggingOut = false;
+          _logoutStatus = 'Preparing...';
+        });
       }
     }
+  }
+
+  /// Get user-friendly message for each logout phase
+  String _getPhaseMessage(LogoutPhase phase) {
+    switch (phase) {
+      case LogoutPhase.validating:
+        return 'Validating...';
+      case LogoutPhase.syncing:
+        return 'Syncing notes...';
+      case LogoutPhase.signingOut:
+        return 'Signing out from server...';
+      case LogoutPhase.cleaningData:
+        return 'Clearing local data...';
+      case LogoutPhase.completed:
+        return 'Completed';
+    }
+  }
+
+  /// Show validation error dialog (e.g., audio notes exist)
+  Future<void> _showValidationErrorDialog(
+    BuildContext context,
+    LogoutValidationResult validation,
+  ) async {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          color: PinpointColors.amber,
+          size: 48,
+        ),
+        title: const Text('Cannot Sign Out'),
+        content: Text(
+          validation.blockReason == LogoutBlockReason.audioNotesExist
+              ? 'You have ${validation.audioNotesCount} audio recording${validation.audioNotesCount! > 1 ? 's' : ''} that are stored locally only and will be lost forever.\n\nPlease backup or delete your audio recordings before signing out.'
+              : validation.errorMessage ?? 'Unable to sign out at this time.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show sync error dialog with retry/force logout options
+  Future<bool?> _showSyncErrorDialog(BuildContext context, String error) async {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          Icons.sync_problem_rounded,
+          color: PinpointColors.rose,
+          size: 48,
+        ),
+        title: const Text('Sync Failed'),
+        content: Text(
+          'Failed to sync your notes:\n\n${error.replaceAll('Exception: ', '')}\n\nYour unsynced changes will be lost if you sign out now.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: PinpointColors.rose,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Force Sign Out'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -993,33 +1153,48 @@ class _LogoutButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            PinpointHaptics.medium();
-            _handleLogout(context);
-          },
+          onTap: _isLoggingOut
+              ? null
+              : () {
+                  PinpointHaptics.medium();
+                  _handleLogout(context);
+                },
           borderRadius: BorderRadius.circular(16),
           child: ListTile(
-            leading: Icon(
-              Icons.logout_rounded,
-              color: PinpointColors.rose,
-            ),
+            leading: _isLoggingOut
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        PinpointColors.rose,
+                      ),
+                    ),
+                  )
+                : Icon(
+                    Icons.logout_rounded,
+                    color: PinpointColors.rose,
+                  ),
             title: Text(
-              'Sign Out',
+              _isLoggingOut ? 'Signing Out...' : 'Sign Out',
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: PinpointColors.rose,
               ),
             ),
             subtitle: Text(
-              'Sign out of your account',
+              _isLoggingOut ? _logoutStatus : 'Sign out of your account',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurface.withValues(alpha: 0.6),
               ),
             ),
-            trailing: Icon(
-              Icons.chevron_right_rounded,
-              color: PinpointColors.rose.withValues(alpha: 0.6),
-            ),
+            trailing: _isLoggingOut
+                ? null
+                : Icon(
+                    Icons.chevron_right_rounded,
+                    color: PinpointColors.rose.withValues(alpha: 0.6),
+                  ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
