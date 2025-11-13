@@ -118,12 +118,8 @@ class _BrutalistInputState extends State<BrutalistInput>
     final hasError = widget.errorText != null;
 
     _borderColorAnimation = ColorTween(
-      begin: hasError
-          ? PinpointColors.error
-          : inputStyle.borderColor,
-      end: hasError
-          ? PinpointColors.errorLight
-          : colorScheme.primary,
+      begin: hasError ? PinpointColors.error : inputStyle.borderColor,
+      end: hasError ? PinpointColors.errorLight : colorScheme.primary,
     ).animate(_focusController);
 
     return Column(

@@ -116,9 +116,7 @@ class _BrutalistButtonState extends State<BrutalistButton>
             borderRadius: BorderRadius.circular(buttonStyle.borderRadius),
             boxShadow: isDisabled
                 ? []
-                : (_isPressed
-                    ? buttonStyle.pressedShadow
-                    : buttonStyle.shadow),
+                : (_isPressed ? buttonStyle.pressedShadow : buttonStyle.shadow),
           ),
           child: _buildContent(context, brightness, buttonStyle, isDisabled),
         ),

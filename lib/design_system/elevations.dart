@@ -168,11 +168,13 @@ class PinpointElevations {
   // ============================================
 
   /// Brutalist shadow - sharp offset with minimal blur
-  static List<BoxShadow> brutalist(Brightness brightness, {
+  static List<BoxShadow> brutalist(
+    Brightness brightness, {
     double offsetX = 4,
     double offsetY = 4,
     Color? color,
-  }) => [
+  }) =>
+      [
         BoxShadow(
           color: color ?? _shadowColor(brightness, 0.2),
           blurRadius: 1,
@@ -181,9 +183,11 @@ class PinpointElevations {
       ];
 
   /// Bold brutalist shadow - larger offset
-  static List<BoxShadow> brutalistBold(Brightness brightness, {
+  static List<BoxShadow> brutalistBold(
+    Brightness brightness, {
     Color? color,
-  }) => [
+  }) =>
+      [
         BoxShadow(
           color: color ?? _shadowColor(brightness, 0.25),
           blurRadius: 2,
@@ -206,11 +210,14 @@ class PinpointElevations {
       ];
 
   /// Layered brutalist shadow - multiple offset layers
-  static List<BoxShadow> brutalistLayered(Brightness brightness, {
+  static List<BoxShadow> brutalistLayered(
+    Brightness brightness, {
     Color? accentColor,
-  }) => [
+  }) =>
+      [
         BoxShadow(
-          color: accentColor?.withValues(alpha: 0.3) ?? _shadowColor(brightness, 0.1),
+          color: accentColor?.withValues(alpha: 0.3) ??
+              _shadowColor(brightness, 0.1),
           blurRadius: 0,
           offset: const Offset(4, 4),
         ),

@@ -147,7 +147,8 @@ class PinpointSpacing {
 class SpacingPresets {
   // Card spacing
   static const cardPadding = EdgeInsets.all(PinpointSpacing.paddingDefault);
-  static const cardPaddingGenerous = EdgeInsets.all(PinpointSpacing.paddingGenerous);
+  static const cardPaddingGenerous =
+      EdgeInsets.all(PinpointSpacing.paddingGenerous);
 
   // List spacing
   static const listItemPadding = EdgeInsets.symmetric(
@@ -157,8 +158,10 @@ class SpacingPresets {
 
   // Screen spacing
   static const screenPadding = EdgeInsets.all(PinpointSpacing.screenEdge);
-  static const screenPaddingH = EdgeInsets.symmetric(horizontal: PinpointSpacing.screenEdge);
-  static const screenPaddingV = EdgeInsets.symmetric(vertical: PinpointSpacing.screenEdge);
+  static const screenPaddingH =
+      EdgeInsets.symmetric(horizontal: PinpointSpacing.screenEdge);
+  static const screenPaddingV =
+      EdgeInsets.symmetric(vertical: PinpointSpacing.screenEdge);
 
   // Section spacing
   static const sectionGap = SizedBox(height: PinpointSpacing.sectionSpacing);

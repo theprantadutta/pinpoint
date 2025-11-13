@@ -50,8 +50,9 @@ class GlassAppBar extends StatefulWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => Size.fromHeight(
-    (expandedHeight ?? kToolbarHeight) + (bottom?.preferredSize.height ?? 0.0),
-  );
+        (expandedHeight ?? kToolbarHeight) +
+            (bottom?.preferredSize.height ?? 0.0),
+      );
 }
 
 class _GlassAppBarState extends State<GlassAppBar> {
