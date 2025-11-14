@@ -19,20 +19,17 @@ class MarkdownToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
 
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
-        border: Border(
-          top: BorderSide(
-            color: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
-          ),
-        ),
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           children: [
             _ToolbarButton(
@@ -236,7 +233,7 @@ class _ToolbarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
 
     return Tooltip(
       message: tooltip,
@@ -246,17 +243,15 @@ class _ToolbarButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isActive
-                ? (isDarkMode ? Colors.blue[900] : Colors.blue[100])
-                : null,
+            color: isActive ? cs.primaryContainer : null,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
             size: 20,
             color: isActive
-                ? (isDarkMode ? Colors.blue[300] : Colors.blue[700])
-                : (isDarkMode ? Colors.grey[400] : Colors.grey[700]),
+                ? cs.onPrimaryContainer
+                : cs.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ),
@@ -270,12 +265,12 @@ class _ToolbarDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
 
     return Container(
       width: 1,
       height: 20,
-      color: isDarkMode ? Colors.grey[800] : Colors.grey[300],
+      color: cs.outline.withValues(alpha: 0.3),
     );
   }
 }

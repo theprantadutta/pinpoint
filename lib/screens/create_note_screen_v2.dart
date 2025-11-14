@@ -62,6 +62,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   // Save tracking
   int? _currentNoteId; // Track saved note ID
   bool _isSaving = false;
+  Timer? _autoSaveTimer; // Auto-save timer
 
   @override
   void initState() {
@@ -72,12 +73,18 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     _textContentFocusNode = FocusNode();
     _reminderDescriptionController = TextEditingController();
 
+    // Add auto-save listeners
+    _titleController.addListener(_scheduleAutoSave);
+    _textContentController.addListener(_scheduleAutoSave);
+    _reminderDescriptionController.addListener(_scheduleAutoSave);
+
     // Initialize folders
     _initializeFolders();
   }
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     _titleController.dispose();
     _titleFocusNode.dispose();
     _textContentController.dispose();
@@ -93,7 +100,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   Future<void> _initializeFolders() async {
     try {
       // Get existing folders
-      final folders = await DriftNoteFolderService.watchAllNoteFoldersStream().first;
+      final folders =
+          await DriftNoteFolderService.watchAllNoteFoldersStream().first;
 
       if (folders.isNotEmpty && mounted) {
         setState(() {
@@ -117,7 +125,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final allFolders = await DriftNoteFolderService.watchAllNoteFoldersStream().first;
+    final allFolders =
+        await DriftNoteFolderService.watchAllNoteFoldersStream().first;
 
     if (!mounted) return;
 
@@ -247,6 +256,60 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     );
   }
 
+  /// Schedule auto-save with 2 second debounce
+  void _scheduleAutoSave() {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) {
+        _autoSaveNote();
+      }
+    });
+  }
+
+  /// Auto-save note based on content
+  Future<void> _autoSaveNote() async {
+    if (_isSaving) return;
+
+    final title = _titleController.text.trim();
+
+    // Check if there's any content to save based on note type
+    bool hasContent = false;
+
+    switch (selectedNoteType) {
+      case 'Title Content':
+        final content = _textContentController.text.trim();
+        hasContent = title.isNotEmpty || content.isNotEmpty;
+        break;
+
+      case 'Record Audio':
+        hasContent = _audioFilePath != null;
+        break;
+
+      case 'Todo List':
+        hasContent = _todoItems.isNotEmpty && _todoItems.any((item) => item.trim().isNotEmpty);
+        break;
+
+      case 'Reminder':
+        hasContent = _reminderTime != null;
+        break;
+    }
+
+    if (!hasContent) {
+      debugPrint('⏭️ [CreateNoteV2] Auto-save skipped: No content');
+      return;
+    }
+
+    debugPrint('💾 [CreateNoteV2] Auto-saving note (type: $selectedNoteType)...');
+
+    try {
+      await _saveNote();
+      debugPrint('✅ [CreateNoteV2] Auto-save completed');
+    } catch (e) {
+      debugPrint('⚠️ [CreateNoteV2] Auto-save failed: $e');
+      // Don't show error to user for auto-save failures
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -266,7 +329,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             // Content
             Expanded(
               child: CustomScrollView(
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 slivers: [
                   // Folder Selection
                   SliverToBoxAdapter(
@@ -449,15 +513,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   Widget _buildTextNoteContent() {
     return SliverFillRemaining(
       hasScrollBody: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: MarkdownEditor(
-          controller: _textContentController,
-          focusNode: _textContentFocusNode,
-          hintText: 'Write your note in markdown...',
-          showToolbar: true,
-          enablePreview: true,
-        ),
+      child: MarkdownEditor(
+        controller: _textContentController,
+        focusNode: _textContentFocusNode,
+        hintText: 'Write your note in markdown...',
+        showToolbar: true,
+        enablePreview: true,
       ),
     );
   }
@@ -474,7 +535,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             // Recording indicator / status
             if (_isRecording || _audioFilePath != null) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 decoration: BoxDecoration(
                   color: isDark
                       ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
@@ -541,7 +603,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: (_isRecording ? cs.error : cs.primary).withValues(alpha: 0.3),
+                      color: (_isRecording ? cs.error : cs.primary)
+                          .withValues(alpha: 0.3),
                       blurRadius: 24,
                       spreadRadius: 4,
                     ),
@@ -561,7 +624,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             Text(
               _isRecording
                   ? 'Tap to stop recording'
-                  : (_audioFilePath != null ? 'Tap to record again' : 'Tap to start recording'),
+                  : (_audioFilePath != null
+                      ? 'Tap to record again'
+                      : 'Tap to start recording'),
               style: TextStyle(
                 fontSize: 15,
                 color: cs.onSurface.withValues(alpha: 0.7),
@@ -593,7 +658,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                     iconSize: 28,
                     style: IconButton.styleFrom(
                       padding: const EdgeInsets.all(18),
-                      side: BorderSide(color: cs.outline.withValues(alpha: 0.3)),
+                      side:
+                          BorderSide(color: cs.outline.withValues(alpha: 0.3)),
                     ),
                   ),
                 ],
@@ -622,7 +688,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   icon: Icon(Symbols.add, size: 20),
                   label: const Text('Add Todo Item'),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     side: BorderSide(color: cs.outline.withValues(alpha: 0.3)),
                   ),
                 ),
@@ -637,7 +704,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   children: [
                     // Checkbox placeholder (not interactive in create mode)
@@ -668,6 +736,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                         setState(() {
                           _todoItems.removeAt(index);
                         });
+                        _scheduleAutoSave();
                       },
                     ),
                   ],
@@ -700,6 +769,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               setState(() {
                 _todoItems.add(value.trim());
               });
+              _scheduleAutoSave();
               Navigator.pop(context);
             }
           },
@@ -715,6 +785,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 setState(() {
                   _todoItems.add(controller.text.trim());
                 });
+                _scheduleAutoSave();
                 Navigator.pop(context);
               }
             },
@@ -849,6 +920,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             pickedTime.minute,
           );
         });
+        _scheduleAutoSave();
       }
     }
   }
@@ -866,13 +938,30 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       dateStr = 'Tomorrow';
     } else {
       // Format as "Mon, Jan 1, 2025"
-      final months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final months = [
+        '',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
       final weekdays = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      dateStr = '${weekdays[dateTime.weekday]}, ${months[dateTime.month]} ${dateTime.day}, ${dateTime.year}';
+      dateStr =
+          '${weekdays[dateTime.weekday]}, ${months[dateTime.month]} ${dateTime.day}, ${dateTime.year}';
     }
 
     // Format time as 12-hour format
-    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final hour = dateTime.hour > 12
+        ? dateTime.hour - 12
+        : (dateTime.hour == 0 ? 12 : dateTime.hour);
     final minute = dateTime.minute.toString().padLeft(2, '0');
     final period = dateTime.hour >= 12 ? 'PM' : 'AM';
 
@@ -924,7 +1013,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (mounted) {
           setState(() {
-            _recordedDuration = Duration(seconds: _recordedDuration.inSeconds + 1);
+            _recordedDuration =
+                Duration(seconds: _recordedDuration.inSeconds + 1);
           });
         }
       });
@@ -946,7 +1036,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           _audioDurationSeconds = _recordedDuration.inSeconds;
           _isRecording = false;
         });
-        debugPrint('✅ [VoiceNote] Stopped recording. Duration: $_audioDurationSeconds seconds');
+        _scheduleAutoSave();
+        debugPrint(
+            '✅ [VoiceNote] Stopped recording. Duration: $_audioDurationSeconds seconds');
         debugPrint('📁 [VoiceNote] Audio saved to: $path');
       }
     } catch (e) {
