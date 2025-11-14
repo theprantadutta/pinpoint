@@ -203,29 +203,28 @@ folders (NEW TABLE)
 
 ## 📦 MIGRATION PHASES
 
-### PHASE 1: Database Redesign (Week 1-2)
+### PHASE 1: Database Redesign ✅ COMPLETE
 **Goal**: Create new schema, migrate existing data
+**Completed**: 2025-11-14
 
 #### 1.1 Create New Entity Files
-- [ ] `lib/entities/text_note_entity.dart` (standalone, not extension)
-- [ ] `lib/entities/voice_note_entity.dart` (standalone)
-- [ ] `lib/entities/todo_list_note_entity.dart` (standalone)
-- [ ] `lib/entities/todo_item_entity.dart` (many:1 with todo_list_notes)
-- [ ] `lib/entities/reminder_note_entity.dart` (standalone)
-- [ ] `lib/entities/text_note_folder_relations_entity.dart`
-- [ ] `lib/entities/voice_note_folder_relations_entity.dart`
-- [ ] `lib/entities/todo_list_note_folder_relations_entity.dart`
-- [ ] `lib/entities/reminder_note_folder_relations_entity.dart`
+- [x] `lib/entities/text_note_entity.dart` (standalone, not extension)
+- [x] `lib/entities/voice_note_entity.dart` (standalone)
+- [x] `lib/entities/todo_list_note_entity.dart` (standalone)
+- [x] `lib/entities/todo_item_entity.dart` (many:1 with todo_list_notes)
+- [x] `lib/entities/reminder_note_entity.dart` (standalone)
+- [x] `lib/entities/text_note_folder_relations_entity.dart`
+- [x] `lib/entities/voice_note_folder_relations_entity.dart`
+- [x] `lib/entities/todo_list_note_folder_relations_entity.dart`
+- [x] `lib/entities/reminder_note_folder_relations_entity.dart`
 
 #### 1.2 Update Database Definition
-- [ ] `lib/database/database.dart` - Add new tables to @DriftDatabase annotation
-- [ ] Write migration function: `MigrationStrategy` V7 → V8
-- [ ] Migration steps:
+- [x] `lib/database/database.dart` - Add new tables to @DriftDatabase annotation
+- [x] Write migration function: `MigrationStrategy` V7 → V8
+- [x] Migration steps (simplified to fresh schema):
   1. Create all new tables
-  2. Migrate data from old `notes` + type tables → new standalone tables
-  3. Assign all notes without folders to "Random" folder
-  4. Validate migration (count records before/after)
-  5. Drop old tables: `notes`, `text_notes` (old), `audio_notes`, `todo_notes`, `note_todo_items`, `reminder_notes`, `note_folder_relations`
+  2. Drop old tables: `notes`, `text_notes` (old), `audio_notes`, `todo_notes`, `note_todo_items`, `reminder_notes`, `note_folder_relations`
+  3. **Note**: No data migration needed (user directive: data loss acceptable)
 
 #### 1.3 Migration Logic
 ```dart
@@ -247,37 +246,46 @@ folders (NEW TABLE)
 
 ---
 
-### PHASE 2: Service Layer Rewrite (Week 3-4)
+### PHASE 2: Service Layer Rewrite ✅ COMPLETE
 **Goal**: Create type-specific CRUD services with mandatory folder enforcement
+**Completed**: 2025-11-14
 
 #### 2.1 Create Type-Specific Services
-- [ ] `lib/services/text_note_service.dart`
+- [x] `lib/services/text_note_service.dart`
   - `createTextNote(title, content, List<FolderDto> folders)` ← folders required
   - `updateTextNote(id, title, content, folders)`
   - `deleteTextNote(id)` ← soft delete
+  - `permanentlyDeleteTextNote(id)` ← hard delete
   - `getTextNote(id)`
   - `watchAllTextNotes()`
   - `watchTextNotesByFolder(folderId)`
 
-- [ ] `lib/services/voice_note_service.dart`
-  - Similar CRUD with voice-specific fields
+- [x] `lib/services/voice_note_service.dart`
+  - Full CRUD with voice-specific fields (audioFilePath, durationSeconds, transcription)
 
-- [ ] `lib/services/todo_list_note_service.dart`
-  - `createTodoListNote(title, List<TodoItemDto>, List<FolderDto>)`
-  - `addTodoItem(todoListNoteId, todoTitle)`
-  - `toggleTodoItem(todoItemId, isDone)`
-  - `deleteTodoItem(todoItemId)`
+- [x] `lib/services/todo_list_note_service.dart`
+  - `createTodoListNote(title, List<String> initialItems, List<FolderDto>)`
+  - `addTodoItem(todoListNoteId, todoListNoteUuid, content)`
+  - `updateTodoItem(itemId, content, isCompleted)`
+  - `toggleTodoItemCompletion(itemId)`
+  - `deleteTodoItem(itemId)`
+  - `watchTodoItems(todoListNoteId)`
 
-- [ ] `lib/services/reminder_note_service.dart`
-  - Similar CRUD with reminder-specific fields
+- [x] `lib/services/reminder_note_service.dart`
+  - Full CRUD with reminder-specific fields (reminderTime, isTriggered)
+  - `markReminderAsTriggered(noteId)`
+  - `watchPendingReminders()` - future reminders
+  - `watchTriggeredReminders()` - past triggered reminders
+  - `getRemindersToTrigger()` - ready to send notifications
 
 #### 2.2 Folder Service Updates
-- [ ] Update `drift_note_folder_service.dart`:
-  - Keep prepopulation logic (deterministic UUIDs)
-  - Add validation: `validateFolderList(List<FolderDto>)` → must have at least 1
+- [x] Folder enforcement implemented in all services
+  - All create methods require folders parameter
+  - Throws exception if folders.isEmpty
+  - Pattern: `if (folders.isEmpty) throw Exception('Note must belong to at least one folder')`
 
 #### 2.3 Delete Old Service
-- [ ] Archive `lib/services/drift_note_service.dart` (or refactor as base class)
+- [ ] Archive `lib/services/drift_note_service.dart` (deferred - still used by old UI)
 
 **Enforcement Rule**: All `create*Note()` methods MUST accept folders parameter, default to ["Random"] if empty.
 
