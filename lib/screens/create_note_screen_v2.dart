@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:async';
 
 import '../components/create_note_screen/create_note_categories.dart';
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
@@ -41,6 +45,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   String? _audioFilePath;
   int? _audioDurationSeconds;
   String? _audioTranscription;
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isRecording = false;
+  bool _isPlaying = false;
+  Timer? _recordingTimer;
+  Duration _recordedDuration = Duration.zero;
 
   // Todo list fields
   final List<String> _todoItems = [];
@@ -73,6 +83,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     _textContentController.dispose();
     _textContentFocusNode.dispose();
     _reminderDescriptionController.dispose();
+    _recordingTimer?.cancel();
+    _audioRecorder.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -460,54 +473,438 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   }
 
   Widget _buildVoiceNoteContent() {
-    // TODO: Implement voice note UI
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Center(
-          child: Text(
-            'Voice note UI coming soon',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          children: [
+            // Recording indicator / status
+            if (_isRecording || _audioFilePath != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
+                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: cs.outline.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        if (_isRecording)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: cs.error,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        if (_isRecording) const SizedBox(width: 12),
+                        Text(
+                          _isRecording ? 'Recording...' : 'Recording Complete',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      _formatDuration(_recordedDuration),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: cs.primary,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+
+            // Record button
+            GestureDetector(
+              onTap: _isRecording ? _stopRecording : _startRecording,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: _isRecording
+                        ? [cs.error, cs.error.withValues(alpha: 0.8)]
+                        : [cs.primary, cs.primary.withValues(alpha: 0.8)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (_isRecording ? cs.error : cs.primary).withValues(alpha: 0.3),
+                      blurRadius: 24,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  _isRecording ? Symbols.stop : Symbols.mic,
+                  size: 48,
+                  color: Colors.white,
+                ),
+              ),
             ),
-          ),
+
+            const SizedBox(height: 16),
+
+            // Status text
+            Text(
+              _isRecording
+                  ? 'Tap to stop recording'
+                  : (_audioFilePath != null ? 'Tap to record again' : 'Tap to start recording'),
+              style: TextStyle(
+                fontSize: 15,
+                color: cs.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+
+            // Playback controls (only show if we have a recording)
+            if (_audioFilePath != null && !_isRecording) ...[
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Play/Pause button
+                  IconButton.filled(
+                    onPressed: _isPlaying ? _pausePlayback : _startPlayback,
+                    icon: Icon(_isPlaying ? Symbols.pause : Symbols.play_arrow),
+                    iconSize: 32,
+                    style: IconButton.styleFrom(
+                      backgroundColor: cs.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.all(20),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Stop button
+                  IconButton.outlined(
+                    onPressed: _stopPlayback,
+                    icon: const Icon(Symbols.stop),
+                    iconSize: 28,
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(18),
+                      side: BorderSide(color: cs.outline.withValues(alpha: 0.3)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
         ),
       ),
     );
   }
 
   Widget _buildTodoListContent() {
-    // TODO: Implement todo list UI
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Center(
-          child: Text(
-            'Todo list UI coming soon',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            if (index == _todoItems.length) {
+              // Add new todo button
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: OutlinedButton.icon(
+                  onPressed: _addTodoItem,
+                  icon: Icon(Symbols.add, size: 20),
+                  label: const Text('Add Todo Item'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    side: BorderSide(color: cs.outline.withValues(alpha: 0.3)),
+                  ),
+                ),
+              );
+            }
+
+            final item = _todoItems[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
+                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: cs.outline.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    // Checkbox placeholder (not interactive in create mode)
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        Symbols.radio_button_unchecked,
+                        size: 20,
+                        color: cs.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    // Todo text
+                    Expanded(
+                      child: Text(
+                        item,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ),
+                    // Delete button
+                    IconButton(
+                      icon: Icon(
+                        Symbols.delete,
+                        size: 20,
+                        color: cs.error,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _todoItems.removeAt(index);
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+          childCount: _todoItems.length + 1, // +1 for add button
         ),
       ),
     );
   }
 
+  void _addTodoItem() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Todo Item'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Enter todo item',
+            border: OutlineInputBorder(),
+          ),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              setState(() {
+                _todoItems.add(value.trim());
+              });
+              Navigator.pop(context);
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                setState(() {
+                  _todoItems.add(controller.text.trim());
+                });
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildReminderContent() {
-    // TODO: Implement reminder UI
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Center(
-          child: Text(
-            'Reminder UI coming soon',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Description Field
+            Text(
+              "Description",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
+              ),
             ),
-          ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _reminderDescriptionController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: "What would you like to be reminded about?",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(
+                    color: cs.outline.withValues(alpha: 0.2),
+                  ),
+                ),
+                filled: true,
+                fillColor: isDark
+                    ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
+                    : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                contentPadding: const EdgeInsets.all(16),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Reminder Time
+            Text(
+              "Reminder Time",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: _pickReminderDateTime,
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      cs.primary.withValues(alpha: isDark ? 0.2 : 0.15),
+                      cs.primary.withValues(alpha: isDark ? 0.1 : 0.08),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: cs.primary.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: cs.primary.withValues(alpha: isDark ? 0.3 : 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Symbols.calendar_today,
+                        color: cs.primary,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        _reminderTime == null
+                            ? "Select Date & Time"
+                            : _formatReminderDateTime(_reminderTime!),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Symbols.chevron_right,
+                      color: cs.onSurface.withValues(alpha: 0.4),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Future<void> _pickReminderDateTime() async {
+    DateTime now = DateTime.now();
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now,
+      lastDate: DateTime(2100),
+    );
+
+    if (pickedDate != null && mounted) {
+      TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+
+      if (pickedTime != null && mounted) {
+        setState(() {
+          _reminderTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
+    }
+  }
+
+  String _formatReminderDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+    String dateStr;
+    if (date == today) {
+      dateStr = 'Today';
+    } else if (date == tomorrow) {
+      dateStr = 'Tomorrow';
+    } else {
+      // Format as "Mon, Jan 1, 2025"
+      final months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final weekdays = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      dateStr = '${weekdays[dateTime.weekday]}, ${months[dateTime.month]} ${dateTime.day}, ${dateTime.year}';
+    }
+
+    // Format time as 12-hour format
+    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+
+    return '$dateStr at $hour:$minute $period';
   }
 
   /// Check if note should be saved
@@ -516,7 +913,130 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     final hasContent = _textContentController.text.trim().isNotEmpty;
     final hasTodos = _todoItems.any((item) => item.isNotEmpty);
     final hasReminder = _reminderTime != null;
+    final hasAudio = _audioFilePath != null;
 
-    return hasTitle || hasContent || hasTodos || hasReminder;
+    return hasTitle || hasContent || hasTodos || hasReminder || hasAudio;
+  }
+
+  // Voice Note Recording Methods
+
+  Future<void> _startRecording() async {
+    try {
+      // Check and request permission
+      if (!await _audioRecorder.hasPermission()) {
+        debugPrint('❌ [VoiceNote] No microphone permission');
+        return;
+      }
+
+      // Get temporary directory for audio file
+      final tempDir = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final audioPath = '${tempDir.path}/voice_note_$timestamp.m4a';
+
+      // Start recording
+      await _audioRecorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: audioPath,
+      );
+
+      setState(() {
+        _isRecording = true;
+        _recordedDuration = Duration.zero;
+      });
+
+      // Start timer to update duration
+      _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (mounted) {
+          setState(() {
+            _recordedDuration = Duration(seconds: _recordedDuration.inSeconds + 1);
+          });
+        }
+      });
+
+      debugPrint('🎤 [VoiceNote] Started recording to: $audioPath');
+    } catch (e) {
+      debugPrint('❌ [VoiceNote] Failed to start recording: $e');
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      final path = await _audioRecorder.stop();
+      _recordingTimer?.cancel();
+
+      if (path != null && mounted) {
+        setState(() {
+          _audioFilePath = path;
+          _audioDurationSeconds = _recordedDuration.inSeconds;
+          _isRecording = false;
+        });
+        debugPrint('✅ [VoiceNote] Stopped recording. Duration: $_audioDurationSeconds seconds');
+        debugPrint('📁 [VoiceNote] Audio saved to: $path');
+      }
+    } catch (e) {
+      debugPrint('❌ [VoiceNote] Failed to stop recording: $e');
+      setState(() {
+        _isRecording = false;
+      });
+    }
+  }
+
+  Future<void> _startPlayback() async {
+    if (_audioFilePath == null) return;
+
+    try {
+      await _audioPlayer.play(DeviceFileSource(_audioFilePath!));
+      setState(() {
+        _isPlaying = true;
+      });
+
+      // Listen for playback completion
+      _audioPlayer.onPlayerComplete.listen((_) {
+        if (mounted) {
+          setState(() {
+            _isPlaying = false;
+          });
+        }
+      });
+
+      debugPrint('▶️ [VoiceNote] Started playback');
+    } catch (e) {
+      debugPrint('❌ [VoiceNote] Failed to start playback: $e');
+    }
+  }
+
+  Future<void> _pausePlayback() async {
+    try {
+      await _audioPlayer.pause();
+      setState(() {
+        _isPlaying = false;
+      });
+      debugPrint('⏸️ [VoiceNote] Paused playback');
+    } catch (e) {
+      debugPrint('❌ [VoiceNote] Failed to pause playback: $e');
+    }
+  }
+
+  Future<void> _stopPlayback() async {
+    try {
+      await _audioPlayer.stop();
+      setState(() {
+        _isPlaying = false;
+      });
+      debugPrint('⏹️ [VoiceNote] Stopped playback');
+    } catch (e) {
+      debugPrint('❌ [VoiceNote] Failed to stop playback: $e');
+    }
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
   }
 }
