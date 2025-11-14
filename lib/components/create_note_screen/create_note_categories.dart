@@ -35,7 +35,7 @@ class CreateNoteCategories extends StatelessWidget {
 
     return SliverToBoxAdapter(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
