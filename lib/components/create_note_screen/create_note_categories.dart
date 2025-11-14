@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import '../../constants/constants.dart';
 
@@ -12,9 +13,25 @@ class CreateNoteCategories extends StatelessWidget {
     required this.onSelectedTypeChanged,
   });
 
+  IconData _getIconForNoteType(String noteType) {
+    switch (noteType) {
+      case 'Title Content':
+        return Symbols.edit_note;
+      case 'Record Audio':
+        return Symbols.mic;
+      case 'Todo List':
+        return Symbols.check_box;
+      case 'Reminder':
+        return Symbols.alarm;
+      default:
+        return Symbols.note;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return SliverToBoxAdapter(
       child: Container(
@@ -29,27 +46,44 @@ class CreateNoteCategories extends StatelessWidget {
 
               return Padding(
                 padding: EdgeInsets.only(right: index == kNoteTypes.length - 1 ? 0 : 8),
-                child: GestureDetector(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
                   onTap: () => onSelectedTypeChanged(noteType),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: 14,
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? cs.primaryContainer
+                          ? cs.primary.withValues(alpha: 0.1)
                           : cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      noteType,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isSelected ? cs.onPrimaryContainer : cs.onSurface,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? cs.primary.withValues(alpha: 0.2)
+                            : cs.outline.withValues(alpha: 0.1),
+                        width: 1,
                       ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _getIconForNoteType(noteType),
+                          color: isSelected ? cs.primary : cs.onSurface.withValues(alpha: 0.7),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          noteType,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? cs.primary : cs.onSurface,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:async';
 
+import '../components/create_note_screen/create_note_categories.dart';
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
 import '../constants/constants.dart';
 import '../design_system/design_system.dart';
@@ -331,11 +332,54 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 slivers: [
-                  // Metadata Section (Note Type + Folder bubbles)
+                  // Note Type Selection
+                  CreateNoteCategories(
+                    selectedType: selectedNoteType,
+                    onSelectedTypeChanged: (type) {
+                      PinpointHaptics.light();
+                      setState(() => selectedNoteType = type);
+                    },
+                  ),
+
+                  // Folder Selection
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                      child: _buildMetadataSection(cs, isDark),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => _showFolderBottomSheet(),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: cs.secondary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: cs.secondary.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Symbols.folder,
+                                color: cs.secondary,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                selectedFolders.isEmpty
+                                    ? 'Add Folder'
+                                    : selectedFolders.first.title,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: cs.secondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
 
@@ -1046,187 +1090,5 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return '$minutes:$seconds';
-  }
-
-  /// Build metadata section with floating bubbles (matching original design)
-  Widget _buildMetadataSection(ColorScheme cs, bool isDark) {
-    return Row(
-      children: [
-        // Note Type Bubble
-        Flexible(
-          child: _buildFloatingBubble(
-            label: _getLabelForNoteType(selectedNoteType),
-            icon: _getIconForNoteType(selectedNoteType),
-            color: cs.primary,
-            cs: cs,
-            isDark: isDark,
-            onTap: () {
-              PinpointHaptics.light();
-              _showNoteTypeBottomSheet(cs, isDark);
-            },
-          ),
-        ),
-
-        const SizedBox(width: 12),
-
-        // Folder Bubble
-        Flexible(
-          child: _buildFloatingBubble(
-            label: selectedFolders.isEmpty
-                ? 'Add Folder'
-                : selectedFolders.first.title,
-            icon: Symbols.folder,
-            color: cs.secondary,
-            cs: cs,
-            isDark: isDark,
-            onTap: () => _showFolderBottomSheet(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Build floating bubble (matching original create_note_screen design)
-  Widget _buildFloatingBubble({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required ColorScheme cs,
-    required bool isDark,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color.withValues(alpha: isDark ? 0.2 : 0.15),
-              color.withValues(alpha: isDark ? 0.1 : 0.08),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: color.withValues(alpha: 0.2),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.1),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: isDark ? 0.3 : 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 16, color: color),
-            ),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: cs.onSurface,
-                      letterSpacing: 0.2,
-                    ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 18,
-              color: cs.onSurface.withValues(alpha: 0.5),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Show note type selection bottom sheet
-  void _showNoteTypeBottomSheet(ColorScheme cs, bool isDark) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Select Note Type',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-            const SizedBox(height: 24),
-            ...kNoteTypes.map((type) {
-              final isSelected = selectedNoteType == type;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: Icon(_getIconForNoteType(type), color: cs.primary),
-                  title: Text(_getLabelForNoteType(type)),
-                  trailing: isSelected
-                      ? Icon(Icons.check_rounded, color: cs.primary)
-                      : null,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: cs.outline.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  selected: isSelected,
-                  onTap: () {
-                    PinpointHaptics.light();
-                    setState(() => selectedNoteType = type);
-                    Navigator.pop(context);
-                  },
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Get icon for note type
-  IconData _getIconForNoteType(String noteType) {
-    switch (noteType) {
-      case 'Title Content':
-        return Symbols.edit_note;
-      case 'Record Audio':
-        return Symbols.mic;
-      case 'Todo List':
-        return Symbols.check_box;
-      case 'Reminder':
-        return Symbols.alarm;
-      default:
-        return Symbols.note;
-    }
-  }
-
-  /// Get label for note type
-  String _getLabelForNoteType(String noteType) {
-    return noteType; // kNoteTypes already contains display names
   }
 }
