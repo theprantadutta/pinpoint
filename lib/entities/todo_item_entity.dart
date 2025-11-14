@@ -25,12 +25,22 @@ class TodoItemsV2 extends Table {
       text().references(TodoListNotesV2, #uuid)();
 
   /// The text content of this todo item
-  TextColumn get title => text()();
+  TextColumn get content => text()();
 
   /// Whether this todo item is completed
-  BoolColumn get isDone => boolean().withDefault(const Constant(false))();
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
 
   /// Display order within the todo list
   /// Lower numbers appear first (0, 1, 2, ...)
   IntColumn get orderIndex => integer().withDefault(const Constant(0))();
+
+  /// Whether changes have been synced to cloud
+  /// Set to false when modified, true after successful sync
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
+
+  /// Timestamp when this todo item was created
+  DateTimeColumn get createdAt => dateTime()();
+
+  /// Timestamp when this todo item was last updated
+  DateTimeColumn get updatedAt => dateTime()();
 }
