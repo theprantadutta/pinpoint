@@ -162,6 +162,16 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
       return;
     }
 
+    // CRITICAL: Don't auto-save if note is deleted
+    if (_currentNoteId != null) {
+      final existingNote =
+          await DriftNoteService.getSingleNote(_currentNoteId!);
+      if (existingNote != null && existingNote.isDeleted) {
+        debugPrint('Auto-save skipped: note is deleted');
+        return;
+      }
+    }
+
     debugPrint('Auto-save executing via background queue...');
 
     final now = DateTime.now();

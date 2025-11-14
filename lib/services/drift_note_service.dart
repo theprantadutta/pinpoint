@@ -104,8 +104,9 @@ class DriftNoteService {
           await database.update(database.notes).replace(note.copyWith(
                 id: Value(previousNoteId),
                 isSynced: Value(false), // Mark as needing upload
-                isDeleted: Value(existingNote
-                    .isDeleted), // IMPORTANT: Preserve isDeleted flag
+                isDeleted: Value(existingNote.isDeleted), // IMPORTANT: Preserve isDeleted flag
+                isArchived: Value(existingNote.isArchived), // IMPORTANT: Preserve isArchived flag
+                isPinned: Value(existingNote.isPinned), // IMPORTANT: Preserve isPinned flag
               ));
           return existingNote.id;
         }
