@@ -273,12 +273,17 @@ class ApiSyncService extends SyncService {
       'is_deleted': note.isDeleted,
     };
 
-    return {
+    final payload = {
+      'client_note_id': note.id,  // CRITICAL: Backend needs this for unique constraint
       'client_note_uuid': note.uuid,
       'encrypted_data': encryptedData,
       'metadata': metadata,
       'version': 1,
     };
+
+    debugPrint('🔍 [ApiSync] Payload for note ${note.uuid}: client_note_id=${note.id}');
+
+    return payload;
   }
 
   /// Build complete note data structure with all related data

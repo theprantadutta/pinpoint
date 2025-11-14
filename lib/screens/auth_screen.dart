@@ -4,6 +4,7 @@ import 'package:pinpoint/services/google_sign_in_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/api_service.dart';
 import 'package:pinpoint/services/firebase_notification_service.dart';
+import 'package:pinpoint/services/drift_note_folder_service.dart';
 import 'package:pinpoint/screens/home_screen.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
 import 'package:pinpoint/sync/sync_service.dart';
@@ -47,6 +48,13 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<bool> _performInitialSync() async {
     try {
       debugPrint('🔄 [Auth] Starting initial sync to restore data...');
+
+      // CRITICAL: Initialize folders BEFORE sync to prevent data loss
+      // Without this, notes restored from cloud won't have folder relationships
+      // because the folder lookup will fail silently
+      debugPrint('📁 [Auth] Initializing note folders before sync...');
+      await DriftNoteFolderService.watchAllNoteFoldersStream().first;
+      debugPrint('✅ [Auth] Note folders initialized');
 
       // Initialize sync manager with API sync service (now that we're authenticated)
       debugPrint(

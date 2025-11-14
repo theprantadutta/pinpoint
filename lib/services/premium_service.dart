@@ -236,15 +236,10 @@ class PremiumService extends ChangeNotifier {
     return DateTime.parse(lastReconcileString);
   }
 
-  /// Check if reconciliation is needed (once per day)
+  /// Check if reconciliation is needed (always reconcile after every sync)
   bool shouldReconcile() {
-    final lastReconcile = getLastReconciliation();
-    if (lastReconcile == null) return true; // Never reconciled
-
-    // Reconcile if more than 24 hours have passed
-    final hoursSinceReconcile =
-        DateTime.now().difference(lastReconcile).inHours;
-    return hoursSinceReconcile >= 24;
+    // Always reconcile after every sync to ensure backend count is accurate
+    return true;
   }
 
   /// Auto-reconcile usage if needed (called periodically)
@@ -255,8 +250,7 @@ class PremiumService extends ChangeNotifier {
       return;
     }
 
-    debugPrint(
-        '🔄 [PremiumService] Auto-reconciling usage (24h+ since last reconcile)');
+    debugPrint('🔄 [PremiumService] Auto-reconciling usage after sync');
 
     try {
       final result = await reconcileUsageWithBackend();
