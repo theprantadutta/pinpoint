@@ -3,7 +3,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
-import 'package:pinpoint/screens/create_note_screen.dart';
+import 'package:pinpoint/screens/create_note_screen_v2.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,7 +11,6 @@ import '../../design_system/design_system.dart';
 import '../../models/note_with_details.dart';
 import '../../services/drift_note_service.dart';
 import '../../services/filter_service.dart';
-import '../../screens/create_note_screen.dart' show CreateNoteScreen;
 import '../../util/note_utils.dart';
 
 class HomeScreenRecentNotes extends StatefulWidget {
@@ -94,11 +93,10 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
             child: Consumer<FilterService>(
               builder: (context, filterService, _) {
                 return StreamBuilder<List<NoteWithDetails>>(
-                  stream: DriftNoteService.watchNotesWithDetails(
+                  stream: DriftNoteService.watchNotesWithDetailsV2(
                     searchQuery: widget.searchQuery,
                     sortType: _sortType,
                     sortDirection: _sortDirection,
-                    filterOptions: filterService.filterOptions,
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -200,7 +198,7 @@ class NoteListItem extends StatelessWidget {
         onTap: () {
           PinpointHaptics.medium();
           context.push(
-            CreateNoteScreen.kRouteName,
+            CreateNoteScreenV2.kRouteName,
             extra: CreateNoteScreenArguments(
               noticeType: n.noteType,
               existingNote: note,
