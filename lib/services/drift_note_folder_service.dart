@@ -40,13 +40,18 @@ class DriftNoteFolderService {
     final database = getIt<AppDatabase>();
     const uuid = Uuid();
 
+    // CRITICAL: Use deterministic UUIDs based on folder name
+    // This ensures the same folder name always gets the same UUID across devices/reinstalls
+    // Using UUID v5 with a namespace ensures consistency
+    const folderNamespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; // UUID namespace for folders
+
     await database.batch(
       (batch) {
         batch.insertAll(
           database.noteFolders,
           _noteFolders.map(
             (folder) => NoteFoldersCompanion(
-              uuid: Value(uuid.v4()),
+              uuid: Value(uuid.v5(folderNamespace, folder)), // Deterministic UUID from folder name
               noteFolderTitle: Value(folder),
               createdAt: now,
               updatedAt: now,
