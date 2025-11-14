@@ -64,31 +64,39 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return TextField(
-      controller: widget.controller,
-      focusNode: widget.focusNode,
-      maxLines: widget.maxLines,
-      minLines: widget.minLines,
-      style: widget.textStyle ??
-          TextStyle(
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: TextField(
+        controller: widget.controller,
+        focusNode: widget.focusNode,
+        maxLines: null,
+        expands: true,
+        textAlignVertical: TextAlignVertical.top,
+        style: widget.textStyle ??
+            TextStyle(
+              fontSize: 16,
+              color: cs.onSurface,
+              height: 1.5,
+            ),
+        decoration: InputDecoration(
+          hintText: widget.hintText ?? 'Write your note in markdown...',
+          hintStyle: TextStyle(
+            color: cs.onSurface.withValues(alpha: 0.4),
             fontSize: 16,
-            color: cs.onSurface,
-            height: 1.5,
           ),
-      decoration: InputDecoration(
-        hintText: widget.hintText ?? 'Write your note in markdown...',
-        hintStyle: TextStyle(
-          color: cs.onSurface.withValues(alpha: 0.4),
-          fontSize: 16,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+          isDense: true,
         ),
-        border: InputBorder.none,
-        enabledBorder: InputBorder.none,
-        focusedBorder: InputBorder.none,
-        errorBorder: InputBorder.none,
-        focusedErrorBorder: InputBorder.none,
-        disabledBorder: InputBorder.none,
-        contentPadding: EdgeInsets.zero,
-        isDense: true,
       ),
     );
   }

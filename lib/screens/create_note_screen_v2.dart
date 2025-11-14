@@ -457,8 +457,6 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           hintText: 'Write your note in markdown...',
           showToolbar: true,
           enablePreview: true,
-          maxLines: null,
-          minLines: 15,
         ),
       ),
     );
