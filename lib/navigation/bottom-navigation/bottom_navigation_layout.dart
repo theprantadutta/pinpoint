@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import '../../constants/selectors.dart';
 import '../../screens/create_note_screen.dart';
+import '../../screens/create_note_screen_v2.dart';
 import '../../design_system/design_system.dart';
 import 'top_level_pages.dart';
 
@@ -271,7 +272,8 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
                                   child: InkWell(
                                     onTap: () {
                                       PinpointHaptics.medium();
-                                      context.push(CreateNoteScreen.kRouteName);
+                                      // TESTING: Using V2 screen for Architecture V8
+                                      context.push(CreateNoteScreenV2.kRouteName);
                                     },
                                     borderRadius: BorderRadius.circular(20),
                                     child: const Center(

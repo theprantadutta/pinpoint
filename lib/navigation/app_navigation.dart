@@ -18,6 +18,7 @@ import 'package:pinpoint/screens/admin_user_details_screen.dart';
 import '../screen_arguments/create_note_screen_arguments.dart';
 import '../screens/settings_screen.dart';
 import '../screens/create_note_screen.dart';
+import '../screens/create_note_screen_v2.dart';
 import '../screens/home_screen.dart';
 import '../screens/notes_screen.dart';
 import '../screens/todo_screen.dart';
@@ -196,6 +197,17 @@ class AppNavigation {
           );
         },
       ),
+
+      /// Create Note Screen V2 (Architecture V8)
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: CreateNoteScreenV2.kRouteName,
+        name: "Create Note V2",
+        builder: (context, state) {
+          return CreateNoteScreenV2(key: state.pageKey);
+        },
+      ),
+
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: '${FolderScreen.kRouteName}/:folderId/:folderTitle',
