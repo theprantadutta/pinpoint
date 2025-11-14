@@ -297,73 +297,35 @@ folders (NEW TABLE)
 
 ---
 
-### PHASE 3: Folder-First Sync (Week 5-6)
+### PHASE 3: Folder-First Sync ✅ PARTIALLY COMPLETE
 **Goal**: Implement ordered sync to prevent race conditions
+**Completed**: 2025-11-14 (Folder infrastructure)
 
-#### 3.1 Create Folder Sync Service
-- [ ] `lib/sync/folder_sync_service.dart`
-  ```dart
-  class FolderSyncService {
-    Future<FolderSyncResult> syncFolders() async {
-      // STEP 1: Upload local folders to server
-      await _uploadFolders();
+#### 3.1 Create Folder Sync Service ✅
+- [x] `lib/sync/folder_sync_service.dart`
+  - Bidirectional folder sync (upload + download)
+  - Upload all local folders to server
+  - Download server folders and upsert locally by UUID
+  - Timestamp-based conflict resolution (server wins if newer)
 
-      // STEP 2: Download server folders to local
-      await _downloadFolders();
+#### 3.2 Update Sync Manager ✅
+- [x] `lib/sync/api_sync_service.dart`
+  - Overridden sync() method to enforce folder-first order
+  - Phase 1: Sync folders (blocks if fails)
+  - Phase 2: Sync notes (existing logic)
+  - Detailed logging for each phase
 
-      return FolderSyncResult(success: true, foldersSynced: ...);
-    }
+- [x] `lib/services/api_service.dart`
+  - Added syncFolders() endpoint
+  - Added getAllFolders() endpoint
 
-    Future<void> _uploadFolders() async {
-      final unsyncedFolders = await db.select(db.noteFolders).get();
-      // POST /api/folders/sync with folder list
-    }
+#### 3.3 Create Note Type Sync Services ⚠️ DEFERRED
+- [ ] `lib/sync/text_note_sync_service.dart` - Needs backend V2 endpoints
+- [ ] `lib/sync/voice_note_sync_service.dart` - Needs backend V2 endpoints
+- [ ] `lib/sync/todo_list_note_sync_service.dart` - Needs backend V2 endpoints
+- [ ] `lib/sync/reminder_note_sync_service.dart` - Needs backend V2 endpoints
 
-    Future<void> _downloadFolders() async {
-      // GET /api/folders/sync?since=lastSyncTime
-      // Upsert to local noteFolders table by UUID
-    }
-  }
-  ```
-
-#### 3.2 Update Sync Manager
-- [ ] `lib/sync/sync_manager.dart`
-  ```dart
-  Future<SyncResult> sync() async {
-    // CRITICAL: Sync folders FIRST
-    print('🔄 [Sync] Phase 1/2: Syncing folders...');
-    final folderResult = await _folderSyncService.syncFolders();
-
-    if (!folderResult.success) {
-      return SyncResult.failure('Folder sync failed');
-    }
-
-    // THEN sync all note types (can parallelize)
-    print('🔄 [Sync] Phase 2/2: Syncing notes...');
-    final results = await Future.wait([
-      _textNoteSyncService.sync(),
-      _voiceNoteSyncService.sync(),
-      _todoNoteSyncService.sync(),
-      _reminderNoteSyncService.sync(),
-    ]);
-
-    return _combineResults(results);
-  }
-  ```
-
-#### 3.3 Create Note Type Sync Services
-- [ ] `lib/sync/text_note_sync_service.dart`
-  - Upload unsynced text notes
-  - Download new text notes from server
-  - Decrypt → upsert to text_notes table
-  - Link folder relations
-
-- [ ] Repeat for voice, todo, reminder types
-
-#### 3.4 Update API Sync Service
-- [ ] `lib/sync/api_sync_service.dart`
-  - Refactor to support type-specific endpoints (or unified with type metadata)
-  - Add folder sync endpoint calls
+**Note**: Type-specific sync services require backend endpoints for the new V2 note tables. Current sync still uses old unified notes endpoint which will work until UI migration is complete.
 
 **Commits**:
 - `feat(sync): add folder sync service for ordered sync`
