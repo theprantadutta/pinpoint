@@ -5,11 +5,13 @@ import '../database/database.dart';
 import '../services/api_service.dart';
 import '../services/encryption_service.dart';
 import 'sync_service.dart';
+import 'folder_sync_service.dart';
 
 /// Cloud-based sync service using API backend
 class ApiSyncService extends SyncService {
   final ApiService _apiService;
   final AppDatabase _database;
+  late final FolderSyncService _folderSyncService;
 
   int _lastSyncTime = 0;
 
@@ -17,7 +19,13 @@ class ApiSyncService extends SyncService {
     required ApiService apiService,
     required AppDatabase database,
   })  : _apiService = apiService,
-        _database = database;
+        _database = database {
+    // Initialize FolderSyncService
+    _folderSyncService = FolderSyncService(
+      apiService: apiService,
+      database: database,
+    );
+  }
 
   @override
   Future<void> init() async {
@@ -33,6 +41,52 @@ class ApiSyncService extends SyncService {
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  @override
+  Future<SyncResult> sync({
+    SyncDirection direction = SyncDirection.both,
+  }) async {
+    try {
+      debugPrint('\n🚀 [ApiSync] ========== STARTING SYNC ==========');
+      debugPrint('🚀 [ApiSync] Direction: $direction');
+
+      // CRITICAL: ALWAYS sync folders FIRST to prevent race conditions
+      debugPrint('\n📁 [ApiSync] Phase 1/2: Syncing folders...');
+      final folderResult = await _folderSyncService.syncFolders();
+
+      if (!folderResult.success) {
+        debugPrint('❌ [ApiSync] Folder sync failed: ${folderResult.message}');
+        return SyncResult(
+          success: false,
+          message: 'Folder sync failed: ${folderResult.message}',
+        );
+      }
+
+      debugPrint('✅ [ApiSync] Folders synced: ${folderResult.foldersSynced}');
+
+      // THEN sync notes using parent class logic
+      debugPrint('\n📝 [ApiSync] Phase 2/2: Syncing notes...');
+      final noteResult = await super.sync(direction: direction);
+
+      debugPrint('\n🚀 [ApiSync] ========== SYNC COMPLETE ==========');
+      debugPrint('📊 [ApiSync] Folders: ${folderResult.foldersSynced}, Notes: ${noteResult.notesSynced}');
+
+      return SyncResult(
+        success: noteResult.success,
+        message: noteResult.message,
+        notesSynced: noteResult.notesSynced,
+        foldersSynced: folderResult.foldersSynced,
+        tagsSynced: noteResult.tagsSynced,
+      );
+    } catch (e, st) {
+      debugPrint('❌ [ApiSync] Sync failed: $e');
+      debugPrint('Stack trace: $st');
+      return SyncResult(
+        success: false,
+        message: 'Sync failed: ${e.toString()}',
+      );
     }
   }
 

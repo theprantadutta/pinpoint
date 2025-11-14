@@ -300,6 +300,38 @@ class ApiService {
   }
 
   // ============================================================================
+  // Folders Sync Endpoints
+  // ============================================================================
+
+  /// Sync folders bidirectionally (upload + download)
+  /// CRITICAL: Call this BEFORE note sync to prevent race conditions
+  Future<Map<String, dynamic>> syncFolders({
+    required List<Map<String, dynamic>> folders,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/folders/sync',
+        data: {'folders': folders},
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Get all folders for the user
+  Future<List<Map<String, dynamic>>> getAllFolders() async {
+    try {
+      final response = await _dio.get('/folders/all');
+
+      return List<Map<String, dynamic>>.from(response.data['folders']);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ============================================================================
   // Subscription Endpoints
   // ============================================================================
 
