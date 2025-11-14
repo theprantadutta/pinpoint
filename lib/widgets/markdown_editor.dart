@@ -82,7 +82,13 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
           fontSize: 16,
         ),
         border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        errorBorder: InputBorder.none,
+        focusedErrorBorder: InputBorder.none,
+        disabledBorder: InputBorder.none,
         contentPadding: EdgeInsets.zero,
+        isDense: true,
       ),
     );
   }
