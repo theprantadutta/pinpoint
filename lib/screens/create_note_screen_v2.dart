@@ -342,7 +342,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   // Folder Selection
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () => _showFolderBottomSheet(),
@@ -428,54 +428,100 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
           // Title Input
           Expanded(
-            child: TextField(
-              controller: _titleController,
-              focusNode: _titleFocusNode,
-              decoration: InputDecoration(
-                hintText: 'Untitled',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-                isDense: true,
-                hintStyle: TextStyle(
-                  color: cs.onSurface.withValues(alpha: 0.4),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 18,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: TextField(
+                controller: _titleController,
+                focusNode: _titleFocusNode,
+                decoration: InputDecoration(
+                  hintText: 'Untitled',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                  isDense: true,
+                  hintStyle: TextStyle(
+                    color: cs.onSurface.withValues(alpha: 0.4),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 20,
+                  ),
                 ),
+                style: TextStyle(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
+                maxLines: 1,
+                textInputAction: TextInputAction.done,
               ),
-              style: TextStyle(
-                color: cs.onSurface,
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-              ),
-              maxLines: 1,
-              textInputAction: TextInputAction.done,
             ),
           ),
 
           const SizedBox(width: 8),
 
-          // Save button
-          if (_isSaving)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
-          else
-            IconButton(
-              icon: Icon(Symbols.check, color: cs.primary),
-              iconSize: 24,
-              onPressed: () async {
-                PinpointHaptics.light();
-                await _saveNote();
-                if (mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
+          // Three-dot menu
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert_rounded, color: cs.onSurface),
+            iconSize: 24,
+            padding: EdgeInsets.zero,
+            offset: const Offset(0, 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
+            onSelected: (value) async {
+              PinpointHaptics.light();
+              switch (value) {
+                case 'save':
+                  await _saveNote();
+                  if (mounted) {
+                    Navigator.of(context).pop();
+                  }
+                  break;
+                case 'delete':
+                  _handleDeleteNote(context, cs);
+                  break;
+                case 'info':
+                  _showNoteInfo(context, cs, isDark);
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'save',
+                child: Row(
+                  children: [
+                    Icon(Symbols.check, size: 20, color: cs.primary),
+                    const SizedBox(width: 12),
+                    const Text('Save & Close'),
+                  ],
+                ),
+              ),
+              if (_currentNoteId != null) ...[
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline_rounded, size: 20, color: cs.error),
+                      const SizedBox(width: 12),
+                      const Text('Delete'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'info',
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, size: 20, color: cs.primary),
+                      const SizedBox(width: 12),
+                      const Text('Info'),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -1088,5 +1134,117 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return '$minutes:$seconds';
+  }
+
+  /// Handle delete note
+  void _handleDeleteNote(BuildContext context, ColorScheme cs) {
+    if (_currentNoteId == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Note'),
+        content: const Text('Are you sure you want to delete this note?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+
+              // Delete based on note type
+              switch (selectedNoteType) {
+                case 'Title Content':
+                  await TextNoteService.deleteTextNote(_currentNoteId!);
+                  break;
+                case 'Record Audio':
+                  await VoiceNoteService.deleteVoiceNote(_currentNoteId!);
+                  break;
+                case 'Todo List':
+                  await TodoListNoteService.deleteTodoListNote(_currentNoteId!);
+                  break;
+                case 'Reminder':
+                  await ReminderNoteService.deleteReminderNote(_currentNoteId!);
+                  break;
+              }
+
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
+            },
+            child: Text('Delete', style: TextStyle(color: cs.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show note info modal
+  void _showNoteInfo(BuildContext context, ColorScheme cs, bool isDark) {
+    if (_currentNoteId == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Note Info',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 24),
+            _buildInfoRow('Type', selectedNoteType, cs),
+            const SizedBox(height: 12),
+            _buildInfoRow('ID', _currentNoteId.toString(), cs),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              'Folder',
+              selectedFolders.isEmpty ? 'None' : selectedFolders.first.title,
+              cs,
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, ColorScheme cs) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: cs.onSurface.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              color: cs.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
