@@ -9,6 +9,7 @@ class MarkdownEditor extends StatefulWidget {
   final FocusNode focusNode;
   final String? hintText;
   final int? maxLines;
+  final int? minLines;
   final bool showToolbar;
   final bool enablePreview;
   final TextStyle? textStyle;
@@ -19,6 +20,7 @@ class MarkdownEditor extends StatefulWidget {
     required this.focusNode,
     this.hintText,
     this.maxLines,
+    this.minLines,
     this.showToolbar = true,
     this.enablePreview = true,
     this.textStyle,
@@ -66,6 +68,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       controller: widget.controller,
       focusNode: widget.focusNode,
       maxLines: widget.maxLines,
+      minLines: widget.minLines,
       style: widget.textStyle ??
           TextStyle(
             fontSize: 16,
