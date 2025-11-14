@@ -8,7 +8,8 @@
       "Bash(./venv/Scripts/python.exe -m alembic:*)",
       "Bash(./venv/Scripts/python.exe:*)",
       "Bash(flutter build:*)",
-      "Bash(flutter pub run build_runner build:*)"
+      "Bash(flutter pub run build_runner build:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
