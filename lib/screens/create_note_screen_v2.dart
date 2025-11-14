@@ -255,7 +255,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: cs.surface,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -299,14 +299,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
   Widget _buildHeader(BuildContext context, ColorScheme cs, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF1E293B).withValues(alpha: 0.8)
-            : Colors.white.withValues(alpha: 0.95),
+        color: cs.surface,
         border: Border(
           bottom: BorderSide(
-            color: cs.outline.withValues(alpha: 0.05),
+            color: cs.outline.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
@@ -331,40 +329,35 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             },
           ),
 
+          const SizedBox(width: 8),
+
           // Title Input
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? cs.surfaceContainerHighest.withValues(alpha: 0.4)
-                    : cs.surfaceContainerHighest.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: TextField(
-                controller: _titleController,
-                focusNode: _titleFocusNode,
-                decoration: InputDecoration(
-                  hintText: 'Untitled',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                  isDense: true,
-                  hintStyle: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.4),
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16,
-                  ),
+            child: TextField(
+              controller: _titleController,
+              focusNode: _titleFocusNode,
+              decoration: InputDecoration(
+                hintText: 'Untitled',
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+                isDense: true,
+                hintStyle: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.4),
+                  fontWeight: FontWeight.w500,
+                  fontSize: 18,
                 ),
-                style: TextStyle(
-                  color: cs.onSurface,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-                maxLines: 1,
-                textInputAction: TextInputAction.done,
               ),
+              style: TextStyle(
+                color: cs.onSurface,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
+              maxLines: 1,
+              textInputAction: TextInputAction.done,
             ),
           ),
+
+          const SizedBox(width: 8),
 
           // Save button
           if (_isSaving)
@@ -401,18 +394,15 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: cs.outline.withValues(alpha: 0.1),
-          ),
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
             Icon(
               Symbols.folder,
               size: 20,
-              color: cs.primary,
+              color: cs.onSurfaceVariant,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -432,8 +422,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             ),
             Icon(
               Symbols.chevron_right,
-              size: 20,
-              color: cs.onSurface.withValues(alpha: 0.5),
+              size: 18,
+              color: cs.onSurface.withValues(alpha: 0.3),
             ),
           ],
         ),
@@ -460,7 +450,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     return SliverFillRemaining(
       hasScrollBody: false,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: MarkdownEditor(
           controller: _textContentController,
           focusNode: _textContentFocusNode,
@@ -617,7 +607,6 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
   Widget _buildTodoListContent() {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SliverPadding(
       padding: const EdgeInsets.all(16),
@@ -645,25 +634,19 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               padding: const EdgeInsets.only(bottom: 8),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: cs.outline.withValues(alpha: 0.1),
-                  ),
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   children: [
                     // Checkbox placeholder (not interactive in create mode)
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Icon(
-                        Symbols.radio_button_unchecked,
-                        size: 20,
-                        color: cs.onSurface.withValues(alpha: 0.5),
-                      ),
+                    Icon(
+                      Symbols.radio_button_unchecked,
+                      size: 20,
+                      color: cs.onSurface.withValues(alpha: 0.5),
                     ),
+                    const SizedBox(width: 12),
                     // Todo text
                     Expanded(
                       child: Text(
@@ -677,9 +660,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                     // Delete button
                     IconButton(
                       icon: Icon(
-                        Symbols.delete,
+                        Symbols.delete_outline,
                         size: 20,
-                        color: cs.error,
+                        color: cs.onSurface.withValues(alpha: 0.5),
                       ),
                       onPressed: () {
                         setState(() {
@@ -744,7 +727,6 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
   Widget _buildReminderContent() {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SliverToBoxAdapter(
       child: Padding(
@@ -762,26 +744,31 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: _reminderDescriptionController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: "What would you like to be reminded about?",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(
-                    color: cs.outline.withValues(alpha: 0.2),
+            Container(
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _reminderDescriptionController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: "What would you like to be reminded about?",
+                  hintStyle: TextStyle(
+                    color: cs.onSurface.withValues(alpha: 0.4),
                   ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
                 ),
-                filled: true,
-                fillColor: isDark
-                    ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                    : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                contentPadding: const EdgeInsets.all(16),
+                style: TextStyle(
+                  fontSize: 15,
+                  color: cs.onSurface,
+                ),
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Reminder Time
             Text(
@@ -796,34 +783,17 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             GestureDetector(
               onTap: _pickReminderDateTime,
               child: Container(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      cs.primary.withValues(alpha: isDark ? 0.2 : 0.15),
-                      cs.primary.withValues(alpha: isDark ? 0.1 : 0.08),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: cs.primary.withValues(alpha: 0.2),
-                  ),
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: cs.primary.withValues(alpha: isDark ? 0.3 : 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Symbols.calendar_today,
-                        color: cs.primary,
-                        size: 24,
-                      ),
+                    Icon(
+                      Symbols.schedule,
+                      color: cs.primary,
+                      size: 24,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -833,14 +803,16 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                             : _formatReminderDateTime(_reminderTime!),
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface,
+                          color: _reminderTime == null
+                              ? cs.onSurface.withValues(alpha: 0.5)
+                              : cs.onSurface,
                         ),
                       ),
                     ),
                     Icon(
                       Symbols.chevron_right,
-                      color: cs.onSurface.withValues(alpha: 0.4),
+                      size: 18,
+                      color: cs.onSurface.withValues(alpha: 0.3),
                     ),
                   ],
                 ),

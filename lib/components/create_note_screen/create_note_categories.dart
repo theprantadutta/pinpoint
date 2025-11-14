@@ -14,60 +14,48 @@ class CreateNoteCategories extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final kPrimaryColor = Theme.of(context).primaryColor;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
-    final darkerColor =
-        isDarkTheme ? Colors.grey.shade400 : Colors.grey.shade600;
+    final cs = Theme.of(context).colorScheme;
+
     return SliverToBoxAdapter(
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 10.0),
-        margin: EdgeInsets.only(
-          top: 8,
-          // bottom: 8,
-        ),
-        height: MediaQuery.sizeOf(context).height * 0.045,
-        child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          itemCount: kNoteTypes.length,
-          itemBuilder: (context, index) {
-            final noteType = kNoteTypes[index];
-            final isSelected = noteType == selectedType;
-            return GestureDetector(
-              onTap: () => onSelectedTypeChanged(noteType),
-              child: Container(
-                margin: EdgeInsets.only(
-                  left: index == 0 ? 0 : 5,
-                  right: index == kNoteTypes.length - 1 ? 5 : 0,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? kPrimaryColor.withValues(alpha: 0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(5),
-                  border: isSelected
-                      ? null
-                      : Border.all(
-                          color: kPrimaryColor.withValues(alpha: 0.2),
-                        ),
-                ),
-                child: Center(
-                  child: Text(
-                    noteType,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isSelected ? kPrimaryColor : darkerColor,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
+          child: Row(
+            children: kNoteTypes.asMap().entries.map((entry) {
+              final index = entry.key;
+              final noteType = entry.value;
+              final isSelected = noteType == selectedType;
+
+              return Padding(
+                padding: EdgeInsets.only(right: index == kNoteTypes.length - 1 ? 0 : 8),
+                child: GestureDetector(
+                  onTap: () => onSelectedTypeChanged(noteType),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? cs.primaryContainer
+                          : cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      noteType,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isSelected ? cs.onPrimaryContainer : cs.onSurface,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            }).toList(),
+          ),
         ),
       ),
     );

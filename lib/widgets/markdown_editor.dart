@@ -59,123 +59,112 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   }
 
   Widget _buildEditor(bool isDarkMode) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? Colors.grey[900] : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
-        ),
-      ),
-      child: TextField(
-        controller: widget.controller,
-        focusNode: widget.focusNode,
-        maxLines: widget.maxLines,
-        style: widget.textStyle ??
-            TextStyle(
-              fontSize: 16,
-              color: isDarkMode ? Colors.white : Colors.black87,
-              fontFamily: 'monospace',
-            ),
-        decoration: InputDecoration(
-          hintText: widget.hintText ?? 'Write your note in markdown...',
-          hintStyle: TextStyle(
-            color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return TextField(
+      controller: widget.controller,
+      focusNode: widget.focusNode,
+      maxLines: widget.maxLines,
+      style: widget.textStyle ??
+          TextStyle(
+            fontSize: 16,
+            color: cs.onSurface,
+            height: 1.5,
           ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
+      decoration: InputDecoration(
+        hintText: widget.hintText ?? 'Write your note in markdown...',
+        hintStyle: TextStyle(
+          color: cs.onSurface.withValues(alpha: 0.4),
+          fontSize: 16,
         ),
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.zero,
       ),
     );
   }
 
   Widget _buildPreview(bool isDarkMode) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? Colors.grey[900] : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
-        ),
-      ),
-      child: ValueListenableBuilder<TextEditingValue>(
-        valueListenable: widget.controller,
-        builder: (context, value, child) {
-          if (value.text.isEmpty) {
-            return Center(
-              child: Text(
-                'No content to preview',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
-                  fontSize: 16,
-                ),
-              ),
-            );
-          }
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
-          return Markdown(
-            data: value.text,
-            selectable: true,
-            padding: const EdgeInsets.all(16),
-            styleSheet: MarkdownStyleSheet.fromTheme(
-              Theme.of(context),
-            ).copyWith(
-              // Customize markdown styles here
-              h1: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black87,
-              ),
-              h2: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black87,
-              ),
-              h3: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black87,
-              ),
-              p: TextStyle(
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: widget.controller,
+      builder: (context, value, child) {
+        if (value.text.isEmpty) {
+          return Center(
+            child: Text(
+              'No content to preview',
+              style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.4),
                 fontSize: 16,
-                color: isDarkMode ? Colors.white : Colors.black87,
-                height: 1.5,
-              ),
-              code: TextStyle(
-                backgroundColor: isDarkMode ? Colors.grey[850] : Colors.grey[200],
-                fontFamily: 'monospace',
-              ),
-              codeblockDecoration: BoxDecoration(
-                color: isDarkMode ? Colors.grey[850] : Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              blockquote: TextStyle(
-                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                fontStyle: FontStyle.italic,
-              ),
-              blockquoteDecoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: isDarkMode ? Colors.grey[700]! : Colors.grey[400]!,
-                    width: 4,
-                  ),
-                ),
-              ),
-              listBullet: TextStyle(
-                color: isDarkMode ? Colors.white : Colors.black87,
               ),
             ),
-            onTapLink: (text, href, title) async {
-              if (href != null) {
-                final uri = Uri.tryParse(href);
-                if (uri != null && await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              }
-            },
           );
-        },
-      ),
+        }
+
+        return Markdown(
+          data: value.text,
+          selectable: true,
+          padding: EdgeInsets.zero,
+          styleSheet: MarkdownStyleSheet.fromTheme(
+            Theme.of(context),
+          ).copyWith(
+            // Customize markdown styles here
+            h1: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: cs.onSurface,
+            ),
+            h2: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: cs.onSurface,
+            ),
+            h3: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: cs.onSurface,
+            ),
+            p: TextStyle(
+              fontSize: 16,
+              color: cs.onSurface,
+              height: 1.5,
+            ),
+            code: TextStyle(
+              backgroundColor: cs.surfaceContainerHighest,
+              fontFamily: 'monospace',
+            ),
+            codeblockDecoration: BoxDecoration(
+              color: cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            blockquote: TextStyle(
+              color: cs.onSurface.withValues(alpha: 0.7),
+              fontStyle: FontStyle.italic,
+            ),
+            blockquoteDecoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: cs.outline.withValues(alpha: 0.5),
+                  width: 4,
+                ),
+              ),
+            ),
+            listBullet: TextStyle(
+              color: cs.onSurface,
+            ),
+          ),
+          onTapLink: (text, href, title) async {
+            if (href != null) {
+              final uri = Uri.tryParse(href);
+              if (uri != null && await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            }
+          },
+        );
+      },
     );
   }
 }
