@@ -84,6 +84,16 @@ class BackgroundSaveQueueService {
     _lastEnqueuedTime[noteKey] = DateTime.now();
     _totalEnqueued++;
 
+    // CRITICAL: Validate that note is not deleted before allowing save
+    if (previousNoteId != null) {
+      final existingNote = await DriftNoteService.getSingleNote(previousNoteId);
+      if (existingNote != null && existingNote.isDeleted) {
+        debugPrint('[SaveQueue] Cannot save - note is deleted: $noteKey');
+        return SaveResult(
+            success: false, noteId: 0, reason: 'Note is deleted');
+      }
+    }
+
     // Enqueue the save job
     debugPrint('[SaveQueue] Enqueueing save for note: $noteKey');
 
