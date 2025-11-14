@@ -130,7 +130,7 @@ class _NoteCardState extends State<NoteCard> {
                       // Title
                       Expanded(
                         child: Text(
-                          widget.title.isEmpty ? '(Untitled)' : widget.title,
+                          widget.title.isEmpty ? 'Empty note' : widget.title,
                           style: PinpointTypography.noteCardTitle(
                             brightness: theme.brightness,
                           ).copyWith(

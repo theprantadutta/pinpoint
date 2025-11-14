@@ -164,9 +164,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     });
 
     try {
-      final title = _titleController.text.trim().isEmpty
-          ? 'Untitled'
-          : _titleController.text.trim();
+      final title = _titleController.text.trim();
 
       // Ensure folders are selected
       if (selectedFolders.isEmpty) {
