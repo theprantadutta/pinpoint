@@ -1,21 +1,32 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:async';
+import 'package:share_plus/share_plus.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:image_picker/image_picker.dart';
 
 import '../components/create_note_screen/create_note_categories.dart';
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
 import '../constants/constants.dart';
 import '../design_system/design_system.dart';
 import '../dtos/note_folder_dto.dart';
+import '../constants/premium_limits.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/text_note_service.dart';
 import '../services/voice_note_service.dart';
 import '../services/todo_list_note_service.dart';
 import '../services/reminder_note_service.dart';
+import '../services/premium_service.dart';
+import '../services/ocr_service.dart';
+import '../util/show_a_toast.dart';
 import '../widgets/markdown_editor.dart';
+import '../widgets/premium_gate_dialog.dart';
+import '../widgets/usage_stats_bottom_sheet.dart';
 
 /// CreateNoteScreen V2 - Architecture V8 Implementation
 /// Uses new independent note type tables and type-specific services
@@ -482,6 +493,21 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 case 'delete':
                   _handleDeleteNote(context, cs);
                   break;
+                case 'share':
+                  _handleShareNote(context);
+                  break;
+                case 'export_markdown':
+                  _handleExportMarkdown(context);
+                  break;
+                case 'export_pdf':
+                  _handleExportPdf(context);
+                  break;
+                case 'ocr_scan':
+                  _handleOcrScan(context);
+                  break;
+                case 'usage':
+                  _showUsageStats(context);
+                  break;
                 case 'info':
                   _showNoteInfo(context, cs, isDark);
                   break;
@@ -509,6 +535,140 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                     ],
                   ),
                 ),
+              ],
+              PopupMenuItem(
+                value: 'share',
+                child: Row(
+                  children: [
+                    Icon(Symbols.share, size: 20, color: cs.primary),
+                    const SizedBox(width: 12),
+                    const Text('Share'),
+                  ],
+                ),
+              ),
+              // OCR Scan
+              if (selectedNoteType == 'Title Content')
+                PopupMenuItem(
+                  value: 'ocr_scan',
+                  child: Row(
+                    children: [
+                      Icon(Icons.document_scanner_rounded, size: 20, color: cs.primary),
+                      const SizedBox(width: 12),
+                      Builder(
+                        builder: (context) {
+                          final premiumService = PremiumService();
+                          final isPremium = premiumService.isPremium;
+                          final used = premiumService.getOcrScansThisMonth();
+                          final total = PremiumLimits.maxOcrScansPerMonthForFree;
+
+                          String ocrText = 'Scan Text from Image';
+                          if (!isPremium) {
+                            ocrText = 'Scan Text ($used/$total)';
+                          }
+
+                          return Text(ocrText);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              // Markdown Export
+              if (selectedNoteType == 'Title Content')
+                PopupMenuItem(
+                  value: 'export_markdown',
+                  child: Row(
+                    children: [
+                      Icon(Icons.file_download_rounded, size: 20, color: cs.primary),
+                      const SizedBox(width: 12),
+                      const Text('Export Markdown'),
+                      const SizedBox(width: 4),
+                      if (!PremiumService().isPremium)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: PinpointColors.mint.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'PRO',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: PinpointColors.mint,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              // PDF Export
+              if (selectedNoteType == 'Title Content')
+                PopupMenuItem(
+                  value: 'export_pdf',
+                  child: Row(
+                    children: [
+                      Icon(Icons.picture_as_pdf_rounded, size: 20, color: cs.primary),
+                      const SizedBox(width: 12),
+                      const Text('Export PDF'),
+                      const SizedBox(width: 4),
+                      if (!PremiumService().isPremium)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: PinpointColors.mint.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'PRO',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: PinpointColors.mint,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              // Encrypted Sharing (Coming Soon)
+              PopupMenuItem(
+                enabled: false,
+                child: Row(
+                  children: [
+                    Icon(Icons.lock_outline_rounded, size: 20, color: cs.onSurface.withValues(alpha: 0.4)),
+                    const SizedBox(width: 12),
+                    Text('Share Encrypted', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4))),
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: cs.onSurface.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'SOON',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: cs.onSurface.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Usage Stats
+              PopupMenuItem(
+                value: 'usage',
+                child: Row(
+                  children: [
+                    Icon(Icons.analytics_outlined, size: 20, color: cs.primary),
+                    const SizedBox(width: 12),
+                    const Text('Usage'),
+                  ],
+                ),
+              ),
+              if (_currentNoteId != null)
                 PopupMenuItem(
                   value: 'info',
                   child: Row(
@@ -519,7 +679,6 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                     ],
                   ),
                 ),
-              ],
             ],
           ),
         ],
@@ -1245,6 +1404,360 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Handle share note
+  Future<void> _handleShareNote(BuildContext context) async {
+    final title = _titleController.text.trim();
+    String content = '';
+
+    // Get content based on note type
+    switch (selectedNoteType) {
+      case 'Title Content':
+        content = _textContentController.text.trim();
+        break;
+      case 'Todo List':
+        content = _todoItems.where((item) => item.isNotEmpty).join('\n');
+        break;
+      case 'Reminder':
+        content = _reminderDescriptionController.text.trim();
+        if (_reminderTime != null) {
+          content += '\nReminder: ${_reminderTime.toString()}';
+        }
+        break;
+      default:
+        content = '';
+    }
+
+    if (title.isEmpty && content.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Nothing to Share'),
+          content: const Text('Please add some content before sharing.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    Share.share(
+      '$title\n\n$content',
+      subject: title,
+    );
+
+    PinpointHaptics.success();
+  }
+
+  /// Handle export markdown
+  Future<void> _handleExportMarkdown(BuildContext context) async {
+    if (selectedNoteType != 'Title Content') return;
+
+    final title = _titleController.text.trim();
+    final content = _textContentController.text.trim();
+
+    if (title.isEmpty && content.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Nothing to Export'),
+          content: const Text('Please add some content before exporting.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final premiumService = PremiumService();
+    if (!premiumService.isPremium) {
+      if (!premiumService.canExport()) {
+        if (mounted) {
+          PremiumGateDialog.showExportLimit(context);
+        }
+        return;
+      }
+    }
+
+    try {
+      final markdown = StringBuffer();
+
+      if (title.isNotEmpty) {
+        markdown.writeln('# $title');
+        markdown.writeln();
+      }
+
+      if (content.isNotEmpty) {
+        markdown.writeln(content);
+      }
+
+      markdown.writeln();
+      markdown.writeln('---');
+      markdown.writeln('*Exported from Pinpoint*');
+      markdown.writeln('*Date: ${DateTime.now().toString().split('.')[0]}*');
+
+      final directory = await getTemporaryDirectory();
+      final fileName = title.isNotEmpty
+          ? '${title.replaceAll(RegExp(r'[^\w\s-]'), '')}.md'
+          : 'note_${DateTime.now().millisecondsSinceEpoch}.md';
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsString(markdown.toString());
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: title.isNotEmpty ? title : 'Exported Note',
+      );
+
+      if (!premiumService.isPremium) {
+        await premiumService.incrementExports();
+      }
+
+      PinpointHaptics.success();
+
+      if (mounted) {
+        showSuccessToast(
+          context: context,
+          title: 'Exported!',
+          description: 'Markdown file exported successfully',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error exporting markdown: $e');
+      PinpointHaptics.error();
+
+      if (mounted) {
+        showErrorToast(
+          context: context,
+          title: 'Export Failed',
+          description: 'Unable to export markdown file',
+        );
+      }
+    }
+  }
+
+  /// Handle export PDF
+  Future<void> _handleExportPdf(BuildContext context) async {
+    if (selectedNoteType != 'Title Content') return;
+
+    final title = _titleController.text.trim();
+    final content = _textContentController.text.trim();
+
+    if (title.isEmpty && content.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Nothing to Export'),
+          content: const Text('Please add some content before exporting.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final premiumService = PremiumService();
+    if (!premiumService.isPremium) {
+      if (!premiumService.canExport()) {
+        if (mounted) {
+          PremiumGateDialog.showExportLimit(context);
+        }
+        return;
+      }
+    }
+
+    try {
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (title.isNotEmpty) ...[
+                  pw.Text(
+                    title,
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.SizedBox(height: 20),
+                ],
+                if (content.isNotEmpty) ...[
+                  pw.Text(
+                    content,
+                    style: const pw.TextStyle(
+                      fontSize: 12,
+                      lineSpacing: 1.5,
+                    ),
+                  ),
+                  pw.SizedBox(height: 20),
+                ],
+                pw.Spacer(),
+                pw.Divider(),
+                pw.SizedBox(height: 10),
+                pw.Text(
+                  'Exported from Pinpoint',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontStyle: pw.FontStyle.italic,
+                  ),
+                ),
+                pw.Text(
+                  'Date: ${DateTime.now().toString().split('.')[0]}',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontStyle: pw.FontStyle.italic,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      final directory = await getTemporaryDirectory();
+      final fileName = title.isNotEmpty
+          ? '${title.replaceAll(RegExp(r'[^\w\s-]'), '')}.pdf'
+          : 'note_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsBytes(await pdf.save());
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: title.isNotEmpty ? title : 'Exported Note',
+      );
+
+      if (!premiumService.isPremium) {
+        await premiumService.incrementExports();
+      }
+
+      PinpointHaptics.success();
+
+      if (mounted) {
+        showSuccessToast(
+          context: context,
+          title: 'Exported!',
+          description: 'PDF file exported successfully',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error exporting PDF: $e');
+      PinpointHaptics.error();
+
+      if (mounted) {
+        showErrorToast(
+          context: context,
+          title: 'Export Failed',
+          description: 'Unable to export PDF file',
+        );
+      }
+    }
+  }
+
+  /// Handle OCR scan
+  Future<void> _handleOcrScan(BuildContext context) async {
+    if (selectedNoteType != 'Title Content') return;
+
+    final premiumService = PremiumService();
+    if (!premiumService.canPerformOcrScan()) {
+      PinpointHaptics.error();
+      final remaining = premiumService.getRemainingOcrScans();
+      await PremiumGateDialog.showOcrLimit(context, remaining);
+      return;
+    }
+
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+      if (image == null) return;
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+
+      final String recognizedText = await OCRService.recognizeText(image.path);
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (recognizedText.isEmpty) {
+        PinpointHaptics.error();
+        if (mounted) {
+          showErrorToast(
+            context: context,
+            title: 'No Text Found',
+            description: 'Could not detect any text in the image',
+          );
+        }
+        return;
+      }
+
+      final currentText = _textContentController.text;
+      final newText = currentText.isEmpty
+          ? recognizedText
+          : '$currentText\n\n$recognizedText';
+      _textContentController.text = newText;
+
+      await premiumService.incrementOcrScans();
+
+      PinpointHaptics.success();
+      if (mounted) {
+        showSuccessToast(
+          context: context,
+          title: 'Text Extracted!',
+          description: 'Text from image has been added to your note',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error performing OCR: $e');
+      PinpointHaptics.error();
+
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+
+      if (mounted) {
+        showErrorToast(
+          context: context,
+          title: 'OCR Failed',
+          description: 'Unable to scan text from image',
+        );
+      }
+    }
+  }
+
+  /// Show usage stats
+  void _showUsageStats(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const UsageStatsBottomSheet(),
     );
   }
 }
