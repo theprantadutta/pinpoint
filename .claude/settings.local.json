@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(dir:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(git add:*)",
+      "Bash(./venv/Scripts/python.exe -m alembic:*)",
+      "Bash(./venv/Scripts/python.exe:*)",
+      "Bash(flutter build:*)"
     ],
     "deny": [],
     "ask": []
