@@ -114,6 +114,9 @@ class _TodoScreenState extends State<TodoScreen> {
                 }
 
                 if (snapshot.hasError) {
+                  // Log the error for debugging
+                  debugPrint('❌ [TodoScreen] Error loading todos: ${snapshot.error}');
+                  debugPrint('❌ [TodoScreen] Stack trace: ${snapshot.stackTrace}');
                   return EmptyState(
                     icon: Icons.error_outline_rounded,
                     title: 'Error loading todos',

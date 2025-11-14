@@ -1150,9 +1150,11 @@ class DriftNoteService {
       final sql = '''
         SELECT
           t.id AS todo_id,
+          t.uuid AS todo_uuid,
           t.note_id AS todo_note_id,
           t.todo_title AS todo_title,
           t.is_done AS todo_is_done,
+          n.uuid AS note_uuid,
           n.note_title AS note_title,
           tn.content AS note_content,
           n.created_at AS note_created_at,
@@ -1173,6 +1175,7 @@ class DriftNoteService {
             readsFrom: {
               database.noteTodoItems,
               database.notes,
+              database.textNotes,
             },
           )
           .watch()
