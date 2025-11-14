@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
-import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
 
 import '../entities/note.dart';
