@@ -1302,4 +1302,252 @@ class DriftNoteService {
     }
     await DriftNoteFolderService.upsertNoteFoldersWithNote(folders, noteId);
   }
+
+  /// Watch all notes from V2 tables (Architecture V8)
+  /// Queries text_notes_v2, voice_notes_v2, todo_list_notes_v2, reminder_notes_v2
+  /// Converts to NoteWithDetails format for backward compatibility with UI
+  static Stream<List<NoteWithDetails>> watchNotesWithDetailsV2({
+    String searchQuery = '',
+    String sortType = 'updatedAt',
+    String sortDirection = 'desc',
+  }) async* {
+    final database = getIt<AppDatabase>();
+
+    // Watch all 4 V2 tables
+    final textNotesStream = database.select(database.textNotesV2).watch();
+    final voiceNotesStream = database.select(database.voiceNotesV2).watch();
+    final todoNotesStream = database.select(database.todoListNotesV2).watch();
+    final reminderNotesStream = database.select(database.reminderNotesV2).watch();
+
+    // Combine all streams
+    await for (final _ in Stream.periodic(const Duration(milliseconds: 100))) {
+      final textNotes = await textNotesStream.first;
+      final voiceNotes = await voiceNotesStream.first;
+      final todoNotes = await todoNotesStream.first;
+      final reminderNotes = await reminderNotesStream.first;
+
+      List<NoteWithDetails> allNotes = [];
+
+      // Convert text notes
+      for (final textNote in textNotes) {
+        if (textNote.isArchived || textNote.isDeleted) continue;
+
+        // Apply search filter
+        if (searchQuery.isNotEmpty) {
+          final query = searchQuery.toLowerCase();
+          final matchesTitle = textNote.title?.toLowerCase().contains(query) ?? false;
+          final matchesContent = textNote.content.toLowerCase().contains(query);
+          if (!matchesTitle && !matchesContent) continue;
+        }
+
+        // Get folders for this note
+        final folderRelations = await (database.select(database.textNoteFolderRelationsV2)
+              ..where((r) => r.textNoteId.equals(textNote.id)))
+            .get();
+
+        final folders = <NoteFolderDto>[];
+        for (final rel in folderRelations) {
+          final folder = await (database.select(database.noteFolders)
+                ..where((f) => f.noteFolderId.equals(rel.folderId)))
+              .getSingleOrNull();
+          if (folder != null) {
+            folders.add(NoteFolderDto(
+              id: folder.noteFolderId,
+              title: folder.noteFolderTitle,
+            ));
+          }
+        }
+
+        // Create fake Note object for compatibility
+        final fakeNote = Note(
+          id: textNote.id,
+          uuid: textNote.uuid,
+          noteType: 'text',
+          noteTitle: textNote.title ?? '',
+          isPinned: textNote.isPinned,
+          isArchived: textNote.isArchived,
+          isDeleted: textNote.isDeleted,
+          isSynced: textNote.isSynced,
+          createdAt: textNote.createdAt,
+          updatedAt: textNote.updatedAt,
+        );
+
+        allNotes.add(NoteWithDetails(
+          note: fakeNote,
+          folders: folders,
+          attachments: [],
+          todoItems: [],
+          textContent: textNote.content,
+        ));
+      }
+
+      // Convert voice notes
+      for (final voiceNote in voiceNotes) {
+        if (voiceNote.isArchived || voiceNote.isDeleted) continue;
+
+        // Apply search filter
+        if (searchQuery.isNotEmpty) {
+          final query = searchQuery.toLowerCase();
+          final matchesTitle = voiceNote.title?.toLowerCase().contains(query) ?? false;
+          if (!matchesTitle) continue;
+        }
+
+        // Get folders
+        final folderRelations = await (database.select(database.voiceNoteFolderRelationsV2)
+              ..where((r) => r.voiceNoteId.equals(voiceNote.id)))
+            .get();
+
+        final folders = <NoteFolderDto>[];
+        for (final rel in folderRelations) {
+          final folder = await (database.select(database.noteFolders)
+                ..where((f) => f.noteFolderId.equals(rel.folderId)))
+              .getSingleOrNull();
+          if (folder != null) {
+            folders.add(NoteFolderDto(
+              id: folder.noteFolderId,
+              title: folder.noteFolderTitle,
+            ));
+          }
+        }
+
+        final fakeNote = Note(
+          id: voiceNote.id,
+          uuid: voiceNote.uuid,
+          noteType: 'voice',
+          noteTitle: voiceNote.title ?? 'Voice Note',
+          isPinned: voiceNote.isPinned,
+          isArchived: voiceNote.isArchived,
+          isDeleted: voiceNote.isDeleted,
+          isSynced: voiceNote.isSynced,
+          createdAt: voiceNote.createdAt,
+          updatedAt: voiceNote.updatedAt,
+        );
+
+        allNotes.add(NoteWithDetails(
+          note: fakeNote,
+          folders: folders,
+          attachments: [],
+          todoItems: [],
+          textContent: null,
+        ));
+      }
+
+      // Convert todo notes
+      for (final todoNote in todoNotes) {
+        if (todoNote.isArchived || todoNote.isDeleted) continue;
+
+        // Apply search filter
+        if (searchQuery.isNotEmpty) {
+          final query = searchQuery.toLowerCase();
+          final matchesTitle = todoNote.title?.toLowerCase().contains(query) ?? false;
+          if (!matchesTitle) continue;
+        }
+
+        // Get folders
+        final folderRelations = await (database.select(database.todoListNoteFolderRelationsV2)
+              ..where((r) => r.todoListNoteId.equals(todoNote.id)))
+            .get();
+
+        final folders = <NoteFolderDto>[];
+        for (final rel in folderRelations) {
+          final folder = await (database.select(database.noteFolders)
+                ..where((f) => f.noteFolderId.equals(rel.folderId)))
+              .getSingleOrNull();
+          if (folder != null) {
+            folders.add(NoteFolderDto(
+              id: folder.noteFolderId,
+              title: folder.noteFolderTitle,
+            ));
+          }
+        }
+
+        final fakeNote = Note(
+          id: todoNote.id,
+          uuid: todoNote.uuid,
+          noteType: 'todo_list',
+          noteTitle: todoNote.title ?? 'Todo List',
+          isPinned: todoNote.isPinned,
+          isArchived: todoNote.isArchived,
+          isDeleted: todoNote.isDeleted,
+          isSynced: todoNote.isSynced,
+          createdAt: todoNote.createdAt,
+          updatedAt: todoNote.updatedAt,
+        );
+
+        allNotes.add(NoteWithDetails(
+          note: fakeNote,
+          folders: folders,
+          attachments: [],
+          todoItems: [],
+          textContent: null,
+        ));
+      }
+
+      // Convert reminder notes
+      for (final reminderNote in reminderNotes) {
+        if (reminderNote.isArchived || reminderNote.isDeleted) continue;
+
+        // Apply search filter
+        if (searchQuery.isNotEmpty) {
+          final query = searchQuery.toLowerCase();
+          final matchesTitle = reminderNote.title?.toLowerCase().contains(query) ?? false;
+          final matchesDesc = reminderNote.description?.toLowerCase().contains(query) ?? false;
+          if (!matchesTitle && !matchesDesc) continue;
+        }
+
+        // Get folders
+        final folderRelations = await (database.select(database.reminderNoteFolderRelationsV2)
+              ..where((r) => r.reminderNoteId.equals(reminderNote.id)))
+            .get();
+
+        final folders = <NoteFolderDto>[];
+        for (final rel in folderRelations) {
+          final folder = await (database.select(database.noteFolders)
+                ..where((f) => f.noteFolderId.equals(rel.folderId)))
+              .getSingleOrNull();
+          if (folder != null) {
+            folders.add(NoteFolderDto(
+              id: folder.noteFolderId,
+              title: folder.noteFolderTitle,
+            ));
+          }
+        }
+
+        final fakeNote = Note(
+          id: reminderNote.id,
+          uuid: reminderNote.uuid,
+          noteType: 'reminder',
+          noteTitle: reminderNote.title ?? 'Reminder',
+          isPinned: reminderNote.isPinned,
+          isArchived: reminderNote.isArchived,
+          isDeleted: reminderNote.isDeleted,
+          isSynced: reminderNote.isSynced,
+          createdAt: reminderNote.createdAt,
+          updatedAt: reminderNote.updatedAt,
+        );
+
+        allNotes.add(NoteWithDetails(
+          note: fakeNote,
+          folders: folders,
+          attachments: [],
+          todoItems: [],
+          textContent: reminderNote.description,
+        ));
+      }
+
+      // Sort
+      allNotes.sort((a, b) {
+        final aVal = sortType == 'createdAt' ? a.note.createdAt : a.note.updatedAt;
+        final bVal = sortType == 'createdAt' ? b.note.createdAt : b.note.updatedAt;
+
+        if (sortDirection == 'desc') {
+          return bVal.compareTo(aVal);
+        } else {
+          return aVal.compareTo(bVal);
+        }
+      });
+
+      yield allNotes;
+    }
+  }
 }
