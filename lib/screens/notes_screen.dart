@@ -69,11 +69,10 @@ class _NotesScreenState extends State<NotesScreen> {
             Consumer<FilterService>(
               builder: (context, filterService, _) {
                 return StreamBuilder<List<NoteWithDetails>>(
-                  stream: DriftNoteService.watchNotesWithDetails(
+                  stream: DriftNoteService.watchNotesWithDetailsV2(
                     searchQuery: _searchQuery,
                     sortType: _sortBy,
                     sortDirection: _sortDirection,
-                    filterOptions: filterService.filterOptions,
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -191,11 +190,10 @@ class _NotesScreenState extends State<NotesScreen> {
             child: Consumer<FilterService>(
               builder: (context, filterService, _) {
                 return StreamBuilder<List<NoteWithDetails>>(
-                  stream: DriftNoteService.watchNotesWithDetails(
+                  stream: DriftNoteService.watchNotesWithDetailsV2(
                     searchQuery: _searchQuery,
                     sortType: _sortBy,
                     sortDirection: _sortDirection,
-                    filterOptions: filterService.filterOptions,
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
