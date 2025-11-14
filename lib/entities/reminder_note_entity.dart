@@ -4,7 +4,7 @@ import 'package:drift/drift.dart';
 /// ARCHITECTURAL CHANGE: No longer extends base Notes table
 /// Each note type is now completely independent
 @DataClassName('ReminderNoteEntity')
-class ReminderNotes extends Table {
+class ReminderNotesV2 extends Table {
   /// Auto-incrementing primary key (for local use only)
   IntColumn get id => integer().autoIncrement()();
 

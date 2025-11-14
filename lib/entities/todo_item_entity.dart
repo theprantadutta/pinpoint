@@ -3,10 +3,10 @@ import 'package:drift/drift.dart';
 import 'todo_list_note_entity.dart';
 
 /// Table for individual todo items within a todo list note
-/// Many-to-one relationship with TodoListNotes
-/// ARCHITECTURAL CHANGE: Now references TodoListNotes instead of base Notes table
+/// Many-to-one relationship with TodoListNotesV2
+/// ARCHITECTURAL CHANGE: Now references TodoListNotesV2 instead of base Notes table
 @DataClassName('TodoItemEntity')
-class TodoItems extends Table {
+class TodoItemsV2 extends Table {
   /// Auto-incrementing primary key (for local use only)
   IntColumn get id => integer().autoIncrement()();
 
@@ -14,15 +14,15 @@ class TodoItems extends Table {
   /// Generated using UUID v4 on creation
   TextColumn get uuid => text().unique()();
 
-  /// Foreign key to TodoListNotes table (local ID)
+  /// Foreign key to TodoListNotesV2 table (local ID)
   /// CASCADE DELETE: When todo list note is deleted, all its items are also deleted
   IntColumn get todoListNoteId =>
-      integer().references(TodoListNotes, #id, onDelete: KeyAction.cascade)();
+      integer().references(TodoListNotesV2, #id, onDelete: KeyAction.cascade)();
 
-  /// Foreign key to TodoListNotes table (UUID for sync)
+  /// Foreign key to TodoListNotesV2 table (UUID for sync)
   /// Used for cross-device sync to link items to their parent todo list
   TextColumn get todoListNoteUuid =>
-      text().references(TodoListNotes, #uuid)();
+      text().references(TodoListNotesV2, #uuid)();
 
   /// The text content of this todo item
   TextColumn get title => text()();

@@ -5,7 +5,7 @@ import 'package:drift/drift.dart';
 /// Each note type is now completely independent
 /// A todo list note contains multiple todo items (one-to-many relationship)
 @DataClassName('TodoListNoteEntity')
-class TodoListNotes extends Table {
+class TodoListNotesV2 extends Table {
   /// Auto-incrementing primary key (for local use only)
   IntColumn get id => integer().autoIncrement()();
 

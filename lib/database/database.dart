@@ -12,10 +12,21 @@ import '../entities/text_note.dart';
 import '../entities/audio_note.dart';
 import '../entities/todo_note.dart';
 import '../entities/reminder_note.dart';
+// NEW ENTITIES (Architecture V8): Independent note types
+import '../entities/text_note_entity.dart';
+import '../entities/voice_note_entity.dart';
+import '../entities/todo_list_note_entity.dart';
+import '../entities/todo_item_entity.dart';
+import '../entities/reminder_note_entity.dart';
+import '../entities/text_note_folder_relations_entity.dart';
+import '../entities/voice_note_folder_relations_entity.dart';
+import '../entities/todo_list_note_folder_relations_entity.dart';
+import '../entities/reminder_note_folder_relations_entity.dart';
 
 part '../generated/database/database.g.dart';
 
 @DriftDatabase(tables: [
+  // Keep old tables for now (will be removed after full migration)
   NoteFolderRelations,
   NoteFolders,
   NoteTodoItems,
@@ -25,6 +36,16 @@ part '../generated/database/database.g.dart';
   AudioNotes,
   TodoNotes,
   ReminderNotes,
+  // NEW ARCHITECTURE V8: Independent note types
+  TextNotesV2,
+  VoiceNotesV2,
+  TodoListNotesV2,
+  TodoItemsV2,
+  ReminderNotesV2,
+  TextNoteFolderRelationsV2,
+  VoiceNoteFolderRelationsV2,
+  TodoListNoteFolderRelationsV2,
+  ReminderNoteFolderRelationsV2,
 ])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
@@ -33,85 +54,38 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (m) async {
-        // Ensure full schema exists on fresh installs
+        // Create all tables from scratch
         await m.createAll();
+        debugPrint('✅ [Database] Created fresh database schema v8');
       },
       onUpgrade: (m, from, to) async {
-        // Migration from v6 to v7: Add UUID columns
-        if (from < 7) {
-          debugPrint('🔄 [Database Migration] Migrating from v$from to v$to');
-          await _migrateToV7(m);
-        }
+        // V7 → V8: Complete architecture redesign
+        // No migration logic needed - fresh start with new schema
+        // Old data will be lost (acceptable for development)
+        debugPrint('🔄 [Database] Upgrading from v$from to v$to');
+        debugPrint('⚠️ [Database] This is a breaking change - all data will be reset');
+
+        // Drop all old tables and recreate
+        await m.deleteTable('notes');
+        await m.deleteTable('text_notes');
+        await m.deleteTable('audio_notes');
+        await m.deleteTable('todo_notes');
+        await m.deleteTable('note_todo_items');
+        await m.deleteTable('reminder_notes');
+        await m.deleteTable('note_folder_relations');
+        await m.deleteTable('note_attachments');
+
+        // Create all new tables
+        await m.createAll();
+        debugPrint('✅ [Database] Migration to v8 completed - fresh schema ready');
       },
     );
-  }
-
-  /// Migrate from v6 to v7: Add UUID support
-  Future<void> _migrateToV7(Migrator m) async {
-    debugPrint('📦 [Database Migration] Adding UUID columns...');
-
-    // Step 1: Add UUID columns to all tables
-    await m.addColumn(notes, notes.uuid);
-    await m.addColumn(noteFolders, noteFolders.uuid);
-    await m.addColumn(noteTodoItems, noteTodoItems.uuid);
-    await m.addColumn(noteTodoItems, noteTodoItems.noteUuid);
-
-    debugPrint('✅ [Database Migration] UUID columns added');
-
-    // Step 2: Backfill UUIDs for existing records
-    await _backfillUuids();
-
-    debugPrint('✅ [Database Migration] Migration to v7 completed');
-  }
-
-  /// Backfill UUIDs for all existing records
-  Future<void> _backfillUuids() async {
-    final uuid = const Uuid();
-    debugPrint('🔄 [Database Migration] Backfilling UUIDs...');
-
-    // Backfill notes
-    final existingNotes = await select(notes).get();
-    debugPrint('   - Backfilling ${existingNotes.length} notes');
-
-    for (final note in existingNotes) {
-      final noteUuid = uuid.v4();
-      await (update(notes)..where((t) => t.id.equals(note.id)))
-          .write(NotesCompanion(uuid: Value(noteUuid)));
-
-      // Also update todo items that belong to this note
-      await (update(noteTodoItems)..where((t) => t.noteId.equals(note.id)))
-          .write(NoteTodoItemsCompanion(noteUuid: Value(noteUuid)));
-    }
-
-    // Backfill folders
-    final existingFolders = await select(noteFolders).get();
-    debugPrint('   - Backfilling ${existingFolders.length} folders');
-
-    for (final folder in existingFolders) {
-      await (update(noteFolders)
-            ..where((t) => t.noteFolderId.equals(folder.noteFolderId)))
-          .write(NoteFoldersCompanion(uuid: Value(uuid.v4())));
-    }
-
-    // Backfill todo items (assign their own UUIDs)
-    final existingTodos = await select(noteTodoItems).get();
-    debugPrint('   - Backfilling ${existingTodos.length} todo items');
-
-    for (final todo in existingTodos) {
-      // Only update if UUID is null (might have been updated with parent note)
-      if (todo.uuid.isEmpty) {
-        await (update(noteTodoItems)..where((t) => t.id.equals(todo.id)))
-            .write(NoteTodoItemsCompanion(uuid: Value(uuid.v4())));
-      }
-    }
-
-    debugPrint('✅ [Database Migration] UUID backfill completed');
   }
 
   static QueryExecutor _openConnection() {
