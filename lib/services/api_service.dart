@@ -325,7 +325,8 @@ class ApiService {
     try {
       final response = await _dio.get('/folders/all');
 
-      return List<Map<String, dynamic>>.from(response.data['folders']);
+      // Backend returns list directly, not wrapped in 'folders' key
+      return List<Map<String, dynamic>>.from(response.data);
     } on DioException catch (e) {
       throw _handleError(e);
     }
