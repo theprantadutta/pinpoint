@@ -55,9 +55,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
   late TextEditingController _reminderDescription;
   late SharePlus _sharePlus;
 
-  List<NoteFolderDto> selectedFolders = [
-    DriftNoteFolderService.firstNoteFolder
-  ];
+  // Initialized dynamically in _initializeFolders() to avoid hardcoded ID issues
+  List<NoteFolderDto> selectedFolders = [];
   List<db.NoteTodoItem> todos = [];
   List<db.NoteTodoItem> _savedTodos = []; // Track previously saved todos
   DateTime? reminderDateTime;
@@ -85,6 +84,9 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
     _contentController.addListener(_scheduleAutoSave);
     _reminderDescription.addListener(_scheduleAutoSave);
 
+    // Ensure folders exist before creating a new note
+    _initializeFolders();
+
     if (widget.args?.existingNote != null) {
       final existingNote = widget.args!.existingNote!;
       _currentNoteId = existingNote.note.id;
@@ -106,6 +108,29 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
     } else if (widget.args?.noticeType != null) {
       // Pre-select note type for new notes (e.g., from Todo screen)
       selectedNoteType = widget.args!.noticeType;
+    }
+  }
+
+  /// Initialize folders and set default folder for new notes
+  Future<void> _initializeFolders() async {
+    try {
+      // Ensure folders exist in database
+      final folders = await DriftNoteFolderService.watchAllNoteFoldersStream().first;
+
+      // For new notes (not editing existing), set default folder
+      if (widget.args?.existingNote == null && folders.isNotEmpty && mounted) {
+        setState(() {
+          selectedFolders = [
+            NoteFolderDto(
+              id: folders.first.noteFolderId,
+              title: folders.first.noteFolderTitle,
+            )
+          ];
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to initialize folders: $e');
+      // Keep default empty folders list if initialization fails
     }
   }
 

@@ -80,7 +80,7 @@ class SyncManager with ChangeNotifier {
       await premiumService.syncUsageWithBackend();
       debugPrint('✅ [SyncManager] Synced usage stats with backend');
 
-      // Auto-reconcile if needed (once per day)
+      // Auto-reconcile after every sync to keep backend count accurate
       await premiumService.autoReconcileIfNeeded();
     } catch (e) {
       debugPrint('⚠️ [SyncManager] Could not sync usage stats: $e');
