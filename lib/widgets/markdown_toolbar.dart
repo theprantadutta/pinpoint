@@ -20,6 +20,26 @@ class MarkdownToolbar extends StatefulWidget {
 
 class _MarkdownToolbarState extends State<MarkdownToolbar> {
   @override
+  void initState() {
+    super.initState();
+    // Listen to controller changes to update toolbar button states
+    widget.controller.addListener(_updateToolbar);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_updateToolbar);
+    super.dispose();
+  }
+
+  void _updateToolbar() {
+    // Update the toolbar when the selection or formatting changes
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
