@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
-import 'package:pinpoint/screens/create_note_screen.dart';
+import 'package:pinpoint/screens/create_note_screen_v2.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:provider/provider.dart';
 import '../constants/constants.dart';
@@ -73,6 +73,7 @@ class _NotesScreenState extends State<NotesScreen> {
                     searchQuery: _searchQuery,
                     sortType: _sortBy,
                     sortDirection: _sortDirection,
+                    excludeNoteTypes: ['todo', 'reminder'], // Notes screen only shows text and voice notes
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -194,6 +195,7 @@ class _NotesScreenState extends State<NotesScreen> {
                     searchQuery: _searchQuery,
                     sortType: _sortBy,
                     sortDirection: _sortDirection,
+                    excludeNoteTypes: ['todo', 'reminder'], // Notes screen only shows text and voice notes
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -249,6 +251,11 @@ class _NotesScreenState extends State<NotesScreen> {
             excerpt: hasTitle ? note.textContent : null,
             lastModified: note.note.updatedAt,
             isPinned: note.note.isPinned,
+            noteType: note.note.noteType,
+            totalTasks: note.note.noteType == 'todo' ? note.todoItems.length : null,
+            completedTasks: note.note.noteType == 'todo'
+                ? note.todoItems.where((item) => item.isDone).length
+                : null,
             tags: [
               ...note.folders.map(
                 (f) => CardNoteTag(
@@ -260,7 +267,7 @@ class _NotesScreenState extends State<NotesScreen> {
             onTap: () {
               PinpointHaptics.medium();
               context.push(
-                CreateNoteScreen.kRouteName,
+                CreateNoteScreenV2.kRouteName,
                 extra: CreateNoteScreenArguments(
                   noticeType: getNoteTypeDisplayName(note.note.noteType),
                   existingNote: note,
@@ -295,6 +302,11 @@ class _NotesScreenState extends State<NotesScreen> {
               note.note.noteTitle!.trim().isNotEmpty;
           return NoteCard(
             title: getNoteTitleOrPreview(note.note.noteTitle, note.textContent),
+            noteType: note.note.noteType,
+            totalTasks: note.note.noteType == 'todo' ? note.todoItems.length : null,
+            completedTasks: note.note.noteType == 'todo'
+                ? note.todoItems.where((item) => item.isDone).length
+                : null,
             excerpt: hasTitle ? note.textContent : null,
             lastModified: note.note.updatedAt,
             isPinned: note.note.isPinned,
@@ -309,7 +321,7 @@ class _NotesScreenState extends State<NotesScreen> {
             onTap: () {
               PinpointHaptics.medium();
               context.push(
-                CreateNoteScreen.kRouteName,
+                CreateNoteScreenV2.kRouteName,
                 extra: CreateNoteScreenArguments(
                   noticeType: getNoteTypeDisplayName(note.note.noteType),
                   existingNote: note,

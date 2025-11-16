@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:fleather/fleather.dart';
 
-/// Toolbar for markdown text formatting
-/// Provides buttons to insert common markdown syntax
+/// Simple toolbar for text formatting with Fleather
+/// Provides buttons for bold, italic, underline, and strikethrough
 class MarkdownToolbar extends StatelessWidget {
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final VoidCallback? onPreviewToggle;
-  final bool isPreviewMode;
+  final FleatherController controller;
+  final FocusNode? focusNode;
 
   const MarkdownToolbar({
     super.key,
     required this.controller,
-    required this.focusNode,
-    this.onPreviewToggle,
-    this.isPreviewMode = false,
+    this.focusNode,
   });
 
   @override
@@ -24,7 +21,7 @@ class MarkdownToolbar extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: cs.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(12),
       ),
       child: SingleChildScrollView(
@@ -35,185 +32,43 @@ class MarkdownToolbar extends StatelessWidget {
             _ToolbarButton(
               icon: Symbols.format_bold,
               tooltip: 'Bold',
-              onPressed: () => _wrapSelection('**', '**'),
+              onPressed: () => _toggleAttribute(ParchmentAttribute.bold),
+              isActive: _isAttributeActive(ParchmentAttribute.bold),
             ),
             _ToolbarButton(
               icon: Symbols.format_italic,
               tooltip: 'Italic',
-              onPressed: () => _wrapSelection('*', '*'),
+              onPressed: () => _toggleAttribute(ParchmentAttribute.italic),
+              isActive: _isAttributeActive(ParchmentAttribute.italic),
+            ),
+            _ToolbarButton(
+              icon: Symbols.format_underlined,
+              tooltip: 'Underline',
+              onPressed: () => _toggleAttribute(ParchmentAttribute.underline),
+              isActive: _isAttributeActive(ParchmentAttribute.underline),
             ),
             _ToolbarButton(
               icon: Symbols.format_strikethrough,
               tooltip: 'Strikethrough',
-              onPressed: () => _wrapSelection('~~', '~~'),
+              onPressed: () => _toggleAttribute(ParchmentAttribute.strikethrough),
+              isActive: _isAttributeActive(ParchmentAttribute.strikethrough),
             ),
-            const SizedBox(width: 8),
-            const _ToolbarDivider(),
-            const SizedBox(width: 8),
-            _ToolbarButton(
-              icon: Symbols.title,
-              tooltip: 'Heading',
-              onPressed: () => _insertAtLineStart('# '),
-            ),
-            _ToolbarButton(
-              icon: Symbols.format_list_bulleted,
-              tooltip: 'Bullet List',
-              onPressed: () => _insertAtLineStart('- '),
-            ),
-            _ToolbarButton(
-              icon: Symbols.format_list_numbered,
-              tooltip: 'Numbered List',
-              onPressed: () => _insertAtLineStart('1. '),
-            ),
-            _ToolbarButton(
-              icon: Symbols.checklist,
-              tooltip: 'Checkbox',
-              onPressed: () => _insertAtLineStart('- [ ] '),
-            ),
-            const SizedBox(width: 8),
-            const _ToolbarDivider(),
-            const SizedBox(width: 8),
-            _ToolbarButton(
-              icon: Symbols.code,
-              tooltip: 'Inline Code',
-              onPressed: () => _wrapSelection('`', '`'),
-            ),
-            _ToolbarButton(
-              icon: Symbols.code_blocks,
-              tooltip: 'Code Block',
-              onPressed: () => _wrapSelection('```\n', '\n```'),
-            ),
-            _ToolbarButton(
-              icon: Symbols.format_quote,
-              tooltip: 'Quote',
-              onPressed: () => _insertAtLineStart('> '),
-            ),
-            _ToolbarButton(
-              icon: Symbols.link,
-              tooltip: 'Link',
-              onPressed: () => _insertLink(),
-            ),
-            const SizedBox(width: 8),
-            const _ToolbarDivider(),
-            const SizedBox(width: 8),
-            _ToolbarButton(
-              icon: Symbols.horizontal_rule,
-              tooltip: 'Horizontal Line',
-              onPressed: () => _insertText('\n---\n'),
-            ),
-            if (onPreviewToggle != null) ...[
-              const SizedBox(width: 8),
-              const _ToolbarDivider(),
-              const SizedBox(width: 8),
-              _ToolbarButton(
-                icon: isPreviewMode ? Symbols.edit : Symbols.preview,
-                tooltip: isPreviewMode ? 'Edit' : 'Preview',
-                onPressed: onPreviewToggle!,
-                isActive: isPreviewMode,
-              ),
-            ],
           ],
         ),
       ),
     );
   }
 
-  /// Wrap selected text with prefix and suffix
-  void _wrapSelection(String prefix, String suffix) {
-    final text = controller.text;
-    final selection = controller.selection;
-
-    if (!selection.isValid) return;
-
-    final selectedText = selection.textInside(text);
-    final before = text.substring(0, selection.start);
-    final after = text.substring(selection.end);
-
-    final newText = selectedText.isEmpty
-        ? '$before${prefix}text$suffix$after'
-        : '$before$prefix$selectedText$suffix$after';
-
-    controller.value = controller.value.copyWith(
-      text: newText,
-      selection: TextSelection.collapsed(
-        offset: selection.start + prefix.length + (selectedText.isEmpty ? 4 : selectedText.length),
-      ),
-    );
-
-    focusNode.requestFocus();
+  /// Toggle text formatting attribute
+  void _toggleAttribute(ParchmentAttribute attribute) {
+    controller.formatSelection(attribute);
+    focusNode?.requestFocus();
   }
 
-  /// Insert text at the beginning of the current line
-  void _insertAtLineStart(String prefix) {
-    final text = controller.text;
-    final selection = controller.selection;
-
-    if (!selection.isValid) return;
-
-    // Find start of current line
-    final lineStart = text.lastIndexOf('\n', selection.start - 1) + 1;
-    final before = text.substring(0, lineStart);
-    final after = text.substring(lineStart);
-
-    final newText = '$before$prefix$after';
-
-    controller.value = controller.value.copyWith(
-      text: newText,
-      selection: TextSelection.collapsed(
-        offset: lineStart + prefix.length,
-      ),
-    );
-
-    focusNode.requestFocus();
-  }
-
-  /// Insert text at cursor position
-  void _insertText(String textToInsert) {
-    final text = controller.text;
-    final selection = controller.selection;
-
-    if (!selection.isValid) return;
-
-    final before = text.substring(0, selection.start);
-    final after = text.substring(selection.end);
-
-    final newText = '$before$textToInsert$after';
-
-    controller.value = controller.value.copyWith(
-      text: newText,
-      selection: TextSelection.collapsed(
-        offset: selection.start + textToInsert.length,
-      ),
-    );
-
-    focusNode.requestFocus();
-  }
-
-  /// Insert markdown link
-  void _insertLink() {
-    final text = controller.text;
-    final selection = controller.selection;
-
-    if (!selection.isValid) return;
-
-    final selectedText = selection.textInside(text);
-    final before = text.substring(0, selection.start);
-    final after = text.substring(selection.end);
-
-    final linkText = selectedText.isEmpty ? 'link text' : selectedText;
-    final linkUrl = 'https://';
-
-    final newText = '$before[$linkText]($linkUrl)$after';
-
-    controller.value = controller.value.copyWith(
-      text: newText,
-      selection: TextSelection(
-        baseOffset: selection.start + linkText.length + 3,
-        extentOffset: selection.start + linkText.length + 3 + linkUrl.length,
-      ),
-    );
-
-    focusNode.requestFocus();
+  /// Check if an attribute is currently active
+  bool _isAttributeActive(ParchmentAttribute attribute) {
+    final attrs = controller.getSelectionStyle().values;
+    return attrs.contains(attribute);
   }
 }
 
@@ -241,36 +96,21 @@ class _ToolbarButton extends StatelessWidget {
         onTap: onPressed,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
+          margin: const EdgeInsets.symmetric(horizontal: 2),
           decoration: BoxDecoration(
             color: isActive ? cs.primaryContainer : null,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            size: 20,
+            size: 22,
             color: isActive
                 ? cs.onPrimaryContainer
-                : cs.onSurface.withValues(alpha: 0.6),
+                : cs.onSurface.withValues(alpha: 0.7),
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Vertical divider for toolbar
-class _ToolbarDivider extends StatelessWidget {
-  const _ToolbarDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Container(
-      width: 1,
-      height: 20,
-      color: cs.outline.withValues(alpha: 0.3),
     );
   }
 }
