@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:drift/drift.dart';
 
 import '../database/database.dart';
 import '../models/reminder_dto.dart';
@@ -46,10 +47,10 @@ class ReminderSyncService {
       // Convert to DTOs for sync
       final reminderDtos = unsyncedReminders.map((note) {
         return ReminderDto.fromLocal(
-          noteUuid: note.uuid,
-          title: note.title,
+          noteUuid: note.uuid!,
+          title: note.title!,
           description: note.description,
-          reminderTime: note.reminderTime,
+          reminderTime: note.reminderTime!,
         );
       }).toList();
 
@@ -89,7 +90,7 @@ class ReminderSyncService {
     } catch (e, st) {
       debugPrint('❌ [ReminderSyncService] Sync failed: $e');
       debugPrint('Stack trace: $st');
-      return {'created': 0, 'failed': unsyncedReminders?.length ?? 0, 'skipped': 0};
+      return {'created': 0, 'failed': 0, 'skipped': 0};
     } finally {
       _isSyncing = false;
     }
@@ -104,10 +105,10 @@ class ReminderSyncService {
     for (final note in reminders) {
       try {
         await ApiService().createReminder(
-          noteUuid: note.uuid,
-          title: note.title,
+          noteUuid: note.uuid!,
+          title: note.title!,
           description: note.description,
-          reminderTime: note.reminderTime,
+          reminderTime: note.reminderTime!,
         );
 
         // Mark as synced
@@ -133,14 +134,12 @@ class ReminderSyncService {
     try {
       final database = getIt<AppDatabase>();
 
-      final count = await (database.selectOnly(database.reminderNotesV2)
-            ..addColumns([database.reminderNotesV2.id.count()])
-            ..where(database.reminderNotesV2.isDeleted.equals(false))
-            ..where(database.reminderNotesV2.isSynced.equals(false)))
-          .getSingle();
+      final unsyncedReminders = await (database.select(database.reminderNotesV2)
+            ..where((t) => t.isDeleted.equals(false))
+            ..where((t) => t.isSynced.equals(false)))
+          .get();
 
-      final unsyncedCount = count.read(database.reminderNotesV2.id.count()) ?? 0;
-      return unsyncedCount > 0;
+      return unsyncedReminders.isNotEmpty;
     } catch (e) {
       debugPrint('❌ [ReminderSyncService] Failed to check sync status: $e');
       return false;

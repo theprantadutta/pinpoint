@@ -226,7 +226,15 @@ class _MarkdownToolbarState extends State<MarkdownToolbar> {
 
   /// Toggle text formatting attribute
   void _toggleAttribute(ParchmentAttribute attribute) {
-    widget.controller.formatSelection(attribute);
+    final currentStyle = widget.controller.getSelectionStyle();
+
+    // If the attribute is already active, remove it
+    if (currentStyle.containsSame(attribute)) {
+      widget.controller.formatSelection(attribute.unset);
+    } else {
+      widget.controller.formatSelection(attribute);
+    }
+
     widget.focusNode?.requestFocus();
   }
 

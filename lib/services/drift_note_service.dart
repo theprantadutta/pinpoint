@@ -19,6 +19,33 @@ import 'package:pinpoint/sync/sync_manager.dart';
 class DriftNoteService {
   DriftNoteService._();
 
+  /// Extracts plain text from content that might be in JSON Delta format
+  /// Supports both JSON Delta (new) and plain text (old) for backward compatibility
+  static String _extractPlainTextFromContent(String? content) {
+    if (content == null || content.isEmpty) return '';
+
+    try {
+      // Try to parse as JSON Delta format
+      final jsonData = jsonDecode(content);
+      if (jsonData is List) {
+        // Extract text from Delta operations
+        final buffer = StringBuffer();
+        for (final op in jsonData) {
+          if (op is Map && op.containsKey('insert')) {
+            buffer.write(op['insert']);
+          }
+        }
+        return buffer.toString();
+      }
+    } catch (e) {
+      // Not JSON, return as plain text (backward compatibility)
+      return content;
+    }
+
+    // Fallback
+    return content;
+  }
+
   static Future<Note?> getSingleNote(int noteId) {
     final database = getIt<AppDatabase>();
     return (database.select(database.notes)..where((x) => x.id.equals(noteId)))
@@ -59,7 +86,7 @@ class DriftNoteService {
       final textNote = await (database.select(database.textNotes)
             ..where((x) => x.noteId.equals(noteId)))
           .getSingleOrNull();
-      textContent = textNote?.content;
+      textContent = _extractPlainTextFromContent(textNote?.content);
     }
 
     // Get attachments (empty for now, add if needed)
@@ -489,7 +516,7 @@ class DriftNoteService {
                     folders: folders,
                     attachments: [],
                     todoItems: [],
-                    textContent: row.read<String?>('text_content'),
+                    textContent: _extractPlainTextFromContent(row.read<String?>('text_content')),
                   );
                 });
 
@@ -680,7 +707,7 @@ class DriftNoteService {
                     folders: folders,
                     attachments: [],
                     todoItems: [],
-                    textContent: row.read<String?>('text_content'),
+                    textContent: _extractPlainTextFromContent(row.read<String?>('text_content')),
                   );
                 });
 
@@ -893,7 +920,7 @@ class DriftNoteService {
                       folders: folders,
                       attachments: [],
                       todoItems: [],
-                      textContent: row.read<String?>('text_content'),
+                      textContent: _extractPlainTextFromContent(row.read<String?>('text_content')),
                     );
                   });
 
@@ -1080,7 +1107,7 @@ class DriftNoteService {
                     folders: folders,
                     attachments: [],
                     todoItems: [],
-                    textContent: row.read<String?>('text_content'),
+                    textContent: _extractPlainTextFromContent(row.read<String?>('text_content')),
                   );
                 });
 
@@ -1388,7 +1415,7 @@ class DriftNoteService {
           folders: folders,
           attachments: [],
           todoItems: [],
-          textContent: textNote.content,
+          textContent: _extractPlainTextFromContent(textNote.content),
         ));
         }
       }
@@ -1423,6 +1450,21 @@ class DriftNoteService {
           }
         }
 
+        // Generate preview text for voice note
+        String? voicePreview;
+        if (voiceNote.transcription != null && voiceNote.transcription!.isNotEmpty) {
+          // Use transcription if available
+          voicePreview = voiceNote.transcription;
+        } else if (voiceNote.durationSeconds != null && voiceNote.durationSeconds! > 0) {
+          // Show duration
+          final duration = Duration(seconds: voiceNote.durationSeconds!);
+          final minutes = duration.inMinutes;
+          final seconds = duration.inSeconds % 60;
+          voicePreview = 'Voice recording ${minutes}m ${seconds}s';
+        } else {
+          voicePreview = 'Voice recording';
+        }
+
         final fakeNote = Note(
           id: voiceNote.id,
           uuid: voiceNote.uuid,
@@ -1441,7 +1483,7 @@ class DriftNoteService {
           folders: folders,
           attachments: [],
           todoItems: [],
-          textContent: null,
+          textContent: voicePreview,
         ));
         }
       }
