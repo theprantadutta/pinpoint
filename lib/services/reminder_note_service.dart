@@ -4,7 +4,6 @@ import 'package:uuid/uuid.dart';
 
 import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
-import '../models/reminder_dto.dart';
 import '../service_locators/init_service_locators.dart';
 import 'api_service.dart';
 
@@ -157,10 +156,10 @@ class ReminderNoteService {
           } else {
             // Create new backend reminder if it doesn't exist
             await ApiService().createReminder(
-              noteUuid: currentNote.uuid,
-              title: title ?? currentNote.title,
+              noteUuid: currentNote.uuid!,
+              title: title ?? currentNote.title!,
               description: description ?? currentNote.description,
-              reminderTime: reminderTime ?? currentNote.reminderTime,
+              reminderTime: reminderTime ?? currentNote.reminderTime!,
             );
             debugPrint('✅ [ReminderNoteService] Created backend reminder for: ${currentNote.uuid}');
 
