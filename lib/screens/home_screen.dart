@@ -8,6 +8,7 @@ import '../services/notification_service.dart';
 import '../services/subscription_service.dart';
 import '../services/premium_service.dart';
 import '../services/firebase_notification_service.dart';
+import '../services/reminder_sync_service.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String kRouteName = '/home';
@@ -60,6 +61,25 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint('✅ [HomeScreen] FCM token registered');
     } catch (e) {
       debugPrint('⚠️ [HomeScreen] FCM token registration failed: $e');
+    }
+
+    // Sync local reminders to backend (auto-migration)
+    try {
+      debugPrint('⏰ [HomeScreen] Syncing local reminders to backend...');
+      final syncResult = await ReminderSyncService.syncAllReminders();
+      final created = syncResult['created'] ?? 0;
+      final failed = syncResult['failed'] ?? 0;
+
+      if (created > 0) {
+        debugPrint('✅ [HomeScreen] Synced $created reminders to backend');
+      } else if (failed > 0) {
+        debugPrint('⚠️ [HomeScreen] Failed to sync $failed reminders');
+      } else {
+        debugPrint('✅ [HomeScreen] No reminders to sync');
+      }
+    } catch (e) {
+      debugPrint('⚠️ [HomeScreen] Reminder sync failed: $e');
+      // Don't block app initialization if sync fails
     }
   }
 

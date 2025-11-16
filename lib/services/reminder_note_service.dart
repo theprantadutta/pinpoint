@@ -4,7 +4,9 @@ import 'package:uuid/uuid.dart';
 
 import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
+import '../models/reminder_dto.dart';
 import '../service_locators/init_service_locators.dart';
+import 'api_service.dart';
 
 /// Service for managing reminder notes with scheduled notifications
 /// Part of Architecture V8: Independent note types
@@ -32,10 +34,13 @@ class ReminderNoteService {
         throw Exception('Reminder note must belong to at least one folder');
       }
 
+      // Generate UUID for the note
+      final noteUuid = uuid.v4();
+
       // Create reminder note
       final reminderNoteId = await database.into(database.reminderNotesV2).insert(
         ReminderNotesV2Companion(
-          uuid: Value(uuid.v4()),
+          uuid: Value(noteUuid),
           title: Value(title),
           description: Value(description),
           reminderTime: Value(reminderTime),
@@ -51,6 +56,26 @@ class ReminderNoteService {
 
       // Link to folders
       await _linkToFolders(reminderNoteId, folders);
+
+      // Schedule reminder on backend
+      try {
+        await ApiService().createReminder(
+          noteUuid: noteUuid,
+          title: title,
+          description: description,
+          reminderTime: reminderTime,
+        );
+        debugPrint('✅ [ReminderNoteService] Scheduled backend reminder for: $noteUuid');
+
+        // Mark as synced
+        await (database.update(database.reminderNotesV2)
+              ..where((t) => t.id.equals(reminderNoteId)))
+            .write(const ReminderNotesV2Companion(isSynced: Value(true)));
+      } catch (e) {
+        debugPrint('⚠️ [ReminderNoteService] Failed to schedule backend reminder: $e');
+        // Don't fail the whole operation - local reminder still works
+        // Sync service will retry later
+      }
 
       debugPrint('✅ [ReminderNoteService] Created reminder note: $reminderNoteId with ${folders.length} folders, scheduled for ${reminderTime.toIso8601String()}');
       return reminderNoteId;
@@ -75,6 +100,12 @@ class ReminderNoteService {
       final database = getIt<AppDatabase>();
       final now = DateTime.now();
 
+      // Get current note for UUID and backend sync
+      final currentNote = await getReminderNote(noteId);
+      if (currentNote == null) {
+        throw Exception('Reminder note not found: $noteId');
+      }
+
       // Build update companion
       final companion = ReminderNotesV2Companion(
         title: title != null ? Value(title) : const Value.absent(),
@@ -97,6 +128,51 @@ class ReminderNoteService {
           throw Exception('Reminder note must belong to at least one folder');
         }
         await _updateFolderRelations(noteId, folders);
+      }
+
+      // Update backend reminder if any field changed
+      if (title != null || description != null || reminderTime != null) {
+        try {
+          // Get reminders from backend for this note
+          final reminders = await ApiService().getReminders(includeTriggered: false);
+          final backendReminder = reminders.firstWhere(
+            (r) => r['note_uuid'] == currentNote.uuid,
+            orElse: () => <String, dynamic>{},
+          );
+
+          if (backendReminder.isNotEmpty && backendReminder['id'] != null) {
+            // Update existing backend reminder
+            await ApiService().updateReminder(
+              reminderId: backendReminder['id'] as String,
+              title: title,
+              description: description,
+              reminderTime: reminderTime,
+            );
+            debugPrint('✅ [ReminderNoteService] Updated backend reminder: ${backendReminder['id']}');
+
+            // Mark as synced
+            await (database.update(database.reminderNotesV2)
+                  ..where((t) => t.id.equals(noteId)))
+                .write(const ReminderNotesV2Companion(isSynced: Value(true)));
+          } else {
+            // Create new backend reminder if it doesn't exist
+            await ApiService().createReminder(
+              noteUuid: currentNote.uuid,
+              title: title ?? currentNote.title,
+              description: description ?? currentNote.description,
+              reminderTime: reminderTime ?? currentNote.reminderTime,
+            );
+            debugPrint('✅ [ReminderNoteService] Created backend reminder for: ${currentNote.uuid}');
+
+            // Mark as synced
+            await (database.update(database.reminderNotesV2)
+                  ..where((t) => t.id.equals(noteId)))
+                .write(const ReminderNotesV2Companion(isSynced: Value(true)));
+          }
+        } catch (e) {
+          debugPrint('⚠️ [ReminderNoteService] Failed to update backend reminder: $e');
+          // Don't fail the whole operation
+        }
       }
 
       debugPrint('✅ [ReminderNoteService] Updated reminder note: $noteId');
@@ -137,12 +213,36 @@ class ReminderNoteService {
       final database = getIt<AppDatabase>();
       final now = DateTime.now();
 
+      // Get note for UUID
+      final note = await getReminderNote(noteId);
+      if (note == null) {
+        throw Exception('Reminder note not found: $noteId');
+      }
+
+      // Delete from backend first
+      try {
+        final reminders = await ApiService().getReminders(includeTriggered: false);
+        final backendReminder = reminders.firstWhere(
+          (r) => r['note_uuid'] == note.uuid,
+          orElse: () => <String, dynamic>{},
+        );
+
+        if (backendReminder.isNotEmpty && backendReminder['id'] != null) {
+          await ApiService().deleteReminder(backendReminder['id'] as String);
+          debugPrint('✅ [ReminderNoteService] Deleted backend reminder: ${backendReminder['id']}');
+        }
+      } catch (e) {
+        debugPrint('⚠️ [ReminderNoteService] Failed to delete backend reminder: $e');
+        // Continue with local deletion
+      }
+
+      // Soft delete locally
       await (database.update(database.reminderNotesV2)
             ..where((t) => t.id.equals(noteId)))
           .write(
         ReminderNotesV2Companion(
           isDeleted: const Value(true),
-          isSynced: const Value(false), // Mark for sync
+          isSynced: const Value(true), // Synced (deleted on backend)
           updatedAt: Value(now),
         ),
       );
@@ -159,6 +259,28 @@ class ReminderNoteService {
   static Future<void> permanentlyDeleteReminderNote(int noteId) async {
     try {
       final database = getIt<AppDatabase>();
+
+      // Get note for UUID before deletion
+      final note = await getReminderNote(noteId);
+
+      // Delete from backend if note exists
+      if (note != null) {
+        try {
+          final reminders = await ApiService().getReminders(includeTriggered: true);
+          final backendReminder = reminders.firstWhere(
+            (r) => r['note_uuid'] == note.uuid,
+            orElse: () => <String, dynamic>{},
+          );
+
+          if (backendReminder.isNotEmpty && backendReminder['id'] != null) {
+            await ApiService().deleteReminder(backendReminder['id'] as String);
+            debugPrint('✅ [ReminderNoteService] Permanently deleted backend reminder: ${backendReminder['id']}');
+          }
+        } catch (e) {
+          debugPrint('⚠️ [ReminderNoteService] Failed to delete backend reminder: $e');
+          // Continue with local deletion
+        }
+      }
 
       // Delete folder relations (cascade)
       await (database.delete(database.reminderNoteFolderRelationsV2)

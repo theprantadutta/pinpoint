@@ -498,6 +498,113 @@ class ApiService {
   }
 
   // ============================================================================
+  // Reminder Endpoints (Backend-Controlled Notifications)
+  // ============================================================================
+
+  /// Create a new reminder (schedules backend notification)
+  Future<Map<String, dynamic>> createReminder({
+    required String noteUuid,
+    required String title,
+    String? description,
+    required DateTime reminderTime,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/reminders',
+        data: {
+          'note_uuid': noteUuid,
+          'title': title,
+          'description': description,
+          'reminder_time': reminderTime.toUtc().toIso8601String(),
+        },
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Update an existing reminder (reschedules if time changed)
+  Future<Map<String, dynamic>> updateReminder({
+    required String reminderId,
+    String? title,
+    String? description,
+    DateTime? reminderTime,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (title != null) data['title'] = title;
+      if (description != null) data['description'] = description;
+      if (reminderTime != null) {
+        data['reminder_time'] = reminderTime.toUtc().toIso8601String();
+      }
+
+      final response = await _dio.put(
+        '/reminders/$reminderId',
+        data: data,
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Delete a reminder (cancels scheduled notification)
+  Future<Map<String, dynamic>> deleteReminder(String reminderId) async {
+    try {
+      final response = await _dio.delete('/reminders/$reminderId');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Get all reminders for the current user
+  Future<List<Map<String, dynamic>>> getReminders({
+    bool includeTriggered = true,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/reminders',
+        queryParameters: {
+          'include_triggered': includeTriggered,
+        },
+      );
+      final data = response.data as Map<String, dynamic>;
+      return List<Map<String, dynamic>>.from(data['reminders'] as List);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Get a specific reminder
+  Future<Map<String, dynamic>> getReminder(String reminderId) async {
+    try {
+      final response = await _dio.get('/reminders/$reminderId');
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Bulk sync reminders from client (for migration)
+  Future<Map<String, dynamic>> syncReminders(
+    List<Map<String, dynamic>> reminders,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/reminders/sync',
+        data: {
+          'reminders': reminders,
+        },
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ============================================================================
   // Error Handling
   // ============================================================================
 
