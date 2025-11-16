@@ -66,6 +66,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   bool _isPlaying = false;
   Timer? _recordingTimer;
   Duration _recordedDuration = Duration.zero;
+  Duration _playbackPosition = Duration.zero;
+  Duration _playbackDuration = Duration.zero;
 
   // Todo list fields
   List<TodoItemEntity> _todoItems = [];
@@ -99,6 +101,32 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     _titleController.addListener(_scheduleAutoSave);
     _fleatherController.addListener(_scheduleAutoSave);
     _reminderDescriptionController.addListener(_scheduleAutoSave);
+
+    // Add audio player listeners for playback tracking
+    _audioPlayer.onPositionChanged.listen((position) {
+      if (mounted) {
+        setState(() {
+          _playbackPosition = position;
+        });
+      }
+    });
+
+    _audioPlayer.onDurationChanged.listen((duration) {
+      if (mounted) {
+        setState(() {
+          _playbackDuration = duration;
+        });
+      }
+    });
+
+    _audioPlayer.onPlayerComplete.listen((_) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _playbackPosition = Duration.zero;
+        });
+      }
+    });
 
     // Initialize folders
     _initializeFolders();
@@ -166,12 +194,13 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       if (note.noteType == 'text') {
         // Text note
         selectedNoteType = 'Title Content';
-        if (existingNote.textContent != null &&
-            existingNote.textContent!.isNotEmpty) {
+        // Load raw content from database (not the plain text version)
+        final textNote = await TextNoteService.getTextNote(note.id);
+        if (textNote != null && textNote.content.isNotEmpty) {
           _fleatherController = MarkdownEditor.createControllerFromMarkdown(
-              existingNote.textContent!);
+              textNote.content);
         }
-      } else if (note.noteType == 'audio') {
+      } else if (note.noteType == 'voice') {
         // Voice note
         selectedNoteType = 'Record Audio';
         final voiceNote = await VoiceNoteService.getVoiceNote(note.id);
@@ -1047,6 +1076,63 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             // Playback controls (only show if we have a recording)
             if (_audioFilePath != null && !_isRecording) ...[
               const SizedBox(height: 32),
+
+              // Progress bar and time display
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    // Progress slider
+                    SliderTheme(
+                      data: SliderThemeData(
+                        trackHeight: 3,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                      ),
+                      child: Slider(
+                        value: _playbackPosition.inMilliseconds.toDouble(),
+                        max: _playbackDuration.inMilliseconds > 0
+                            ? _playbackDuration.inMilliseconds.toDouble()
+                            : (_audioDurationSeconds != null
+                                ? (_audioDurationSeconds! * 1000).toDouble()
+                                : 100.0),
+                        onChanged: (value) async {
+                          final position = Duration(milliseconds: value.toInt());
+                          await _audioPlayer.seek(position);
+                        },
+                      ),
+                    ),
+
+                    // Time display
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _formatDuration(_playbackPosition),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: cs.onSurface.withValues(alpha: 0.7),
+                            ),
+                          ),
+                          Text(
+                            _formatDuration(_playbackDuration.inMilliseconds > 0
+                                ? _playbackDuration
+                                : Duration(seconds: _audioDurationSeconds ?? 0)),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: cs.onSurface.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -1310,27 +1396,40 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               ),
             ),
             const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _reminderDescriptionController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: "What would you like to be reminded about?",
-                  hintStyle: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.4),
+            TextField(
+              controller: _reminderDescriptionController,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: "What would you like to be reminded about?",
+                filled: true,
+                fillColor: cs.surfaceContainerLowest,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                  borderSide: BorderSide(
+                    color: cs.outline.withValues(alpha: 0.2),
+                    width: 1,
                   ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
                 ),
-                style: TextStyle(
-                  fontSize: 15,
-                  color: cs.onSurface,
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                  borderSide: BorderSide(
+                    color: cs.primary.withValues(alpha: 0.5),
+                    width: 1.5,
+                  ),
                 ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                  borderSide: BorderSide(
+                    color: cs.outline.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.all(16),
+              ),
+              style: TextStyle(
+                fontSize: 15,
+                color: cs.onSurface,
+                height: 1.5,
               ),
             ),
 
@@ -1351,8 +1450,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(8),
+                  color: cs.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(
+                    color: cs.outline.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -1384,6 +1487,74 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 ),
               ),
             ),
+
+            // Schedule Reminder Button
+            if (_reminderTime != null) ...[
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _reminderTime == null
+                      ? null
+                      : () async {
+                          // Show confirmation
+                          PinpointHaptics.light();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Reminder scheduled for ${_formatReminderDateTime(_reminderTime!)}',
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                  icon: const Icon(Symbols.notifications_active),
+                  label: Text(
+                    'Reminder Scheduled',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: cs.primaryContainer,
+                    foregroundColor: cs.onPrimaryContainer,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  'Backend will send notification to all your devices',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: cs.onSurface.withValues(alpha: 0.6),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _pickReminderDateTime,
+                  icon: const Icon(Symbols.add_alert),
+                  label: Text(
+                    'Schedule Reminder',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -1466,9 +1637,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   /// Check if note should be saved
   bool _shouldSave() {
     final hasTitle = _titleController.text.trim().isNotEmpty;
-    final hasContent = MarkdownEditor.controllerToMarkdown(_fleatherController)
-        .trim()
-        .isNotEmpty;
+    // Check plain text content, not JSON - empty Fleather editor is just "\n"
+    final plainText = MarkdownEditor.getPlainText(_fleatherController).trim();
+    final hasContent = plainText.isNotEmpty;
     final hasTodos = _todoItems.isNotEmpty;
     final hasReminder = _reminderTime != null;
     final hasAudio = _audioFilePath != null;
@@ -1587,6 +1758,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       await _audioPlayer.stop();
       setState(() {
         _isPlaying = false;
+        _playbackPosition = Duration.zero;
       });
       debugPrint('⏹️ [VoiceNote] Stopped playback');
     } catch (e) {
