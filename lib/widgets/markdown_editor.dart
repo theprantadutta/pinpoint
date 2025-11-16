@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fleather/fleather.dart';
 import 'markdown_toolbar.dart';
 
-/// Simple WYSIWYG markdown editor powered by Fleather
-/// Shows formatted text while editing (no markdown syntax visible)
+/// Advanced WYSIWYG editor powered by Fleather
+/// Supports full rich text formatting including colors, headings, lists, links, and more
+/// All formatting is preserved through JSON serialization
 class MarkdownEditor extends StatefulWidget {
   final FleatherController controller;
   final FocusNode? focusNode;
@@ -20,30 +22,62 @@ class MarkdownEditor extends StatefulWidget {
     this.onChanged,
   });
 
-  /// Creates a FleatherController from markdown text
-  static FleatherController createControllerFromMarkdown(String markdown) {
-    if (markdown.isEmpty) {
+  /// Creates a FleatherController from stored content (JSON Delta format)
+  /// Supports both plain text and rich JSON format for backward compatibility
+  static FleatherController createControllerFromMarkdown(String content) {
+    if (content.isEmpty) {
       return FleatherController();
     }
 
     try {
-      // For now, use plain text - we can add proper markdown support later
-      // The formatting will be preserved through Fleather's rich text
-      final doc = ParchmentDocument.fromDelta(
-        Delta()..insert(markdown),
-      );
-      return FleatherController(document: doc);
+      // Try to parse as JSON (rich text format)
+      final jsonData = jsonDecode(content);
+
+      if (jsonData is List) {
+        // It's a Delta JSON array
+        final delta = Delta.fromJson(jsonData);
+        final doc = ParchmentDocument.fromDelta(delta);
+        return FleatherController(document: doc);
+      }
     } catch (e) {
-      // Fallback to empty controller
-      return FleatherController();
+      // Not JSON, treat as plain text for backward compatibility
+      // This maintains compatibility with old notes
+      try {
+        final doc = ParchmentDocument.fromDelta(
+          Delta()..insert(content),
+        );
+        return FleatherController(document: doc);
+      } catch (e) {
+        // Fallback to empty controller
+        return FleatherController();
+      }
+    }
+
+    // Fallback
+    return FleatherController();
+  }
+
+  /// Converts the current controller content to JSON format
+  /// This preserves ALL formatting including colors, styles, headings, etc.
+  static String controllerToMarkdown(FleatherController controller) {
+    try {
+      // Convert to JSON Delta format to preserve all formatting
+      final delta = controller.document.toDelta();
+      final jsonData = delta.toJson();
+      return jsonEncode(jsonData);
+    } catch (e) {
+      // Fallback to plain text if something goes wrong
+      try {
+        return controller.document.toPlainText();
+      } catch (e) {
+        return '';
+      }
     }
   }
 
-  /// Converts the current controller content to markdown text
-  static String controllerToMarkdown(FleatherController controller) {
+  /// Get plain text version (for previews, search, etc.)
+  static String getPlainText(FleatherController controller) {
     try {
-      // Get plain text for now - formatting is maintained in the editor
-      // TODO: Add proper markdown export with formatting
       return controller.document.toPlainText();
     } catch (e) {
       return '';
@@ -64,8 +98,8 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
 
   void _onDocumentChanged() {
     if (widget.onChanged != null) {
-      final markdown = MarkdownEditor.controllerToMarkdown(widget.controller);
-      widget.onChanged!(markdown);
+      final content = MarkdownEditor.controllerToMarkdown(widget.controller);
+      widget.onChanged!(content);
     }
   }
 
