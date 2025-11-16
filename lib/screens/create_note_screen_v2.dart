@@ -76,6 +76,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   // Reminder fields
   DateTime? _reminderTime;
   late TextEditingController _reminderDescriptionController;
+  bool _isReminderScheduledOnBackend = false;
 
   // Save tracking
   int? _currentNoteId; // Track saved note ID
@@ -226,6 +227,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         if (reminderNote != null) {
           _reminderTime = reminderNote.reminderTime;
           _reminderDescriptionController.text = reminderNote.description ?? '';
+          _isReminderScheduledOnBackend = reminderNote.isSynced ?? false;
         }
       }
 
@@ -1491,50 +1493,111 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             // Schedule Reminder Button
             if (_reminderTime != null) ...[
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _reminderTime == null
-                      ? null
-                      : () async {
-                          // Show confirmation
-                          PinpointHaptics.light();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Reminder scheduled for ${_formatReminderDateTime(_reminderTime!)}',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                  icon: const Icon(Symbols.notifications_active),
-                  label: Text(
-                    'Reminder Scheduled',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+              if (_isReminderScheduledOnBackend) ...[
+                // Already scheduled on backend
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: null, // Disabled - already scheduled
+                    icon: const Icon(Symbols.notifications_active),
+                    label: Text(
+                      'Notification Scheduled',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: cs.primaryContainer,
+                      foregroundColor: cs.onPrimaryContainer,
                     ),
                   ),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: cs.primaryContainer,
-                    foregroundColor: cs.onPrimaryContainer,
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    'Backend will send notification to all your devices',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: cs.onSurface.withValues(alpha: 0.6),
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  'Backend will send notification to all your devices',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: cs.onSurface.withValues(alpha: 0.6),
+              ] else ...[
+                // Not yet scheduled - show button to schedule
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _currentNoteId == null
+                        ? null
+                        : () async {
+                            PinpointHaptics.light();
+
+                            // Save first if needed
+                            if (!_isSaving) {
+                              await _saveNote();
+                            }
+
+                            if (_currentNoteId != null && mounted) {
+                              try {
+                                // Schedule on backend
+                                await ReminderNoteService.scheduleReminderOnBackend(_currentNoteId!);
+
+                                setState(() {
+                                  _isReminderScheduledOnBackend = true;
+                                });
+
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Notification scheduled for ${_formatReminderDateTime(_reminderTime!)}',
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+                                      duration: const Duration(seconds: 3),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Failed to schedule notification: $e'),
+                                      behavior: SnackBarBehavior.floating,
+                                      backgroundColor: cs.error,
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                    icon: const Icon(Symbols.send),
+                    label: Text(
+                      'Schedule Notification',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
                   ),
-                  textAlign: TextAlign.center,
                 ),
-              ),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    'Tap to schedule backend notification for all devices',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: cs.onSurface.withValues(alpha: 0.6),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ] else ...[
               const SizedBox(height: 24),
               SizedBox(
@@ -1543,7 +1606,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   onPressed: _pickReminderDateTime,
                   icon: const Icon(Symbols.add_alert),
                   label: Text(
-                    'Schedule Reminder',
+                    'Set Reminder Time',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

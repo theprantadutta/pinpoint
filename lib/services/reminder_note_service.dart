@@ -56,26 +56,6 @@ class ReminderNoteService {
       // Link to folders
       await _linkToFolders(reminderNoteId, folders);
 
-      // Schedule reminder on backend
-      try {
-        await ApiService().createReminder(
-          noteUuid: noteUuid,
-          title: title,
-          description: description,
-          reminderTime: reminderTime,
-        );
-        debugPrint('✅ [ReminderNoteService] Scheduled backend reminder for: $noteUuid');
-
-        // Mark as synced
-        await (database.update(database.reminderNotesV2)
-              ..where((t) => t.id.equals(reminderNoteId)))
-            .write(const ReminderNotesV2Companion(isSynced: Value(true)));
-      } catch (e) {
-        debugPrint('⚠️ [ReminderNoteService] Failed to schedule backend reminder: $e');
-        // Don't fail the whole operation - local reminder still works
-        // Sync service will retry later
-      }
-
       debugPrint('✅ [ReminderNoteService] Created reminder note: $reminderNoteId with ${folders.length} folders, scheduled for ${reminderTime.toIso8601String()}');
       return reminderNoteId;
     } catch (e, st) {
@@ -129,54 +109,73 @@ class ReminderNoteService {
         await _updateFolderRelations(noteId, folders);
       }
 
-      // Update backend reminder if any field changed
-      if (title != null || description != null || reminderTime != null) {
-        try {
-          // Get reminders from backend for this note
-          final reminders = await ApiService().getReminders(includeTriggered: false);
-          final backendReminder = reminders.firstWhere(
-            (r) => r['note_uuid'] == currentNote.uuid,
-            orElse: () => <String, dynamic>{},
-          );
-
-          if (backendReminder.isNotEmpty && backendReminder['id'] != null) {
-            // Update existing backend reminder
-            await ApiService().updateReminder(
-              reminderId: backendReminder['id'] as String,
-              title: title,
-              description: description,
-              reminderTime: reminderTime,
-            );
-            debugPrint('✅ [ReminderNoteService] Updated backend reminder: ${backendReminder['id']}');
-
-            // Mark as synced
-            await (database.update(database.reminderNotesV2)
-                  ..where((t) => t.id.equals(noteId)))
-                .write(const ReminderNotesV2Companion(isSynced: Value(true)));
-          } else {
-            // Create new backend reminder if it doesn't exist
-            await ApiService().createReminder(
-              noteUuid: currentNote.uuid!,
-              title: title ?? currentNote.title!,
-              description: description ?? currentNote.description,
-              reminderTime: reminderTime ?? currentNote.reminderTime!,
-            );
-            debugPrint('✅ [ReminderNoteService] Created backend reminder for: ${currentNote.uuid}');
-
-            // Mark as synced
-            await (database.update(database.reminderNotesV2)
-                  ..where((t) => t.id.equals(noteId)))
-                .write(const ReminderNotesV2Companion(isSynced: Value(true)));
-          }
-        } catch (e) {
-          debugPrint('⚠️ [ReminderNoteService] Failed to update backend reminder: $e');
-          // Don't fail the whole operation
-        }
-      }
-
       debugPrint('✅ [ReminderNoteService] Updated reminder note: $noteId');
     } catch (e, st) {
       debugPrint('❌ [ReminderNoteService] Failed to update reminder note: $e');
+      debugPrint('Stack trace: $st');
+      rethrow;
+    }
+  }
+
+  /// Schedule reminder notification on backend (explicit user action)
+  /// This should be called when user clicks "Schedule Reminder" button
+  static Future<void> scheduleReminderOnBackend(int noteId) async {
+    try {
+      final database = getIt<AppDatabase>();
+
+      // Get the reminder note
+      final note = await getReminderNote(noteId);
+      if (note == null) {
+        throw Exception('Reminder note not found: $noteId');
+      }
+
+      // Check if already synced to backend
+      if (note.isSynced) {
+        debugPrint('⏭️ [ReminderNoteService] Reminder already scheduled on backend: $noteId');
+        return;
+      }
+
+      // Schedule on backend
+      try {
+        // Check if reminder already exists on backend
+        final reminders = await ApiService().getReminders(includeTriggered: false);
+        final backendReminder = reminders.firstWhere(
+          (r) => r['note_uuid'] == note.uuid,
+          orElse: () => <String, dynamic>{},
+        );
+
+        if (backendReminder.isNotEmpty && backendReminder['id'] != null) {
+          // Update existing backend reminder
+          await ApiService().updateReminder(
+            reminderId: backendReminder['id'] as String,
+            title: note.title,
+            description: note.description,
+            reminderTime: note.reminderTime,
+          );
+          debugPrint('✅ [ReminderNoteService] Updated backend reminder: ${backendReminder['id']}');
+        } else {
+          // Create new backend reminder
+          await ApiService().createReminder(
+            noteUuid: note.uuid!,
+            title: note.title!,
+            description: note.description,
+            reminderTime: note.reminderTime!,
+          );
+          debugPrint('✅ [ReminderNoteService] Created backend reminder for: ${note.uuid}');
+        }
+
+        // Mark as synced
+        await (database.update(database.reminderNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(const ReminderNotesV2Companion(isSynced: Value(true)));
+
+        debugPrint('✅ [ReminderNoteService] Reminder scheduled on backend: $noteId');
+      } catch (e) {
+        debugPrint('❌ [ReminderNoteService] Failed to schedule backend reminder: $e');
+        rethrow;
+      }
+    } catch (e, st) {
+      debugPrint('❌ [ReminderNoteService] Failed to schedule reminder on backend: $e');
       debugPrint('Stack trace: $st');
       rethrow;
     }
