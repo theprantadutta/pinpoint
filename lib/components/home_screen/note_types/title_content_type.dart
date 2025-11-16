@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/components/home_screen/note_types/note_attachments.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
-import 'package:pinpoint/screens/create_note_screen.dart';
+import 'package:pinpoint/screens/create_note_screen_v2.dart';
 
 import '../../../constants/constants.dart';
 import '../../../models/note_with_details.dart';
@@ -18,11 +18,10 @@ class TitleContentType extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final kPrimaryColor = Theme.of(context).primaryColor;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
     final note = noteWithDetails.note;
     return GestureDetector(
       onTap: () => context.push(
-        CreateNoteScreen.kRouteName,
+        CreateNoteScreenV2.kRouteName,
         extra: CreateNoteScreenArguments(
           noticeType: kNoteTypes[0],
           existingNote: noteWithDetails,

@@ -9,12 +9,15 @@ import 'package:share_plus/share_plus.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:image_picker/image_picker.dart';
+import 'package:fleather/fleather.dart';
 
 import '../components/create_note_screen/create_note_categories.dart';
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
 import '../constants/constants.dart';
+import '../database/database.dart';
 import '../design_system/design_system.dart';
 import '../dtos/note_folder_dto.dart';
+import '../screen_arguments/create_note_screen_arguments.dart';
 import '../constants/premium_limits.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/text_note_service.dart';
@@ -32,8 +35,9 @@ import '../widgets/usage_stats_bottom_sheet.dart';
 /// Uses new independent note type tables and type-specific services
 class CreateNoteScreenV2 extends StatefulWidget {
   static const String kRouteName = '/create-note-v2';
+  final CreateNoteScreenArguments? arguments;
 
-  const CreateNoteScreenV2({super.key});
+  const CreateNoteScreenV2({super.key, this.arguments});
 
   @override
   State<CreateNoteScreenV2> createState() => _CreateNoteScreenV2State();
@@ -49,7 +53,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   List<NoteFolderDto> selectedFolders = [];
 
   // Text note fields
-  late TextEditingController _textContentController;
+  late FleatherController _fleatherController;
   late FocusNode _textContentFocusNode;
 
   // Voice note fields
@@ -64,7 +68,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   Duration _recordedDuration = Duration.zero;
 
   // Todo list fields
-  final List<String> _todoItems = [];
+  List<TodoItemEntity> _todoItems = [];
+  String? _todoListNoteUuid;
 
   // Reminder fields
   DateTime? _reminderTime;
@@ -78,19 +83,30 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   @override
   void initState() {
     super.initState();
+
+    // Set initial note type from arguments if provided
+    if (widget.arguments?.noticeType != null) {
+      selectedNoteType = widget.arguments!.noticeType;
+    }
+
     _titleController = TextEditingController();
     _titleFocusNode = FocusNode();
-    _textContentController = TextEditingController();
+    _fleatherController = FleatherController();
     _textContentFocusNode = FocusNode();
     _reminderDescriptionController = TextEditingController();
 
     // Add auto-save listeners
     _titleController.addListener(_scheduleAutoSave);
-    _textContentController.addListener(_scheduleAutoSave);
+    _fleatherController.addListener(_scheduleAutoSave);
     _reminderDescriptionController.addListener(_scheduleAutoSave);
 
     // Initialize folders
     _initializeFolders();
+
+    // Load existing note if editing
+    if (widget.arguments?.existingNote != null) {
+      _loadExistingNote();
+    }
   }
 
   @override
@@ -98,7 +114,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     _autoSaveTimer?.cancel();
     _titleController.dispose();
     _titleFocusNode.dispose();
-    _textContentController.dispose();
+    _fleatherController.dispose();
     _textContentFocusNode.dispose();
     _reminderDescriptionController.dispose();
     _recordingTimer?.cancel();
@@ -128,6 +144,70 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     } catch (e) {
       debugPrint('❌ [CreateNoteV2] Failed to initialize folders: $e');
       // Keep empty folders list if initialization fails
+    }
+  }
+
+  /// Load existing note for editing
+  Future<void> _loadExistingNote() async {
+    try {
+      final existingNote = widget.arguments!.existingNote!;
+      final note = existingNote.note;
+
+      // Set note ID and basic info
+      _currentNoteId = note.id;
+      _titleController.text = note.noteTitle ?? '';
+
+      // Set folders
+      selectedFolders = existingNote.folders
+          .map((f) => NoteFolderDto(id: f.id, title: f.title))
+          .toList();
+
+      // Load type-specific content based on note type
+      if (note.noteType == 'text') {
+        // Text note
+        selectedNoteType = 'Title Content';
+        if (existingNote.textContent != null &&
+            existingNote.textContent!.isNotEmpty) {
+          _fleatherController = MarkdownEditor.createControllerFromMarkdown(
+              existingNote.textContent!);
+        }
+      } else if (note.noteType == 'audio') {
+        // Voice note
+        selectedNoteType = 'Record Audio';
+        final voiceNote = await VoiceNoteService.getVoiceNote(note.id);
+        if (voiceNote != null) {
+          _audioFilePath = voiceNote.audioFilePath;
+          _audioDurationSeconds = voiceNote.durationSeconds ?? 0;
+          _audioTranscription = voiceNote.transcription;
+        }
+      } else if (note.noteType == 'todo') {
+        // Todo note
+        selectedNoteType = 'Todo List';
+        final todoNote = await TodoListNoteService.getTodoListNote(note.id);
+        if (todoNote != null) {
+          _todoListNoteUuid = todoNote.uuid;
+          // Load todo items
+          final items = await TodoListNoteService.watchTodoItems(note.id).first;
+          _todoItems = items;
+        }
+      } else if (note.noteType == 'reminder') {
+        // Reminder note
+        selectedNoteType = 'Reminder';
+        final reminderNote = await ReminderNoteService.getReminderNote(note.id);
+        if (reminderNote != null) {
+          _reminderTime = reminderNote.reminderTime;
+          _reminderDescriptionController.text = reminderNote.description ?? '';
+        }
+      }
+
+      if (mounted) {
+        setState(() {});
+      }
+
+      debugPrint('✅ [CreateNoteV2] Loaded existing note: ${note.id}');
+    } catch (e, st) {
+      debugPrint('❌ [CreateNoteV2] Failed to load existing note: $e');
+      debugPrint('Stack trace: $st');
     }
   }
 
@@ -224,32 +304,76 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   }
 
   Future<int> _saveTextNote(String title) async {
-    final content = _textContentController.text;
-    return await TextNoteService.createTextNote(
-      title: title,
-      content: content,
-      folders: selectedFolders,
-    );
+    final content = MarkdownEditor.controllerToMarkdown(_fleatherController);
+
+    if (_currentNoteId != null) {
+      // Update existing note
+      await TextNoteService.updateTextNote(
+        noteId: _currentNoteId!,
+        title: title,
+        content: content,
+        folders: selectedFolders,
+      );
+      return _currentNoteId!;
+    } else {
+      // Create new note
+      return await TextNoteService.createTextNote(
+        title: title,
+        content: content,
+        folders: selectedFolders,
+      );
+    }
   }
 
   Future<int> _saveVoiceNote(String title) async {
-    // TODO: Implement voice note saving
-    // For now, create a placeholder
-    return await VoiceNoteService.createVoiceNote(
-      title: title,
-      audioFilePath: _audioFilePath ?? '',
-      folders: selectedFolders,
-      durationSeconds: _audioDurationSeconds,
-      transcription: _audioTranscription,
-    );
+    if (_currentNoteId != null) {
+      // Update existing note
+      await VoiceNoteService.updateVoiceNote(
+        noteId: _currentNoteId!,
+        title: title,
+        audioFilePath: _audioFilePath,
+        folders: selectedFolders,
+        durationSeconds: _audioDurationSeconds,
+        transcription: _audioTranscription,
+      );
+      return _currentNoteId!;
+    } else {
+      // Create new note
+      return await VoiceNoteService.createVoiceNote(
+        title: title,
+        audioFilePath: _audioFilePath ?? '',
+        folders: selectedFolders,
+        durationSeconds: _audioDurationSeconds,
+        transcription: _audioTranscription,
+      );
+    }
   }
 
   Future<int> _saveTodoListNote(String title) async {
-    return await TodoListNoteService.createTodoListNote(
-      title: title,
-      folders: selectedFolders,
-      initialItems: _todoItems.where((item) => item.isNotEmpty).toList(),
-    );
+    if (_currentNoteId != null) {
+      // Update existing note
+      await TodoListNoteService.updateTodoListNote(
+        noteId: _currentNoteId!,
+        title: title,
+        folders: selectedFolders,
+      );
+      return _currentNoteId!;
+    } else {
+      // Create new note (without initial items - we'll add them separately)
+      final noteId = await TodoListNoteService.createTodoListNote(
+        title: title,
+        folders: selectedFolders,
+        initialItems: [], // Empty for now
+      );
+
+      // Get the note UUID for adding items
+      final todoNote = await TodoListNoteService.getTodoListNote(noteId);
+      if (todoNote != null) {
+        _todoListNoteUuid = todoNote.uuid;
+      }
+
+      return noteId;
+    }
   }
 
   Future<int> _saveReminderNote(String title) async {
@@ -257,12 +381,25 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       throw Exception('Reminder time is required');
     }
 
-    return await ReminderNoteService.createReminderNote(
-      title: title,
-      reminderTime: _reminderTime!,
-      folders: selectedFolders,
-      description: _reminderDescriptionController.text,
-    );
+    if (_currentNoteId != null) {
+      // Update existing note
+      await ReminderNoteService.updateReminderNote(
+        noteId: _currentNoteId!,
+        title: title,
+        reminderTime: _reminderTime,
+        folders: selectedFolders,
+        description: _reminderDescriptionController.text,
+      );
+      return _currentNoteId!;
+    } else {
+      // Create new note
+      return await ReminderNoteService.createReminderNote(
+        title: title,
+        reminderTime: _reminderTime!,
+        folders: selectedFolders,
+        description: _reminderDescriptionController.text,
+      );
+    }
   }
 
   /// Schedule auto-save with 2 second debounce
@@ -286,7 +423,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
     switch (selectedNoteType) {
       case 'Title Content':
-        final content = _textContentController.text.trim();
+        final content =
+            MarkdownEditor.controllerToMarkdown(_fleatherController).trim();
         hasContent = title.isNotEmpty || content.isNotEmpty;
         break;
 
@@ -295,7 +433,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         break;
 
       case 'Todo List':
-        hasContent = _todoItems.isNotEmpty && _todoItems.any((item) => item.trim().isNotEmpty);
+        hasContent = title.isNotEmpty || _todoItems.isNotEmpty;
         break;
 
       case 'Reminder':
@@ -308,7 +446,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       return;
     }
 
-    debugPrint('💾 [CreateNoteV2] Auto-saving note (type: $selectedNoteType)...');
+    debugPrint(
+        '💾 [CreateNoteV2] Auto-saving note (type: $selectedNoteType)...');
 
     try {
       await _saveNote();
@@ -358,35 +497,98 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                         borderRadius: BorderRadius.circular(12),
                         onTap: () => _showFolderBottomSheet(),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: cs.secondary.withValues(alpha: 0.1),
+                            color: isDark
+                                ? cs.surfaceContainerHighest
+                                    .withValues(alpha: 0.3)
+                                : cs.surfaceContainerHighest
+                                    .withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: cs.secondary.withValues(alpha: 0.2),
+                              color: cs.outline.withValues(alpha: 0.15),
                               width: 1,
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Symbols.folder,
-                                color: cs.secondary,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                selectedFolders.isEmpty
-                                    ? 'Add Folder'
-                                    : selectedFolders.first.title,
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: cs.secondary,
+                          child: selectedFolders.isEmpty
+                              ? Row(
+                                  children: [
+                                    Icon(
+                                      Symbols.add,
+                                      size: 18,
+                                      color: cs.primary,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      'Add to folder',
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                        color:
+                                            cs.onSurface.withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      size: 18,
+                                      color:
+                                          cs.onSurface.withValues(alpha: 0.4),
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  children: [
+                                    Icon(
+                                      Symbols.folder,
+                                      size: 18,
+                                      color: cs.primary,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: selectedFolders.map((folder) {
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: cs.primary
+                                                  .withValues(alpha: 0.08),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: cs.primary
+                                                    .withValues(alpha: 0.15),
+                                                width: 0.5,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              folder.title,
+                                              style: theme.textTheme.labelSmall
+                                                  ?.copyWith(
+                                                color: cs.primary
+                                                    .withValues(alpha: 0.9),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      Icons.edit_rounded,
+                                      size: 16,
+                                      color:
+                                          cs.onSurface.withValues(alpha: 0.4),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
                     ),
@@ -435,12 +637,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             },
           ),
 
-          const SizedBox(width: 8),
+          const SizedBox(width: 5),
 
           // Title Input
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(10),
@@ -451,7 +652,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 decoration: InputDecoration(
                   hintText: 'Untitled',
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                   isDense: true,
                   hintStyle: TextStyle(
                     color: cs.onSurface.withValues(alpha: 0.4),
@@ -470,7 +672,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             ),
           ),
 
-          const SizedBox(width: 8),
+          const SizedBox(width: 5),
 
           // Three-dot menu
           PopupMenuButton<String>(
@@ -529,7 +731,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(Icons.delete_outline_rounded, size: 20, color: cs.error),
+                      Icon(Icons.delete_outline_rounded,
+                          size: 20, color: cs.error),
                       const SizedBox(width: 12),
                       const Text('Delete'),
                     ],
@@ -552,14 +755,16 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   value: 'ocr_scan',
                   child: Row(
                     children: [
-                      Icon(Icons.document_scanner_rounded, size: 20, color: cs.primary),
+                      Icon(Icons.document_scanner_rounded,
+                          size: 20, color: cs.primary),
                       const SizedBox(width: 12),
                       Builder(
                         builder: (context) {
                           final premiumService = PremiumService();
                           final isPremium = premiumService.isPremium;
                           final used = premiumService.getOcrScansThisMonth();
-                          final total = PremiumLimits.maxOcrScansPerMonthForFree;
+                          final total =
+                              PremiumLimits.maxOcrScansPerMonthForFree;
 
                           String ocrText = 'Scan Text from Image';
                           if (!isPremium) {
@@ -578,13 +783,15 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   value: 'export_markdown',
                   child: Row(
                     children: [
-                      Icon(Icons.file_download_rounded, size: 20, color: cs.primary),
+                      Icon(Icons.file_download_rounded,
+                          size: 20, color: cs.primary),
                       const SizedBox(width: 12),
                       const Text('Export Markdown'),
                       const SizedBox(width: 4),
                       if (!PremiumService().isPremium)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: PinpointColors.mint.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
@@ -607,13 +814,15 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   value: 'export_pdf',
                   child: Row(
                     children: [
-                      Icon(Icons.picture_as_pdf_rounded, size: 20, color: cs.primary),
+                      Icon(Icons.picture_as_pdf_rounded,
+                          size: 20, color: cs.primary),
                       const SizedBox(width: 12),
                       const Text('Export PDF'),
                       const SizedBox(width: 4),
                       if (!PremiumService().isPremium)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: PinpointColors.mint.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
@@ -635,12 +844,16 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 enabled: false,
                 child: Row(
                   children: [
-                    Icon(Icons.lock_outline_rounded, size: 20, color: cs.onSurface.withValues(alpha: 0.4)),
+                    Icon(Icons.lock_outline_rounded,
+                        size: 20, color: cs.onSurface.withValues(alpha: 0.4)),
                     const SizedBox(width: 12),
-                    Text('Share Encrypted', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4))),
+                    Text('Share Encrypted',
+                        style: TextStyle(
+                            color: cs.onSurface.withValues(alpha: 0.4))),
                     const SizedBox(width: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: cs.onSurface.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -673,7 +886,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   value: 'info',
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline_rounded, size: 20, color: cs.primary),
+                      Icon(Icons.info_outline_rounded,
+                          size: 20, color: cs.primary),
                       const SizedBox(width: 12),
                       const Text('Info'),
                     ],
@@ -702,14 +916,20 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   }
 
   Widget _buildTextNoteContent() {
-    return SliverFillRemaining(
-      hasScrollBody: false,
-      child: MarkdownEditor(
-        controller: _textContentController,
-        focusNode: _textContentFocusNode,
-        hintText: 'Write your note in markdown...',
-        showToolbar: true,
-        enablePreview: true,
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7 - keyboardHeight,
+        child: MarkdownEditor(
+          controller: _fleatherController,
+          focusNode: _textContentFocusNode,
+          hintText: 'Start writing your note...',
+          showToolbar: true,
+          onChanged: (markdown) {
+            // Content changes are automatically saved via transaction stream
+          },
+        ),
       ),
     );
   }
@@ -899,20 +1119,34 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   children: [
-                    // Checkbox placeholder (not interactive in create mode)
-                    Icon(
-                      Symbols.radio_button_unchecked,
-                      size: 20,
-                      color: cs.onSurface.withValues(alpha: 0.5),
+                    // Checkbox (interactive)
+                    Checkbox(
+                      value: item.isCompleted,
+                      onChanged: (value) async {
+                        if (value != null) {
+                          await _toggleTodoItem(item.id);
+                        }
+                      },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    // Todo text
+                    const SizedBox(width: 8),
+                    // Todo text (also interactive - tapping toggles completion)
                     Expanded(
-                      child: Text(
-                        item,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: cs.onSurface,
+                      child: GestureDetector(
+                        onTap: () async {
+                          await _toggleTodoItem(item.id);
+                        },
+                        child: Text(
+                          item.content,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: cs.onSurface,
+                            decoration: item.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
                         ),
                       ),
                     ),
@@ -923,11 +1157,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                         size: 20,
                         color: cs.onSurface.withValues(alpha: 0.5),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _todoItems.removeAt(index);
-                        });
-                        _scheduleAutoSave();
+                      onPressed: () async {
+                        await _deleteTodoItem(item.id);
                       },
                     ),
                   ],
@@ -941,7 +1172,54 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     );
   }
 
-  void _addTodoItem() {
+  Future<void> _toggleTodoItem(int itemId) async {
+    try {
+      await TodoListNoteService.toggleTodoItemCompletion(itemId);
+      // Reload items from database
+      if (_currentNoteId != null) {
+        final items =
+            await TodoListNoteService.watchTodoItems(_currentNoteId!).first;
+        if (mounted) {
+          setState(() {
+            _todoItems = items;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to toggle todo item: $e');
+    }
+  }
+
+  Future<void> _deleteTodoItem(int itemId) async {
+    try {
+      await TodoListNoteService.deleteTodoItem(itemId);
+      // Reload items from database
+      if (_currentNoteId != null) {
+        final items =
+            await TodoListNoteService.watchTodoItems(_currentNoteId!).first;
+        if (mounted) {
+          setState(() {
+            _todoItems = items;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to delete todo item: $e');
+    }
+  }
+
+  Future<void> _addTodoItem() async {
+    // Ensure we have a note created first
+    if (_currentNoteId == null) {
+      await _saveNote();
+      if (_currentNoteId == null) {
+        debugPrint('❌ Failed to create todo list note');
+        return;
+      }
+    }
+
+    if (!mounted) return;
+
     final controller = TextEditingController();
     showDialog(
       context: context,
@@ -955,13 +1233,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             border: OutlineInputBorder(),
           ),
           textInputAction: TextInputAction.done,
-          onSubmitted: (value) {
+          onSubmitted: (value) async {
             if (value.trim().isNotEmpty) {
-              setState(() {
-                _todoItems.add(value.trim());
-              });
-              _scheduleAutoSave();
-              Navigator.pop(context);
+              await _saveTodoItemToDatabase(value.trim());
+              if (mounted) {
+                Navigator.pop(context);
+              }
             }
           },
         ),
@@ -971,13 +1248,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               if (controller.text.trim().isNotEmpty) {
-                setState(() {
-                  _todoItems.add(controller.text.trim());
-                });
-                _scheduleAutoSave();
-                Navigator.pop(context);
+                await _saveTodoItemToDatabase(controller.text.trim());
+                if (mounted) {
+                  Navigator.pop(context);
+                }
               }
             },
             child: const Text('Add'),
@@ -985,6 +1261,34 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         ],
       ),
     );
+  }
+
+  Future<void> _saveTodoItemToDatabase(String content) async {
+    try {
+      if (_currentNoteId == null || _todoListNoteUuid == null) {
+        debugPrint('❌ Cannot add todo item: note not created yet');
+        return;
+      }
+
+      await TodoListNoteService.addTodoItem(
+        todoListNoteId: _currentNoteId!,
+        todoListNoteUuid: _todoListNoteUuid!,
+        content: content,
+      );
+
+      // Reload items from database
+      final items =
+          await TodoListNoteService.watchTodoItems(_currentNoteId!).first;
+      if (mounted) {
+        setState(() {
+          _todoItems = items;
+        });
+      }
+
+      debugPrint('✅ Added todo item: $content');
+    } catch (e) {
+      debugPrint('❌ Failed to add todo item: $e');
+    }
   }
 
   Widget _buildReminderContent() {
@@ -1162,8 +1466,10 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   /// Check if note should be saved
   bool _shouldSave() {
     final hasTitle = _titleController.text.trim().isNotEmpty;
-    final hasContent = _textContentController.text.trim().isNotEmpty;
-    final hasTodos = _todoItems.any((item) => item.isNotEmpty);
+    final hasContent = MarkdownEditor.controllerToMarkdown(_fleatherController)
+        .trim()
+        .isNotEmpty;
+    final hasTodos = _todoItems.isNotEmpty;
     final hasReminder = _reminderTime != null;
     final hasAudio = _audioFilePath != null;
 
@@ -1415,10 +1721,13 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     // Get content based on note type
     switch (selectedNoteType) {
       case 'Title Content':
-        content = _textContentController.text.trim();
+        content =
+            MarkdownEditor.controllerToMarkdown(_fleatherController).trim();
         break;
       case 'Todo List':
-        content = _todoItems.where((item) => item.isNotEmpty).join('\n');
+        content = _todoItems
+            .map((item) => '${item.isCompleted ? '✓' : '○'} ${item.content}')
+            .join('\n');
         break;
       case 'Reminder':
         content = _reminderDescriptionController.text.trim();
@@ -1460,7 +1769,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     if (selectedNoteType != 'Title Content') return;
 
     final title = _titleController.text.trim();
-    final content = _textContentController.text.trim();
+    final content =
+        MarkdownEditor.controllerToMarkdown(_fleatherController).trim();
 
     if (title.isEmpty && content.isEmpty) {
       showDialog(
@@ -1550,7 +1860,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     if (selectedNoteType != 'Title Content') return;
 
     final title = _titleController.text.trim();
-    final content = _textContentController.text.trim();
+    final content =
+        MarkdownEditor.controllerToMarkdown(_fleatherController).trim();
 
     if (title.isEmpty && content.isEmpty) {
       showDialog(
@@ -1717,11 +2028,13 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         return;
       }
 
-      final currentText = _textContentController.text;
+      final currentText =
+          MarkdownEditor.controllerToMarkdown(_fleatherController);
       final newText = currentText.isEmpty
           ? recognizedText
           : '$currentText\n\n$recognizedText';
-      _textContentController.text = newText;
+      _fleatherController =
+          MarkdownEditor.createControllerFromMarkdown(newText);
 
       await premiumService.incrementOcrScans();
 

@@ -3,11 +3,14 @@ import '../theme.dart';
 import '../typography.dart';
 import '../animations.dart';
 import 'tag_chip.dart';
+import '../../constants/note_type_config.dart';
 
 /// NoteCard - Card component for displaying note previews
 ///
 /// Features:
 /// - Title, excerpt, tags, timestamp
+/// - Note type badges and accent colors
+/// - Progress bars for todo lists
 /// - Press states (hover, pressed)
 /// - Pin and star controls
 /// - Long-press for selection
@@ -27,6 +30,16 @@ class NoteCard extends StatefulWidget {
   final VoidCallback? onStarToggle;
   final Widget? thumbnail;
 
+  // Note type configuration
+  final String? noteType; // 'text', 'todo', 'voice', 'reminder'
+
+  // Todo-specific fields
+  final int? totalTasks;
+  final int? completedTasks;
+
+  // Voice note specific
+  final String? voiceDuration;
+
   const NoteCard({
     super.key,
     required this.title,
@@ -41,6 +54,10 @@ class NoteCard extends StatefulWidget {
     this.onPinToggle,
     this.onStarToggle,
     this.thumbnail,
+    this.noteType,
+    this.totalTasks,
+    this.completedTasks,
+    this.voiceDuration,
   });
 
   @override
@@ -56,6 +73,11 @@ class _NoteCardState extends State<NoteCard> {
     final theme = Theme.of(context);
     final listItemStyle = theme.listItemStyle;
     final motionSettings = MotionSettings.fromMediaQuery(context);
+
+    // Get note type config
+    final typeConfig = widget.noteType != null
+        ? NoteTypeConfig.fromType(widget.noteType!)
+        : null;
 
     // Determine background color based on state
     Color backgroundColor = listItemStyle.backgroundColor;
@@ -93,7 +115,6 @@ class _NoteCardState extends State<NoteCard> {
           child: AnimatedContainer(
             duration: motionSettings.getDuration(PinpointAnimations.fast),
             curve: motionSettings.getCurve(PinpointAnimations.sharp),
-            padding: listItemStyle.padding,
             decoration: BoxDecoration(
               color: backgroundColor,
               borderRadius: listItemStyle.borderRadius,
@@ -105,10 +126,33 @@ class _NoteCardState extends State<NoteCard> {
               ),
               boxShadow: listItemStyle.elevation,
             ),
-            child: ClipRect(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+            child: ClipRRect(
+              borderRadius: listItemStyle.borderRadius,
+              child: Stack(
+                children: [
+                  // Colored accent bar for note type (positioned at left edge)
+                  if (typeConfig != null)
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 3,
+                        color: typeConfig.color,
+                      ),
+                    ),
+                  // Main content
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: typeConfig != null ? 15 : listItemStyle.padding.left,
+                    right: listItemStyle.padding.right,
+                    top: listItemStyle.padding.top,
+                    bottom: listItemStyle.padding.bottom,
+                  ),
+                  child: ClipRect(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                 children: [
                   // Header row with title and controls
                   Row(
@@ -127,22 +171,65 @@ class _NoteCardState extends State<NoteCard> {
                         const SizedBox(width: 12),
                       ],
 
-                      // Title
+                      // Title with type badge
                       Expanded(
-                        child: Text(
-                          widget.title.isEmpty ? 'Empty note' : widget.title,
-                          style: PinpointTypography.noteCardTitle(
-                            brightness: theme.brightness,
-                          ).copyWith(
-                            color: widget.title.isEmpty
-                                ? theme.colorScheme.onSurfaceVariant
-                                : null,
-                            fontStyle: widget.title.isEmpty
-                                ? FontStyle.italic
-                                : FontStyle.normal,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Type badge
+                            if (typeConfig != null) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: typeConfig.color.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: typeConfig.color.withValues(alpha: 0.15),
+                                    width: 0.5,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      typeConfig.icon,
+                                      size: 13,
+                                      color: typeConfig.color.withValues(alpha: 0.7),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      typeConfig.displayName,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                        color: typeConfig.color.withValues(alpha: 0.8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                            // Title
+                            Text(
+                              widget.title.isEmpty ? 'Empty note' : widget.title,
+                              style: PinpointTypography.noteCardTitle(
+                                brightness: theme.brightness,
+                              ).copyWith(
+                                color: widget.title.isEmpty
+                                    ? theme.colorScheme.onSurfaceVariant
+                                    : null,
+                                fontStyle: widget.title.isEmpty
+                                    ? FontStyle.italic
+                                    : FontStyle.normal,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ),
 
@@ -189,8 +276,46 @@ class _NoteCardState extends State<NoteCard> {
                     ],
                   ),
 
-                  // Excerpt
-                  if (widget.excerpt != null && widget.excerpt!.isNotEmpty) ...[
+                  // Todo-specific content: Progress bar and task summary
+                  if (widget.noteType == 'todo' &&
+                      widget.totalTasks != null &&
+                      widget.totalTasks! > 0) ...[
+                    const SizedBox(height: 12),
+                    // Task summary
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline_rounded,
+                          size: 16,
+                          color: typeConfig?.color ?? theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${widget.completedTasks ?? 0}/${widget.totalTasks} tasks completed',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Progress bar
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: (widget.completedTasks ?? 0) / widget.totalTasks!,
+                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          typeConfig?.color ?? theme.colorScheme.primary,
+                        ),
+                        minHeight: 6,
+                      ),
+                    ),
+                  ]
+                  // Regular excerpt for other note types
+                  else if (widget.excerpt != null && widget.excerpt!.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
                       widget.excerpt!,
@@ -199,6 +324,37 @@ class _NoteCardState extends State<NoteCard> {
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+
+                  // Voice note duration badge
+                  if (widget.noteType == 'voice' && widget.voiceDuration != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: typeConfig?.lightColor ?? theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.play_arrow_rounded,
+                            size: 16,
+                            color: typeConfig?.color ?? theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            widget.voiceDuration!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: typeConfig?.color ?? theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
 
@@ -229,6 +385,10 @@ class _NoteCardState extends State<NoteCard> {
                       ),
                     ),
                   ],
+                ],
+              ),
+                    ),
+                  ),
                 ],
               ),
             ),

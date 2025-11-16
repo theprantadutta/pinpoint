@@ -188,6 +188,11 @@ class NoteListItem extends StatelessWidget {
         excerpt: hasTitle ? note.textContent : null,
         lastModified: n.updatedAt,
         isPinned: n.isPinned,
+        noteType: n.noteType,
+        totalTasks: n.noteType == 'todo' ? note.todoItems.length : null,
+        completedTasks: n.noteType == 'todo'
+            ? note.todoItems.where((item) => item.isDone).length
+            : null,
         tags: [
           if (note.folders.isNotEmpty)
             CardNoteTag(

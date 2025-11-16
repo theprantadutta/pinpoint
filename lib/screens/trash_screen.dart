@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
-import 'package:pinpoint/screens/create_note_screen.dart';
+import 'package:pinpoint/screens/create_note_screen_v2.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -148,7 +148,7 @@ class _TrashScreenState extends State<TrashScreen> {
                                   onTap: () {
                                     PinpointHaptics.medium();
                                     context.push(
-                                      CreateNoteScreen.kRouteName,
+                                      CreateNoteScreenV2.kRouteName,
                                       extra: CreateNoteScreenArguments(
                                         noticeType: n.noteType,
                                         existingNote: note,

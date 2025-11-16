@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import '../../constants/selectors.dart';
-import '../../screens/create_note_screen.dart';
 import '../../screens/create_note_screen_v2.dart';
 import '../../design_system/design_system.dart';
 import 'top_level_pages.dart';

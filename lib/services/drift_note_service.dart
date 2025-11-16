@@ -9,7 +9,6 @@ import 'package:pinpoint/models/note_todo_item_with_note.dart';
 import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/drift_note_folder_service.dart';
-import 'package:pinpoint/services/encryption_service.dart';
 import 'package:pinpoint/services/logger_service.dart';
 import 'package:pinpoint/services/notification_service.dart';
 import 'package:pinpoint/util/note_utils.dart';
@@ -124,20 +123,6 @@ class DriftNoteService {
     } catch (e, st) {
       log.e('Failed to insert/update note', e, st);
       return 0;
-    }
-  }
-
-  static void _handleReminderNotification(
-      int noteId, DateTime? reminderTime, String? noteTitle) {
-    if (reminderTime != null && reminderTime.isAfter(DateTime.now())) {
-      NotificationService.scheduleNotification(
-        id: noteId,
-        title: noteTitle ?? 'Reminder',
-        body: 'Time for your note!',
-        scheduledDate: reminderTime,
-      );
-    } else {
-      NotificationService.cancelNotification(noteId);
     }
   }
 
@@ -1218,37 +1203,6 @@ class DriftNoteService {
     }
   }
 
-  // Heuristic decrypt with quiet fallback:
-  // - If it looks like JSON/delta (starts with '[' or '{'), return as-is.
-  // - If it is not base64-like or length not multiple of 4, return as-is.
-  // - Otherwise attempt decrypt, and on failure return original without noisy logs.
-  static String? _safeDecrypt(String? value) {
-    if (value == null) return null;
-    final v = value.trim();
-
-    // Quick check: Quill delta / JSON content
-    if (v.startsWith('[') || v.startsWith('{')) {
-      return value;
-    }
-
-    // Base64 characters only
-    final base64Like = RegExp(r'^[A-Za-z0-9+/=]+$');
-    if (!base64Like.hasMatch(v)) {
-      return value;
-    }
-
-    // Base64 should be padded to multiple of 4
-    if (v.length % 4 != 0) {
-      return value;
-    }
-
-    try {
-      return SecureEncryptionService.decrypt(v);
-    } catch (_) {
-      return value;
-    }
-  }
-
   static Future<void> importNoteFromJson(String jsonString) async {
     final database = getIt<AppDatabase>();
     final noteJson = jsonDecode(jsonString);
@@ -1306,14 +1260,64 @@ class DriftNoteService {
   /// Watch all notes from V2 tables (Architecture V8)
   /// Queries text_notes_v2, voice_notes_v2, todo_list_notes_v2, reminder_notes_v2
   /// Converts to NoteWithDetails format for backward compatibility with UI
+  /// Watch all todo items from V2 architecture (TodoItemsV2 + TodoListNotesV2)
+  /// Returns NoteTodoItemWithNote for compatibility with existing UI
+  static Stream<List<NoteTodoItemWithNote>> watchAllTodoItemsV2() {
+    try {
+      final database = getIt<AppDatabase>();
+      log.d('[watchAllTodoItemsV2] start');
+
+      // Join TodoItemsV2 with TodoListNotesV2
+      final query = database.select(database.todoItemsV2).join([
+        innerJoin(
+          database.todoListNotesV2,
+          database.todoListNotesV2.id.equalsExp(database.todoItemsV2.todoListNoteId),
+        ),
+      ])
+        ..where(database.todoListNotesV2.isDeleted.equals(false))
+        ..orderBy([
+          OrderingTerm(expression: database.todoListNotesV2.updatedAt, mode: OrderingMode.desc),
+          OrderingTerm(expression: database.todoItemsV2.createdAt, mode: OrderingMode.asc),
+        ]);
+
+      return query.watch().map((rows) {
+        return rows.map((row) {
+          final todoItem = row.readTable(database.todoItemsV2);
+          final todoNote = row.readTable(database.todoListNotesV2);
+
+          return NoteTodoItemWithNote(
+            todoItem: NoteTodoItem(
+              id: todoItem.id,
+              uuid: todoItem.uuid,
+              noteId: todoNote.id,
+              noteUuid: todoNote.uuid,
+              todoTitle: todoItem.content,
+              isDone: todoItem.isCompleted,
+              orderIndex: todoItem.orderIndex,
+            ),
+            noteTitle: todoNote.title ?? 'Todo List',
+            noteType: 'todo',
+            noteCreatedAt: todoNote.createdAt,
+            noteUpdatedAt: todoNote.updatedAt,
+          );
+        }).toList();
+      });
+    } catch (e, st) {
+      log.e('[watchAllTodoItemsV2] error: $e');
+      log.e('[watchAllTodoItemsV2] stack trace: $st');
+      return Stream.value([]);
+    }
+  }
+
   static Stream<List<NoteWithDetails>> watchNotesWithDetailsV2({
     String searchQuery = '',
     String sortType = 'updatedAt',
     String sortDirection = 'desc',
+    List<String>? excludeNoteTypes, // Exclude specific note types (e.g., ['todo', 'reminder'])
   }) async* {
     final database = getIt<AppDatabase>();
 
-    // Watch all 4 V2 tables
+    // Watch all note type tables
     final textNotesStream = database.select(database.textNotesV2).watch();
     final voiceNotesStream = database.select(database.voiceNotesV2).watch();
     final todoNotesStream = database.select(database.todoListNotesV2).watch();
@@ -1328,9 +1332,16 @@ class DriftNoteService {
 
       List<NoteWithDetails> allNotes = [];
 
-      // Convert text notes
-      for (final textNote in textNotes) {
-        if (textNote.isArchived || textNote.isDeleted) continue;
+      // Check if note types should be excluded
+      final shouldExcludeText = excludeNoteTypes?.contains('text') ?? false;
+      final shouldExcludeVoice = excludeNoteTypes?.contains('voice') ?? false;
+      final shouldExcludeTodo = excludeNoteTypes?.contains('todo') ?? false;
+      final shouldExcludeReminder = excludeNoteTypes?.contains('reminder') ?? false;
+
+      // Convert text notes (skip if excluded)
+      if (!shouldExcludeText) {
+        for (final textNote in textNotes) {
+          if (textNote.isArchived || textNote.isDeleted) continue;
 
         // Apply search filter
         if (searchQuery.isNotEmpty) {
@@ -1379,11 +1390,13 @@ class DriftNoteService {
           todoItems: [],
           textContent: textNote.content,
         ));
+        }
       }
 
-      // Convert voice notes
-      for (final voiceNote in voiceNotes) {
-        if (voiceNote.isArchived || voiceNote.isDeleted) continue;
+      // Convert voice notes (skip if excluded)
+      if (!shouldExcludeVoice) {
+        for (final voiceNote in voiceNotes) {
+          if (voiceNote.isArchived || voiceNote.isDeleted) continue;
 
         // Apply search filter
         if (searchQuery.isNotEmpty) {
@@ -1430,11 +1443,13 @@ class DriftNoteService {
           todoItems: [],
           textContent: null,
         ));
+        }
       }
 
-      // Convert todo notes
-      for (final todoNote in todoNotes) {
-        if (todoNote.isArchived || todoNote.isDeleted) continue;
+      // Convert todo notes (skip if excluded)
+      if (!shouldExcludeTodo) {
+        for (final todoNote in todoNotes) {
+          if (todoNote.isArchived || todoNote.isDeleted) continue;
 
         // Apply search filter
         if (searchQuery.isNotEmpty) {
@@ -1461,10 +1476,39 @@ class DriftNoteService {
           }
         }
 
+        // Get todo items from TodoItemsV2 table
+        final todoItems = await (database.select(database.todoItemsV2)
+              ..where((t) => t.todoListNoteId.equals(todoNote.id))
+              ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
+            .get();
+
+        // Convert TodoItemEntity to NoteTodoItem for compatibility
+        final convertedTodoItems = todoItems.map((item) {
+          return NoteTodoItem(
+            id: item.id,
+            uuid: item.uuid,
+            noteId: todoNote.id,
+            noteUuid: todoNote.uuid,
+            todoTitle: item.content,
+            isDone: item.isCompleted,
+            orderIndex: item.orderIndex,
+          );
+        }).toList();
+
+        // Generate preview text from todo items
+        String? todoPreview;
+        if (todoItems.isNotEmpty) {
+          final itemsPreview = todoItems.take(3).map((item) {
+            final checkbox = item.isCompleted ? '✓' : '○';
+            return '$checkbox ${item.content}';
+          }).join('\n');
+          todoPreview = itemsPreview;
+        }
+
         final fakeNote = Note(
           id: todoNote.id,
           uuid: todoNote.uuid,
-          noteType: 'todo_list',
+          noteType: 'todo',
           noteTitle: todoNote.title ?? 'Todo List',
           isPinned: todoNote.isPinned,
           isArchived: todoNote.isArchived,
@@ -1478,14 +1522,16 @@ class DriftNoteService {
           note: fakeNote,
           folders: folders,
           attachments: [],
-          todoItems: [],
-          textContent: null,
+          todoItems: convertedTodoItems,
+          textContent: todoPreview,
         ));
+        }
       }
 
-      // Convert reminder notes
-      for (final reminderNote in reminderNotes) {
-        if (reminderNote.isArchived || reminderNote.isDeleted) continue;
+      // Convert reminder notes (skip if excluded)
+      if (!shouldExcludeReminder) {
+        for (final reminderNote in reminderNotes) {
+          if (reminderNote.isArchived || reminderNote.isDeleted) continue;
 
         // Apply search filter
         if (searchQuery.isNotEmpty) {
@@ -1533,6 +1579,7 @@ class DriftNoteService {
           todoItems: [],
           textContent: reminderNote.description,
         ));
+        }
       }
 
       // Sort

@@ -15,13 +15,12 @@ import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 import 'package:pinpoint/screens/admin_panel_screen.dart';
 import 'package:pinpoint/screens/admin_user_details_screen.dart';
 
-import '../screen_arguments/create_note_screen_arguments.dart';
 import '../screens/settings_screen.dart';
-import '../screens/create_note_screen.dart';
 import '../screens/create_note_screen_v2.dart';
 import '../screens/home_screen.dart';
 import '../screens/notes_screen.dart';
 import '../screens/todo_screen.dart';
+import '../screen_arguments/create_note_screen_arguments.dart';
 import 'bottom-navigation/bottom_navigation_layout.dart';
 
 class AppNavigation {
@@ -182,29 +181,17 @@ class AppNavigation {
         ],
       ),
 
-      /// Create Note Screen
-      GoRoute(
-        parentNavigatorKey: rootNavigatorKey,
-        path: CreateNoteScreen.kRouteName,
-        name: "Create Note",
-        builder: (context, state) {
-          // final noticeType = state.pathParameters["noticeId"] ?? kNoteTypes[0];
-          // Retrieve the arguments from the state
-          final args = state.extra as CreateNoteScreenArguments?;
-          return CreateNoteScreen(
-            key: state.pageKey,
-            args: args,
-          );
-        },
-      ),
-
       /// Create Note Screen V2 (Architecture V8)
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: CreateNoteScreenV2.kRouteName,
-        name: "Create Note V2",
+        name: "Create Note",
         builder: (context, state) {
-          return CreateNoteScreenV2(key: state.pageKey);
+          final args = state.extra as CreateNoteScreenArguments?;
+          return CreateNoteScreenV2(
+            key: state.pageKey,
+            arguments: args,
+          );
         },
       ),
 
