@@ -116,8 +116,13 @@ class ReminderSyncService {
         await ApiService().createReminder(
           noteUuid: note.uuid!,
           title: note.title!,
-          description: note.description,
+          notificationTitle: note.notificationTitle ?? note.title!,
+          notificationContent: note.notificationContent,
           reminderTime: note.reminderTime!,
+          recurrenceType: note.recurrenceType ?? 'once',
+          recurrenceInterval: note.recurrenceInterval ?? 1,
+          recurrenceEndType: note.recurrenceEndType ?? 'never',
+          recurrenceEndValue: note.recurrenceEndValue,
         );
 
         // Mark as synced

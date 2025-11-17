@@ -505,18 +505,33 @@ class ApiService {
   Future<Map<String, dynamic>> createReminder({
     required String noteUuid,
     required String title,
-    String? description,
+    required String notificationTitle,
+    String? notificationContent,
     required DateTime reminderTime,
+    String recurrenceType = 'once',
+    int recurrenceInterval = 1,
+    String recurrenceEndType = 'never',
+    String? recurrenceEndValue,
   }) async {
     try {
+      final data = {
+        'note_uuid': noteUuid,
+        'title': title,
+        'notification_title': notificationTitle,
+        'notification_content': notificationContent,
+        'reminder_time': reminderTime.toUtc().toIso8601String(),
+        'recurrence_type': recurrenceType,
+        'recurrence_interval': recurrenceInterval,
+        'recurrence_end_type': recurrenceEndType,
+      };
+
+      if (recurrenceEndValue != null) {
+        data['recurrence_end_value'] = recurrenceEndValue;
+      }
+
       final response = await _dio.post(
         '/reminders',
-        data: {
-          'note_uuid': noteUuid,
-          'title': title,
-          'description': description,
-          'reminder_time': reminderTime.toUtc().toIso8601String(),
-        },
+        data: data,
       );
       return response.data;
     } on DioException catch (e) {
@@ -528,16 +543,26 @@ class ApiService {
   Future<Map<String, dynamic>> updateReminder({
     required String reminderId,
     String? title,
-    String? description,
+    String? notificationTitle,
+    String? notificationContent,
     DateTime? reminderTime,
+    String? recurrenceType,
+    int? recurrenceInterval,
+    String? recurrenceEndType,
+    String? recurrenceEndValue,
   }) async {
     try {
       final data = <String, dynamic>{};
       if (title != null) data['title'] = title;
-      if (description != null) data['description'] = description;
+      if (notificationTitle != null) data['notification_title'] = notificationTitle;
+      if (notificationContent != null) data['notification_content'] = notificationContent;
       if (reminderTime != null) {
         data['reminder_time'] = reminderTime.toUtc().toIso8601String();
       }
+      if (recurrenceType != null) data['recurrence_type'] = recurrenceType;
+      if (recurrenceInterval != null) data['recurrence_interval'] = recurrenceInterval;
+      if (recurrenceEndType != null) data['recurrence_end_type'] = recurrenceEndType;
+      if (recurrenceEndValue != null) data['recurrence_end_value'] = recurrenceEndValue;
 
       final response = await _dio.put(
         '/reminders/$reminderId',
