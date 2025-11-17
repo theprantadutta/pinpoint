@@ -974,26 +974,27 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
           children: [
-            // Recording indicator / status
-            if (_isRecording || _audioFilePath != null) ...[
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: cs.outline.withValues(alpha: 0.1),
+            // Recording UI (shown when recording or no audio exists)
+            if (_audioFilePath == null || _isRecording) ...[
+              // Recording indicator / status
+              if (_isRecording) ...[
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
+                        : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: cs.outline.withValues(alpha: 0.1),
+                    ),
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        if (_isRecording)
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
                           Container(
                             width: 8,
                             height: 8,
@@ -1002,94 +1003,137 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                               shape: BoxShape.circle,
                             ),
                           ),
-                        if (_isRecording) const SizedBox(width: 12),
-                        Text(
-                          _isRecording ? 'Recording...' : 'Recording Complete',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: cs.onSurface,
+                          const SizedBox(width: 12),
+                          Text(
+                            'Recording...',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: cs.onSurface,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      _formatDuration(_recordedDuration),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: cs.primary,
-                        fontFeatures: const [FontFeature.tabularFigures()],
+                        ],
                       ),
+                      Text(
+                        _formatDuration(_recordedDuration),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: cs.primary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+
+              // Record button
+              GestureDetector(
+                onTap: _isRecording ? _stopRecording : _startRecording,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: _isRecording
+                          ? [cs.error, cs.error.withValues(alpha: 0.8)]
+                          : [cs.primary, cs.primary.withValues(alpha: 0.8)],
                     ),
-                  ],
+                    boxShadow: [
+                      BoxShadow(
+                        color: (_isRecording ? cs.error : cs.primary)
+                            .withValues(alpha: 0.3),
+                        blurRadius: 24,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    _isRecording ? Symbols.stop : Symbols.mic,
+                    size: 48,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              const SizedBox(height: 32),
+
+              const SizedBox(height: 16),
+
+              // Status text
+              Text(
+                _isRecording
+                    ? 'Tap to stop recording'
+                    : 'Tap to start recording',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: cs.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
             ],
 
-            // Record button
-            GestureDetector(
-              onTap: _isRecording ? _stopRecording : _startRecording,
-              child: Container(
-                width: 120,
-                height: 120,
+            // Audio player UI (shown when audio exists and not recording)
+            if (_audioFilePath != null && !_isRecording) ...[
+              // Audio player card
+              Container(
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: _isRecording
-                        ? [cs.error, cs.error.withValues(alpha: 0.8)]
-                        : [cs.primary, cs.primary.withValues(alpha: 0.8)],
+                    colors: [
+                      cs.primaryContainer.withValues(alpha: 0.5),
+                      cs.secondaryContainer.withValues(alpha: 0.3),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: cs.outline.withValues(alpha: 0.1),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: (_isRecording ? cs.error : cs.primary)
-                          .withValues(alpha: 0.3),
-                      blurRadius: 24,
-                      spreadRadius: 4,
+                      color: cs.shadow.withValues(alpha: 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Icon(
-                  _isRecording ? Symbols.stop : Symbols.mic,
-                  size: 48,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Status text
-            Text(
-              _isRecording
-                  ? 'Tap to stop recording'
-                  : (_audioFilePath != null
-                      ? 'Tap to record again'
-                      : 'Tap to start recording'),
-              style: TextStyle(
-                fontSize: 15,
-                color: cs.onSurface.withValues(alpha: 0.7),
-              ),
-            ),
-
-            // Playback controls (only show if we have a recording)
-            if (_audioFilePath != null && !_isRecording) ...[
-              const SizedBox(height: 32),
-
-              // Progress bar and time display
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
+                    // Audio icon
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: cs.primary.withValues(alpha: 0.1),
+                        border: Border.all(
+                          color: cs.primary.withValues(alpha: 0.2),
+                          width: 2,
+                        ),
+                      ),
+                      child: Icon(
+                        Symbols.audio_file,
+                        size: 40,
+                        color: cs.primary,
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
                     // Progress slider
                     SliderTheme(
                       data: SliderThemeData(
-                        trackHeight: 3,
-                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                        trackHeight: 4,
+                        activeTrackColor: cs.primary,
+                        inactiveTrackColor: cs.primary.withValues(alpha: 0.2),
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                        thumbColor: cs.primary,
+                        overlayColor: cs.primary.withValues(alpha: 0.2),
                       ),
                       child: Slider(
                         value: _playbackPosition.inMilliseconds.toDouble(),
@@ -1115,7 +1159,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                             _formatDuration(_playbackPosition),
                             style: TextStyle(
                               fontSize: 13,
+                              fontWeight: FontWeight.w600,
                               color: cs.onSurface.withValues(alpha: 0.7),
+                              fontFeatures: const [FontFeature.tabularFigures()],
                             ),
                           ),
                           Text(
@@ -1124,44 +1170,61 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                                 : Duration(seconds: _audioDurationSeconds ?? 0)),
                             style: TextStyle(
                               fontSize: 13,
+                              fontWeight: FontWeight.w600,
                               color: cs.onSurface.withValues(alpha: 0.7),
+                              fontFeatures: const [FontFeature.tabularFigures()],
                             ),
                           ),
                         ],
                       ),
                     ),
+
+                    const SizedBox(height: 20),
+
+                    // Playback controls
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Play/Pause button
+                        IconButton.filled(
+                          onPressed: _isPlaying ? _pausePlayback : _startPlayback,
+                          icon: Icon(_isPlaying ? Symbols.pause : Symbols.play_arrow),
+                          iconSize: 32,
+                          style: IconButton.styleFrom(
+                            backgroundColor: cs.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.all(20),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Stop button
+                        IconButton.outlined(
+                          onPressed: _stopPlayback,
+                          icon: const Icon(Symbols.stop),
+                          iconSize: 28,
+                          style: IconButton.styleFrom(
+                            padding: const EdgeInsets.all(18),
+                            side: BorderSide(color: cs.outline.withValues(alpha: 0.3)),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Play/Pause button
-                  IconButton.filled(
-                    onPressed: _isPlaying ? _pausePlayback : _startPlayback,
-                    icon: Icon(_isPlaying ? Symbols.pause : Symbols.play_arrow),
-                    iconSize: 32,
-                    style: IconButton.styleFrom(
-                      backgroundColor: cs.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.all(20),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Stop button
-                  IconButton.outlined(
-                    onPressed: _stopPlayback,
-                    icon: const Icon(Symbols.stop),
-                    iconSize: 28,
-                    style: IconButton.styleFrom(
-                      padding: const EdgeInsets.all(18),
-                      side:
-                          BorderSide(color: cs.outline.withValues(alpha: 0.3)),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 20),
+
+              // Replace recording button
+              OutlinedButton.icon(
+                onPressed: _replaceRecording,
+                icon: const Icon(Symbols.refresh),
+                label: const Text('Record Again'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  side: BorderSide(color: cs.primary.withValues(alpha: 0.5)),
+                  foregroundColor: cs.primary,
+                ),
               ),
             ],
           ],
@@ -1826,6 +1889,46 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       debugPrint('⏹️ [VoiceNote] Stopped playback');
     } catch (e) {
       debugPrint('❌ [VoiceNote] Failed to stop playback: $e');
+    }
+  }
+
+  Future<void> _replaceRecording() async {
+    try {
+      // Stop any ongoing playback
+      if (_isPlaying) {
+        await _stopPlayback();
+      }
+
+      // Delete old audio file if it exists
+      if (_audioFilePath != null) {
+        try {
+          final file = File(_audioFilePath!);
+          if (await file.exists()) {
+            await file.delete();
+            debugPrint('🗑️ [VoiceNote] Deleted old audio file: $_audioFilePath');
+          }
+        } catch (e) {
+          debugPrint('⚠️ [VoiceNote] Failed to delete old audio file: $e');
+          // Continue anyway - we'll overwrite the path
+        }
+      }
+
+      // Clear audio state
+      setState(() {
+        _audioFilePath = null;
+        _audioDurationSeconds = null;
+        _recordedDuration = Duration.zero;
+        _playbackPosition = Duration.zero;
+        _playbackDuration = Duration.zero;
+        _isPlaying = false;
+      });
+
+      // Trigger auto-save to update the note (remove audio)
+      _scheduleAutoSave();
+
+      debugPrint('🔄 [VoiceNote] Ready to record again');
+    } catch (e) {
+      debugPrint('❌ [VoiceNote] Failed to replace recording: $e');
     }
   }
 

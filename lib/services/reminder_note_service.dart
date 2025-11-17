@@ -5,12 +5,27 @@ import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
 import '../service_locators/init_service_locators.dart';
+import '../sync/sync_manager.dart';
 import 'api_service.dart';
 
 /// Service for managing reminder notes with scheduled notifications
 /// Part of Architecture V8: Independent note types
 class ReminderNoteService {
   ReminderNoteService._();
+
+  /// Trigger background sync (non-blocking)
+  static void _triggerBackgroundSync() {
+    Future.microtask(() async {
+      try {
+        final syncManager = getIt<SyncManager>();
+        debugPrint('🔄 [ReminderNoteService] Triggering background sync...');
+        await syncManager.upload();
+        debugPrint('✅ [ReminderNoteService] Background sync completed');
+      } catch (e) {
+        debugPrint('⚠️ [ReminderNoteService] Background sync failed: $e');
+      }
+    });
+  }
 
   /// Create a new reminder note
   ///
@@ -57,6 +72,10 @@ class ReminderNoteService {
       await _linkToFolders(reminderNoteId, folders);
 
       debugPrint('✅ [ReminderNoteService] Created reminder note: $reminderNoteId with ${folders.length} folders, scheduled for ${reminderTime.toIso8601String()}');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
+
       return reminderNoteId;
     } catch (e, st) {
       debugPrint('❌ [ReminderNoteService] Failed to create reminder note: $e');
@@ -110,6 +129,9 @@ class ReminderNoteService {
       }
 
       debugPrint('✅ [ReminderNoteService] Updated reminder note: $noteId');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
     } catch (e, st) {
       debugPrint('❌ [ReminderNoteService] Failed to update reminder note: $e');
       debugPrint('Stack trace: $st');

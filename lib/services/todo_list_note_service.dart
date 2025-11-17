@@ -5,11 +5,26 @@ import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
 import '../service_locators/init_service_locators.dart';
+import '../sync/sync_manager.dart';
 
 /// Service for managing todo list notes with items
 /// Part of Architecture V8: Independent note types
 class TodoListNoteService {
   TodoListNoteService._();
+
+  /// Trigger background sync (non-blocking)
+  static void _triggerBackgroundSync() {
+    Future.microtask(() async {
+      try {
+        final syncManager = getIt<SyncManager>();
+        debugPrint('🔄 [TodoListNoteService] Triggering background sync...');
+        await syncManager.upload();
+        debugPrint('✅ [TodoListNoteService] Background sync completed');
+      } catch (e) {
+        debugPrint('⚠️ [TodoListNoteService] Background sync failed: $e');
+      }
+    });
+  }
 
   /// Create a new todo list note
   ///
@@ -56,6 +71,10 @@ class TodoListNoteService {
       }
 
       debugPrint('✅ [TodoListNoteService] Created todo list note: $todoListNoteId with ${folders.length} folders and ${initialItems?.length ?? 0} items');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
+
       return todoListNoteId;
     } catch (e, st) {
       debugPrint('❌ [TodoListNoteService] Failed to create todo list note: $e');
@@ -97,6 +116,9 @@ class TodoListNoteService {
       }
 
       debugPrint('✅ [TodoListNoteService] Updated todo list note: $noteId');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
     } catch (e, st) {
       debugPrint('❌ [TodoListNoteService] Failed to update todo list note: $e');
       debugPrint('Stack trace: $st');

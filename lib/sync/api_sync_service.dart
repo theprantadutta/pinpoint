@@ -1,11 +1,56 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
+import 'package:path_provider/path_provider.dart';
 import '../database/database.dart';
 import '../services/api_service.dart';
 import '../services/encryption_service.dart';
 import 'sync_service.dart';
 import 'folder_sync_service.dart';
+
+/// Wrapper class for V2 notes (different note types are in separate tables)
+class _V2NoteWrapper {
+  final String type; // 'text', 'voice', 'todo', 'reminder'
+  final dynamic note; // TextNoteEntity, VoiceNoteEntity, TodoListNoteEntity, or ReminderNoteEntity
+  final List<TodoItemEntity>? todoItems; // Only for todo notes
+
+  _V2NoteWrapper({
+    required this.type,
+    required this.note,
+    this.todoItems,
+  });
+
+  String get uuid {
+    switch (type) {
+      case 'text':
+        return (note as TextNoteEntity).uuid;
+      case 'voice':
+        return (note as VoiceNoteEntity).uuid;
+      case 'todo':
+        return (note as TodoListNoteEntity).uuid;
+      case 'reminder':
+        return (note as ReminderNoteEntity).uuid;
+      default:
+        throw Exception('Unknown note type: $type');
+    }
+  }
+
+  bool get isDeleted {
+    switch (type) {
+      case 'text':
+        return (note as TextNoteEntity).isDeleted;
+      case 'voice':
+        return (note as VoiceNoteEntity).isDeleted;
+      case 'todo':
+        return (note as TodoListNoteEntity).isDeleted;
+      case 'reminder':
+        return (note as ReminderNoteEntity).isDeleted;
+      default:
+        return false;
+    }
+  }
+}
 
 /// Cloud-based sync service using API backend
 class ApiSyncService extends SyncService {
@@ -110,11 +155,10 @@ class ApiSyncService extends SyncService {
   @override
   Future<SyncResult> uploadChanges() async {
     try {
-      debugPrint('\n🔼 [ApiSync] ========== STARTING UPLOAD ==========');
+      debugPrint('\n🔼 [ApiSync] ========== STARTING V2 UPLOAD ==========');
 
-      // Get all notes that need syncing (modified since last sync or never synced)
+      // Get all V2 notes that need syncing
       final notesToSync = await _getNotesToUpload();
-      debugPrint('🔼 [ApiSync] Found ${notesToSync.length} notes to upload');
 
       if (notesToSync.isEmpty) {
         debugPrint('✅ [ApiSync] No notes to upload\n');
@@ -127,16 +171,27 @@ class ApiSyncService extends SyncService {
 
       // Convert notes to encrypted format
       final encryptedNotes = <Map<String, dynamic>>[];
+      int failedCount = 0;
 
-      for (final note in notesToSync) {
+      for (final noteWrapper in notesToSync) {
         try {
+          final noteId = (noteWrapper.note as dynamic).id;
+          final noteTitle = noteWrapper.type == 'text'
+              ? (noteWrapper.note as TextNoteEntity).title ?? 'Untitled'
+              : noteWrapper.type == 'voice'
+                  ? (noteWrapper.note as VoiceNoteEntity).title ?? 'Voice note'
+                  : noteWrapper.type == 'todo'
+                      ? (noteWrapper.note as TodoListNoteEntity).title ?? 'Todo list'
+                      : (noteWrapper.note as ReminderNoteEntity).title ?? 'Reminder';
+
           debugPrint(
-              '🔼 [ApiSync] Encrypting note ${note.id} (${note.noteType}): "${note.noteTitle}"');
-          final encryptedNote = await _serializeAndEncryptNote(note);
+              '🔼 [ApiSync] Encrypting note $noteId (${noteWrapper.type}): "$noteTitle"');
+          final encryptedNote = await _serializeAndEncryptNoteV2(noteWrapper);
           encryptedNotes.add(encryptedNote);
-          debugPrint('✅ [ApiSync] Note ${note.id} encrypted successfully');
+          debugPrint('✅ [ApiSync] Note $noteId encrypted successfully');
         } catch (e) {
-          debugPrint('❌ [ApiSync] Failed to encrypt note ${note.id}: $e');
+          failedCount++;
+          debugPrint('❌ [ApiSync] Failed to encrypt note: $e');
           // Skip this note and continue with others
         }
       }
@@ -146,6 +201,7 @@ class ApiSyncService extends SyncService {
           success: false,
           message: 'Failed to encrypt notes',
           notesSynced: 0,
+          notesFailed: failedCount,
         );
       }
 
@@ -153,6 +209,7 @@ class ApiSyncService extends SyncService {
       final deviceId = await _getDeviceId();
 
       // Upload to backend
+      debugPrint('🔼 [ApiSync] Uploading ${encryptedNotes.length} notes to backend...');
       final response = await _apiService.syncNotes(
         notes: encryptedNotes,
         deviceId: deviceId,
@@ -161,12 +218,13 @@ class ApiSyncService extends SyncService {
       final syncedCount = response['synced_count'] ?? 0;
       debugPrint('✅ [ApiSync] Uploaded $syncedCount notes successfully');
 
-      // Mark all uploaded notes as synced
-      for (final note in notesToSync) {
-        await (_database.update(_database.notes)
-              ..where((tbl) => tbl.id.equals(note.id)))
-            .write(const NotesCompanion(isSynced: Value(true)));
-        debugPrint('  ✓ Marked note ${note.id} as synced');
+      // Mark all uploaded notes as synced in their respective V2 tables
+      for (final noteWrapper in notesToSync) {
+        try {
+          await _markNoteAsSyncedV2(noteWrapper);
+        } catch (e) {
+          debugPrint('⚠️ [ApiSync] Failed to mark note as synced: $e');
+        }
       }
 
       debugPrint('🔼 [ApiSync] ========== UPLOAD COMPLETE ==========\n');
@@ -175,6 +233,7 @@ class ApiSyncService extends SyncService {
         success: true,
         message: 'Uploaded $syncedCount notes',
         notesSynced: syncedCount,
+        notesFailed: failedCount,
       );
     } catch (e) {
       debugPrint('❌ [ApiSync] Upload failed: $e');
@@ -182,6 +241,47 @@ class ApiSyncService extends SyncService {
         success: false,
         message: 'Upload failed: ${e.toString()}',
       );
+    }
+  }
+
+  /// Mark a V2 note as synced in the appropriate table
+  Future<void> _markNoteAsSyncedV2(_V2NoteWrapper noteWrapper) async {
+    final noteId = (noteWrapper.note as dynamic).id;
+
+    switch (noteWrapper.type) {
+      case 'text':
+        await (_database.update(_database.textNotesV2)
+              ..where((tbl) => tbl.id.equals(noteId)))
+            .write(const TextNotesV2Companion(isSynced: Value(true)));
+        debugPrint('  ✓ Marked text note $noteId as synced');
+        break;
+
+      case 'voice':
+        await (_database.update(_database.voiceNotesV2)
+              ..where((tbl) => tbl.id.equals(noteId)))
+            .write(const VoiceNotesV2Companion(isSynced: Value(true)));
+        debugPrint('  ✓ Marked voice note $noteId as synced');
+        break;
+
+      case 'todo':
+        await (_database.update(_database.todoListNotesV2)
+              ..where((tbl) => tbl.id.equals(noteId)))
+            .write(const TodoListNotesV2Companion(isSynced: Value(true)));
+
+        // Also mark all todo items as synced
+        final noteUuid = (noteWrapper.note as TodoListNoteEntity).uuid;
+        await (_database.update(_database.todoItemsV2)
+              ..where((tbl) => tbl.todoListNoteUuid.equals(noteUuid)))
+            .write(const TodoItemsV2Companion(isSynced: Value(true)));
+        debugPrint('  ✓ Marked todo note $noteId and its items as synced');
+        break;
+
+      case 'reminder':
+        await (_database.update(_database.reminderNotesV2)
+              ..where((tbl) => tbl.id.equals(noteId)))
+            .write(const ReminderNotesV2Companion(isSynced: Value(true)));
+        debugPrint('  ✓ Marked reminder note $noteId as synced');
+        break;
     }
   }
 
@@ -334,19 +434,188 @@ class ApiSyncService extends SyncService {
     }
   }
 
-  /// Get all notes that need to be uploaded (not yet synced)
-  Future<List<Note>> _getNotesToUpload() async {
-    // Get ALL notes that haven't been synced yet (including deleted ones)
-    // Deleted notes need to be uploaded so the server knows they were deleted
-    final unsyncedNotes = await (_database.select(_database.notes)
+  /// Get all V2 notes that need to be uploaded (not yet synced)
+  Future<List<_V2NoteWrapper>> _getNotesToUpload() async {
+    final notesToUpload = <_V2NoteWrapper>[];
+
+    // Get unsynced text notes
+    final textNotes = await (_database.select(_database.textNotesV2)
           ..where((tbl) => tbl.isSynced.equals(false)))
         .get();
+    for (final textNote in textNotes) {
+      notesToUpload.add(_V2NoteWrapper(type: 'text', note: textNote));
+    }
 
+    // Get unsynced voice notes
+    final voiceNotes = await (_database.select(_database.voiceNotesV2)
+          ..where((tbl) => tbl.isSynced.equals(false)))
+        .get();
+    for (final voiceNote in voiceNotes) {
+      notesToUpload.add(_V2NoteWrapper(type: 'voice', note: voiceNote));
+    }
+
+    // Get unsynced todo notes (with their items)
+    final todoNotes = await (_database.select(_database.todoListNotesV2)
+          ..where((tbl) => tbl.isSynced.equals(false)))
+        .get();
+    for (final todoNote in todoNotes) {
+      // Get todo items for this note
+      final todoItems = await (_database.select(_database.todoItemsV2)
+            ..where((tbl) => tbl.todoListNoteUuid.equals(todoNote.uuid))
+            ..orderBy([(tbl) => OrderingTerm(expression: tbl.orderIndex)]))
+          .get();
+      notesToUpload.add(_V2NoteWrapper(
+        type: 'todo',
+        note: todoNote,
+        todoItems: todoItems,
+      ));
+    }
+
+    // Get unsynced reminder notes
+    final reminderNotes = await (_database.select(_database.reminderNotesV2)
+          ..where((tbl) => tbl.isSynced.equals(false)))
+        .get();
+    for (final reminderNote in reminderNotes) {
+      notesToUpload.add(_V2NoteWrapper(type: 'reminder', note: reminderNote));
+    }
+
+    final deletedCount = notesToUpload.where((n) => n.isDeleted).length;
     debugPrint(
-        '🔼 [ApiSync] Found ${unsyncedNotes.length} unsynced notes to upload (including ${unsyncedNotes.where((n) => n.isDeleted).length} deleted)');
-    return unsyncedNotes;
+        '🔼 [ApiSync] Found ${notesToUpload.length} unsynced notes to upload (including $deletedCount deleted)');
+    debugPrint(
+        '🔼 [ApiSync] Breakdown: ${textNotes.length} text, ${voiceNotes.length} voice, ${todoNotes.length} todo, ${reminderNotes.length} reminder');
+
+    return notesToUpload;
   }
 
+  /// Serialize V2 note and encrypt for upload
+  Future<Map<String, dynamic>> _serializeAndEncryptNoteV2(_V2NoteWrapper noteWrapper) async {
+    // Build complete note data structure based on type
+    final Map<String, dynamic> noteData;
+
+    switch (noteWrapper.type) {
+      case 'text':
+        noteData = _serializeTextNoteV2(noteWrapper.note as TextNoteEntity);
+        break;
+      case 'voice':
+        noteData = _serializeVoiceNoteV2(noteWrapper.note as VoiceNoteEntity);
+        break;
+      case 'todo':
+        noteData = _serializeTodoNoteV2(
+          noteWrapper.note as TodoListNoteEntity,
+          noteWrapper.todoItems!,
+        );
+        break;
+      case 'reminder':
+        noteData = _serializeReminderNoteV2(noteWrapper.note as ReminderNoteEntity);
+        break;
+      default:
+        throw Exception('Unknown note type: ${noteWrapper.type}');
+    }
+
+    // Convert to JSON string
+    final jsonString = jsonEncode(noteData);
+
+    // Encrypt the JSON
+    final encryptedData = SecureEncryptionService.encrypt(jsonString);
+
+    // Build metadata (non-sensitive)
+    final metadata = {
+      'type': noteWrapper.type,
+      'updated_at': noteData['updatedAt'],
+      'has_audio': noteWrapper.type == 'voice',
+      'has_attachments': false,
+      'is_archived': noteData['isArchived'] ?? false,
+      'is_deleted': noteData['isDeleted'] ?? false,
+    };
+
+    final payload = {
+      'client_note_id': (noteWrapper.note as dynamic).id,
+      'client_note_uuid': noteWrapper.uuid,
+      'encrypted_data': encryptedData,
+      'metadata': metadata,
+      'version': 1,
+    };
+
+    return payload;
+  }
+
+  /// Serialize text note V2
+  Map<String, dynamic> _serializeTextNoteV2(TextNoteEntity note) {
+    return {
+      'uuid': note.uuid,
+      'noteTitle': note.title ?? '',
+      'noteType': 'text',
+      'content': note.content,
+      'isPinned': note.isPinned,
+      'isArchived': note.isArchived,
+      'isDeleted': note.isDeleted,
+      'createdAt': note.createdAt.toIso8601String(),
+      'updatedAt': note.updatedAt.toIso8601String(),
+    };
+  }
+
+  /// Serialize voice note V2
+  Map<String, dynamic> _serializeVoiceNoteV2(VoiceNoteEntity note) {
+    return {
+      'uuid': note.uuid,
+      'noteTitle': note.title ?? '',
+      'noteType': 'audio', // Backend expects 'audio'
+      'audioFilePath': note.audioFilePath,
+      'audioDuration': note.durationSeconds,
+      'transcription': note.transcription,
+      'recordedAt': note.recordedAt?.toIso8601String(),
+      'isPinned': note.isPinned,
+      'isArchived': note.isArchived,
+      'isDeleted': note.isDeleted,
+      'createdAt': note.createdAt.toIso8601String(),
+      'updatedAt': note.updatedAt.toIso8601String(),
+    };
+  }
+
+  /// Serialize todo note V2
+  Map<String, dynamic> _serializeTodoNoteV2(
+    TodoListNoteEntity note,
+    List<TodoItemEntity> items,
+  ) {
+    return {
+      'uuid': note.uuid,
+      'noteTitle': note.title ?? '',
+      'noteType': 'todo',
+      'todoItems': items
+          .map((item) => {
+                'uuid': item.uuid,
+                'text': item.content,
+                'isDone': item.isCompleted,
+                'orderIndex': item.orderIndex,
+              })
+          .toList(),
+      'isPinned': note.isPinned,
+      'isArchived': note.isArchived,
+      'isDeleted': note.isDeleted,
+      'createdAt': note.createdAt.toIso8601String(),
+      'updatedAt': note.updatedAt.toIso8601String(),
+    };
+  }
+
+  /// Serialize reminder note V2
+  Map<String, dynamic> _serializeReminderNoteV2(ReminderNoteEntity note) {
+    return {
+      'uuid': note.uuid,
+      'noteTitle': note.title ?? '',
+      'noteType': 'reminder',
+      'reminderDescription': note.description,
+      'reminderTime': note.reminderTime.toIso8601String(),
+      'isTriggered': note.isTriggered,
+      'isPinned': note.isPinned,
+      'isArchived': note.isArchived,
+      'isDeleted': note.isDeleted,
+      'createdAt': note.createdAt.toIso8601String(),
+      'updatedAt': note.updatedAt.toIso8601String(),
+    };
+  }
+
+  /// OLD METHOD - Keep for reference, will be removed after V2 migration
   /// Serialize note and encrypt for upload
   Future<Map<String, dynamic>> _serializeAndEncryptNote(Note note) async {
     // Build complete note data structure
@@ -484,14 +753,14 @@ class ApiSyncService extends SyncService {
     Map<String, dynamic> noteData,
     DateTime serverUpdatedAt,
   ) async {
-    // Check if note exists by UUID
-    final existingNote = await _getNoteByUuid(clientNoteUuid);
+    // Check if note exists by UUID in V2 tables
+    final existingNote = await _getNoteByUuidV2(clientNoteUuid);
 
     if (existingNote != null) {
-      // Update existing note
-      await _updateExistingNote(clientNoteUuid, noteData, serverUpdatedAt);
+      // Update existing V2 note
+      await _updateExistingNoteV2(existingNote, noteData, serverUpdatedAt);
     } else {
-      // Create new note with the UUID
+      // Create new V2 note with the UUID
       await _createNoteFromData(clientNoteUuid, noteData);
     }
   }
@@ -608,131 +877,306 @@ class ApiSyncService extends SyncService {
     debugPrint('✅ [ApiSync] Updated note $noteUuid');
   }
 
-  /// Create new note from downloaded data
+  /// Update existing V2 note with downloaded data
+  Future<void> _updateExistingNoteV2(
+    _V2NoteWrapper existingNote,
+    Map<String, dynamic> noteData,
+    DateTime serverUpdatedAt,
+  ) async {
+    final uuid = existingNote.uuid;
+    final title = noteData['noteTitle'] as String?;
+    final isPinned = noteData['isPinned'] as bool? ?? false;
+    final isArchived = noteData['isArchived'] as bool? ?? false;
+    final isDeleted = noteData['isDeleted'] as bool? ?? false;
+
+    debugPrint('🔄 [ApiSync] Updating existing V2 ${existingNote.type} note: $uuid');
+
+    switch (existingNote.type) {
+      case 'text':
+        await (_database.update(_database.textNotesV2)
+              ..where((tbl) => tbl.uuid.equals(uuid)))
+            .write(
+          TextNotesV2Companion(
+            title: Value(title),
+            content: Value(noteData['content'] as String? ?? ''),
+            isPinned: Value(isPinned),
+            isArchived: Value(isArchived),
+            isDeleted: Value(isDeleted),
+            updatedAt: Value(serverUpdatedAt),
+            isSynced: const Value(true),
+          ),
+        );
+        break;
+
+      case 'voice':
+        final serverAudioPath = noteData['audioFilePath'] as String? ?? '';
+
+        await (_database.update(_database.voiceNotesV2)
+              ..where((tbl) => tbl.uuid.equals(uuid)))
+            .write(
+          VoiceNotesV2Companion(
+            title: Value(title),
+            audioFilePath: Value(serverAudioPath),
+            durationSeconds: Value(noteData['audioDuration'] as int?),
+            transcription: Value(noteData['transcription'] as String?),
+            isPinned: Value(isPinned),
+            isArchived: Value(isArchived),
+            isDeleted: Value(isDeleted),
+            updatedAt: Value(serverUpdatedAt),
+            isSynced: const Value(true),
+          ),
+        );
+
+        // Download audio file if it's a server path
+        if (serverAudioPath.isNotEmpty && !serverAudioPath.startsWith('/data/')) {
+          await _downloadAudioFile(serverAudioPath, uuid);
+        }
+        break;
+
+      case 'todo':
+        await (_database.update(_database.todoListNotesV2)
+              ..where((tbl) => tbl.uuid.equals(uuid)))
+            .write(
+          TodoListNotesV2Companion(
+            title: Value(title),
+            isPinned: Value(isPinned),
+            isArchived: Value(isArchived),
+            isDeleted: Value(isDeleted),
+            updatedAt: Value(serverUpdatedAt),
+            isSynced: const Value(true),
+          ),
+        );
+
+        // Update todo items
+        if (noteData.containsKey('todoItems')) {
+          // Delete existing items
+          await (_database.delete(_database.todoItemsV2)
+                ..where((tbl) => tbl.todoListNoteUuid.equals(uuid)))
+              .go();
+
+          // Insert new items
+          final items = noteData['todoItems'] as List;
+          for (final item in items) {
+            await _database.into(_database.todoItemsV2).insert(
+              TodoItemsV2Companion(
+                uuid: Value(item['uuid'] as String),
+                todoListNoteUuid: Value(uuid),
+                content: Value(item['text'] as String),
+                isCompleted: Value(item['isDone'] as bool),
+                orderIndex: Value(item['orderIndex'] as int),
+                createdAt: Value(serverUpdatedAt),
+                updatedAt: Value(serverUpdatedAt),
+                isSynced: const Value(true),
+              ),
+            );
+          }
+        }
+        break;
+
+      case 'reminder':
+        await (_database.update(_database.reminderNotesV2)
+              ..where((tbl) => tbl.uuid.equals(uuid)))
+            .write(
+          ReminderNotesV2Companion(
+            title: Value(title),
+            description: Value(noteData['reminderDescription'] as String?),
+            reminderTime: Value(DateTime.parse(noteData['reminderTime'] as String)),
+            isTriggered: Value(noteData['isTriggered'] as bool? ?? false),
+            isPinned: Value(isPinned),
+            isArchived: Value(isArchived),
+            isDeleted: Value(isDeleted),
+            updatedAt: Value(serverUpdatedAt),
+            isSynced: const Value(true),
+          ),
+        );
+        break;
+    }
+
+    debugPrint('✅ [ApiSync] Updated V2 note: $uuid');
+  }
+
+  /// Create new V2 note from downloaded data
   Future<void> _createNoteFromData(
     String clientNoteUuid,
     Map<String, dynamic> noteData,
   ) async {
     try {
       debugPrint(
-          '📝 [ApiSync] Creating new note from server data (uuid: $clientNoteUuid)');
+          '📝 [ApiSync] Creating new V2 note from server data (uuid: $clientNoteUuid)');
 
       final noteType = noteData['noteType'] as String;
+      final createdAt = DateTime.parse(noteData['createdAt'] as String);
+      final updatedAt = DateTime.parse(noteData['updatedAt'] as String);
+      final title = noteData['noteTitle'] as String?;
+      final isPinned = noteData['isPinned'] as bool? ?? false;
+      final isArchived = noteData['isArchived'] as bool? ?? false;
+      final isDeleted = noteData['isDeleted'] as bool? ?? false;
 
-      // Create base note with the UUID from server
-      final noteId = await _database.into(_database.notes).insert(
-            NotesCompanion(
-              uuid: Value(clientNoteUuid),
-              noteTitle: Value(noteData['noteTitle'] as String?),
-              noteType: Value(noteType),
-              isPinned: Value(noteData['isPinned'] as bool? ?? false),
-              isArchived: Value(noteData['isArchived'] as bool? ?? false),
-              isDeleted: Value(noteData['isDeleted'] as bool? ?? false),
-              createdAt: Value(DateTime.parse(noteData['createdAt'] as String)),
-              updatedAt: Value(DateTime.parse(noteData['updatedAt'] as String)),
-              isSynced:
-                  Value(true), // Mark as synced since we got it from server
-            ),
-          );
-
-      // Create type-specific data
+      // Create type-specific note in V2 tables
       switch (noteType) {
         case 'text':
-          if (noteData.containsKey('content')) {
-            await _database.into(_database.textNotes).insert(
-                  TextNotesCompanion(
-                    noteId: Value(noteId),
-                    content: Value(noteData['content'] as String?),
-                  ),
-                );
-          }
+          await _database.into(_database.textNotesV2).insert(
+            TextNotesV2Companion(
+              uuid: Value(clientNoteUuid),
+              title: Value(title),
+              content: Value(noteData['content'] as String? ?? ''),
+              isPinned: Value(isPinned),
+              isArchived: Value(isArchived),
+              isDeleted: Value(isDeleted),
+              createdAt: Value(createdAt),
+              updatedAt: Value(updatedAt),
+              isSynced: const Value(true), // Mark as synced
+            ),
+          );
+          debugPrint('✅ [ApiSync] Created text note V2: $clientNoteUuid');
           break;
 
         case 'audio':
-          if (noteData.containsKey('audioFilePath')) {
-            await _database.into(_database.audioNotes).insert(
-                  AudioNotesCompanion(
-                    noteId: Value(noteId),
-                    audioFilePath: Value(noteData['audioFilePath'] as String),
-                    durationSeconds: Value(noteData['audioDuration'] as int?),
-                    recordedAt:
-                        Value(DateTime.parse(noteData['createdAt'] as String)),
-                  ),
-                );
+          final serverAudioPath = noteData['audioFilePath'] as String? ?? '';
+
+          await _database.into(_database.voiceNotesV2).insert(
+            VoiceNotesV2Companion(
+              uuid: Value(clientNoteUuid),
+              title: Value(title),
+              audioFilePath: Value(serverAudioPath),
+              durationSeconds: Value(noteData['audioDuration'] as int?),
+              transcription: Value(noteData['transcription'] as String?),
+              recordedAt: Value(noteData['recordedAt'] != null
+                  ? DateTime.parse(noteData['recordedAt'] as String)
+                  : createdAt),
+              isPinned: Value(isPinned),
+              isArchived: Value(isArchived),
+              isDeleted: Value(isDeleted),
+              createdAt: Value(createdAt),
+              updatedAt: Value(updatedAt),
+              isSynced: const Value(true), // Mark as synced
+            ),
+          );
+          debugPrint('✅ [ApiSync] Created voice note V2: $clientNoteUuid');
+
+          // Download audio file if it's a server path
+          if (serverAudioPath.isNotEmpty && !serverAudioPath.startsWith('/data/')) {
+            await _downloadAudioFile(serverAudioPath, clientNoteUuid);
           }
           break;
 
         case 'todo':
-          // Create todo note entry
-          await _database.into(_database.todoNotes).insert(
-                TodoNotesCompanion(
-                  noteId: Value(noteId),
-                  totalItems: Value(0),
-                  completedItems: Value(0),
-                ),
-              );
+          // Create todo list note
+          await _database.into(_database.todoListNotesV2).insert(
+            TodoListNotesV2Companion(
+              uuid: Value(clientNoteUuid),
+              title: Value(title),
+              isPinned: Value(isPinned),
+              isArchived: Value(isArchived),
+              isDeleted: Value(isDeleted),
+              createdAt: Value(createdAt),
+              updatedAt: Value(updatedAt),
+              isSynced: const Value(true), // Mark as synced
+            ),
+          );
 
-          // Create todo items with UUIDs
+          // Create todo items
           if (noteData.containsKey('todoItems')) {
             final items = noteData['todoItems'] as List;
             for (final item in items) {
-              await _database.into(_database.noteTodoItems).insert(
-                    NoteTodoItemsCompanion(
-                      uuid: Value(item['uuid'] as String),
-                      noteId: Value(noteId),
-                      noteUuid: Value(clientNoteUuid),
-                      todoTitle: Value(item['text'] as String),
-                      isDone: Value(item['isDone'] as bool),
-                      orderIndex: Value(item['orderIndex'] as int),
-                    ),
-                  );
+              await _database.into(_database.todoItemsV2).insert(
+                TodoItemsV2Companion(
+                  uuid: Value(item['uuid'] as String),
+                  todoListNoteId: const Value.absent(), // Will be set by cascade
+                  todoListNoteUuid: Value(clientNoteUuid),
+                  content: Value(item['text'] as String),
+                  isCompleted: Value(item['isDone'] as bool),
+                  orderIndex: Value(item['orderIndex'] as int),
+                  createdAt: Value(createdAt),
+                  updatedAt: Value(updatedAt),
+                  isSynced: const Value(true),
+                ),
+              );
             }
+            debugPrint('✅ [ApiSync] Created todo note V2 with ${items.length} items: $clientNoteUuid');
           }
           break;
 
         case 'reminder':
-          if (noteData.containsKey('reminderTime')) {
-            await _database.into(_database.reminderNotes).insert(
-                  ReminderNotesCompanion(
-                    noteId: Value(noteId),
-                    description:
-                        Value(noteData['reminderDescription'] as String?),
-                    reminderTime: Value(
-                        DateTime.parse(noteData['reminderTime'] as String)),
-                  ),
-                );
-          }
+          await _database.into(_database.reminderNotesV2).insert(
+            ReminderNotesV2Companion(
+              uuid: Value(clientNoteUuid),
+              title: Value(title),
+              description: Value(noteData['reminderDescription'] as String?),
+              reminderTime: Value(DateTime.parse(noteData['reminderTime'] as String)),
+              isTriggered: Value(noteData['isTriggered'] as bool? ?? false),
+              isPinned: Value(isPinned),
+              isArchived: Value(isArchived),
+              isDeleted: Value(isDeleted),
+              createdAt: Value(createdAt),
+              updatedAt: Value(updatedAt),
+              isSynced: const Value(true), // Mark as synced
+            ),
+          );
+          debugPrint('✅ [ApiSync] Created reminder note V2: $clientNoteUuid');
           break;
+
+        default:
+          debugPrint('⚠️ [ApiSync] Unknown note type: $noteType');
+          return;
       }
 
-      // Create folder relationships (using folder UUIDs)
-      if (noteData.containsKey('folderUuids')) {
-        final folderUuids = (noteData['folderUuids'] as List).cast<String>();
+      // TODO: Handle folder relationships for V2 notes
+      // For now, skip folder sync as V2 architecture may handle this differently
 
-        for (final folderUuid in folderUuids) {
-          // Look up folder ID from UUID
-          final folder = await (_database.select(_database.noteFolders)
-                ..where((tbl) => tbl.uuid.equals(folderUuid)))
-              .getSingleOrNull();
-
-          if (folder != null) {
-            await _database.into(_database.noteFolderRelations).insert(
-                  NoteFolderRelationsCompanion(
-                    noteId: Value(noteId),
-                    noteFolderId: Value(folder.noteFolderId),
-                  ),
-                );
-          }
-        }
-        debugPrint(
-            '✅ [ApiSync] Created ${folderUuids.length} folder relations for note $clientNoteUuid');
-      }
-
-      debugPrint(
-          '✅ [ApiSync] Created note $clientNoteUuid');
+      debugPrint('✅ [ApiSync] Successfully created V2 note $clientNoteUuid');
     } catch (e, stackTrace) {
-      debugPrint('❌ [ApiSync] Failed to create note: $e');
+      debugPrint('❌ [ApiSync] Failed to create V2 note: $e');
       debugPrint('Stack trace: $stackTrace');
+    }
+  }
+
+  /// Download audio file from backend to local storage
+  Future<void> _downloadAudioFile(String serverFilePath, String noteUuid) async {
+    try {
+      debugPrint('📥 [ApiSync] Downloading audio file: $serverFilePath');
+
+      // Get app documents directory
+      final appDir = await getApplicationDocumentsDirectory();
+      final audioDir = Directory('${appDir.path}/audio');
+      if (!await audioDir.exists()) {
+        await audioDir.create(recursive: true);
+      }
+
+      // Generate local filename using note UUID
+      final extension = serverFilePath.split('.').last;
+      final localFileName = '$noteUuid.$extension';
+      final localFilePath = '${audioDir.path}/$localFileName';
+
+      // Check if file already exists
+      final localFile = File(localFilePath);
+      if (await localFile.exists()) {
+        debugPrint('ℹ️ [ApiSync] Audio file already exists locally: $localFilePath');
+
+        // Update voice note with local path
+        await (_database.update(_database.voiceNotesV2)
+              ..where((tbl) => tbl.uuid.equals(noteUuid)))
+            .write(VoiceNotesV2Companion(
+          audioFilePath: Value(localFilePath),
+        ));
+        return;
+      }
+
+      // Download audio file
+      await _apiService.downloadAudioFile(serverFilePath, localFilePath);
+      debugPrint('✅ [ApiSync] Audio downloaded to: $localFilePath');
+
+      // Update voice note with local path
+      await (_database.update(_database.voiceNotesV2)
+            ..where((tbl) => tbl.uuid.equals(noteUuid)))
+          .write(VoiceNotesV2Companion(
+        audioFilePath: Value(localFilePath),
+      ));
+
+      debugPrint('✅ [ApiSync] Updated voice note with local path');
+    } catch (e) {
+      debugPrint('❌ [ApiSync] Failed to download audio: $e');
+      // Don't throw - audio download failure shouldn't break sync
     }
   }
 
@@ -743,6 +1187,49 @@ class ApiSyncService extends SyncService {
     return 'flutter_device_${DateTime.now().millisecondsSinceEpoch}';
   }
 
+  /// Get note by UUID from V2 tables
+  /// Returns a wrapper object indicating which table the note was found in
+  Future<_V2NoteWrapper?> _getNoteByUuidV2(String uuid) async {
+    // Check text notes
+    final textNote = await (_database.select(_database.textNotesV2)
+          ..where((tbl) => tbl.uuid.equals(uuid)))
+        .getSingleOrNull();
+    if (textNote != null) {
+      return _V2NoteWrapper(type: 'text', note: textNote);
+    }
+
+    // Check voice notes
+    final voiceNote = await (_database.select(_database.voiceNotesV2)
+          ..where((tbl) => tbl.uuid.equals(uuid)))
+        .getSingleOrNull();
+    if (voiceNote != null) {
+      return _V2NoteWrapper(type: 'voice', note: voiceNote);
+    }
+
+    // Check todo notes
+    final todoNote = await (_database.select(_database.todoListNotesV2)
+          ..where((tbl) => tbl.uuid.equals(uuid)))
+        .getSingleOrNull();
+    if (todoNote != null) {
+      // Also get todo items
+      final todoItems = await (_database.select(_database.todoItemsV2)
+            ..where((tbl) => tbl.todoListNoteUuid.equals(uuid)))
+          .get();
+      return _V2NoteWrapper(type: 'todo', note: todoNote, todoItems: todoItems);
+    }
+
+    // Check reminder notes
+    final reminderNote = await (_database.select(_database.reminderNotesV2)
+          ..where((tbl) => tbl.uuid.equals(uuid)))
+        .getSingleOrNull();
+    if (reminderNote != null) {
+      return _V2NoteWrapper(type: 'reminder', note: reminderNote);
+    }
+
+    return null;
+  }
+
+  /// OLD METHOD - Keep for reference
   /// Get note by UUID
   Future<Note?> _getNoteByUuid(String uuid) async {
     return await (_database.select(_database.notes)
