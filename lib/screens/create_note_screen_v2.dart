@@ -1956,17 +1956,18 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Note'),
         content: const Text('Are you sure you want to delete this note?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              // Close the dialog first
+              Navigator.pop(dialogContext);
 
               // Delete based on note type
               switch (selectedNoteType) {
@@ -1984,6 +1985,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   break;
               }
 
+              // Navigate back to previous screen using screen context, not dialog context
               if (mounted) {
                 Navigator.of(context).pop();
               }
