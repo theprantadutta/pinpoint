@@ -20,6 +20,10 @@ class SyncResult {
   final int notesSynced;
   final int foldersSynced;
   final int tagsSynced;
+  final int remindersSynced;
+  final int notesFailed;
+  final List<String> errors;
+  final int decryptionErrors;
 
   SyncResult({
     required this.success,
@@ -27,7 +31,29 @@ class SyncResult {
     this.notesSynced = 0,
     this.foldersSynced = 0,
     this.tagsSynced = 0,
+    this.remindersSynced = 0,
+    this.notesFailed = 0,
+    this.errors = const [],
+    this.decryptionErrors = 0,
   });
+
+  /// Get a user-friendly summary of the sync result
+  String get detailedSummary {
+    final parts = <String>[];
+
+    if (notesSynced > 0) parts.add('$notesSynced notes');
+    if (foldersSynced > 0) parts.add('$foldersSynced folders');
+    if (remindersSynced > 0) parts.add('$remindersSynced reminders');
+    if (tagsSynced > 0) parts.add('$tagsSynced tags');
+
+    final restored = parts.isEmpty ? 'No data' : parts.join(', ');
+
+    if (notesFailed > 0 || decryptionErrors > 0) {
+      return '$restored restored. $notesFailed failed${decryptionErrors > 0 ? ' ($decryptionErrors decryption errors)' : ''}';
+    }
+
+    return parts.isEmpty ? message : '$restored restored successfully';
+  }
 }
 
 /// Base sync service class

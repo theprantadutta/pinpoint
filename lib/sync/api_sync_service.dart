@@ -53,7 +53,7 @@ class ApiSyncService extends SyncService {
       debugPrint('🚀 [ApiSync] Direction: $direction');
 
       // CRITICAL: ALWAYS sync folders FIRST to prevent race conditions
-      debugPrint('\n📁 [ApiSync] Phase 1/2: Syncing folders...');
+      debugPrint('\n📁 [ApiSync] Phase 1/3: Syncing folders...');
       final folderResult = await _folderSyncService.syncFolders();
 
       if (!folderResult.success) {
@@ -67,11 +67,24 @@ class ApiSyncService extends SyncService {
       debugPrint('✅ [ApiSync] Folders synced: ${folderResult.foldersSynced}');
 
       // THEN sync notes using parent class logic
-      debugPrint('\n📝 [ApiSync] Phase 2/2: Syncing notes...');
+      debugPrint('\n📝 [ApiSync] Phase 2/3: Syncing notes...');
       final noteResult = await super.sync(direction: direction);
 
+      // FINALLY sync reminders (independent note type in V2 architecture)
+      debugPrint('\n⏰ [ApiSync] Phase 3/3: Syncing reminders...');
+      int remindersSynced = 0;
+      if (direction == SyncDirection.download || direction == SyncDirection.both) {
+        try {
+          remindersSynced = await _downloadReminders();
+          debugPrint('✅ [ApiSync] Reminders synced: $remindersSynced');
+        } catch (e) {
+          debugPrint('⚠️ [ApiSync] Reminder sync failed (non-critical): $e');
+          // Don't fail the entire sync if reminders fail
+        }
+      }
+
       debugPrint('\n🚀 [ApiSync] ========== SYNC COMPLETE ==========');
-      debugPrint('📊 [ApiSync] Folders: ${folderResult.foldersSynced}, Notes: ${noteResult.notesSynced}');
+      debugPrint('📊 [ApiSync] Folders: ${folderResult.foldersSynced}, Notes: ${noteResult.notesSynced}, Reminders: $remindersSynced');
 
       return SyncResult(
         success: noteResult.success,
@@ -79,6 +92,10 @@ class ApiSyncService extends SyncService {
         notesSynced: noteResult.notesSynced,
         foldersSynced: folderResult.foldersSynced,
         tagsSynced: noteResult.tagsSynced,
+        remindersSynced: remindersSynced,
+        notesFailed: noteResult.notesFailed,
+        errors: noteResult.errors,
+        decryptionErrors: noteResult.decryptionErrors,
       );
     } catch (e, st) {
       debugPrint('❌ [ApiSync] Sync failed: $e');
@@ -195,6 +212,9 @@ class ApiSyncService extends SyncService {
 
       int successCount = 0;
       int conflictCount = 0;
+      int failedCount = 0;
+      int decryptionErrorCount = 0;
+      final List<String> errors = [];
 
       // Process each note
       for (final encryptedNote in response) {
@@ -264,25 +284,46 @@ class ApiSyncService extends SyncService {
             successCount++;
           }
         } catch (e) {
-          debugPrint('❌ [ApiSync] Failed to process note: $e');
-          // Continue with other notes
+          failedCount++;
+          final errorMsg = e.toString();
+
+          // Check if it's a decryption error
+          if (errorMsg.contains('decrypt') || errorMsg.contains('Decryption') ||
+              errorMsg.contains('Invalid') || errorMsg.contains('cipher')) {
+            decryptionErrorCount++;
+            debugPrint('❌ [ApiSync] DECRYPTION FAILED for note: $e');
+            errors.add('Decryption failed: ${errorMsg.length > 100 ? '${errorMsg.substring(0, 100)}...' : errorMsg}');
+          } else {
+            debugPrint('❌ [ApiSync] Failed to process note: $e');
+            errors.add('Processing failed: ${errorMsg.length > 100 ? '${errorMsg.substring(0, 100)}...' : errorMsg}');
+          }
         }
       }
 
       // Update last sync time
       _lastSyncTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
-      final message = conflictCount > 0
-          ? 'Downloaded $successCount notes, $conflictCount conflicts (kept local)'
-          : 'Downloaded $successCount notes';
+      final messageParts = <String>[];
+      if (successCount > 0) messageParts.add('$successCount notes restored');
+      if (conflictCount > 0) messageParts.add('$conflictCount conflicts (kept local)');
+      if (failedCount > 0) messageParts.add('$failedCount failed');
+
+      final message = messageParts.isEmpty ? 'No changes' : messageParts.join(', ');
 
       debugPrint('✅ [ApiSync] $message');
+      if (decryptionErrorCount > 0) {
+        debugPrint('⚠️ [ApiSync] CRITICAL: $decryptionErrorCount decryption errors detected!');
+        debugPrint('⚠️ [ApiSync] This usually means the encryption key is incorrect.');
+      }
       debugPrint('🔽 [ApiSync] ========== DOWNLOAD COMPLETE ==========\n');
 
       return SyncResult(
-        success: true,
+        success: failedCount == 0 || successCount > 0, // Success if at least some notes worked
         message: message,
         notesSynced: successCount,
+        notesFailed: failedCount,
+        errors: errors,
+        decryptionErrors: decryptionErrorCount,
       );
     } catch (e) {
       debugPrint('❌ [ApiSync] Download failed: $e');
@@ -707,5 +748,91 @@ class ApiSyncService extends SyncService {
     return await (_database.select(_database.notes)
           ..where((tbl) => tbl.uuid.equals(uuid)))
         .getSingleOrNull();
+  }
+
+  /// Download and restore reminders from backend
+  Future<int> _downloadReminders() async {
+    try {
+      debugPrint('⏰ [ApiSync] Fetching reminders from backend...');
+
+      // Fetch all active reminders from backend
+      final backendReminders = await _apiService.getReminders(
+        includeTriggered: false, // Only get active reminders
+      );
+
+      debugPrint('⏰ [ApiSync] Downloaded ${backendReminders.length} reminders from server');
+
+      if (backendReminders.isEmpty) {
+        return 0;
+      }
+
+      int restoredCount = 0;
+
+      for (final reminderData in backendReminders) {
+        try {
+          final noteUuid = reminderData['note_uuid'] as String;
+          final title = reminderData['title'] as String?;
+          final description = reminderData['description'] as String?;
+          final reminderTimeStr = reminderData['reminder_time'] as String;
+          final reminderTime = DateTime.parse(reminderTimeStr);
+
+          debugPrint('⏰ [ApiSync] Processing reminder for note: $noteUuid');
+
+          // Check if reminder already exists locally
+          final existing = await (_database.select(_database.reminderNotesV2)
+                ..where((tbl) => tbl.uuid.equals(noteUuid)))
+              .getSingleOrNull();
+
+          if (existing != null) {
+            // Update existing reminder if server version is different
+            if (existing.reminderTime != reminderTime ||
+                existing.title != title ||
+                existing.description != description) {
+              await (_database.update(_database.reminderNotesV2)
+                    ..where((tbl) => tbl.uuid.equals(noteUuid)))
+                  .write(ReminderNotesV2Companion(
+                title: Value(title),
+                description: Value(description),
+                reminderTime: Value(reminderTime),
+                isSynced: const Value(true),
+                updatedAt: Value(DateTime.now()),
+              ));
+              debugPrint('✅ [ApiSync] Updated reminder for note $noteUuid');
+              restoredCount++;
+            } else {
+              debugPrint('ℹ️ [ApiSync] Reminder $noteUuid already up to date');
+            }
+          } else {
+            // Create new reminder from server data
+            await _database.into(_database.reminderNotesV2).insert(
+                  ReminderNotesV2Companion(
+                    uuid: Value(noteUuid),
+                    title: Value(title),
+                    description: Value(description),
+                    reminderTime: Value(reminderTime),
+                    isTriggered: const Value(false),
+                    isPinned: const Value(false),
+                    isArchived: const Value(false),
+                    isDeleted: const Value(false),
+                    isSynced: const Value(true),
+                    createdAt: Value(DateTime.now()),
+                    updatedAt: Value(DateTime.now()),
+                  ),
+                );
+            debugPrint('✅ [ApiSync] Created reminder for note $noteUuid');
+            restoredCount++;
+          }
+        } catch (e) {
+          debugPrint('❌ [ApiSync] Failed to process reminder: $e');
+          // Continue with other reminders
+        }
+      }
+
+      debugPrint('⏰ [ApiSync] Restored $restoredCount reminders');
+      return restoredCount;
+    } catch (e) {
+      debugPrint('❌ [ApiSync] Failed to download reminders: $e');
+      rethrow;
+    }
   }
 }

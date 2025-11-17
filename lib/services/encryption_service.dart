@@ -86,42 +86,56 @@ class SecureEncryptionService {
 
   /// Force fetch encryption key from cloud and replace local key
   /// Use this after login to ensure we have the correct key from cloud
-  static Future<bool> syncKeyFromCloud(dynamic apiService) async {
-    try {
-      debugPrint('🔄 [Encryption] Force fetching encryption key from cloud...');
-      final cloudKey = await apiService.getEncryptionKey();
+  /// Includes retry logic for reliability
+  static Future<bool> syncKeyFromCloud(dynamic apiService, {int maxRetries = 3}) async {
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        debugPrint('🔄 [Encryption] Fetching encryption key from cloud (attempt $attempt/$maxRetries)...');
+        final cloudKey = await apiService.getEncryptionKey();
 
-      if (cloudKey != null) {
-        debugPrint(
-            '✅ [Encryption] Retrieved key from cloud, replacing local key');
+        if (cloudKey != null) {
+          debugPrint(
+              '✅ [Encryption] Retrieved key from cloud, replacing local key');
 
-        // Replace local key with cloud key
-        await _storage.write(key: _keyStorageKey, value: cloudKey);
+          // Replace local key with cloud key
+          await _storage.write(key: _keyStorageKey, value: cloudKey);
 
-        // Reinitialize encrypter with new key
-        final key = enc.Key.fromBase64(cloudKey);
-        _encrypter = enc.Encrypter(enc.AES(key));
+          // Reinitialize encrypter with new key
+          final key = enc.Key.fromBase64(cloudKey);
+          _encrypter = enc.Encrypter(enc.AES(key));
 
-        debugPrint('✅ [Encryption] Successfully synced key from cloud');
-        return true;
-      } else {
-        debugPrint('ℹ️ [Encryption] No key found in cloud');
-
-        // Upload current local key to cloud if we have one
-        String? localKey = await _storage.read(key: _keyStorageKey);
-        if (localKey != null) {
-          debugPrint('☁️ [Encryption] Uploading local key to cloud...');
-          await apiService.storeEncryptionKey(localKey);
-          debugPrint('✅ [Encryption] Local key uploaded to cloud');
+          debugPrint('✅ [Encryption] Successfully synced key from cloud');
           return true;
-        }
+        } else {
+          debugPrint('ℹ️ [Encryption] No key found in cloud');
 
-        return false;
+          // Upload current local key to cloud if we have one
+          String? localKey = await _storage.read(key: _keyStorageKey);
+          if (localKey != null) {
+            debugPrint('☁️ [Encryption] Uploading local key to cloud...');
+            await apiService.storeEncryptionKey(localKey);
+            debugPrint('✅ [Encryption] Local key uploaded to cloud');
+            return true;
+          }
+
+          return false;
+        }
+      } catch (e) {
+        debugPrint('❌ [Encryption] Attempt $attempt failed: $e');
+
+        if (attempt < maxRetries) {
+          // Wait before retrying (exponential backoff)
+          final delaySeconds = attempt * 2; // 2s, 4s, 6s...
+          debugPrint('⏳ [Encryption] Retrying in ${delaySeconds}s...');
+          await Future.delayed(Duration(seconds: delaySeconds));
+        } else {
+          debugPrint('❌ [Encryption] All $maxRetries attempts failed to sync key from cloud');
+          return false;
+        }
       }
-    } catch (e) {
-      debugPrint('❌ [Encryption] Failed to sync key from cloud: $e');
-      return false;
     }
+
+    return false;
   }
 
   // Encrypt with random IV (more secure)

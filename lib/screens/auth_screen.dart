@@ -109,13 +109,28 @@ class _AuthScreenState extends State<AuthScreen> {
 
       if (result.success) {
         debugPrint('✅ [Auth] Initial sync successful: ${result.message}');
-        debugPrint('   - Notes synced count: ${result.notesSynced}');
-        if (result.notesSynced > 0) {
-          debugPrint('   - ✅ Restored ${result.notesSynced} notes from cloud');
-        } else {
-          debugPrint(
-              '   - ⚠️ No notes were synced (cloud might be empty or decryption failed)');
+        debugPrint('   - Notes synced: ${result.notesSynced}');
+        debugPrint('   - Folders synced: ${result.foldersSynced}');
+        debugPrint('   - Reminders synced: ${result.remindersSynced}');
+        if (result.notesFailed > 0) {
+          debugPrint('   - ⚠️ Notes failed: ${result.notesFailed}');
         }
+        if (result.decryptionErrors > 0) {
+          debugPrint('   - ❌ Decryption errors: ${result.decryptionErrors}');
+        }
+
+        // Show sync result summary to user
+        if (mounted) {
+          final hasData = result.notesSynced > 0 ||
+              result.foldersSynced > 0 ||
+              result.remindersSynced > 0;
+          final hasErrors = result.notesFailed > 0 || result.decryptionErrors > 0;
+
+          if (hasData || hasErrors) {
+            await _showSyncResultDialog(result);
+          }
+        }
+
         return true;
       } else {
         debugPrint('⚠️ [Auth] Initial sync failed: ${result.message}');
@@ -188,6 +203,118 @@ class _AuthScreenState extends State<AuthScreen> {
 
       return false; // Continue without sync
     }
+  }
+
+  /// Show sync result dialog with detailed information
+  Future<void> _showSyncResultDialog(SyncResult result) async {
+    final hasErrors = result.notesFailed > 0 || result.decryptionErrors > 0;
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              hasErrors ? Icons.warning_amber : Icons.check_circle,
+              color: hasErrors ? Colors.orange : Colors.green,
+            ),
+            const SizedBox(width: 8),
+            Text(hasErrors ? 'Sync Completed with Errors' : 'Sync Successful'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (result.notesSynced > 0) ...[
+              _buildSyncStat('Notes', result.notesSynced, Icons.note),
+            ],
+            if (result.foldersSynced > 0) ...[
+              const SizedBox(height: 8),
+              _buildSyncStat('Folders', result.foldersSynced, Icons.folder),
+            ],
+            if (result.remindersSynced > 0) ...[
+              const SizedBox(height: 8),
+              _buildSyncStat('Reminders', result.remindersSynced, Icons.alarm),
+            ],
+            if (result.notesFailed > 0) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              _buildSyncStat(
+                'Failed to restore',
+                result.notesFailed,
+                Icons.error_outline,
+                isError: true,
+              ),
+            ],
+            if (result.decryptionErrors > 0) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.lock_outline, color: Colors.red.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Decryption Errors',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${result.decryptionErrors} notes could not be decrypted. This usually means the encryption key is incorrect or corrupted.',
+                      style: TextStyle(fontSize: 12, color: Colors.red.shade900),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Helper widget to build sync stat row
+  Widget _buildSyncStat(String label, int count, IconData icon,
+      {bool isError = false}) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: isError ? Colors.red : Colors.blue,
+        ),
+        const SizedBox(width: 8),
+        Text('$label: '),
+        Text(
+          '$count',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isError ? Colors.red : Colors.green,
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _handleGoogleSignIn() async {
