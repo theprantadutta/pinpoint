@@ -845,8 +845,10 @@ class DriftNoteService {
       log.d(
           '[watchNotesWithDetails] start; query="$searchQuery", sort: $sortType $sortDirection, filters: $filters');
 
+      // Exclude todos AND reminders from the count
+      // Reminders are a special feature provided for free and don't count toward the 50-note limit
       String whereClause =
-          'WHERE n.is_archived = 0 AND n.is_deleted = 0 AND n.note_type != \'todo\'';
+          'WHERE n.is_archived = 0 AND n.is_deleted = 0 AND n.note_type != \'todo\' AND n.note_type != \'reminder\'';
       List<dynamic> variables = [];
 
       // Search in title, content, todo items, folder names, and attachment names (case-insensitive)

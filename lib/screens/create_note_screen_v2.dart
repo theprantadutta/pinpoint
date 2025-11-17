@@ -12,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:fleather/fleather.dart';
 
 import '../components/create_note_screen/create_note_categories.dart';
+import '../components/create_note_screen/reminder_type/reminder_type_content.dart';
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
 import '../constants/constants.dart';
 import '../database/database.dart';
@@ -75,8 +76,15 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
   // Reminder fields
   DateTime? _reminderTime;
-  late TextEditingController _reminderDescriptionController;
-  bool _isReminderScheduledOnBackend = false;
+  late TextEditingController _reminderNotificationTitleController;
+  late TextEditingController _reminderNotificationContentController;
+  late TextEditingController _reminderDescriptionController; // Deprecated, but kept for backward compatibility
+
+  // Recurrence fields
+  String _recurrenceType = 'once'; // once, hourly, daily, weekly, monthly, yearly
+  int _recurrenceInterval = 1;
+  String _recurrenceEndType = 'never'; // never, after_occurrences, on_date
+  String? _recurrenceEndValue;
 
   // Save tracking
   int? _currentNoteId; // Track saved note ID
@@ -96,11 +104,15 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     _titleFocusNode = FocusNode();
     _fleatherController = FleatherController();
     _textContentFocusNode = FocusNode();
-    _reminderDescriptionController = TextEditingController();
+    _reminderNotificationTitleController = TextEditingController();
+    _reminderNotificationContentController = TextEditingController();
+    _reminderDescriptionController = TextEditingController(); // Deprecated
 
     // Add auto-save listeners
     _titleController.addListener(_scheduleAutoSave);
     _fleatherController.addListener(_scheduleAutoSave);
+    _reminderNotificationTitleController.addListener(_scheduleAutoSave);
+    _reminderNotificationContentController.addListener(_scheduleAutoSave);
     _reminderDescriptionController.addListener(_scheduleAutoSave);
 
     // Add audio player listeners for playback tracking
@@ -145,6 +157,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     _titleFocusNode.dispose();
     _fleatherController.dispose();
     _textContentFocusNode.dispose();
+    _reminderNotificationTitleController.dispose();
+    _reminderNotificationContentController.dispose();
     _reminderDescriptionController.dispose();
     _recordingTimer?.cancel();
     _audioRecorder.dispose();
@@ -226,8 +240,13 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         final reminderNote = await ReminderNoteService.getReminderNote(note.id);
         if (reminderNote != null) {
           _reminderTime = reminderNote.reminderTime;
-          _reminderDescriptionController.text = reminderNote.description ?? '';
-          _isReminderScheduledOnBackend = reminderNote.isSynced ?? false;
+          _reminderNotificationTitleController.text = reminderNote.notificationTitle ?? reminderNote.title ?? '';
+          _reminderNotificationContentController.text = reminderNote.notificationContent ?? '';
+          _reminderDescriptionController.text = reminderNote.description ?? ''; // Deprecated, but kept for backward compatibility
+          _recurrenceType = reminderNote.recurrenceType ?? 'once';
+          _recurrenceInterval = reminderNote.recurrenceInterval ?? 1;
+          _recurrenceEndType = reminderNote.recurrenceEndType ?? 'never';
+          _recurrenceEndValue = reminderNote.recurrenceEndValue;
         }
       }
 
@@ -413,24 +432,51 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       throw Exception('Reminder time is required');
     }
 
+    // Validate that reminder time is in the future
+    if (_reminderTime!.isBefore(DateTime.now())) {
+      throw Exception('Reminder time must be in the future');
+    }
+
+    // Use notification title if provided, otherwise fall back to note title
+    final notificationTitle = _reminderNotificationTitleController.text.isNotEmpty
+        ? _reminderNotificationTitleController.text
+        : title;
+
     if (_currentNoteId != null) {
       // Update existing note
       await ReminderNoteService.updateReminderNote(
         noteId: _currentNoteId!,
         title: title,
+        notificationTitle: notificationTitle,
+        notificationContent: _reminderNotificationContentController.text.isNotEmpty
+            ? _reminderNotificationContentController.text
+            : null,
         reminderTime: _reminderTime,
         folders: selectedFolders,
-        description: _reminderDescriptionController.text,
+        recurrenceType: _recurrenceType,
+        recurrenceInterval: _recurrenceInterval,
+        recurrenceEndType: _recurrenceEndType,
+        recurrenceEndValue: _recurrenceEndValue,
       );
       return _currentNoteId!;
     } else {
-      // Create new note
-      return await ReminderNoteService.createReminderNote(
+      // Create new note(s) - may create multiple for recurring reminders
+      final noteIds = await ReminderNoteService.createReminderNote(
         title: title,
+        notificationTitle: notificationTitle,
+        notificationContent: _reminderNotificationContentController.text.isNotEmpty
+            ? _reminderNotificationContentController.text
+            : null,
         reminderTime: _reminderTime!,
         folders: selectedFolders,
-        description: _reminderDescriptionController.text,
+        recurrenceType: _recurrenceType,
+        recurrenceInterval: _recurrenceInterval,
+        recurrenceEndType: _recurrenceEndType,
+        recurrenceEndValue: _recurrenceEndValue,
       );
+
+      // Return the first note ID (parent/primary reminder)
+      return noteIds.first;
     }
   }
 
@@ -1454,247 +1500,40 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   }
 
   Widget _buildReminderContent() {
-    final cs = Theme.of(context).colorScheme;
-
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Description Field
-            Text(
-              "Description",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: cs.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _reminderDescriptionController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: "What would you like to be reminded about?",
-                filled: true,
-                fillColor: cs.surfaceContainerLowest,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: BorderSide(
-                    color: cs.outline.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: BorderSide(
-                    color: cs.primary.withValues(alpha: 0.5),
-                    width: 1.5,
-                  ),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: BorderSide(
-                    color: cs.outline.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.all(16),
-              ),
-              style: TextStyle(
-                fontSize: 15,
-                color: cs.onSurface,
-                height: 1.5,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Reminder Time
-            Text(
-              "Reminder Time",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: cs.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: _pickReminderDateTime,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerLowest,
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(
-                    color: cs.outline.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Symbols.schedule,
-                      color: cs.primary,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        _reminderTime == null
-                            ? "Select Date & Time"
-                            : _formatReminderDateTime(_reminderTime!),
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: _reminderTime == null
-                              ? cs.onSurface.withValues(alpha: 0.5)
-                              : cs.onSurface,
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      Symbols.chevron_right,
-                      size: 18,
-                      color: cs.onSurface.withValues(alpha: 0.3),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Schedule Reminder Button
-            if (_reminderTime != null) ...[
-              const SizedBox(height: 24),
-              if (_isReminderScheduledOnBackend) ...[
-                // Already scheduled on backend
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: null, // Disabled - already scheduled
-                    icon: const Icon(Symbols.notifications_active),
-                    label: Text(
-                      'Notification Scheduled',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: cs.primaryContainer,
-                      foregroundColor: cs.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    'Backend will send notification to all your devices',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: cs.onSurface.withValues(alpha: 0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ] else ...[
-                // Not yet scheduled - show button to schedule
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: _currentNoteId == null
-                        ? null
-                        : () async {
-                            PinpointHaptics.light();
-
-                            // Save first if needed
-                            if (!_isSaving) {
-                              await _saveNote();
-                            }
-
-                            if (_currentNoteId != null && mounted) {
-                              try {
-                                // Schedule on backend
-                                await ReminderNoteService.scheduleReminderOnBackend(_currentNoteId!);
-
-                                setState(() {
-                                  _isReminderScheduledOnBackend = true;
-                                });
-
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Notification scheduled for ${_formatReminderDateTime(_reminderTime!)}',
-                                      ),
-                                      behavior: SnackBarBehavior.floating,
-                                      duration: const Duration(seconds: 3),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Failed to schedule notification: $e'),
-                                      behavior: SnackBarBehavior.floating,
-                                      backgroundColor: cs.error,
-                                    ),
-                                  );
-                                }
-                              }
-                            }
-                          },
-                    icon: const Icon(Symbols.send),
-                    label: Text(
-                      'Schedule Notification',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    'Tap to schedule backend notification for all devices',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: cs.onSurface.withValues(alpha: 0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            ] else ...[
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _pickReminderDateTime,
-                  icon: const Icon(Symbols.add_alert),
-                  label: Text(
-                    'Set Reminder Time',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
+    // ReminderTypeContent already returns a SliverToBoxAdapter
+    return ReminderTypeContent(
+      notificationTitleController: _reminderNotificationTitleController,
+      notificationContentController: _reminderNotificationContentController,
+      selectedDateTime: _reminderTime,
+      recurrenceType: _recurrenceType,
+      recurrenceInterval: _recurrenceInterval,
+      recurrenceEndType: _recurrenceEndType,
+      recurrenceEndValue: _recurrenceEndValue,
+      onReminderDateTimeChanged: (DateTime selectedDateTime) {
+        setState(() {
+          _reminderTime = selectedDateTime;
+        });
+      },
+      onRecurrenceTypeChanged: (String type) {
+        setState(() {
+          _recurrenceType = type;
+        });
+      },
+      onRecurrenceIntervalChanged: (int interval) {
+        setState(() {
+          _recurrenceInterval = interval;
+        });
+      },
+      onRecurrenceEndTypeChanged: (String type) {
+        setState(() {
+          _recurrenceEndType = type;
+        });
+      },
+      onRecurrenceEndValueChanged: (String? value) {
+        setState(() {
+          _recurrenceEndValue = value;
+        });
+      },
     );
   }
 

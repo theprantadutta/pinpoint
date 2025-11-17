@@ -115,12 +115,13 @@ class SyncManager with ChangeNotifier {
       return SyncResult(success: true, message: 'Premium - no limits');
     }
 
-    // Get total note count
+    // Get total note count (excludes todos AND reminders)
+    // Reminders are a special free feature and don't count toward the 50-note limit
     try {
       final allNotes = await DriftNoteService.watchNotesWithDetails().first;
       final totalNotes = allNotes.length;
 
-      // Check if exceeds free tier limit
+      // Check if exceeds free tier limit (50 notes, excluding reminders)
       if (!premiumService.canSyncNote() || totalNotes > 50) {
         return SyncResult(
           success: false,

@@ -53,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration {
@@ -61,28 +61,56 @@ class AppDatabase extends _$AppDatabase {
       onCreate: (m) async {
         // Create all tables from scratch
         await m.createAll();
-        debugPrint('✅ [Database] Created fresh database schema v8');
+        debugPrint('✅ [Database] Created fresh database schema v9');
       },
       onUpgrade: (m, from, to) async {
-        // V7 → V8: Complete architecture redesign
-        // No migration logic needed - fresh start with new schema
-        // Old data will be lost (acceptable for development)
         debugPrint('🔄 [Database] Upgrading from v$from to v$to');
-        debugPrint('⚠️ [Database] This is a breaking change - all data will be reset');
 
-        // Drop all old tables and recreate
-        await m.deleteTable('notes');
-        await m.deleteTable('text_notes');
-        await m.deleteTable('audio_notes');
-        await m.deleteTable('todo_notes');
-        await m.deleteTable('note_todo_items');
-        await m.deleteTable('reminder_notes');
-        await m.deleteTable('note_folder_relations');
-        await m.deleteTable('note_attachments');
+        if (from == 7) {
+          // V7 → V8: Complete architecture redesign
+          // No migration logic needed - fresh start with new schema
+          // Old data will be lost (acceptable for development)
+          debugPrint('⚠️ [Database] This is a breaking change - all data will be reset');
 
-        // Create all new tables
-        await m.createAll();
-        debugPrint('✅ [Database] Migration to v8 completed - fresh schema ready');
+          // Drop all old tables and recreate
+          await m.deleteTable('notes');
+          await m.deleteTable('text_notes');
+          await m.deleteTable('audio_notes');
+          await m.deleteTable('todo_notes');
+          await m.deleteTable('note_todo_items');
+          await m.deleteTable('reminder_notes');
+          await m.deleteTable('note_folder_relations');
+          await m.deleteTable('note_attachments');
+
+          // Create all new tables
+          await m.createAll();
+          debugPrint('✅ [Database] Migration to v8 completed - fresh schema ready');
+        }
+
+        if (from == 8 && to == 9) {
+          // V8 → V9: Add recurring reminder fields
+          debugPrint('🔄 [Database] Adding recurring reminder fields to ReminderNotesV2');
+
+          await m.addColumn(reminderNotesV2, reminderNotesV2.notificationTitle);
+          await m.addColumn(reminderNotesV2, reminderNotesV2.notificationContent);
+          await m.addColumn(reminderNotesV2, reminderNotesV2.recurrenceType);
+          await m.addColumn(reminderNotesV2, reminderNotesV2.recurrenceInterval);
+          await m.addColumn(reminderNotesV2, reminderNotesV2.recurrenceEndType);
+          await m.addColumn(reminderNotesV2, reminderNotesV2.recurrenceEndValue);
+          await m.addColumn(reminderNotesV2, reminderNotesV2.parentReminderId);
+          await m.addColumn(reminderNotesV2, reminderNotesV2.occurrenceNumber);
+          await m.addColumn(reminderNotesV2, reminderNotesV2.seriesId);
+
+          // Migrate existing data: copy title to notificationTitle, description to notificationContent
+          await customStatement('''
+            UPDATE reminder_notes_v2
+            SET notification_title = COALESCE(title, ''),
+                notification_content = description
+            WHERE notification_title IS NULL
+          ''');
+
+          debugPrint('✅ [Database] Migration to v9 completed - recurring reminders ready');
+        }
       },
     );
   }

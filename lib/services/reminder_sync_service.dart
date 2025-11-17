@@ -49,8 +49,17 @@ class ReminderSyncService {
         return ReminderDto.fromLocal(
           noteUuid: note.uuid!,
           title: note.title!,
+          notificationTitle: note.notificationTitle ?? note.title!,
+          notificationContent: note.notificationContent,
           description: note.description,
           reminderTime: note.reminderTime!,
+          recurrenceType: note.recurrenceType,
+          recurrenceInterval: note.recurrenceInterval,
+          recurrenceEndType: note.recurrenceEndType,
+          recurrenceEndValue: note.recurrenceEndValue,
+          parentReminderId: note.parentReminderId,
+          occurrenceNumber: note.occurrenceNumber,
+          seriesId: note.seriesId,
         );
       }).toList();
 
