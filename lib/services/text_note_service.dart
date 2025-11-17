@@ -5,11 +5,28 @@ import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
 import '../service_locators/init_service_locators.dart';
+import '../sync/sync_manager.dart';
 
 /// Service for managing text notes with markdown support
 /// Part of Architecture V8: Independent note types
 class TextNoteService {
   TextNoteService._();
+
+  /// Trigger background sync (non-blocking)
+  static void _triggerBackgroundSync() {
+    // Don't await - run in background
+    Future.microtask(() async {
+      try {
+        final syncManager = getIt<SyncManager>();
+        debugPrint('🔄 [TextNoteService] Triggering background sync...');
+        await syncManager.upload();
+        debugPrint('✅ [TextNoteService] Background sync completed');
+      } catch (e) {
+        debugPrint('⚠️ [TextNoteService] Background sync failed: $e');
+        // Don't throw - sync failure shouldn't break note saving
+      }
+    });
+  }
 
   /// Create a new text note
   ///
@@ -50,6 +67,10 @@ class TextNoteService {
       await _linkToFolders(textNoteId, folders);
 
       debugPrint('✅ [TextNoteService] Created text note: $textNoteId with ${folders.length} folders');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
+
       return textNoteId;
     } catch (e, st) {
       debugPrint('❌ [TextNoteService] Failed to create text note: $e');
@@ -93,6 +114,9 @@ class TextNoteService {
       }
 
       debugPrint('✅ [TextNoteService] Updated text note: $noteId');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
     } catch (e, st) {
       debugPrint('❌ [TextNoteService] Failed to update text note: $e');
       debugPrint('Stack trace: $st');

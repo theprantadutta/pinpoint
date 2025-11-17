@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -5,11 +6,80 @@ import 'package:uuid/uuid.dart';
 import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
 import '../service_locators/init_service_locators.dart';
+import '../sync/sync_manager.dart';
+import 'api_service.dart';
 
 /// Service for managing voice/audio notes
 /// Part of Architecture V8: Independent note types
 class VoiceNoteService {
   VoiceNoteService._();
+
+  /// Trigger background sync (non-blocking)
+  static void _triggerBackgroundSync() {
+    Future.microtask(() async {
+      try {
+        final syncManager = getIt<SyncManager>();
+        debugPrint('🔄 [VoiceNoteService] Triggering background sync...');
+        await syncManager.upload();
+        debugPrint('✅ [VoiceNoteService] Background sync completed');
+      } catch (e) {
+        debugPrint('⚠️ [VoiceNoteService] Background sync failed: $e');
+      }
+    });
+  }
+
+  /// Upload audio file to backend and return server path
+  static Future<String?> _uploadAudioToBackend(String localFilePath) async {
+    try {
+      // Check if file exists
+      final file = File(localFilePath);
+      if (!await file.exists()) {
+        debugPrint('⚠️ [VoiceNoteService] Audio file not found: $localFilePath');
+        return null;
+      }
+
+      final apiService = ApiService();
+      debugPrint('📤 [VoiceNoteService] Uploading audio file: $localFilePath');
+      final serverPath = await apiService.uploadAudioFile(localFilePath);
+      debugPrint('✅ [VoiceNoteService] Audio uploaded to server: $serverPath');
+      return serverPath;
+    } catch (e) {
+      debugPrint('❌ [VoiceNoteService] Failed to upload audio: $e');
+      return null;
+    }
+  }
+
+  /// Upload audio file in background and update voice note with server path
+  static void _uploadAudioInBackground(int noteId, String localFilePath) {
+    Future.microtask(() async {
+      try {
+        // Upload audio to backend
+        final serverPath = await _uploadAudioToBackend(localFilePath);
+
+        if (serverPath == null) {
+          debugPrint('⚠️ [VoiceNoteService] Audio upload failed for note $noteId');
+          return;
+        }
+
+        // Update voice note with server path
+        final database = getIt<AppDatabase>();
+        await (database.update(database.voiceNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(VoiceNotesV2Companion(
+          audioFilePath: Value(serverPath),
+          isSynced: const Value(false), // Mark for sync to upload metadata
+          updatedAt: Value(DateTime.now()),
+        ));
+
+        debugPrint('✅ [VoiceNoteService] Updated note $noteId with server path: $serverPath');
+
+        // Trigger sync to upload the updated metadata
+        _triggerBackgroundSync();
+      } catch (e) {
+        debugPrint('❌ [VoiceNoteService] Background audio upload failed: $e');
+      }
+    });
+  }
 
   /// Create a new voice note
   ///
@@ -56,6 +126,13 @@ class VoiceNoteService {
       await _linkToFolders(voiceNoteId, folders);
 
       debugPrint('✅ [VoiceNoteService] Created voice note: $voiceNoteId with ${folders.length} folders');
+
+      // Upload audio file to backend in background
+      _uploadAudioInBackground(voiceNoteId, audioFilePath);
+
+      // Trigger background sync
+      _triggerBackgroundSync();
+
       return voiceNoteId;
     } catch (e, st) {
       debugPrint('❌ [VoiceNoteService] Failed to create voice note: $e');
@@ -103,6 +180,9 @@ class VoiceNoteService {
       }
 
       debugPrint('✅ [VoiceNoteService] Updated voice note: $noteId');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
     } catch (e, st) {
       debugPrint('❌ [VoiceNoteService] Failed to update voice note: $e');
       debugPrint('Stack trace: $st');

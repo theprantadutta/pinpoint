@@ -605,6 +605,90 @@ class ApiService {
   }
 
   // ============================================================================
+  // Audio File Management
+  // ============================================================================
+
+  /// Upload an audio file to the backend
+  /// Returns the server file path
+  Future<String> uploadAudioFile(String localFilePath) async {
+    try {
+      final file = await MultipartFile.fromFile(
+        localFilePath,
+        filename: localFilePath.split('/').last,
+      );
+
+      final formData = FormData.fromMap({
+        'file': file,
+      });
+
+      final response = await _dio.post(
+        '/audio/upload',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
+      );
+
+      if (response.data['success'] == true) {
+        return response.data['file_path'] as String;
+      } else {
+        throw Exception('Upload failed: ${response.data['message']}');
+      }
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Download an audio file from the backend
+  /// Returns the local file path where the audio was saved
+  Future<String> downloadAudioFile(
+    String serverFilePath,
+    String localSavePath,
+  ) async {
+    try {
+      // Parse server path: userId/filename
+      final parts = serverFilePath.split('/');
+      if (parts.length != 2) {
+        throw Exception('Invalid server file path: $serverFilePath');
+      }
+
+      final userId = parts[0];
+      final filename = parts[1];
+
+      // Download file
+      await _dio.download(
+        '/audio/download/$userId/$filename',
+        localSavePath,
+      );
+
+      return localSavePath;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Check if an audio file exists on the server
+  Future<bool> audioFileExists(String serverFilePath) async {
+    try {
+      final parts = serverFilePath.split('/');
+      if (parts.length != 2) {
+        return false;
+      }
+
+      final userId = parts[0];
+      final filename = parts[1];
+
+      final response = await _dio.head(
+        '/audio/download/$userId/$filename',
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ============================================================================
   // Error Handling
   // ============================================================================
 
