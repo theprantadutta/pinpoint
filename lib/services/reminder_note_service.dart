@@ -264,14 +264,14 @@ class ReminderNoteService {
           .write(
         ReminderNotesV2Companion(
           isDeleted: const Value(true),
-          isSynced: const Value(true), // Synced (deleted on backend)
+          isSynced: const Value(false), // Mark for sync to upload note metadata deletion
           updatedAt: Value(now),
         ),
       );
 
       debugPrint('✅ [ReminderNoteService] Soft deleted reminder note: $noteId');
 
-      // Trigger background sync to propagate deletion to other devices
+      // Trigger background sync to upload note metadata deletion to backend
       _triggerBackgroundSync();
     } catch (e, st) {
       debugPrint('❌ [ReminderNoteService] Failed to delete reminder note: $e');
