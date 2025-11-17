@@ -494,6 +494,13 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   Future<void> _autoSaveNote() async {
     if (_isSaving) return;
 
+    // Skip auto-save for reminders - they require explicit save due to backend API calls
+    // and must have a valid future time
+    if (selectedNoteType == 'Reminder') {
+      debugPrint('⏭️ [CreateNoteV2] Auto-save skipped: Reminders require explicit save');
+      return;
+    }
+
     final title = _titleController.text.trim();
 
     // Check if there's any content to save based on note type
@@ -512,10 +519,6 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
       case 'Todo List':
         hasContent = title.isNotEmpty || _todoItems.isNotEmpty;
-        break;
-
-      case 'Reminder':
-        hasContent = _reminderTime != null;
         break;
     }
 
@@ -775,9 +778,22 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               PinpointHaptics.light();
               switch (value) {
                 case 'save':
-                  await _saveNote();
-                  if (mounted) {
-                    Navigator.of(context).pop();
+                  try {
+                    await _saveNote();
+                    if (mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(e.toString().replaceAll('Exception: ', '')),
+                          backgroundColor: cs.error,
+                          behavior: SnackBarBehavior.floating,
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    }
                   }
                   break;
                 case 'delete':
