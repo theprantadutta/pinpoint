@@ -658,9 +658,19 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             onPressed: () async {
               PinpointHaptics.light();
 
-              // Save before exiting
+              // Cancel auto-save timer to prevent conflicts
+              _autoSaveTimer?.cancel();
+
+              // Save before exiting (but don't trigger sync to avoid db locks)
               if (_shouldSave()) {
-                await _saveNote();
+                try {
+                  await _saveNote();
+                  // Give a brief moment for save to complete
+                  await Future.delayed(const Duration(milliseconds: 100));
+                } catch (e) {
+                  debugPrint('⚠️ [CreateNoteV2] Error saving on back: $e');
+                  // Continue navigation even if save fails
+                }
               }
 
               if (mounted) {

@@ -20,7 +20,8 @@
       "WebFetch(domain:medium.com)",
       "WebFetch(domain:stackoverflow.com)",
       "WebFetch(domain:www.walturn.com)",
-      "Bash(del \"G:\\MyProjects\\pinpoint\\lib\\utils\\markdown_converter.dart\")"
+      "Bash(del \"G:\\MyProjects\\pinpoint\\lib\\utils\\markdown_converter.dart\")",
+      "Bash(flutter pub run:*)"
     ],
     "deny": [],
     "ask": []
