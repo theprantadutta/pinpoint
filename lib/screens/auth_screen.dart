@@ -31,7 +31,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
 
   bool _isLogin = true;
-  bool _isLoading = false;
+  bool _isGoogleLoading = false;
+  bool _isEmailLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
 
@@ -319,7 +320,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _handleGoogleSignIn() async {
     setState(() {
-      _isLoading = true;
+      _isGoogleLoading = true;
       _errorMessage = null;
     });
 
@@ -439,7 +440,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } finally {
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          _isGoogleLoading = false;
         });
       }
     }
@@ -451,7 +452,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     setState(() {
-      _isLoading = true;
+      _isEmailLoading = true;
       _errorMessage = null;
     });
 
@@ -526,7 +527,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } finally {
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          _isEmailLoading = false;
         });
       }
     }
@@ -707,14 +708,14 @@ class _AuthScreenState extends State<AuthScreen> {
 
                     // Login/Register Button
                     FilledButton(
-                      onPressed: _isLoading ? null : _handleEmailPasswordAuth,
+                      onPressed: (_isGoogleLoading || _isEmailLoading) ? null : _handleEmailPasswordAuth,
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: _isLoading
+                      child: _isEmailLoading
                           ? const SizedBox(
                               height: 20,
                               width: 20,
@@ -749,7 +750,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: _isLoading
+                    onPressed: (_isGoogleLoading || _isEmailLoading)
                         ? null
                         : () {
                             setState(() {
@@ -787,8 +788,8 @@ class _AuthScreenState extends State<AuthScreen> {
         ],
       ),
       child: FilledButton.tonalIcon(
-        onPressed: _isLoading ? null : _handleGoogleSignIn,
-        icon: _isLoading
+        onPressed: (_isGoogleLoading || _isEmailLoading) ? null : _handleGoogleSignIn,
+        icon: _isGoogleLoading
             ? const SizedBox(
                 height: 20,
                 width: 20,
