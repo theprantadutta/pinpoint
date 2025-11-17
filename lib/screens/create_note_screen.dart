@@ -15,7 +15,6 @@ import 'package:uuid/uuid.dart';
 
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
 import '../components/create_note_screen/record_audio_type/record_type_content.dart';
-import '../components/create_note_screen/reminder_type/reminder_type_content.dart';
 import '../components/create_note_screen/todo_list_type/todo_list_type_content.dart';
 import '../constants/constants.dart';
 import '../database/database.dart' as db;
@@ -1040,11 +1039,22 @@ class _CreateNoteScreenState extends State<CreateNoteScreen>
           onTodoChanged: _onTodoChanged,
         );
       case 'Reminder':
+        // TODO: Update to new ReminderTypeContent signature or deprecate this screen
+        return const SliverToBoxAdapter(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Text('Please use Create Note Screen V2 for reminders'),
+            ),
+          ),
+        );
+        /* OLD CODE - Commented out
         return ReminderTypeContent(
           descriptionController: _reminderDescription,
           selectedDateTime: reminderDateTime,
           onReminderDateTimeChanged: _onReminderDateTimeChanged,
         );
+        */
       default:
         return const SliverToBoxAdapter(child: SizedBox.shrink());
     }

@@ -29,15 +29,107 @@ class ReminderNoteService {
     });
   }
 
-  /// Create a new reminder note
+  /// Generate occurrence times for recurring reminders
+  static List<DateTime> _generateOccurrenceTimes({
+    required DateTime startTime,
+    required String recurrenceType,
+    required int recurrenceInterval,
+    required String recurrenceEndType,
+    String? recurrenceEndValue,
+    int maxOccurrences = 100,
+  }) {
+    if (recurrenceType == 'once') {
+      return [startTime];
+    }
+
+    final occurrences = <DateTime>[startTime];
+    DateTime currentTime = startTime;
+
+    // Determine end condition
+    int maxCount = maxOccurrences;
+    DateTime? endDate;
+
+    if (recurrenceEndType == 'after_occurrences' && recurrenceEndValue != null) {
+      maxCount = int.tryParse(recurrenceEndValue) ?? maxOccurrences;
+      if (maxCount > maxOccurrences) maxCount = maxOccurrences;
+    } else if (recurrenceEndType == 'on_date' && recurrenceEndValue != null) {
+      try {
+        endDate = DateTime.parse(recurrenceEndValue);
+      } catch (e) {
+        debugPrint('⚠️ [ReminderNoteService] Invalid end date: $recurrenceEndValue');
+      }
+    }
+
+    // Generate occurrences
+    while (occurrences.length < maxCount) {
+      // Calculate next occurrence
+      switch (recurrenceType) {
+        case 'hourly':
+          currentTime = currentTime.add(Duration(hours: recurrenceInterval));
+          break;
+        case 'daily':
+          currentTime = currentTime.add(Duration(days: recurrenceInterval));
+          break;
+        case 'weekly':
+          currentTime = currentTime.add(Duration(days: 7 * recurrenceInterval));
+          break;
+        case 'monthly':
+          currentTime = DateTime(
+            currentTime.year,
+            currentTime.month + recurrenceInterval,
+            currentTime.day,
+            currentTime.hour,
+            currentTime.minute,
+          );
+          break;
+        case 'yearly':
+          currentTime = DateTime(
+            currentTime.year + recurrenceInterval,
+            currentTime.month,
+            currentTime.day,
+            currentTime.hour,
+            currentTime.minute,
+          );
+          break;
+        default:
+          return occurrences; // Unknown recurrence type
+      }
+
+      // Check end date
+      if (endDate != null && currentTime.isAfter(endDate)) {
+        break;
+      }
+
+      // Don't generate occurrences more than 1 year in the future
+      final oneYearAhead = DateTime.now().add(const Duration(days: 365));
+      if (currentTime.isAfter(oneYearAhead)) {
+        break;
+      }
+
+      occurrences.add(currentTime);
+    }
+
+    debugPrint('🔄 [ReminderNoteService] Generated ${occurrences.length} occurrences for $recurrenceType reminder');
+    return occurrences;
+  }
+
+  /// Create new reminder note(s)
+  /// For recurring reminders, generates and creates all occurrences
   ///
   /// IMPORTANT: folders parameter is REQUIRED (mandatory folders)
   /// If empty, defaults to "Random" folder
-  static Future<int> createReminderNote({
+  ///
+  /// Returns: List of created reminder note IDs (single for one-time, multiple for recurring)
+  static Future<List<int>> createReminderNote({
     required String title,
+    required String notificationTitle,
+    String? notificationContent,
     required DateTime reminderTime,
     required List<NoteFolderDto> folders,
-    String? description,
+    String recurrenceType = 'once',
+    int recurrenceInterval = 1,
+    String recurrenceEndType = 'never',
+    String? recurrenceEndValue,
     bool isPinned = false,
   }) async {
     try {
@@ -50,35 +142,71 @@ class ReminderNoteService {
         throw Exception('Reminder note must belong to at least one folder');
       }
 
-      // Generate UUID for the note
-      final noteUuid = uuid.v4();
-
-      // Create reminder note
-      final reminderNoteId = await database.into(database.reminderNotesV2).insert(
-        ReminderNotesV2Companion(
-          uuid: Value(noteUuid),
-          title: Value(title),
-          description: Value(description),
-          reminderTime: Value(reminderTime),
-          isTriggered: const Value(false),
-          isPinned: Value(isPinned),
-          isArchived: const Value(false),
-          isDeleted: const Value(false),
-          isSynced: const Value(false), // Needs cloud sync
-          createdAt: Value(now),
-          updatedAt: Value(now),
-        ),
+      // Generate occurrence times
+      final occurrenceTimes = _generateOccurrenceTimes(
+        startTime: reminderTime,
+        recurrenceType: recurrenceType,
+        recurrenceInterval: recurrenceInterval,
+        recurrenceEndType: recurrenceEndType,
+        recurrenceEndValue: recurrenceEndValue,
       );
 
-      // Link to folders
-      await _linkToFolders(reminderNoteId, folders);
+      // Generate series ID for recurring reminders
+      final seriesId = recurrenceType != 'once' ? uuid.v4() : null;
+      final reminderNoteIds = <int>[];
+      int? parentId;
 
-      debugPrint('✅ [ReminderNoteService] Created reminder note: $reminderNoteId with ${folders.length} folders, scheduled for ${reminderTime.toIso8601String()}');
+      for (int i = 0; i < occurrenceTimes.length; i++) {
+        final occurrenceTime = occurrenceTimes[i];
+
+        // Generate unique UUID for each occurrence
+        final noteUuid = uuid.v4();
+
+        // Create reminder note for this occurrence
+        final reminderNoteId = await database.into(database.reminderNotesV2).insert(
+          ReminderNotesV2Companion(
+            uuid: Value(noteUuid),
+            title: Value(title),
+            notificationTitle: Value(notificationTitle),
+            notificationContent: Value(notificationContent),
+            description: Value(notificationContent), // For backward compatibility
+            reminderTime: Value(occurrenceTime),
+            recurrenceType: Value(recurrenceType),
+            recurrenceInterval: Value(recurrenceInterval),
+            recurrenceEndType: Value(recurrenceEndType),
+            recurrenceEndValue: Value(recurrenceEndValue),
+            occurrenceNumber: Value(i + 1),
+            seriesId: Value(seriesId),
+            parentReminderId: Value(i == 0 ? null : parentId.toString()),
+            isTriggered: const Value(false),
+            isPinned: Value(isPinned),
+            isArchived: const Value(false),
+            isDeleted: const Value(false),
+            isSynced: const Value(false), // Needs cloud sync
+            createdAt: Value(now),
+            updatedAt: Value(now),
+          ),
+        );
+
+        // First occurrence is the parent
+        if (i == 0) {
+          parentId = reminderNoteId;
+        }
+
+        // Link to folders (all occurrences share same folders)
+        await _linkToFolders(reminderNoteId, folders);
+
+        reminderNoteIds.add(reminderNoteId);
+
+        debugPrint('✅ [ReminderNoteService] Created reminder occurrence ${i + 1}/${occurrenceTimes.length}: $reminderNoteId, scheduled for ${occurrenceTime.toIso8601String()}');
+      }
+
+      debugPrint('✅ [ReminderNoteService] Created ${reminderNoteIds.length} reminder note(s) with ${folders.length} folders');
 
       // Trigger background sync
       _triggerBackgroundSync();
 
-      return reminderNoteId;
+      return reminderNoteIds;
     } catch (e, st) {
       debugPrint('❌ [ReminderNoteService] Failed to create reminder note: $e');
       debugPrint('Stack trace: $st');
@@ -86,51 +214,79 @@ class ReminderNoteService {
     }
   }
 
-  /// Update an existing reminder note
+  /// Update an existing reminder note or series
   static Future<void> updateReminderNote({
     required int noteId,
     String? title,
-    String? description,
+    String? notificationTitle,
+    String? notificationContent,
     DateTime? reminderTime,
     List<NoteFolderDto>? folders,
     bool? isPinned,
     bool? isTriggered,
+    String? recurrenceType,
+    int? recurrenceInterval,
+    String? recurrenceEndType,
+    String? recurrenceEndValue,
+    bool updateSeries = false,
   }) async {
     try {
       final database = getIt<AppDatabase>();
       final now = DateTime.now();
 
-      // Get current note for UUID and backend sync
+      // Get current note
       final currentNote = await getReminderNote(noteId);
       if (currentNote == null) {
         throw Exception('Reminder note not found: $noteId');
       }
 
+      // Determine which notes to update
+      List<ReminderNoteEntity> notesToUpdate;
+      if (updateSeries && currentNote.seriesId != null) {
+        // Update all future occurrences in the series
+        notesToUpdate = await (database.select(database.reminderNotesV2)
+              ..where((t) => t.seriesId.equals(currentNote.seriesId!))
+              ..where((t) => t.isTriggered.equals(false))) // Only future occurrences
+            .get();
+        debugPrint('🔄 [ReminderNoteService] Updating ${notesToUpdate.length} occurrences in series');
+      } else {
+        // Update only this note
+        notesToUpdate = [currentNote];
+      }
+
       // Build update companion
       final companion = ReminderNotesV2Companion(
         title: title != null ? Value(title) : const Value.absent(),
-        description: description != null ? Value(description) : const Value.absent(),
+        notificationTitle: notificationTitle != null ? Value(notificationTitle) : const Value.absent(),
+        notificationContent: notificationContent != null ? Value(notificationContent) : const Value.absent(),
+        description: notificationContent != null ? Value(notificationContent) : const Value.absent(), // Backward compat
         reminderTime: reminderTime != null ? Value(reminderTime) : const Value.absent(),
+        recurrenceType: recurrenceType != null ? Value(recurrenceType) : const Value.absent(),
+        recurrenceInterval: recurrenceInterval != null ? Value(recurrenceInterval) : const Value.absent(),
+        recurrenceEndType: recurrenceEndType != null ? Value(recurrenceEndType) : const Value.absent(),
+        recurrenceEndValue: recurrenceEndValue != null ? Value(recurrenceEndValue) : const Value.absent(),
         isTriggered: isTriggered != null ? Value(isTriggered) : const Value.absent(),
         isPinned: isPinned != null ? Value(isPinned) : const Value.absent(),
         isSynced: const Value(false), // Mark for sync
         updatedAt: Value(now),
       );
 
-      // Update note
-      await (database.update(database.reminderNotesV2)
-            ..where((t) => t.id.equals(noteId)))
-          .write(companion);
+      // Update all notes
+      for (final note in notesToUpdate) {
+        await (database.update(database.reminderNotesV2)
+              ..where((t) => t.id.equals(note.id)))
+            .write(companion);
 
-      // Update folder relations if provided
-      if (folders != null) {
-        if (folders.isEmpty) {
-          throw Exception('Reminder note must belong to at least one folder');
+        // Update folder relations if provided
+        if (folders != null) {
+          if (folders.isEmpty) {
+            throw Exception('Reminder note must belong to at least one folder');
+          }
+          await _updateFolderRelations(note.id, folders);
         }
-        await _updateFolderRelations(noteId, folders);
       }
 
-      debugPrint('✅ [ReminderNoteService] Updated reminder note: $noteId');
+      debugPrint('✅ [ReminderNoteService] Updated ${notesToUpdate.length} reminder note(s)');
 
       // Trigger background sync
       _triggerBackgroundSync();
@@ -229,50 +385,71 @@ class ReminderNoteService {
     }
   }
 
-  /// Soft delete a reminder note
-  static Future<void> deleteReminderNote(int noteId) async {
+  /// Soft delete a reminder note or entire series
+  static Future<int> deleteReminderNote(int noteId, {bool deleteSeries = false}) async {
     try {
       final database = getIt<AppDatabase>();
       final now = DateTime.now();
 
-      // Get note for UUID
+      // Get note
       final note = await getReminderNote(noteId);
       if (note == null) {
         throw Exception('Reminder note not found: $noteId');
       }
 
-      // Delete from backend first
-      try {
-        final reminders = await ApiService().getReminders(includeTriggered: false);
-        final backendReminder = reminders.firstWhere(
-          (r) => r['note_uuid'] == note.uuid,
-          orElse: () => <String, dynamic>{},
-        );
-
-        if (backendReminder.isNotEmpty && backendReminder['id'] != null) {
-          await ApiService().deleteReminder(backendReminder['id'] as String);
-          debugPrint('✅ [ReminderNoteService] Deleted backend reminder: ${backendReminder['id']}');
-        }
-      } catch (e) {
-        debugPrint('⚠️ [ReminderNoteService] Failed to delete backend reminder: $e');
-        // Continue with local deletion
+      // Determine which notes to delete
+      List<ReminderNoteEntity> notesToDelete;
+      if (deleteSeries && note.seriesId != null) {
+        // Delete all occurrences in the series
+        notesToDelete = await (database.select(database.reminderNotesV2)
+              ..where((t) => t.seriesId.equals(note.seriesId!)))
+            .get();
+        debugPrint('🔄 [ReminderNoteService] Deleting ${notesToDelete.length} occurrences in series');
+      } else {
+        // Delete only this note
+        notesToDelete = [note];
       }
 
-      // Soft delete locally
-      await (database.update(database.reminderNotesV2)
-            ..where((t) => t.id.equals(noteId)))
-          .write(
-        ReminderNotesV2Companion(
-          isDeleted: const Value(true),
-          isSynced: const Value(false), // Mark for sync to upload note metadata deletion
-          updatedAt: Value(now),
-        ),
-      );
+      int deletedCount = 0;
 
-      debugPrint('✅ [ReminderNoteService] Soft deleted reminder note: $noteId');
+      for (final noteToDelete in notesToDelete) {
+        // Delete from backend first
+        try {
+          final reminders = await ApiService().getReminders(includeTriggered: false);
+          final backendReminder = reminders.firstWhere(
+            (r) => r['note_uuid'] == noteToDelete.uuid,
+            orElse: () => <String, dynamic>{},
+          );
 
-      // Trigger background sync to upload note metadata deletion to backend
+          if (backendReminder.isNotEmpty && backendReminder['id'] != null) {
+            await ApiService().deleteReminder(backendReminder['id'] as String);
+            debugPrint('✅ [ReminderNoteService] Deleted backend reminder: ${backendReminder['id']}');
+          }
+        } catch (e) {
+          debugPrint('⚠️ [ReminderNoteService] Failed to delete backend reminder: $e');
+          // Continue with local deletion
+        }
+
+        // Soft delete locally
+        await (database.update(database.reminderNotesV2)
+              ..where((t) => t.id.equals(noteToDelete.id)))
+            .write(
+          ReminderNotesV2Companion(
+            isDeleted: const Value(true),
+            isSynced: const Value(false), // Mark for sync
+            updatedAt: Value(now),
+          ),
+        );
+
+        deletedCount++;
+      }
+
+      debugPrint('✅ [ReminderNoteService] Soft deleted $deletedCount reminder note(s)');
+
+      // Trigger background sync
       _triggerBackgroundSync();
+
+      return deletedCount;
     } catch (e, st) {
       debugPrint('❌ [ReminderNoteService] Failed to delete reminder note: $e');
       debugPrint('Stack trace: $st');

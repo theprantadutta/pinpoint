@@ -607,8 +607,17 @@ class ApiSyncService extends SyncService {
       'uuid': note.uuid,
       'noteTitle': note.title ?? '',
       'noteType': 'reminder',
-      'reminderDescription': note.description,
+      'notificationTitle': note.notificationTitle ?? note.title ?? '',
+      'notificationContent': note.notificationContent,
+      'reminderDescription': note.description, // For backward compatibility
       'reminderTime': note.reminderTime.toIso8601String(),
+      'recurrenceType': note.recurrenceType,
+      'recurrenceInterval': note.recurrenceInterval,
+      'recurrenceEndType': note.recurrenceEndType,
+      'recurrenceEndValue': note.recurrenceEndValue,
+      'parentReminderId': note.parentReminderId,
+      'occurrenceNumber': note.occurrenceNumber,
+      'seriesId': note.seriesId,
       'isTriggered': note.isTriggered,
       'isPinned': note.isPinned,
       'isArchived': note.isArchived,
@@ -1511,35 +1520,57 @@ class ApiSyncService extends SyncService {
         try {
           final noteUuid = reminderData['note_uuid'] as String;
           final title = reminderData['title'] as String?;
+          final notificationTitle = reminderData['notification_title'] as String?;
+          final notificationContent = reminderData['notification_content'] as String?;
           final description = reminderData['description'] as String?;
           final reminderTimeStr = reminderData['reminder_time'] as String;
           final reminderTime = DateTime.parse(reminderTimeStr);
+          final recurrenceType = reminderData['recurrence_type'] as String? ?? 'once';
+          final recurrenceInterval = reminderData['recurrence_interval'] as int? ?? 1;
+          final recurrenceEndType = reminderData['recurrence_end_type'] as String? ?? 'never';
+          final recurrenceEndValue = reminderData['recurrence_end_value'] as String?;
+          final parentReminderId = reminderData['parent_reminder_id'] as String?;
+          final occurrenceNumber = reminderData['occurrence_number'] as int? ?? 1;
+          final seriesId = reminderData['series_id'] as String?;
 
-          debugPrint('⏰ [ApiSync] Processing reminder for note: $noteUuid');
+          debugPrint('⏰ [ApiSync] Processing reminder for note: $noteUuid (occurrence $occurrenceNumber)');
 
-          // Check if reminder already exists locally
+          // Check if reminder already exists locally (by UUID AND occurrence number for recurring reminders)
           final existing = await (_database.select(_database.reminderNotesV2)
-                ..where((tbl) => tbl.uuid.equals(noteUuid)))
+                ..where((tbl) => tbl.uuid.equals(noteUuid))
+                ..where((tbl) => tbl.occurrenceNumber.equals(occurrenceNumber)))
               .getSingleOrNull();
 
           if (existing != null) {
             // Update existing reminder if server version is different
             if (existing.reminderTime != reminderTime ||
                 existing.title != title ||
-                existing.description != description) {
+                existing.notificationTitle != notificationTitle ||
+                existing.notificationContent != notificationContent ||
+                existing.recurrenceType != recurrenceType) {
               await (_database.update(_database.reminderNotesV2)
-                    ..where((tbl) => tbl.uuid.equals(noteUuid)))
+                    ..where((tbl) => tbl.uuid.equals(noteUuid))
+                    ..where((tbl) => tbl.occurrenceNumber.equals(occurrenceNumber)))
                   .write(ReminderNotesV2Companion(
                 title: Value(title),
+                notificationTitle: Value(notificationTitle),
+                notificationContent: Value(notificationContent),
                 description: Value(description),
                 reminderTime: Value(reminderTime),
+                recurrenceType: Value(recurrenceType),
+                recurrenceInterval: Value(recurrenceInterval),
+                recurrenceEndType: Value(recurrenceEndType),
+                recurrenceEndValue: Value(recurrenceEndValue),
+                parentReminderId: Value(parentReminderId),
+                occurrenceNumber: Value(occurrenceNumber),
+                seriesId: Value(seriesId),
                 isSynced: const Value(true),
                 updatedAt: Value(DateTime.now()),
               ));
-              debugPrint('✅ [ApiSync] Updated reminder for note $noteUuid');
+              debugPrint('✅ [ApiSync] Updated reminder for note $noteUuid occurrence $occurrenceNumber');
               restoredCount++;
             } else {
-              debugPrint('ℹ️ [ApiSync] Reminder $noteUuid already up to date');
+              debugPrint('ℹ️ [ApiSync] Reminder $noteUuid occurrence $occurrenceNumber already up to date');
             }
           } else {
             // Create new reminder from server data
@@ -1547,8 +1578,17 @@ class ApiSyncService extends SyncService {
                   ReminderNotesV2Companion(
                     uuid: Value(noteUuid),
                     title: Value(title),
+                    notificationTitle: Value(notificationTitle),
+                    notificationContent: Value(notificationContent),
                     description: Value(description),
                     reminderTime: Value(reminderTime),
+                    recurrenceType: Value(recurrenceType),
+                    recurrenceInterval: Value(recurrenceInterval),
+                    recurrenceEndType: Value(recurrenceEndType),
+                    recurrenceEndValue: Value(recurrenceEndValue),
+                    parentReminderId: Value(parentReminderId),
+                    occurrenceNumber: Value(occurrenceNumber),
+                    seriesId: Value(seriesId),
                     isTriggered: const Value(false),
                     isPinned: const Value(false),
                     isArchived: const Value(false),
@@ -1558,7 +1598,7 @@ class ApiSyncService extends SyncService {
                     updatedAt: Value(DateTime.now()),
                   ),
                 );
-            debugPrint('✅ [ApiSync] Created reminder for note $noteUuid');
+            debugPrint('✅ [ApiSync] Created reminder for note $noteUuid occurrence $occurrenceNumber');
             restoredCount++;
           }
         } catch (e) {

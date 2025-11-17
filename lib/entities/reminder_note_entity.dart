@@ -12,14 +12,44 @@ class ReminderNotesV2 extends Table {
   /// Generated using UUID v4 on creation
   TextColumn get uuid => text().unique()();
 
-  /// Optional title for the reminder
+  /// Optional title for the reminder (for app organization)
   TextColumn get title => text().nullable()();
+
+  /// Title shown in the push notification
+  TextColumn get notificationTitle => text().nullable()();
+
+  /// Content/body shown in the push notification
+  TextColumn get notificationContent => text().nullable()();
 
   /// When the reminder should trigger/notify the user
   DateTimeColumn get reminderTime => dateTime()();
 
-  /// Optional description or additional details for the reminder
+  /// Optional description (deprecated, use notificationContent)
   TextColumn get description => text().nullable()();
+
+  // Recurrence fields
+  /// Type of recurrence: once, hourly, daily, weekly, monthly, yearly
+  TextColumn get recurrenceType =>
+      text().withDefault(const Constant('once'))();
+
+  /// Interval for recurrence (e.g., every 2 days)
+  IntColumn get recurrenceInterval => integer().withDefault(const Constant(1))();
+
+  /// How the recurrence ends: never, after_occurrences, on_date
+  TextColumn get recurrenceEndType =>
+      text().withDefault(const Constant('never'))();
+
+  /// Value for end condition (number of occurrences or ISO date string)
+  TextColumn get recurrenceEndValue => text().nullable()();
+
+  /// Link to parent reminder (for series tracking)
+  TextColumn get parentReminderId => text().nullable()();
+
+  /// Which occurrence in the series (1, 2, 3...)
+  IntColumn get occurrenceNumber => integer().withDefault(const Constant(1))();
+
+  /// UUID to group all occurrences of same recurring reminder
+  TextColumn get seriesId => text().nullable()();
 
   /// Whether the reminder has already been triggered/shown to the user
   /// false = pending, true = already notified
