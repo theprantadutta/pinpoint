@@ -81,9 +81,10 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
       body: Consumer<FilterService>(
         builder: (context, filterService, _) {
           return StreamBuilder<List<NoteWithDetails>>(
-            stream: DriftNoteService.watchArchivedNotes(
+            stream: DriftNoteService.watchArchivedNotesV2(
               searchQuery: _searchQuery,
-              filterOptions: filterService.filterOptions,
+              sortType: 'updatedAt',
+              sortDirection: 'desc',
             ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {

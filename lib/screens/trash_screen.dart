@@ -82,9 +82,10 @@ class _TrashScreenState extends State<TrashScreen> {
       body: Consumer<FilterService>(
         builder: (context, filterService, _) {
           return StreamBuilder<List<NoteWithDetails>>(
-            stream: DriftNoteService.watchDeletedNotes(
+            stream: DriftNoteService.watchDeletedNotesV2(
               searchQuery: _searchQuery,
-              filterOptions: filterService.filterOptions,
+              sortType: 'updatedAt',
+              sortDirection: 'desc',
             ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {

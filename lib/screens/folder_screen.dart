@@ -89,10 +89,11 @@ class _FolderScreenState extends State<FolderScreen> {
       body: Consumer<FilterService>(
         builder: (context, filterService, _) {
           return StreamBuilder<List<NoteWithDetails>>(
-            stream: DriftNoteService.watchNotesWithDetailsByFolder(
+            stream: DriftNoteService.watchNotesWithDetailsByFolderV2(
               folderId: widget.folderId,
               searchQuery: _searchQuery,
-              filterOptions: filterService.filterOptions,
+              sortType: 'updatedAt',
+              sortDirection: 'desc',
             ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
