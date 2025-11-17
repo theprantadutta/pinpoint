@@ -280,6 +280,40 @@ class ReminderNoteService {
     }
   }
 
+  /// Restore a soft-deleted reminder note
+  static Future<void> restoreReminderNote(int noteId) async {
+    try {
+      final database = getIt<AppDatabase>();
+      final now = DateTime.now();
+
+      // Get note for recreation on backend
+      final note = await getReminderNote(noteId);
+      if (note == null) {
+        throw Exception('Reminder note not found: $noteId');
+      }
+
+      // Restore locally first
+      await (database.update(database.reminderNotesV2)
+            ..where((t) => t.id.equals(noteId)))
+          .write(
+        ReminderNotesV2Companion(
+          isDeleted: const Value(false),
+          isSynced: const Value(false), // Mark for sync
+          updatedAt: Value(now),
+        ),
+      );
+
+      debugPrint('✅ [ReminderNoteService] Restored reminder note: $noteId');
+
+      // Trigger background sync to recreate reminder on backend
+      _triggerBackgroundSync();
+    } catch (e, st) {
+      debugPrint('❌ [ReminderNoteService] Failed to restore reminder note: $e');
+      debugPrint('Stack trace: $st');
+      rethrow;
+    }
+  }
+
   /// Permanently delete a reminder note (hard delete)
   static Future<void> permanentlyDeleteReminderNote(int noteId) async {
     try {

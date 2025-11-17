@@ -219,6 +219,33 @@ class VoiceNoteService {
     }
   }
 
+  /// Restore a soft-deleted voice note
+  static Future<void> restoreVoiceNote(int noteId) async {
+    try {
+      final database = getIt<AppDatabase>();
+      final now = DateTime.now();
+
+      await (database.update(database.voiceNotesV2)
+            ..where((t) => t.id.equals(noteId)))
+          .write(
+        VoiceNotesV2Companion(
+          isDeleted: const Value(false),
+          isSynced: const Value(false), // Mark for sync
+          updatedAt: Value(now),
+        ),
+      );
+
+      debugPrint('✅ [VoiceNoteService] Restored voice note: $noteId');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
+    } catch (e, st) {
+      debugPrint('❌ [VoiceNoteService] Failed to restore voice note: $e');
+      debugPrint('Stack trace: $st');
+      rethrow;
+    }
+  }
+
   /// Permanently delete a voice note (hard delete)
   static Future<void> permanentlyDeleteVoiceNote(int noteId) async {
     try {

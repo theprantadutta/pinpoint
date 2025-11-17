@@ -163,10 +163,10 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                                   onDelete: () async {
                                     final confirmed = await ConfirmSheet.show(
                                       context: context,
-                                      title: 'Delete permanently?',
+                                      title: 'Delete Forever?',
                                       message:
-                                          'This action cannot be undone. The note and its attachments will be removed forever.',
-                                      primaryLabel: 'Delete forever',
+                                          'This action cannot be undone. The note and all its content will be permanently removed.',
+                                      primaryLabel: 'Delete Forever',
                                       secondaryLabel: 'Cancel',
                                       isDestructive: true,
                                       icon: Icons.delete_forever_rounded,
@@ -243,27 +243,35 @@ class _ArchivedNoteCardState extends State<_ArchivedNoteCard> {
               children: [
                 // Leading icon
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        cs.primary.withAlpha(dark ? 56 : 40),
-                        cs.primary.withAlpha(dark ? 25 : 20),
+                        cs.primary.withAlpha(dark ? 50 : 40),
+                        cs.primary.withAlpha(dark ? 30 : 25),
                       ],
                     ),
                     border: Border.all(
-                      color: (dark ? Colors.white : Colors.black).withAlpha(20),
+                      color: cs.primary.withAlpha(dark ? 70 : 60),
+                      width: 1.5,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: cs.primary.withAlpha(dark ? 30 : 20),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Center(
                     child: Icon(
                       Icons.archive_rounded,
                       color: cs.primary,
-                      size: 22,
+                      size: 24,
                     ),
                   ),
                 ),
@@ -306,11 +314,19 @@ class _ArchivedNoteCardState extends State<_ArchivedNoteCard> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Unarchive button
                     GestureDetector(
                       onTap: widget.onUnarchive,
-                      child: GlassContainer(
+                      child: Container(
                         padding: const EdgeInsets.all(10),
-                        borderRadius: 12,
+                        decoration: BoxDecoration(
+                          color: cs.primary.withAlpha(dark ? 40 : 30),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: cs.primary.withAlpha(dark ? 80 : 60),
+                            width: 1.5,
+                          ),
+                        ),
                         child: Icon(
                           Icons.unarchive_rounded,
                           color: cs.primary,
@@ -319,11 +335,19 @@ class _ArchivedNoteCardState extends State<_ArchivedNoteCard> {
                       ),
                     ),
                     const SizedBox(width: 8),
+                    // Delete button
                     GestureDetector(
                       onTap: widget.onDelete,
-                      child: GlassContainer(
+                      child: Container(
                         padding: const EdgeInsets.all(10),
-                        borderRadius: 12,
+                        decoration: BoxDecoration(
+                          color: cs.error.withAlpha(dark ? 40 : 30),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: cs.error.withAlpha(dark ? 80 : 60),
+                            width: 1.5,
+                          ),
+                        ),
                         child: Icon(
                           Icons.delete_forever_rounded,
                           color: cs.error,
