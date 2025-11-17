@@ -331,6 +331,44 @@ class DriftNoteService {
     log.i("Note with ID $noteId and its attachments permanently deleted.");
   }
 
+  /// Restore a soft-deleted V2 note by routing to the appropriate V2 service
+  /// This method handles restoration for all V2 note types
+  static Future<void> restoreNoteByIdV2(
+    int noteId,
+    String noteType,
+  ) async {
+    try {
+      log.i("Restoring V2 note $noteId of type $noteType...");
+
+      switch (noteType) {
+        case 'voice_recording':
+          await VoiceNoteService.restoreVoiceNote(noteId);
+          break;
+
+        case 'title_content':
+          await TextNoteService.restoreTextNote(noteId);
+          break;
+
+        case 'todo_list':
+          await TodoListNoteService.restoreTodoListNote(noteId);
+          break;
+
+        case 'reminder':
+          await ReminderNoteService.restoreReminderNote(noteId);
+          break;
+
+        default:
+          throw Exception('Unknown note type: $noteType');
+      }
+
+      log.i("V2 note $noteId of type $noteType restored successfully");
+    } catch (e, st) {
+      log.e("Failed to restore V2 note $noteId: $e");
+      log.e("Stack trace: $st");
+      rethrow;
+    }
+  }
+
   /// Permanently delete a V2 note by routing to the appropriate V2 service
   /// This method handles deletion for all V2 note types
   static Future<void> permanentlyDeleteNoteByIdV2(

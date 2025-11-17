@@ -155,6 +155,33 @@ class TodoListNoteService {
     }
   }
 
+  /// Restore a soft-deleted todo list note
+  static Future<void> restoreTodoListNote(int noteId) async {
+    try {
+      final database = getIt<AppDatabase>();
+      final now = DateTime.now();
+
+      await (database.update(database.todoListNotesV2)
+            ..where((t) => t.id.equals(noteId)))
+          .write(
+        TodoListNotesV2Companion(
+          isDeleted: const Value(false),
+          isSynced: const Value(false), // Mark for sync
+          updatedAt: Value(now),
+        ),
+      );
+
+      debugPrint('✅ [TodoListNoteService] Restored todo list note: $noteId');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
+    } catch (e, st) {
+      debugPrint('❌ [TodoListNoteService] Failed to restore todo list note: $e');
+      debugPrint('Stack trace: $st');
+      rethrow;
+    }
+  }
+
   /// Permanently delete a todo list note (hard delete)
   static Future<void> permanentlyDeleteTodoListNote(int noteId) async {
     try {

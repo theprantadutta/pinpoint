@@ -161,7 +161,7 @@ class _TrashScreenState extends State<TrashScreen> {
                                       context: context,
                                       title: 'Restore note?',
                                       message:
-                                          'This note will be moved back to your notes.',
+                                          'This note will be restored and moved back to your notes.',
                                       primaryLabel: 'Restore',
                                       secondaryLabel: 'Cancel',
                                       isDestructive: false,
@@ -169,17 +169,17 @@ class _TrashScreenState extends State<TrashScreen> {
                                     );
                                     if (confirmed == true) {
                                       PinpointHaptics.light();
-                                      await DriftNoteService.restoreNoteById(
-                                          n.id);
+                                      await DriftNoteService.restoreNoteByIdV2(
+                                          n.id, n.noteType);
                                     }
                                   },
                                   onDelete: () async {
                                     final confirmed = await ConfirmSheet.show(
                                       context: context,
-                                      title: 'Delete permanently?',
+                                      title: 'Delete Forever?',
                                       message:
-                                          'This action cannot be undone. The note and its attachments will be removed forever.',
-                                      primaryLabel: 'Delete forever',
+                                          'This action cannot be undone. The note and all its content will be permanently removed.',
+                                      primaryLabel: 'Delete Forever',
                                       secondaryLabel: 'Cancel',
                                       isDestructive: true,
                                       icon: Icons.delete_forever_rounded,
@@ -295,27 +295,35 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
               children: [
                 // Leading icon
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        cs.surfaceContainerHighest.withAlpha(dark ? 80 : 120),
-                        cs.surfaceContainerHighest.withAlpha(dark ? 40 : 60),
+                        cs.error.withAlpha(dark ? 45 : 35),
+                        cs.error.withAlpha(dark ? 25 : 20),
                       ],
                     ),
                     border: Border.all(
-                      color: (dark ? Colors.white : Colors.black).withAlpha(20),
+                      color: cs.error.withAlpha(dark ? 60 : 50),
+                      width: 1.5,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: cs.error.withAlpha(dark ? 25 : 15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Center(
                     child: Icon(
                       _getNoteTypeIcon(n.noteType),
-                      color: cs.onSurfaceVariant,
-                      size: 22,
+                      color: cs.error,
+                      size: 24,
                     ),
                   ),
                 ),
@@ -433,16 +441,17 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
                 // Actions
                 _isLoading
                     ? SizedBox(
-                        width: 24,
-                        height: 24,
+                        width: 28,
+                        height: 28,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2,
+                          strokeWidth: 2.5,
                           valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
                         ),
                       )
                     : Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Restore button
                           GestureDetector(
                             onTap: () async {
                               setState(() => _isLoading = true);
@@ -454,9 +463,16 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
                                 }
                               }
                             },
-                            child: GlassContainer(
+                            child: Container(
                               padding: const EdgeInsets.all(10),
-                              borderRadius: 12,
+                              decoration: BoxDecoration(
+                                color: cs.primary.withAlpha(dark ? 40 : 30),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: cs.primary.withAlpha(dark ? 80 : 60),
+                                  width: 1.5,
+                                ),
+                              ),
                               child: Icon(
                                 Icons.restore_from_trash_rounded,
                                 color: cs.primary,
@@ -465,6 +481,7 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
                             ),
                           ),
                           const SizedBox(width: 8),
+                          // Delete button
                           GestureDetector(
                             onTap: () async {
                               setState(() => _isLoading = true);
@@ -476,9 +493,16 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
                                 }
                               }
                             },
-                            child: GlassContainer(
+                            child: Container(
                               padding: const EdgeInsets.all(10),
-                              borderRadius: 12,
+                              decoration: BoxDecoration(
+                                color: cs.error.withAlpha(dark ? 40 : 30),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: cs.error.withAlpha(dark ? 80 : 60),
+                                  width: 1.5,
+                                ),
+                              ),
                               child: Icon(
                                 Icons.delete_forever_rounded,
                                 color: cs.error,

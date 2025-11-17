@@ -151,6 +151,33 @@ class TextNoteService {
     }
   }
 
+  /// Restore a soft-deleted text note
+  static Future<void> restoreTextNote(int noteId) async {
+    try {
+      final database = getIt<AppDatabase>();
+      final now = DateTime.now();
+
+      await (database.update(database.textNotesV2)
+            ..where((t) => t.id.equals(noteId)))
+          .write(
+        TextNotesV2Companion(
+          isDeleted: const Value(false),
+          isSynced: const Value(false), // Mark for sync
+          updatedAt: Value(now),
+        ),
+      );
+
+      debugPrint('✅ [TextNoteService] Restored text note: $noteId');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
+    } catch (e, st) {
+      debugPrint('❌ [TextNoteService] Failed to restore text note: $e');
+      debugPrint('Stack trace: $st');
+      rethrow;
+    }
+  }
+
   /// Permanently delete a text note (hard delete)
   static Future<void> permanentlyDeleteTextNote(int noteId) async {
     try {
