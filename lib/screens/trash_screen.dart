@@ -187,7 +187,8 @@ class _TrashScreenState extends State<TrashScreen> {
                                     if (confirmed == true) {
                                       PinpointHaptics.success();
                                       await DriftNoteService
-                                          .permanentlyDeleteNoteById(n.id);
+                                          .permanentlyDeleteNoteByIdV2(
+                                              n.id, n.noteType);
                                     }
                                   },
                                 ),
