@@ -15,6 +15,10 @@ import 'package:pinpoint/util/note_utils.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
+import 'package:pinpoint/services/voice_note_service.dart';
+import 'package:pinpoint/services/text_note_service.dart';
+import 'package:pinpoint/services/todo_list_note_service.dart';
+import 'package:pinpoint/services/reminder_note_service.dart';
 
 class DriftNoteService {
   DriftNoteService._();
@@ -325,6 +329,44 @@ class DriftNoteService {
           ..where((tbl) => tbl.id.equals(noteId)))
         .go();
     log.i("Note with ID $noteId and its attachments permanently deleted.");
+  }
+
+  /// Permanently delete a V2 note by routing to the appropriate V2 service
+  /// This method handles deletion for all V2 note types
+  static Future<void> permanentlyDeleteNoteByIdV2(
+    int noteId,
+    String noteType,
+  ) async {
+    try {
+      log.i("Permanently deleting V2 note $noteId of type $noteType...");
+
+      switch (noteType) {
+        case 'voice_recording':
+          await VoiceNoteService.permanentlyDeleteVoiceNote(noteId);
+          break;
+
+        case 'title_content':
+          await TextNoteService.permanentlyDeleteTextNote(noteId);
+          break;
+
+        case 'todo_list':
+          await TodoListNoteService.permanentlyDeleteTodoListNote(noteId);
+          break;
+
+        case 'reminder':
+          await ReminderNoteService.permanentlyDeleteReminderNote(noteId);
+          break;
+
+        default:
+          throw Exception('Unknown note type: $noteType');
+      }
+
+      log.i("V2 note $noteId of type $noteType permanently deleted successfully");
+    } catch (e, st) {
+      log.e("Failed to permanently delete V2 note $noteId: $e");
+      log.e("Stack trace: $st");
+      rethrow;
+    }
   }
 
   static Future<void> toggleArchiveStatus(int noteId, bool isArchived) async {

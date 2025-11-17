@@ -688,6 +688,29 @@ class ApiService {
     }
   }
 
+  /// Delete an audio file from the backend
+  Future<void> deleteAudioFile(String serverFilePath) async {
+    try {
+      final parts = serverFilePath.split('/');
+      if (parts.length != 2) {
+        throw Exception('Invalid server file path: $serverFilePath');
+      }
+
+      final userId = parts[0];
+      final filename = parts[1];
+
+      final response = await _dio.delete(
+        '/audio/delete/$userId/$filename',
+      );
+
+      if (response.data['success'] != true) {
+        throw Exception('Delete failed: ${response.data['message']}');
+      }
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ============================================================================
   // Error Handling
   // ============================================================================

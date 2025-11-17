@@ -224,6 +224,39 @@ class VoiceNoteService {
     try {
       final database = getIt<AppDatabase>();
 
+      // Get note for audio file path before deletion
+      final note = await getVoiceNote(noteId);
+      if (note == null) {
+        throw Exception('Voice note not found: $noteId');
+      }
+
+      // Delete audio file from backend if it exists on server
+      if (note.audioFilePath != null &&
+          note.audioFilePath!.isNotEmpty &&
+          !note.audioFilePath!.startsWith('/data/')) {
+        try {
+          await ApiService().deleteAudioFile(note.audioFilePath!);
+          debugPrint('✅ [VoiceNoteService] Deleted audio file from backend: ${note.audioFilePath}');
+        } catch (e) {
+          debugPrint('⚠️ [VoiceNoteService] Failed to delete audio from backend: $e');
+          // Continue with local deletion
+        }
+      }
+
+      // Delete local audio file
+      if (note.audioFilePath != null && note.audioFilePath!.isNotEmpty) {
+        try {
+          final file = File(note.audioFilePath!);
+          if (await file.exists()) {
+            await file.delete();
+            debugPrint('✅ [VoiceNoteService] Deleted local audio file: ${note.audioFilePath}');
+          }
+        } catch (e) {
+          debugPrint('⚠️ [VoiceNoteService] Failed to delete local audio file: $e');
+          // Continue anyway
+        }
+      }
+
       // Delete folder relations (cascade)
       await (database.delete(database.voiceNoteFolderRelationsV2)
             ..where((t) => t.voiceNoteId.equals(noteId)))
