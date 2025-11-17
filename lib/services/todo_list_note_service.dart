@@ -145,6 +145,9 @@ class TodoListNoteService {
       );
 
       debugPrint('✅ [TodoListNoteService] Soft deleted todo list note: $noteId');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
     } catch (e, st) {
       debugPrint('❌ [TodoListNoteService] Failed to delete todo list note: $e');
       debugPrint('Stack trace: $st');

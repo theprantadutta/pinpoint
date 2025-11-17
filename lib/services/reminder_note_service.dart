@@ -270,6 +270,9 @@ class ReminderNoteService {
       );
 
       debugPrint('✅ [ReminderNoteService] Soft deleted reminder note: $noteId');
+
+      // Trigger background sync to propagate deletion to other devices
+      _triggerBackgroundSync();
     } catch (e, st) {
       debugPrint('❌ [ReminderNoteService] Failed to delete reminder note: $e');
       debugPrint('Stack trace: $st');

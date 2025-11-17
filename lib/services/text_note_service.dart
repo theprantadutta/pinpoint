@@ -141,6 +141,9 @@ class TextNoteService {
       );
 
       debugPrint('✅ [TextNoteService] Soft deleted text note: $noteId');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
     } catch (e, st) {
       debugPrint('❌ [TextNoteService] Failed to delete text note: $e');
       debugPrint('Stack trace: $st');
