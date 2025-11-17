@@ -102,22 +102,26 @@ class _SplashScreenState extends State<SplashScreen> {
       _updateStatus('Setting up encryption...');
       debugPrint(
           '🔑 [Splash] Initializing encryption service with cloud sync...');
+      bool encryptionKeySuccess = false;
       try {
         final apiService = ApiService();
 
-        // First check if encryption is already initialized
-        if (!SecureEncryptionService.isInitialized) {
-          debugPrint(
-              '🔑 [Splash] Encryption not initialized, fetching from cloud...');
-          await SecureEncryptionService.syncKeyFromCloud(apiService);
-          debugPrint('✅ [Splash] Encryption initialized with cloud key');
+        // Always sync key from cloud to ensure we have the correct key
+        debugPrint('🔑 [Splash] Fetching encryption key from cloud...');
+        encryptionKeySuccess = await SecureEncryptionService.syncKeyFromCloud(apiService);
+
+        if (encryptionKeySuccess) {
+          debugPrint('✅ [Splash] Encryption key synced successfully from cloud');
         } else {
-          debugPrint(
-              '⚠️ [Splash] Encryption already initialized, syncing from cloud anyway...');
-          await SecureEncryptionService.syncKeyFromCloud(apiService);
+          debugPrint('⚠️ [Splash] Failed to sync encryption key from cloud');
+          // Try to initialize with local key or generate new one
+          if (!SecureEncryptionService.isInitialized) {
+            debugPrint('🔑 [Splash] Falling back to local-only encryption');
+            await SecureEncryptionService.initialize();
+          }
         }
       } catch (e) {
-        debugPrint('❌ [Splash] Failed to initialize encryption: $e');
+        debugPrint('❌ [Splash] Error during encryption initialization: $e');
         // Try to initialize without cloud sync as fallback
         if (!SecureEncryptionService.isInitialized) {
           debugPrint(

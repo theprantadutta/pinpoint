@@ -14,6 +14,7 @@ import 'package:pinpoint/screens/account_linking_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 import 'package:pinpoint/screens/admin_panel_screen.dart';
 import 'package:pinpoint/screens/admin_user_details_screen.dart';
+import 'package:pinpoint/screens/sync_debug_screen.dart';
 
 import '../screens/settings_screen.dart';
 import '../screens/create_note_screen_v2.dart';
@@ -243,6 +244,15 @@ class AppNavigation {
           child: SyncScreen(
             key: state.pageKey,
           ),
+        ),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: SyncDebugScreen.kRouteName,
+        name: "Sync Debug Screen",
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const SyncDebugScreen(),
         ),
       ),
       GoRoute(

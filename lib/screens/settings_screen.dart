@@ -24,6 +24,8 @@ import '../services/premium_service.dart';
 import '../constants/premium_limits.dart';
 import '../navigation/app_navigation.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../sync/sync_manager.dart';
+import '../service_locators/init_service_locators.dart';
 
 class SettingsScreen extends StatefulWidget {
   static const String kRouteName = '/settings';
@@ -304,6 +306,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   // Profile Card
                   if (backendAuth.isAuthenticated) ...[
                     _ProfileHeaderCard(backendAuth: backendAuth),
+                    const SizedBox(height: 12),
+                    _ManualSyncButton(),
+                    const SizedBox(height: 8),
+                    _SettingsTile(
+                      title: 'Sync Debug Info',
+                      subtitle: 'View sync status and troubleshoot issues',
+                      icon: Icons.bug_report_outlined,
+                      onTap: () {
+                        PinpointHaptics.medium();
+                        AppNavigation.router.push('/sync-debug');
+                      },
+                    ),
                     const SizedBox(height: 12),
                   ],
 
@@ -1732,6 +1746,155 @@ class _PasswordDialogState extends State<_PasswordDialog> {
           child: const Text('Verify'),
         ),
       ],
+    );
+  }
+}
+
+/// Manual sync button widget
+class _ManualSyncButton extends StatefulWidget {
+  const _ManualSyncButton();
+
+  @override
+  State<_ManualSyncButton> createState() => _ManualSyncButtonState();
+}
+
+class _ManualSyncButtonState extends State<_ManualSyncButton> {
+  bool _isSyncing = false;
+
+  Future<void> _performManualSync() async {
+    setState(() => _isSyncing = true);
+
+    try {
+      final syncManager = getIt<SyncManager>();
+
+      // Perform full bidirectional sync
+      final result = await syncManager.sync();
+
+      if (!mounted) return;
+
+      // Show result dialog
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                result.success ? Icons.check_circle : Icons.error,
+                color: result.success ? Colors.green : Colors.red,
+              ),
+              const SizedBox(width: 8),
+              Text(result.success ? 'Sync Complete' : 'Sync Failed'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (result.success) ...[
+                if (result.notesSynced > 0)
+                  _buildSyncStat('Notes', result.notesSynced, Icons.note),
+                if (result.foldersSynced > 0) ...[
+                  const SizedBox(height: 8),
+                  _buildSyncStat('Folders', result.foldersSynced, Icons.folder),
+                ],
+                if (result.remindersSynced > 0) ...[
+                  const SizedBox(height: 8),
+                  _buildSyncStat('Reminders', result.remindersSynced, Icons.alarm),
+                ],
+                if (result.notesSynced == 0 &&
+                    result.foldersSynced == 0 &&
+                    result.remindersSynced == 0)
+                  const Text('Everything is already up to date.'),
+                if (result.notesFailed > 0) ...[
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  _buildSyncStat(
+                    'Failed',
+                    result.notesFailed,
+                    Icons.error_outline,
+                    isError: true,
+                  ),
+                ],
+                if (result.decryptionErrors > 0) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Text(
+                      '${result.decryptionErrors} notes could not be decrypted.',
+                      style: TextStyle(fontSize: 12, color: Colors.red.shade900),
+                    ),
+                  ),
+                ],
+              ] else
+                Text(result.message),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sync failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
+    }
+  }
+
+  Widget _buildSyncStat(String label, int count, IconData icon,
+      {bool isError = false}) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: isError ? Colors.red : Colors.blue,
+        ),
+        const SizedBox(width: 8),
+        Text('$label: '),
+        Text(
+          '$count',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isError ? Colors.red : Colors.green,
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsTile(
+      title: 'Sync Now',
+      subtitle: 'Pull latest data from server',
+      icon: _isSyncing ? Icons.sync : Icons.cloud_download_rounded,
+      trailing: _isSyncing
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : null,
+      onTap: _isSyncing ? () {} : _performManualSync,
     );
   }
 }
