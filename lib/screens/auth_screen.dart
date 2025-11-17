@@ -218,26 +218,33 @@ class _AuthScreenState extends State<AuthScreen> {
             Icon(
               hasErrors ? Icons.warning_amber : Icons.check_circle,
               color: hasErrors ? Colors.orange : Colors.green,
+              size: 24,
             ),
-            const SizedBox(width: 8),
-            Text(hasErrors ? 'Sync Completed with Errors' : 'Sync Successful'),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                hasErrors ? 'Sync Completed with Errors' : 'Sync Successful',
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (result.notesSynced > 0) ...[
-              _buildSyncStat('Notes', result.notesSynced, Icons.note),
-            ],
-            if (result.foldersSynced > 0) ...[
-              const SizedBox(height: 8),
-              _buildSyncStat('Folders', result.foldersSynced, Icons.folder),
-            ],
-            if (result.remindersSynced > 0) ...[
-              const SizedBox(height: 8),
-              _buildSyncStat('Reminders', result.remindersSynced, Icons.alarm),
-            ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (result.notesSynced > 0) ...[
+                _buildSyncStat('Notes', result.notesSynced, Icons.note),
+              ],
+              if (result.foldersSynced > 0) ...[
+                const SizedBox(height: 12),
+                _buildSyncStat('Folders', result.foldersSynced, Icons.folder),
+              ],
+              if (result.remindersSynced > 0) ...[
+                const SizedBox(height: 12),
+                _buildSyncStat('Reminders', result.remindersSynced, Icons.alarm),
+              ],
             if (result.notesFailed > 0) ...[
               const SizedBox(height: 16),
               const Divider(),
@@ -283,7 +290,8 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
             ],
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -298,23 +306,64 @@ class _AuthScreenState extends State<AuthScreen> {
   /// Helper widget to build sync stat row
   Widget _buildSyncStat(String label, int count, IconData icon,
       {bool isError = false}) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: isError ? Colors.red : Colors.blue,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isError
+            ? Colors.red.withOpacity(0.1)
+            : Colors.green.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isError
+              ? Colors.red.withOpacity(0.3)
+              : Colors.green.withOpacity(0.3),
         ),
-        const SizedBox(width: 8),
-        Text('$label: '),
-        Text(
-          '$count',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isError ? Colors.red : Colors.green,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isError
+                  ? Colors.red.withOpacity(0.15)
+                  : Colors.green.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              icon,
+              size: 18,
+              color: isError ? Colors.red.shade700 : Colors.green.shade700,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: isError
+                  ? Colors.red.withOpacity(0.2)
+                  : Colors.green.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: isError ? Colors.red.shade700 : Colors.green.shade700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
