@@ -17,7 +17,7 @@ class VoiceNoteService {
   /// Trigger background sync (non-blocking)
   static void _triggerBackgroundSync() {
     // Add delay to ensure current database transaction completes
-    Future.delayed(const Duration(milliseconds: 500), () async {
+    Future.delayed(const Duration(seconds: 1), () async {
       try {
         final syncManager = getIt<SyncManager>();
         debugPrint('🔄 [VoiceNoteService] Triggering background sync...');
@@ -25,6 +25,7 @@ class VoiceNoteService {
         debugPrint('✅ [VoiceNoteService] Background sync completed');
       } catch (e) {
         debugPrint('⚠️ [VoiceNoteService] Background sync failed: $e');
+        // Don't rethrow - sync failures shouldn't affect note operations
       }
     });
   }

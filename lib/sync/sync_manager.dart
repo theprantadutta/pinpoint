@@ -11,10 +11,12 @@ class SyncManager with ChangeNotifier {
 
   SyncService? _syncService;
   bool _isInitialized = false;
+  bool _isSyncing = false; // Lock to prevent concurrent syncs
 
   SyncStatus get status => _syncService?.status ?? SyncStatus.idle;
   String get lastSyncMessage => _syncService?.lastSyncMessage ?? '';
   int get lastSyncTimestamp => _syncService?.lastSyncTimestamp ?? 0;
+  bool get isSyncing => _isSyncing;
 
   /// Initialize the sync manager with a sync service
   Future<void> init({SyncService? syncService}) async {
@@ -51,24 +53,40 @@ class SyncManager with ChangeNotifier {
       );
     }
 
-    // Check premium limits before syncing
-    if (direction == SyncDirection.upload || direction == SyncDirection.both) {
-      final limitCheck = await _checkSyncLimits();
-      if (!limitCheck.success) {
-        return limitCheck;
+    // Skip if already syncing to prevent database lock conflicts
+    if (_isSyncing) {
+      debugPrint('⚠️ [SyncManager] Sync already in progress, skipping...');
+      return SyncResult(
+        success: true,
+        message: 'Sync already in progress',
+      );
+    }
+
+    try {
+      _isSyncing = true;
+      notifyListeners();
+
+      // Check premium limits before syncing
+      if (direction == SyncDirection.upload || direction == SyncDirection.both) {
+        final limitCheck = await _checkSyncLimits();
+        if (!limitCheck.success) {
+          return limitCheck;
+        }
       }
+
+      // Perform the actual sync
+      final result = await _syncService!.sync(direction: direction);
+
+      // After successful sync, update usage stats from backend
+      if (result.success) {
+        await _syncUsageStatsWithBackend();
+      }
+
+      return result;
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
     }
-
-    // Perform the actual sync
-    final result = await _syncService!.sync(direction: direction);
-
-    // After successful sync, update usage stats from backend
-    if (result.success) {
-      await _syncUsageStatsWithBackend();
-    }
-
-    notifyListeners();
-    return result;
   }
 
   /// Sync usage stats with backend after sync operation
@@ -129,9 +147,6 @@ class SyncManager with ChangeNotifier {
   Future<SyncResult> download() async {
     return await sync(direction: SyncDirection.download);
   }
-
-  /// Check if sync is currently in progress
-  bool get isSyncing => status == SyncStatus.syncing;
 
   /// Get last sync timestamp as DateTime
   DateTime? get lastSyncDateTime {
