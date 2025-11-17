@@ -513,6 +513,9 @@ class ApiSyncService extends SyncService {
         throw Exception('Unknown note type: ${noteWrapper.type}');
     }
 
+    // Add folder UUIDs for all note types
+    await _addFolderUuidsToNoteData(noteData, noteWrapper);
+
     // Convert to JSON string
     final jsonString = jsonEncode(noteData);
 
@@ -613,6 +616,226 @@ class ApiSyncService extends SyncService {
       'createdAt': note.createdAt.toIso8601String(),
       'updatedAt': note.updatedAt.toIso8601String(),
     };
+  }
+
+  /// Add folder UUIDs to note data for V2 notes
+  Future<void> _addFolderUuidsToNoteData(
+    Map<String, dynamic> noteData,
+    _V2NoteWrapper noteWrapper,
+  ) async {
+    final folderUuids = <String>[];
+
+    // Fetch folder relations based on note type
+    switch (noteWrapper.type) {
+      case 'text':
+        final textNote = noteWrapper.note as TextNoteEntity;
+        final relations = await (_database.select(_database.textNoteFolderRelationsV2)
+              ..where((r) => r.textNoteId.equals(textNote.id)))
+            .get();
+
+        for (final rel in relations) {
+          final folder = await (_database.select(_database.noteFolders)
+                ..where((f) => f.noteFolderId.equals(rel.folderId)))
+              .getSingleOrNull();
+          if (folder != null) {
+            folderUuids.add(folder.uuid);
+          }
+        }
+        break;
+
+      case 'voice':
+        final voiceNote = noteWrapper.note as VoiceNoteEntity;
+        final relations = await (_database.select(_database.voiceNoteFolderRelationsV2)
+              ..where((r) => r.voiceNoteId.equals(voiceNote.id)))
+            .get();
+
+        for (final rel in relations) {
+          final folder = await (_database.select(_database.noteFolders)
+                ..where((f) => f.noteFolderId.equals(rel.folderId)))
+              .getSingleOrNull();
+          if (folder != null) {
+            folderUuids.add(folder.uuid);
+          }
+        }
+        break;
+
+      case 'todo':
+        final todoNote = noteWrapper.note as TodoListNoteEntity;
+        final relations = await (_database.select(_database.todoListNoteFolderRelationsV2)
+              ..where((r) => r.todoListNoteId.equals(todoNote.id)))
+            .get();
+
+        for (final rel in relations) {
+          final folder = await (_database.select(_database.noteFolders)
+                ..where((f) => f.noteFolderId.equals(rel.folderId)))
+              .getSingleOrNull();
+          if (folder != null) {
+            folderUuids.add(folder.uuid);
+          }
+        }
+        break;
+
+      case 'reminder':
+        final reminderNote = noteWrapper.note as ReminderNoteEntity;
+        final relations = await (_database.select(_database.reminderNoteFolderRelationsV2)
+              ..where((r) => r.reminderNoteId.equals(reminderNote.id)))
+            .get();
+
+        for (final rel in relations) {
+          final folder = await (_database.select(_database.noteFolders)
+                ..where((f) => f.noteFolderId.equals(rel.folderId)))
+              .getSingleOrNull();
+          if (folder != null) {
+            folderUuids.add(folder.uuid);
+          }
+        }
+        break;
+    }
+
+    // Add folder UUIDs to note data
+    noteData['folderUuids'] = folderUuids;
+    debugPrint('📁 [ApiSync] Added ${folderUuids.length} folder UUIDs to ${noteWrapper.type} note ${noteData['uuid']}');
+  }
+
+  /// Restore folder relations from server data for V2 notes
+  Future<void> _restoreFolderRelationsV2(
+    String noteUuid,
+    Map<String, dynamic> noteData,
+    String noteType,
+  ) async {
+    if (!noteData.containsKey('folderUuids')) {
+      debugPrint('⚠️ [ApiSync] No folder UUIDs in note data for $noteUuid, skipping folder restore');
+      return;
+    }
+
+    final folderUuids = (noteData['folderUuids'] as List).cast<String>();
+    if (folderUuids.isEmpty) {
+      debugPrint('⚠️ [ApiSync] Empty folder UUIDs for $noteUuid, skipping folder restore');
+      return;
+    }
+
+    try {
+      // Get note ID from UUID
+      int noteId;
+      switch (noteType) {
+        case 'text':
+          final note = await (_database.select(_database.textNotesV2)
+                ..where((t) => t.uuid.equals(noteUuid)))
+              .getSingleOrNull();
+          if (note == null) return;
+          noteId = note.id;
+
+          // Delete existing folder relations
+          await (_database.delete(_database.textNoteFolderRelationsV2)
+                ..where((r) => r.textNoteId.equals(noteId)))
+              .go();
+          break;
+
+        case 'voice':
+          final note = await (_database.select(_database.voiceNotesV2)
+                ..where((t) => t.uuid.equals(noteUuid)))
+              .getSingleOrNull();
+          if (note == null) return;
+          noteId = note.id;
+
+          // Delete existing folder relations
+          await (_database.delete(_database.voiceNoteFolderRelationsV2)
+                ..where((r) => r.voiceNoteId.equals(noteId)))
+              .go();
+          break;
+
+        case 'todo':
+          final note = await (_database.select(_database.todoListNotesV2)
+                ..where((t) => t.uuid.equals(noteUuid)))
+              .getSingleOrNull();
+          if (note == null) return;
+          noteId = note.id;
+
+          // Delete existing folder relations
+          await (_database.delete(_database.todoListNoteFolderRelationsV2)
+                ..where((r) => r.todoListNoteId.equals(noteId)))
+              .go();
+          break;
+
+        case 'reminder':
+          final note = await (_database.select(_database.reminderNotesV2)
+                ..where((t) => t.uuid.equals(noteUuid)))
+              .getSingleOrNull();
+          if (note == null) return;
+          noteId = note.id;
+
+          // Delete existing folder relations
+          await (_database.delete(_database.reminderNoteFolderRelationsV2)
+                ..where((r) => r.reminderNoteId.equals(noteId)))
+              .go();
+          break;
+
+        default:
+          debugPrint('⚠️ [ApiSync] Unknown note type for folder restore: $noteType');
+          return;
+      }
+
+      // Create new folder relations
+      for (final folderUuid in folderUuids) {
+        // Find folder by UUID
+        final folder = await (_database.select(_database.noteFolders)
+              ..where((f) => f.uuid.equals(folderUuid)))
+            .getSingleOrNull();
+
+        if (folder == null) {
+          debugPrint('⚠️ [ApiSync] Folder not found for UUID: $folderUuid (will be synced later)');
+          continue;
+        }
+
+        // Insert folder relation
+        switch (noteType) {
+          case 'text':
+            await _database.into(_database.textNoteFolderRelationsV2).insert(
+              TextNoteFolderRelationsV2Companion(
+                textNoteId: Value(noteId),
+                folderId: Value(folder.noteFolderId),
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+            break;
+
+          case 'voice':
+            await _database.into(_database.voiceNoteFolderRelationsV2).insert(
+              VoiceNoteFolderRelationsV2Companion(
+                voiceNoteId: Value(noteId),
+                folderId: Value(folder.noteFolderId),
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+            break;
+
+          case 'todo':
+            await _database.into(_database.todoListNoteFolderRelationsV2).insert(
+              TodoListNoteFolderRelationsV2Companion(
+                todoListNoteId: Value(noteId),
+                folderId: Value(folder.noteFolderId),
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+            break;
+
+          case 'reminder':
+            await _database.into(_database.reminderNoteFolderRelationsV2).insert(
+              ReminderNoteFolderRelationsV2Companion(
+                reminderNoteId: Value(noteId),
+                folderId: Value(folder.noteFolderId),
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+            break;
+        }
+      }
+
+      debugPrint('📁 [ApiSync] Restored ${folderUuids.length} folder relations for $noteType note $noteUuid');
+    } catch (e, st) {
+      debugPrint('❌ [ApiSync] Failed to restore folder relations: $e');
+      debugPrint('Stack trace: $st');
+    }
   }
 
   /// OLD METHOD - Keep for reference, will be removed after V2 migration
@@ -906,6 +1129,9 @@ class ApiSyncService extends SyncService {
             isSynced: const Value(true),
           ),
         );
+
+        // Restore folder relations
+        await _restoreFolderRelationsV2(uuid, noteData, 'text');
         break;
 
       case 'voice':
@@ -931,6 +1157,9 @@ class ApiSyncService extends SyncService {
         if (serverAudioPath.isNotEmpty && !serverAudioPath.startsWith('/data/')) {
           await _downloadAudioFile(serverAudioPath, uuid);
         }
+
+        // Restore folder relations
+        await _restoreFolderRelationsV2(uuid, noteData, 'voice');
         break;
 
       case 'todo':
@@ -971,6 +1200,9 @@ class ApiSyncService extends SyncService {
             );
           }
         }
+
+        // Restore folder relations
+        await _restoreFolderRelationsV2(uuid, noteData, 'todo');
         break;
 
       case 'reminder':
@@ -989,6 +1221,9 @@ class ApiSyncService extends SyncService {
             isSynced: const Value(true),
           ),
         );
+
+        // Restore folder relations
+        await _restoreFolderRelationsV2(uuid, noteData, 'reminder');
         break;
     }
 
@@ -1029,6 +1264,9 @@ class ApiSyncService extends SyncService {
             ),
           );
           debugPrint('✅ [ApiSync] Created text note V2: $clientNoteUuid');
+
+          // Restore folder relations
+          await _restoreFolderRelationsV2(clientNoteUuid, noteData, 'text');
           break;
 
         case 'audio':
@@ -1058,6 +1296,9 @@ class ApiSyncService extends SyncService {
           if (serverAudioPath.isNotEmpty && !serverAudioPath.startsWith('/data/')) {
             await _downloadAudioFile(serverAudioPath, clientNoteUuid);
           }
+
+          // Restore folder relations
+          await _restoreFolderRelationsV2(clientNoteUuid, noteData, 'voice');
           break;
 
         case 'todo':
@@ -1095,6 +1336,9 @@ class ApiSyncService extends SyncService {
             }
             debugPrint('✅ [ApiSync] Created todo note V2 with ${items.length} items: $clientNoteUuid');
           }
+
+          // Restore folder relations
+          await _restoreFolderRelationsV2(clientNoteUuid, noteData, 'todo');
           break;
 
         case 'reminder':
@@ -1114,15 +1358,15 @@ class ApiSyncService extends SyncService {
             ),
           );
           debugPrint('✅ [ApiSync] Created reminder note V2: $clientNoteUuid');
+
+          // Restore folder relations
+          await _restoreFolderRelationsV2(clientNoteUuid, noteData, 'reminder');
           break;
 
         default:
           debugPrint('⚠️ [ApiSync] Unknown note type: $noteType');
           return;
       }
-
-      // TODO: Handle folder relationships for V2 notes
-      // For now, skip folder sync as V2 architecture may handle this differently
 
       debugPrint('✅ [ApiSync] Successfully created V2 note $clientNoteUuid');
     } catch (e, stackTrace) {
