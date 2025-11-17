@@ -390,11 +390,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       );
       return _currentNoteId!;
     } else {
-      // Create new note (without initial items - we'll add them separately)
+      // Create new note with actual todo items (convert to string content)
+      final initialItemTexts = _todoItems.map((item) => item.content).toList();
       final noteId = await TodoListNoteService.createTodoListNote(
         title: title,
         folders: selectedFolders,
-        initialItems: [], // Empty for now
+        initialItems: initialItemTexts.isNotEmpty ? initialItemTexts : null,
       );
 
       // Get the note UUID for adding items
