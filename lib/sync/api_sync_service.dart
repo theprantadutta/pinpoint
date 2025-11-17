@@ -1178,26 +1178,34 @@ class ApiSyncService extends SyncService {
 
         // Update todo items
         if (noteData.containsKey('todoItems')) {
-          // Delete existing items
-          await (_database.delete(_database.todoItemsV2)
-                ..where((tbl) => tbl.todoListNoteUuid.equals(uuid)))
-              .go();
+          // Get the note ID
+          final todoNote = await (_database.select(_database.todoListNotesV2)
+                ..where((tbl) => tbl.uuid.equals(uuid)))
+              .getSingleOrNull();
 
-          // Insert new items
-          final items = noteData['todoItems'] as List;
-          for (final item in items) {
-            await _database.into(_database.todoItemsV2).insert(
-              TodoItemsV2Companion(
-                uuid: Value(item['uuid'] as String),
-                todoListNoteUuid: Value(uuid),
-                content: Value(item['text'] as String),
-                isCompleted: Value(item['isDone'] as bool),
-                orderIndex: Value(item['orderIndex'] as int),
-                createdAt: Value(serverUpdatedAt),
-                updatedAt: Value(serverUpdatedAt),
-                isSynced: const Value(true),
-              ),
-            );
+          if (todoNote != null) {
+            // Delete existing items
+            await (_database.delete(_database.todoItemsV2)
+                  ..where((tbl) => tbl.todoListNoteId.equals(todoNote.id)))
+                .go();
+
+            // Insert new items with the note ID
+            final items = noteData['todoItems'] as List;
+            for (final item in items) {
+              await _database.into(_database.todoItemsV2).insert(
+                TodoItemsV2Companion(
+                  uuid: Value(item['uuid'] as String),
+                  todoListNoteId: Value(todoNote.id),
+                  todoListNoteUuid: Value(uuid),
+                  content: Value(item['text'] as String),
+                  isCompleted: Value(item['isDone'] as bool),
+                  orderIndex: Value(item['orderIndex'] as int),
+                  createdAt: Value(serverUpdatedAt),
+                  updatedAt: Value(serverUpdatedAt),
+                  isSynced: const Value(true),
+                ),
+              );
+            }
           }
         }
 
@@ -1303,7 +1311,7 @@ class ApiSyncService extends SyncService {
 
         case 'todo':
           // Create todo list note
-          await _database.into(_database.todoListNotesV2).insert(
+          final todoNoteId = await _database.into(_database.todoListNotesV2).insert(
             TodoListNotesV2Companion(
               uuid: Value(clientNoteUuid),
               title: Value(title),
@@ -1316,14 +1324,14 @@ class ApiSyncService extends SyncService {
             ),
           );
 
-          // Create todo items
+          // Create todo items with the note ID
           if (noteData.containsKey('todoItems')) {
             final items = noteData['todoItems'] as List;
             for (final item in items) {
               await _database.into(_database.todoItemsV2).insert(
                 TodoItemsV2Companion(
                   uuid: Value(item['uuid'] as String),
-                  todoListNoteId: const Value.absent(), // Will be set by cascade
+                  todoListNoteId: Value(todoNoteId),
                   todoListNoteUuid: Value(clientNoteUuid),
                   content: Value(item['text'] as String),
                   isCompleted: Value(item['isDone'] as bool),
