@@ -209,6 +209,9 @@ class VoiceNoteService {
       );
 
       debugPrint('✅ [VoiceNoteService] Soft deleted voice note: $noteId');
+
+      // Trigger background sync
+      _triggerBackgroundSync();
     } catch (e, st) {
       debugPrint('❌ [VoiceNoteService] Failed to delete voice note: $e');
       debugPrint('Stack trace: $st');
