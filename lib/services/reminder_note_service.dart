@@ -203,7 +203,18 @@ class ReminderNoteService {
 
       debugPrint('✅ [ReminderNoteService] Created ${reminderNoteIds.length} reminder note(s) with ${folders.length} folders');
 
-      // Trigger background sync
+      // Schedule all reminders on backend (this is what actually triggers notifications!)
+      debugPrint('🔔 [ReminderNoteService] Scheduling ${reminderNoteIds.length} reminder(s) on backend...');
+      for (final noteId in reminderNoteIds) {
+        try {
+          await scheduleReminderOnBackend(noteId);
+        } catch (e) {
+          debugPrint('⚠️ [ReminderNoteService] Failed to schedule reminder $noteId on backend: $e');
+          // Continue with other reminders even if one fails
+        }
+      }
+
+      // Trigger background sync for encrypted note storage
       _triggerBackgroundSync();
 
       return reminderNoteIds;
@@ -297,8 +308,8 @@ class ReminderNoteService {
     }
   }
 
-  /// Schedule reminder notification on backend (explicit user action)
-  /// This should be called when user clicks "Schedule Reminder" button
+  /// Schedule reminder notification on backend
+  /// This is called automatically when creating/updating reminders
   static Future<void> scheduleReminderOnBackend(int noteId) async {
     try {
       final database = getIt<AppDatabase>();
@@ -317,32 +328,21 @@ class ReminderNoteService {
 
       // Schedule on backend
       try {
-        // Check if reminder already exists on backend
-        final reminders = await ApiService().getReminders(includeTriggered: false);
-        final backendReminder = reminders.firstWhere(
-          (r) => r['note_uuid'] == note.uuid,
-          orElse: () => <String, dynamic>{},
+        // Create new backend reminder with all recurrence fields
+        final response = await ApiService().createReminder(
+          noteUuid: note.uuid!,
+          title: note.title!,
+          notificationTitle: note.notificationTitle ?? note.title!,
+          notificationContent: note.notificationContent,
+          reminderTime: note.reminderTime!,
+          recurrenceType: note.recurrenceType ?? 'once',
+          recurrenceInterval: note.recurrenceInterval ?? 1,
+          recurrenceEndType: note.recurrenceEndType ?? 'never',
+          recurrenceEndValue: note.recurrenceEndValue,
         );
 
-        if (backendReminder.isNotEmpty && backendReminder['id'] != null) {
-          // Update existing backend reminder
-          await ApiService().updateReminder(
-            reminderId: backendReminder['id'] as String,
-            title: note.title,
-            description: note.description,
-            reminderTime: note.reminderTime,
-          );
-          debugPrint('✅ [ReminderNoteService] Updated backend reminder: ${backendReminder['id']}');
-        } else {
-          // Create new backend reminder
-          await ApiService().createReminder(
-            noteUuid: note.uuid!,
-            title: note.title!,
-            description: note.description,
-            reminderTime: note.reminderTime!,
-          );
-          debugPrint('✅ [ReminderNoteService] Created backend reminder for: ${note.uuid}');
-        }
+        debugPrint('✅ [ReminderNoteService] Created backend reminder for: ${note.uuid}');
+        debugPrint('   Backend response: $response');
 
         // Mark as synced
         await (database.update(database.reminderNotesV2)
