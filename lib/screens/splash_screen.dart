@@ -250,21 +250,22 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: SizedBox(
-          width: double.infinity, // Force full width
+          width: double.infinity,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Spacer(flex: 2),
 
-                // Logo - Centered
+                // Logo with enhanced shadow and animation
                 Center(
                   child: Hero(
                     tag: 'app_logo',
@@ -272,17 +273,26 @@ class _SplashScreenState extends State<SplashScreen> {
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(28),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colorScheme.primary.withValues(alpha: 0.1),
+                            colorScheme.secondary.withValues(alpha: 0.05),
+                          ],
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: colorScheme.primary.withValues(alpha: 0.2),
-                            blurRadius: 20,
+                            color: colorScheme.primary.withValues(alpha: 0.3),
+                            blurRadius: 30,
+                            spreadRadius: 5,
                             offset: const Offset(0, 10),
                           ),
                         ],
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(28),
                         child: Image.asset(
                           'assets/images/pinpoint-logo.png',
                           fit: BoxFit.cover,
@@ -292,100 +302,195 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
 
-                // App Name - Centered
+                // App Name
                 Center(
                   child: Text(
                     'PinPoint',
                     style: theme.textTheme.displayMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
-                      letterSpacing: -0.5,
+                      letterSpacing: -1.0,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
-                // Tagline - Centered with full width
+                // Tagline
                 SizedBox(
                   width: double.infinity,
                   child: Text(
                     'Your thoughts, perfectly organized',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: colorScheme.onSurfaceVariant,
-                      letterSpacing: 0.2,
+                      letterSpacing: 0.3,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ),
 
-                const Spacer(flex: 3),
+                const Spacer(flex: 2),
 
-                // Loading/Sync indicator
+                // Enhanced Loading/Sync indicator
                 if (_syncProgress != null) ...[
-                  // Progress bar for sync
+                  // Syncing card with progress
                   Container(
-                    constraints: const BoxConstraints(maxWidth: 280),
+                    constraints: const BoxConstraints(maxWidth: 320),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          colorScheme.primaryContainer.withValues(alpha: isDark ? 0.3 : 0.5),
+                          colorScheme.secondaryContainer.withValues(alpha: isDark ? 0.2 : 0.3),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.1),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.shadow.withValues(alpha: 0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: Column(
                       children: [
-                        // Progress bar
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: _syncProgress,
-                            minHeight: 8,
-                            backgroundColor:
-                                colorScheme.surfaceContainerHighest,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.primary,
-                            ),
+                        // Sync icon
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: colorScheme.primary.withValues(alpha: 0.1),
+                          ),
+                          child: Icon(
+                            Icons.sync_rounded,
+                            size: 32,
+                            color: colorScheme.primary,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        // Percentage text
+
+                        const SizedBox(height: 20),
+
+                        // Status message
                         Text(
-                          '${(_syncProgress! * 100).toInt()}%',
+                          _statusMessage,
                           style: theme.textTheme.titleMedium?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Progress bar with gradient
+                        Stack(
+                          children: [
+                            // Background
+                            Container(
+                              height: 6,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(3),
+                                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            // Progress
+                            FractionallySizedBox(
+                              widthFactor: _syncProgress,
+                              child: Container(
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(3),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      colorScheme.primary,
+                                      colorScheme.secondary,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Percentage with better styling
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${(_syncProgress! * 100).toInt()}%',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ] else ...[
-                  // Circular indicator for general loading
-                  Center(
+                  // Enhanced circular indicator for general loading
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          colorScheme.primaryContainer.withValues(alpha: isDark ? 0.3 : 0.4),
+                          colorScheme.secondaryContainer.withValues(alpha: isDark ? 0.2 : 0.3),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.primary.withValues(alpha: 0.2),
+                          blurRadius: 24,
+                          spreadRadius: 4,
+                        ),
+                      ],
+                    ),
                     child: SizedBox(
-                      width: 40,
-                      height: 40,
+                      width: 48,
+                      height: 48,
                       child: CircularProgressIndicator(
-                        strokeWidth: 3,
+                        strokeWidth: 4,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           colorScheme.primary,
                         ),
                       ),
                     ),
                   ),
-                ],
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Status message
-                Center(
-                  child: Text(
+                  // Status message for non-sync loading
+                  Text(
                     _statusMessage,
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.bodyLarge?.copyWith(
                       color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                ),
+                ],
 
-                const Spacer(),
+                const Spacer(flex: 2),
               ],
             ),
           ),

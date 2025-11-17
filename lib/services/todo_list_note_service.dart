@@ -14,7 +14,8 @@ class TodoListNoteService {
 
   /// Trigger background sync (non-blocking)
   static void _triggerBackgroundSync() {
-    Future.microtask(() async {
+    // Add delay to ensure current database transaction completes
+    Future.delayed(const Duration(milliseconds: 500), () async {
       try {
         final syncManager = getIt<SyncManager>();
         debugPrint('🔄 [TodoListNoteService] Triggering background sync...');
