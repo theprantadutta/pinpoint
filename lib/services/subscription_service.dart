@@ -25,6 +25,7 @@ class SubscriptionService {
 
   List<ProductDetails> _products = [];
   List<ProductDetails> get products => _products;
+  bool get hasProducts => _products.isNotEmpty;
 
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   bool _isAvailable = false;

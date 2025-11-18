@@ -18,12 +18,42 @@ class SubscriptionScreen extends StatefulWidget {
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
   late SubscriptionService _subscriptionService;
   bool _isLoading = false;
+  bool _isLoadingProducts = true;
   String? _selectedProductId;
+  String? _productLoadError;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _subscriptionService = SubscriptionService();
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    setState(() {
+      _isLoadingProducts = true;
+      _productLoadError = null;
+    });
+
+    try {
+      await _subscriptionService.loadProducts();
+
+      if (mounted) {
+        setState(() {
+          _isLoadingProducts = false;
+          if (!_subscriptionService.hasProducts) {
+            _productLoadError = 'No subscription plans available';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingProducts = false;
+          _productLoadError = 'Failed to load subscription plans';
+        });
+      }
+    }
   }
 
   @override
@@ -252,13 +282,71 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildSubscriptionPlans(ColorScheme colorScheme, bool isDark) {
+    // Show loading state
+    if (_isLoadingProducts) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: colorScheme.primary),
+            const SizedBox(height: 16),
+            Text(
+              'Loading subscription plans...',
+              style: TextStyle(
+                color: isDark
+                    ? PinpointColors.darkTextSecondary
+                    : PinpointColors.lightTextSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Show error state
+    if (_productLoadError != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: PinpointColors.rose,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _productLoadError!,
+              style: TextStyle(
+                color: isDark
+                    ? PinpointColors.darkTextPrimary
+                    : PinpointColors.lightTextPrimary,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadProducts,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Show subscription plans with dynamic pricing
     return Column(
       children: [
         // Monthly
-        _buildPlanCard(
+        _buildDynamicPlanCard(
           productId: SubscriptionService.premiumMonthly,
           title: 'Monthly',
-          price: '\$4.99',
           period: 'per month',
           badge: '14-day free trial',
           colorScheme: colorScheme,
@@ -268,10 +356,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         const SizedBox(height: 16),
 
         // Yearly (Best Value)
-        _buildPlanCard(
+        _buildDynamicPlanCard(
           productId: SubscriptionService.premiumYearly,
           title: 'Yearly',
-          price: '\$39.99',
           period: 'per year',
           badge: 'BEST VALUE - Save 33%',
           isPopular: true,
@@ -282,16 +369,45 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         const SizedBox(height: 16),
 
         // Lifetime
-        _buildPlanCard(
+        _buildDynamicPlanCard(
           productId: SubscriptionService.premiumLifetime,
           title: 'Lifetime',
-          price: '\$99.99',
           period: 'one-time',
           badge: 'Pay once, own forever',
           colorScheme: colorScheme,
           isDark: isDark,
         ),
       ],
+    );
+  }
+
+  Widget _buildDynamicPlanCard({
+    required String productId,
+    required String title,
+    required String period,
+    String? badge,
+    bool isPopular = false,
+    required ColorScheme colorScheme,
+    required bool isDark,
+  }) {
+    // Get product details from Google Play
+    final product = _subscriptionService.getProduct(productId);
+
+    // Fallback if product not found
+    if (product == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Use dynamic price from Google Play
+    return _buildPlanCard(
+      productId: productId,
+      title: title,
+      price: product.price, // DYNAMIC PRICE FROM GOOGLE PLAY!
+      period: period,
+      badge: badge,
+      isPopular: isPopular,
+      colorScheme: colorScheme,
+      isDark: isDark,
     );
   }
 
