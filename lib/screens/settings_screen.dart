@@ -66,214 +66,111 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Row(
           children: [
             Icon(Icons.settings_rounded, color: cs.primary, size: 20),
-            const SizedBox(width: 8),
+            const SizedBox(width: PinpointSpacing.sm),
             const Text('Settings'),
           ],
         ),
       ),
       body: ListView(
-        padding:
-            const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
+        padding: EdgeInsets.only(
+          left: PinpointSpacing.screenEdge,
+          right: PinpointSpacing.screenEdge,
+          top: PinpointSpacing.screenEdge,
+          bottom: 60,
+        ),
         children: [
-          // Profile/Branding Section
-          Container(
-            padding: const EdgeInsets.all(24),
-            margin: const EdgeInsets.only(bottom: 24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  cs.primary.withValues(alpha: 0.1),
-                  cs.primary.withValues(alpha: 0.05),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: cs.primary.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(32),
-                    boxShadow: [
-                      BoxShadow(
-                        color: cs.primary.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(32),
-                    child: Image.asset(
-                      'assets/images/pinpoint-logo.png',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Pinpoint',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Your thoughts, perfectly organized',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Subscription Section
+          // Premium/Subscription Section
           Consumer<SubscriptionManager>(
             builder: (context, subscriptionManager, child) {
-              final premiumService = PremiumService();
-              final gracePeriodMessage = premiumService.getGracePeriodMessage();
+              return _PremiumSection(
+                subscriptionManager: subscriptionManager,
+                onManageSubscription: _openGooglePlaySubscriptions,
+              );
+            },
+          ),
+
+          const SizedBox(height: PinpointSpacing.xl),
+
+          // Account & Sync Section
+          Consumer<BackendAuthService>(
+            builder: (context, backendAuth, _) {
+              if (!backendAuth.isAuthenticated) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SectionHeader(title: 'ACCOUNT'),
+                    const SizedBox(height: PinpointSpacing.md),
+                    _SettingsTile(
+                      title: 'Sign In',
+                      subtitle: 'Sign in to sync your notes',
+                      icon: Icons.login_rounded,
+                      onTap: () {
+                        PinpointHaptics.medium();
+                        AppNavigation.router.push('/auth');
+                      },
+                    ),
+                  ],
+                );
+              }
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Subscription',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.1,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  _SectionHeader(title: 'ACCOUNT & SYNC'),
+                  const SizedBox(height: PinpointSpacing.md),
+                  _ProfileCard(backendAuth: backendAuth),
+                  const SizedBox(height: PinpointSpacing.md),
+                  _ManualSyncButton(),
+                  const SizedBox(height: PinpointSpacing.md),
 
-                  // Grace Period Warning Banner
-                  if (subscriptionManager.isInGracePeriod &&
-                      gracePeriodMessage != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.orange.withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.warning_amber_rounded,
-                            color: Colors.orange,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              gracePeriodMessage,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.orange.shade800,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-
-                  _SettingsTile(
-                    title: subscriptionManager.isPremium
-                        ? subscriptionManager.isInGracePeriod
-                            ? 'Premium (Grace Period)'
-                            : 'Premium Active'
-                        : 'Upgrade to Premium',
-                    subtitle: subscriptionManager.isPremium
-                        ? subscriptionManager.isInGracePeriod
-                            ? 'Update payment method'
-                            : 'Thank you for your support!'
-                        : 'Unlock all features',
-                    icon: subscriptionManager.isPremium
-                        ? Icons.workspace_premium
-                        : Icons.star_outline,
-                    trailing: subscriptionManager.isPremium
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: subscriptionManager.isInGracePeriod
-                                  ? Colors.orange
-                                  : PinpointColors.mint,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              subscriptionManager.subscriptionTier
-                                  .toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                              ),
-                            ),
-                          )
-                        : null,
-                    onTap: () {
-                      PinpointHaptics.medium();
-                      AppNavigation.router.push(SubscriptionScreen.kRouteName);
-                    },
-                  ),
-                  // Manage Subscription button (only for premium users)
-                  if (subscriptionManager.isPremium) ...[
-                    const SizedBox(height: 8),
+                  // Sync Debug Info - only in debug mode
+                  if (kDebugMode) ...[
                     _SettingsTile(
-                      title: 'Manage Subscription',
-                      subtitle: 'View in Google Play Store',
-                      icon: Icons.manage_accounts_rounded,
+                      title: 'Sync Debug Info',
+                      subtitle: 'View sync status and troubleshoot issues',
+                      icon: Icons.bug_report_outlined,
                       onTap: () {
                         PinpointHaptics.medium();
-                        _openGooglePlaySubscriptions();
+                        AppNavigation.router.push('/sync-debug');
                       },
                     ),
+                    const SizedBox(height: PinpointSpacing.md),
                   ],
-                  const SizedBox(height: 32),
+
+                  _LinkedAccountsSection(backendAuth: backendAuth),
+                  const SizedBox(height: PinpointSpacing.md),
+                  _LogoutButton(backendAuth: backendAuth),
                 ],
               );
             },
           ),
 
-          // Usage Limits Section
-          _UsageLimitsSection(),
+          const SizedBox(height: PinpointSpacing.xl),
 
-          const SizedBox(height: 32),
+          // Usage Limits Section (Free Users Only)
+          Consumer<SubscriptionManager>(
+            builder: (context, subscriptionManager, child) {
+              if (subscriptionManager.isPremium) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionHeader(title: 'USAGE'),
+                  const SizedBox(height: PinpointSpacing.md),
+                  const _UsageLimitsCard(),
+                  const SizedBox(height: PinpointSpacing.xl),
+                ],
+              );
+            },
+          ),
 
           // Appearance Section
-          Text(
-            'Appearance',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.1,
-            ),
-          ),
-          const SizedBox(height: 12),
+          _SectionHeader(title: 'APPEARANCE'),
+          const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
             title: 'Theme',
+            subtitle: 'Customize your theme',
             icon: Icons.color_lens_rounded,
             onTap: () {
               PinpointHaptics.medium();
@@ -281,74 +178,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: PinpointSpacing.xl),
 
-          // Account Section
-          Consumer<BackendAuthService>(
-            // Use child parameter to preserve _LinkedAccountsSection across rebuilds
-            child: Consumer<BackendAuthService>(
-              builder: (context, auth, _) =>
-                  _LinkedAccountsSection(backendAuth: auth),
-            ),
-            builder: (context, backendAuth, linkedAccountsChild) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Account',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.1,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Profile Card
-                  if (backendAuth.isAuthenticated) ...[
-                    _ProfileHeaderCard(backendAuth: backendAuth),
-                    const SizedBox(height: 12),
-                    _ManualSyncButton(),
-                    const SizedBox(height: 8),
-                    // Sync Debug Info - only in debug mode
-                    if (kDebugMode) ...[
-                      _SettingsTile(
-                        title: 'Sync Debug Info',
-                        subtitle: 'View sync status and troubleshoot issues',
-                        icon: Icons.bug_report_outlined,
-                        onTap: () {
-                          PinpointHaptics.medium();
-                          AppNavigation.router.push('/sync-debug');
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    const SizedBox(height: 4),
-                  ],
-
-                  // Reuse the preserved child widget
-                  if (linkedAccountsChild != null) linkedAccountsChild,
-
-                  // Logout Button
-                  if (backendAuth.isAuthenticated) ...[
-                    const SizedBox(height: 12),
-                    _LogoutButton(backendAuth: backendAuth),
-                  ],
-
-                  const SizedBox(height: 32),
-                ],
-              );
-            },
-          ),
-
-          // General Section
-          Text(
-            'General',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.1,
-            ),
-          ),
-          const SizedBox(height: 12),
+          // Content Section
+          _SectionHeader(title: 'CONTENT'),
+          const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
             title: 'My Folders',
             icon: Icons.folder_rounded,
@@ -357,7 +191,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               AppNavigation.router.push('/my-folders');
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
             title: 'Archive',
             icon: Icons.archive_rounded,
@@ -366,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               AppNavigation.router.push(ArchiveScreen.kRouteName);
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
             title: 'Trash',
             icon: Icons.delete_rounded,
@@ -375,16 +209,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               AppNavigation.router.push(TrashScreen.kRouteName);
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
-            title: 'Sync',
+            title: 'Sync Settings',
             icon: Icons.sync_rounded,
             onTap: () {
               PinpointHaptics.medium();
               AppNavigation.router.push(SyncScreen.kRouteName);
             },
           ),
-          const SizedBox(height: 8),
+
+          const SizedBox(height: PinpointSpacing.xl),
+
+          // Security Section
+          _SectionHeader(title: 'SECURITY'),
+          const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
             title: 'Biometric Lock',
             subtitle:
@@ -403,9 +242,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               MyApp.of(context).changeBiometricEnabledEnabled(!current);
             },
           ),
-          const SizedBox(height: 8),
+
+          const SizedBox(height: PinpointSpacing.xl),
+
+          // Advanced Section
+          _SectionHeader(title: 'ADVANCED'),
+          const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
             title: 'Import Note',
+            subtitle: 'Import from .pinpoint-note file',
             icon: Icons.file_upload_rounded,
             onTap: () async {
               PinpointHaptics.medium();
@@ -429,9 +274,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
           ),
+
           // Test notification - only in debug mode
           if (kDebugMode) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
               title: 'Test Notification',
               subtitle: 'Send a test push notification',
@@ -461,31 +307,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
               },
             ),
-            const SizedBox(height: 8),
           ],
+
           // Admin Panel - only visible to admin email
           if (context.read<BackendAuthService>().userEmail ==
               'prantadutta1997@gmail.com') ...[
+            const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
               title: 'Admin Panel',
               subtitle: 'Debug sync issues',
               icon: Icons.admin_panel_settings,
               onTap: () async {
                 PinpointHaptics.medium();
-
-                // Import required
                 final authenticated = await showDialog<bool>(
                   context: context,
                   builder: (context) => const AdminPasswordDialog(),
                 );
-
                 if (authenticated == true && mounted) {
                   AppNavigation.router.push(AdminPanelScreen.kRouteName);
                 }
               },
             ),
-            const SizedBox(height: 8),
           ],
+
+          const SizedBox(height: PinpointSpacing.xl),
+
+          // About Section
+          _SectionHeader(title: 'ABOUT'),
+          const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
             title: 'Terms & Privacy',
             icon: Icons.policy_rounded,
@@ -503,69 +352,329 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-class _UsageLimitsSection extends StatelessWidget {
-  const _UsageLimitsSection();
+/// Section Header Widget
+class _SectionHeader extends StatelessWidget {
+  final String title;
+
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Text(
+      title,
+      style: theme.textTheme.labelLarge?.copyWith(
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.5,
+        color: theme.colorScheme.primary,
+      ),
+    );
+  }
+}
+
+/// Premium Section with enhanced design
+class _PremiumSection extends StatelessWidget {
+  final SubscriptionManager subscriptionManager;
+  final VoidCallback onManageSubscription;
+
+  const _PremiumSection({
+    required this.subscriptionManager,
+    required this.onManageSubscription,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isPremium = subscriptionManager.isPremium;
+    final isInGracePeriod = subscriptionManager.isInGracePeriod;
+    final gracePeriodMessage = isInGracePeriod ? PremiumService().getGracePeriodMessage() : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Grace Period Warning Banner
+        if (isInGracePeriod && gracePeriodMessage != null) ...[
+          Container(
+              padding: const EdgeInsets.all(PinpointSpacing.md),
+              margin: const EdgeInsets.only(bottom: PinpointSpacing.md),
+              decoration: BoxDecoration(
+                color: PinpointColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: PinpointColors.warning.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: PinpointColors.warning,
+                    size: 24,
+                  ),
+                  const SizedBox(width: PinpointSpacing.ms),
+                  Expanded(
+                    child: Text(
+                      gracePeriodMessage,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: PinpointColors.warningDark,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+
+        // Premium Card
+        BrutalistCard(
+          variant: BrutalistCardVariant.layered,
+          customColor: isPremium
+              ? cs.primaryContainer.withValues(alpha: 0.3)
+              : cs.surface,
+          customBorderColor: isPremium
+              ? cs.primary.withValues(alpha: 0.3)
+              : cs.outline.withValues(alpha: 0.1),
+          onTap: () {
+            PinpointHaptics.medium();
+            AppNavigation.router.push(SubscriptionScreen.kRouteName);
+          },
+          child: Row(
+            children: [
+              // Icon
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isPremium
+                      ? PinpointColors.mint.withValues(alpha: 0.2)
+                      : cs.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isPremium ? Icons.workspace_premium : Icons.star_outline,
+                  color: isPremium ? PinpointColors.mint : cs.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: PinpointSpacing.md),
+
+              // Text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isPremium
+                          ? isInGracePeriod
+                              ? 'Premium (Grace Period)'
+                              : 'Premium Active'
+                          : 'Upgrade to Premium',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isPremium
+                          ? isInGracePeriod
+                              ? 'Update payment method'
+                              : 'Thank you for your support!'
+                          : 'Unlock unlimited features',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Badge or Arrow
+              if (isPremium)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isInGracePeriod
+                        ? PinpointColors.warning
+                        : PinpointColors.mint,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    subscriptionManager.subscriptionTier.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
+                  ),
+                )
+              else
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: cs.onSurface.withValues(alpha: 0.4),
+                ),
+            ],
+          ),
+        ),
+
+        // Manage Subscription button (only for premium users)
+        if (isPremium) ...[
+          const SizedBox(height: PinpointSpacing.md),
+          _SettingsTile(
+            title: 'Manage Subscription',
+            subtitle: 'View in Google Play Store',
+            icon: Icons.manage_accounts_rounded,
+            onTap: () {
+              PinpointHaptics.medium();
+              onManageSubscription();
+            },
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Compact Usage Limits Card
+class _UsageLimitsCard extends StatelessWidget {
+  const _UsageLimitsCard();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final premiumService = PremiumService();
-    final isPremium = premiumService.isPremium;
+
+    final syncedNotes = premiumService.getSyncedNotesCount();
+    final ocrScans = premiumService.getOcrScansThisMonth();
+    final exports = premiumService.getExportsThisMonth();
+
+    return BrutalistCard(
+      variant: BrutalistCardVariant.elevated,
+      child: Column(
+        children: [
+          // Header with reset indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Usage Limits',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              _MonthlyResetIndicator(),
+            ],
+          ),
+          const SizedBox(height: PinpointSpacing.lg),
+
+          // Cloud Sync
+          _UsageLimitRow(
+            icon: Icons.cloud_sync_rounded,
+            label: 'Cloud Sync',
+            used: syncedNotes,
+            limit: PremiumLimits.maxSyncedNotesForFree,
+            isMonthly: false,
+          ),
+          const SizedBox(height: PinpointSpacing.md),
+
+          // OCR Scans
+          _UsageLimitRow(
+            icon: Icons.document_scanner_rounded,
+            label: 'OCR Scans',
+            used: ocrScans,
+            limit: PremiumLimits.maxOcrScansPerMonthForFree,
+            isMonthly: true,
+          ),
+          const SizedBox(height: PinpointSpacing.md),
+
+          // Exports
+          _UsageLimitRow(
+            icon: Icons.file_download_rounded,
+            label: 'Exports',
+            used: exports,
+            limit: PremiumLimits.maxExportsPerMonthForFree,
+            isMonthly: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Usage Limit Row Component
+class _UsageLimitRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int used;
+  final int limit;
+  final bool isMonthly;
+
+  const _UsageLimitRow({
+    required this.icon,
+    required this.label,
+    required this.used,
+    required this.limit,
+    required this.isMonthly,
+  });
+
+  Color _getProgressColor(double percentage) {
+    if (percentage >= 0.9) return PinpointColors.rose;
+    if (percentage >= 0.7) return PinpointColors.amber;
+    return PinpointColors.mint;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final percentage = (used / limit).clamp(0.0, 1.0);
+    final progressColor = _getProgressColor(percentage);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Usage',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.1,
+            Icon(icon, color: cs.primary, size: 18),
+            const SizedBox(width: PinpointSpacing.sm),
+            Expanded(
+              child: Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-            if (!isPremium) _MonthlyResetIndicator(),
+            Text(
+              '$used / $limit',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: progressColor,
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 12),
-
-        // Cloud Sync
-        _UsageLimitCard(
-          icon: Icons.cloud_sync_rounded,
-          title: 'Cloud Sync',
-          used: premiumService.getSyncedNotesCount(),
-          limit: PremiumLimits.maxSyncedNotesForFree,
-          isPremium: isPremium,
-          isMonthly: false,
-        ),
-        const SizedBox(height: 8),
-
-        // OCR Scans
-        _UsageLimitCard(
-          icon: Icons.document_scanner_rounded,
-          title: 'OCR Scans',
-          used: premiumService.getOcrScansThisMonth(),
-          limit: PremiumLimits.maxOcrScansPerMonthForFree,
-          isPremium: isPremium,
-          isMonthly: true,
-        ),
-        const SizedBox(height: 8),
-
-        // Exports
-        _UsageLimitCard(
-          icon: Icons.file_download_rounded,
-          title: 'Exports',
-          used: premiumService.getExportsThisMonth(),
-          limit: PremiumLimits.maxExportsPerMonthForFree,
-          isPremium: isPremium,
-          isMonthly: true,
+        const SizedBox(height: PinpointSpacing.sm),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: percentage,
+            minHeight: 6,
+            backgroundColor: cs.outline.withValues(alpha: 0.1),
+            valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+          ),
         ),
       ],
     );
   }
 }
 
+/// Monthly Reset Indicator
 class _MonthlyResetIndicator extends StatelessWidget {
   const _MonthlyResetIndicator();
 
@@ -589,21 +698,20 @@ class _MonthlyResetIndicator extends StatelessWidget {
     final cs = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: PinpointSpacing.sm,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: cs.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: cs.primary.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.refresh_rounded,
-            size: 14,
+            size: 12,
             color: cs.primary,
           ),
           const SizedBox(width: 4),
@@ -612,6 +720,7 @@ class _MonthlyResetIndicator extends StatelessWidget {
             style: theme.textTheme.labelSmall?.copyWith(
               color: cs.primary,
               fontWeight: FontWeight.w600,
+              fontSize: 10,
             ),
           ),
         ],
@@ -620,113 +729,7 @@ class _MonthlyResetIndicator extends StatelessWidget {
   }
 }
 
-class _UsageLimitCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final int used;
-  final int limit;
-  final bool isPremium;
-  final bool isMonthly;
-
-  const _UsageLimitCard({
-    required this.icon,
-    required this.title,
-    required this.used,
-    required this.limit,
-    required this.isPremium,
-    required this.isMonthly,
-  });
-
-  Color _getProgressColor(BuildContext context, double percentage) {
-    if (isPremium) return Theme.of(context).colorScheme.primary;
-
-    if (percentage >= 0.9) return PinpointColors.rose;
-    if (percentage >= 0.7) return PinpointColors.amber;
-    return PinpointColors.mint;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    final percentage = isPremium ? 0.0 : (used / limit).clamp(0.0, 1.0);
-    final progressColor = _getProgressColor(context, percentage);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark
-            ? cs.surface.withValues(alpha: 0.7)
-            : cs.surface.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: cs.outline.withValues(alpha: 0.1),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: cs.primary, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (isMonthly && !isPremium)
-                      Text(
-                        'This month',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: cs.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Text(
-                isPremium ? 'Unlimited' : '$used / $limit',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: progressColor,
-                ),
-              ),
-            ],
-          ),
-          if (!isPremium) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: percentage,
-                minHeight: 6,
-                backgroundColor: cs.outline.withValues(alpha: 0.1),
-                valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
+/// Settings Tile Component
 class _SettingsTile extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -746,65 +749,46 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? cs.surface.withValues(alpha: 0.7)
-            : cs.surface.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: cs.outline.withValues(alpha: 0.1),
-          width: 1,
+    return BrutalistCard(
+      variant: BrutalistCardVariant.elevated,
+      padding: EdgeInsets.zero,
+      onTap: onTap,
+      child: ListTile(
+        leading: Icon(icon, color: cs.primary, size: 22),
+        title: Text(
+          title,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: ListTile(
-            leading: Icon(icon, color: cs.primary),
-            title: Text(
-              title,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+        subtitle: subtitle != null
+            ? Text(
+                subtitle!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: cs.onSurface.withValues(alpha: 0.6),
+                ),
+              )
+            : null,
+        trailing: trailing ??
+            Icon(
+              Icons.chevron_right_rounded,
+              color: cs.onSurface.withValues(alpha: 0.4),
             ),
-            subtitle: subtitle != null
-                ? Text(
-                    subtitle!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: cs.onSurface.withValues(alpha: 0.6),
-                    ),
-                  )
-                : null,
-            trailing: trailing ??
-                Icon(Icons.chevron_right_rounded,
-                    color: cs.onSurface.withValues(alpha: 0.6)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: PinpointSpacing.md,
+          vertical: 4,
         ),
       ),
     );
   }
 }
 
-/// Profile Header Card showing user information
-class _ProfileHeaderCard extends StatelessWidget {
+/// Profile Card
+class _ProfileCard extends StatelessWidget {
   final BackendAuthService backendAuth;
 
-  const _ProfileHeaderCard({required this.backendAuth});
+  const _ProfileCard({required this.backendAuth});
 
   @override
   Widget build(BuildContext context) {
@@ -813,70 +797,41 @@ class _ProfileHeaderCard extends StatelessWidget {
 
     return Consumer<SubscriptionManager>(
       builder: (context, subscriptionManager, child) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                cs.primaryContainer.withValues(alpha: 0.3),
-                cs.primaryContainer.withValues(alpha: 0.1),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: cs.primary.withValues(alpha: 0.2),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: cs.primary.withValues(alpha: 0.1),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+        return BrutalistCard(
+          variant: BrutalistCardVariant.elevated,
+          customColor: cs.primaryContainer.withValues(alpha: 0.2),
           child: Row(
             children: [
               // Avatar
               Container(
-                width: 56,
-                height: 56,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: cs.primary.withValues(alpha: 0.15),
+                  color: cs.primary.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: cs.primary.withValues(alpha: 0.3),
-                    width: 2,
-                  ),
                 ),
                 child: Icon(
                   Icons.person_rounded,
                   color: cs.primary,
-                  size: 28,
+                  size: 24,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: PinpointSpacing.md),
 
               // User Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Email
                     Text(
                       backendAuth.userEmail ?? 'User',
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        letterSpacing: -0.2,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-
-                    // Account Status
                     Row(
                       children: [
                         Icon(
@@ -913,7 +868,123 @@ class _ProfileHeaderCard extends StatelessWidget {
   }
 }
 
-/// Logout Button with confirmation dialog
+/// Manual Sync Button
+class _ManualSyncButton extends StatefulWidget {
+  const _ManualSyncButton();
+
+  @override
+  State<_ManualSyncButton> createState() => _ManualSyncButtonState();
+}
+
+class _ManualSyncButtonState extends State<_ManualSyncButton> {
+  bool _isSyncing = false;
+
+  Future<void> _performManualSync() async {
+    setState(() => _isSyncing = true);
+
+    try {
+      final syncManager = getIt<SyncManager>();
+      final result = await syncManager.sync();
+
+      if (!mounted) return;
+
+      // Show result dialog
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                result.success ? Icons.check_circle : Icons.error,
+                color: result.success ? PinpointColors.success : PinpointColors.error,
+              ),
+              const SizedBox(width: PinpointSpacing.sm),
+              Text(result.success ? 'Sync Complete' : 'Sync Failed'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (result.success) ...[
+                if (result.notesSynced > 0)
+                  _buildSyncStat('Notes', result.notesSynced, Icons.note),
+                if (result.foldersSynced > 0) ...[
+                  const SizedBox(height: PinpointSpacing.sm),
+                  _buildSyncStat('Folders', result.foldersSynced, Icons.folder),
+                ],
+                if (result.remindersSynced > 0) ...[
+                  const SizedBox(height: PinpointSpacing.sm),
+                  _buildSyncStat('Reminders', result.remindersSynced, Icons.alarm),
+                ],
+                if (result.notesSynced == 0 &&
+                    result.foldersSynced == 0 &&
+                    result.remindersSynced == 0)
+                  const Text('Everything is already up to date.'),
+              ] else
+                Text(result.message),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sync failed: $e'),
+          backgroundColor: PinpointColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
+    }
+  }
+
+  Widget _buildSyncStat(String label, int count, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: PinpointColors.info),
+        const SizedBox(width: PinpointSpacing.sm),
+        Text('$label: '),
+        Text(
+          '$count',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: PinpointColors.success,
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsTile(
+      title: 'Sync Now',
+      subtitle: 'Pull latest data from server',
+      icon: _isSyncing ? Icons.sync : Icons.cloud_download_rounded,
+      trailing: _isSyncing
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : null,
+      onTap: _isSyncing ? () {} : _performManualSync,
+    );
+  }
+}
+
+/// Logout Button
 class _LogoutButton extends StatefulWidget {
   final BackendAuthService backendAuth;
 
@@ -929,10 +1000,8 @@ class _LogoutButtonState extends State<_LogoutButton> {
   LogoutService? _logoutService;
 
   Future<void> _handleLogout(BuildContext context) async {
-    // Prevent multiple simultaneous logout attempts
     if (_isLoggingOut) return;
 
-    // Show confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -958,13 +1027,11 @@ class _LogoutButtonState extends State<_LogoutButton> {
 
     if (confirm != true) return;
 
-    // Initialize logout service
     _logoutService = LogoutService.fromServiceLocator(
       backendAuthService: widget.backendAuth,
       googleSignInService: GoogleSignInService(),
     );
 
-    // Set up phase change listener
     _logoutService!.onPhaseChanged = (phase) {
       if (mounted) {
         setState(() {
@@ -973,21 +1040,17 @@ class _LogoutButtonState extends State<_LogoutButton> {
       }
     };
 
-    // Set loading state
     setState(() {
       _isLoggingOut = true;
       _logoutStatus = 'Validating...';
     });
 
     try {
-      // Phase 1: Validation
       final validation = await _logoutService!.validateLogout();
 
       if (!validation.canProceed) {
-        // Show validation error dialog
         if (mounted) {
           await _showValidationErrorDialog(context, validation);
-
           setState(() {
             _isLoggingOut = false;
           });
@@ -995,7 +1058,6 @@ class _LogoutButtonState extends State<_LogoutButton> {
         return;
       }
 
-      // Check for unsynced notes and warn user
       final unsyncedCount = await _logoutService!.getUnsyncedNotesCount();
       if (unsyncedCount > 0) {
         setState(() {
@@ -1004,15 +1066,12 @@ class _LogoutButtonState extends State<_LogoutButton> {
         });
       }
 
-      // Phase 2-5: Perform logout
       final success = await _logoutService!.performLogout();
 
       if (success && context.mounted) {
-        // Navigate to auth screen
         PinpointHaptics.success();
         AppNavigation.router.go('/auth');
 
-        // Show success feedback after navigation
         Future.delayed(const Duration(milliseconds: 500), () {
           if (context.mounted) {
             showSuccessToast(
@@ -1025,14 +1084,12 @@ class _LogoutButtonState extends State<_LogoutButton> {
       }
     } catch (e) {
       if (context.mounted) {
-        // Check if sync failed
         if (e.toString().contains('Sync failed') ||
             e.toString().contains('sync') ||
             e.toString().contains('network')) {
           final forceLogout = await _showSyncErrorDialog(context, e.toString());
 
           if (forceLogout == true) {
-            // User chose to force logout, navigate to auth
             PinpointHaptics.warning();
             AppNavigation.router.go('/auth');
 
@@ -1047,7 +1104,6 @@ class _LogoutButtonState extends State<_LogoutButton> {
             });
           }
         } else {
-          // Other errors
           PinpointHaptics.error();
           showErrorToast(
             context: context,
@@ -1057,7 +1113,6 @@ class _LogoutButtonState extends State<_LogoutButton> {
         }
       }
     } finally {
-      // Clear loading state if still mounted
       if (mounted) {
         setState(() {
           _isLoggingOut = false;
@@ -1067,7 +1122,6 @@ class _LogoutButtonState extends State<_LogoutButton> {
     }
   }
 
-  /// Get user-friendly message for each logout phase
   String _getPhaseMessage(LogoutPhase phase) {
     switch (phase) {
       case LogoutPhase.validating:
@@ -1083,7 +1137,6 @@ class _LogoutButtonState extends State<_LogoutButton> {
     }
   }
 
-  /// Show validation error dialog (e.g., audio notes exist)
   Future<void> _showValidationErrorDialog(
     BuildContext context,
     LogoutValidationResult validation,
@@ -1112,7 +1165,6 @@ class _LogoutButtonState extends State<_LogoutButton> {
     );
   }
 
-  /// Show sync error dialog with retry/force logout options
   Future<bool?> _showSyncErrorDialog(BuildContext context, String error) async {
     return showDialog<bool>(
       context: context,
@@ -1148,82 +1200,53 @@ class _LogoutButtonState extends State<_LogoutButton> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? cs.surface.withValues(alpha: 0.7)
-            : cs.surface.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: PinpointColors.rose.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: PinpointColors.rose.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _isLoggingOut
-              ? null
-              : () {
-                  PinpointHaptics.medium();
-                  _handleLogout(context);
-                },
-          borderRadius: BorderRadius.circular(16),
-          child: ListTile(
-            leading: _isLoggingOut
-                ? SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        PinpointColors.rose,
-                      ),
-                    ),
-                  )
-                : Icon(
-                    Icons.logout_rounded,
-                    color: PinpointColors.rose,
-                  ),
-            title: Text(
-              _isLoggingOut ? 'Signing Out...' : 'Sign Out',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w600,
+    return BrutalistCard(
+      variant: BrutalistCardVariant.outlined,
+      customBorderColor: PinpointColors.rose.withValues(alpha: 0.3),
+      padding: EdgeInsets.zero,
+      onTap: _isLoggingOut ? null : () => _handleLogout(context),
+      child: ListTile(
+        leading: _isLoggingOut
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Icon(
+                Icons.logout_rounded,
                 color: PinpointColors.rose,
+                size: 22,
               ),
-            ),
-            subtitle: Text(
-              _isLoggingOut ? _logoutStatus : 'Sign out of your account',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: cs.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            trailing: _isLoggingOut
-                ? null
-                : Icon(
-                    Icons.chevron_right_rounded,
-                    color: PinpointColors.rose.withValues(alpha: 0.6),
-                  ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+        title: Text(
+          _isLoggingOut ? 'Signing Out...' : 'Sign Out',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: PinpointColors.rose,
           ),
+        ),
+        subtitle: Text(
+          _isLoggingOut ? _logoutStatus : 'Sign out of your account',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: cs.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        trailing: _isLoggingOut
+            ? null
+            : Icon(
+                Icons.chevron_right_rounded,
+                color: PinpointColors.rose.withValues(alpha: 0.6),
+              ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: PinpointSpacing.md,
+          vertical: 4,
         ),
       ),
     );
   }
 }
 
-/// Linked Accounts Section showing authentication providers
+/// Linked Accounts Section
 class _LinkedAccountsSection extends StatefulWidget {
   final BackendAuthService backendAuth;
 
@@ -1247,7 +1270,6 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
   @override
   void didUpdateWidget(_LinkedAccountsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Only reload if authentication status changed
     if (widget.backendAuth.isAuthenticated !=
         oldWidget.backendAuth.isAuthenticated) {
       _loadProviders(showLoading: true);
@@ -1255,11 +1277,8 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
   }
 
   Future<void> _loadProviders({bool showLoading = false}) async {
-    if (!widget.backendAuth.isAuthenticated) {
-      return;
-    }
+    if (!widget.backendAuth.isAuthenticated) return;
 
-    // If we already have data and not explicitly showing loading, do silent refresh
     if (_hasLoadedOnce && !showLoading) {
       try {
         final providers = await widget.backendAuth.getAuthProviders();
@@ -1274,7 +1293,6 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
       return;
     }
 
-    // Show loading for first load or explicit reload
     if (showLoading && mounted) {
       setState(() {
         _isLoading = true;
@@ -1307,22 +1325,18 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
 
     try {
       final googleSignInService = GoogleSignInService();
-
-      // 1. Sign in with Google
       final userCredential = await googleSignInService.signInWithGoogle();
 
       if (userCredential == null) {
         throw Exception('Google Sign-In was cancelled');
       }
 
-      // 2. Get Firebase token
       final firebaseToken = await googleSignInService.getFirebaseIdToken();
 
       if (firebaseToken == null) {
         throw Exception('Failed to get Firebase token');
       }
 
-      // 3. Show password dialog
       if (!mounted) return;
 
       final password = await showDialog<String>(
@@ -1331,16 +1345,14 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
       );
 
       if (password == null || password.isEmpty) {
-        return; // User cancelled
+        return;
       }
 
-      // 4. Link accounts
       await widget.backendAuth.linkGoogleAccount(
         firebaseToken: firebaseToken,
         password: password,
       );
 
-      // 5. Reload providers (silent refresh)
       await _loadProviders(showLoading: false);
 
       if (mounted) {
@@ -1370,7 +1382,6 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
   }
 
   Future<void> _unlinkGoogleAccount() async {
-    // Show confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1400,8 +1411,6 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
 
     try {
       await widget.backendAuth.unlinkGoogleAccount();
-
-      // Reload providers (silent refresh)
       await _loadProviders(showLoading: false);
 
       if (mounted) {
@@ -1432,62 +1441,30 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.backendAuth.isAuthenticated) {
-      return _SettingsTile(
-        title: 'Sign In',
-        subtitle: 'Sign in to sync your notes',
-        icon: Icons.login_rounded,
-        onTap: () {
-          PinpointHaptics.medium();
-          AppNavigation.router.push('/auth');
-        },
-      );
-    }
-
     if (_providers == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const SizedBox.shrink();
     }
 
     final hasGoogle = _providers!['has_google'] ?? false;
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Linked Accounts',
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: cs.onSurface.withValues(alpha: 0.7),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Email Provider (always shown if authenticated)
-        _AuthProviderCard(
+        // Email Provider
+        _AuthProviderTile(
           icon: Icons.email_rounded,
-          iconColor: cs.primary,
           title: 'Email',
           subtitle: widget.backendAuth.userEmail ?? 'Email authentication',
           isLinked: true,
           isLoading: false,
-          onTap: () {
-            PinpointHaptics.light();
-          },
         ),
-
-        const SizedBox(height: 8),
+        const SizedBox(height: PinpointSpacing.md),
 
         // Google Provider
-        _AuthProviderCard(
+        _AuthProviderTile(
           icon: Icons.g_mobiledata_rounded,
-          iconColor: hasGoogle
-              ? PinpointColors.mint
-              : cs.onSurface.withValues(alpha: 0.5),
           title: 'Google',
-          subtitle:
-              hasGoogle ? 'Linked to your account' : 'Link for easy sign-in',
+          subtitle: hasGoogle ? 'Linked to your account' : 'Link for easy sign-in',
           isLinked: hasGoogle,
           isLoading: _isLoading,
           onTap: _isLoading ? null : (hasGoogle ? null : _linkGoogleAccount),
@@ -1498,10 +1475,9 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
   }
 }
 
-/// Auth Provider Card showing authentication method status
-class _AuthProviderCard extends StatelessWidget {
+/// Auth Provider Tile
+class _AuthProviderTile extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
   final String title;
   final String subtitle;
   final bool isLinked;
@@ -1509,9 +1485,8 @@ class _AuthProviderCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onUnlink;
 
-  const _AuthProviderCard({
+  const _AuthProviderTile({
     required this.icon,
-    required this.iconColor,
     required this.title,
     required this.subtitle,
     required this.isLinked,
@@ -1524,158 +1499,106 @@ class _AuthProviderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? cs.surface.withValues(alpha: 0.7)
-            : cs.surface.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isLinked
-              ? iconColor.withValues(alpha: 0.3)
-              : cs.outline.withValues(alpha: 0.1),
-          width: isLinked ? 1.5 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isLinked
-                ? iconColor.withValues(alpha: 0.05)
-                : Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return BrutalistCard(
+      variant: BrutalistCardVariant.elevated,
+      customBorderColor: isLinked
+          ? PinpointColors.mint.withValues(alpha: 0.3)
+          : cs.outline.withValues(alpha: 0.1),
+      padding: const EdgeInsets.all(PinpointSpacing.md),
+      onTap: onTap,
+      child: Row(
+        children: [
+          // Icon
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isLinked
+                  ? PinpointColors.mint.withValues(alpha: 0.2)
+                  : cs.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: isLinked ? PinpointColors.mint : cs.primary,
+              size: 20,
+            ),
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap != null && !isLoading
-              ? () {
-                  PinpointHaptics.medium();
-                  onTap!();
-                }
-              : null,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Icon
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: iconColor.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
+          const SizedBox(width: PinpointSpacing.ms),
 
-                // Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            title,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (isLinked) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    PinpointColors.mint.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: PinpointColors.mint
-                                      .withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.check_circle,
-                                    size: 12,
-                                    color: PinpointColors.mint,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Linked',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: PinpointColors.mint,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: cs.onSurface.withValues(alpha: 0.6),
+                    ),
+                    if (isLinked) ...[
+                      const SizedBox(width: PinpointSpacing.sm),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        decoration: BoxDecoration(
+                          color: PinpointColors.mint.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'Linked',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: PinpointColors.mint,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 9,
+                          ),
+                        ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
-
-                // Actions
-                if (isLoading)
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else if (onUnlink != null)
-                  IconButton(
-                    icon: Icon(
-                      Icons.link_off_rounded,
-                      color: PinpointColors.rose,
-                    ),
-                    onPressed: () {
-                      PinpointHaptics.medium();
-                      onUnlink!();
-                    },
-                    tooltip: 'Unlink account',
-                  )
-                else if (onTap != null && !isLinked)
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: cs.onSurface.withValues(alpha: 0.4),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurface.withValues(alpha: 0.6),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
-        ),
+
+          // Actions
+          if (isLoading)
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else if (onUnlink != null)
+            IconButton(
+              icon: Icon(
+                Icons.link_off_rounded,
+                color: PinpointColors.rose,
+                size: 20,
+              ),
+              onPressed: onUnlink,
+              tooltip: 'Unlink account',
+            )
+          else if (onTap != null && !isLinked)
+            Icon(
+              Icons.chevron_right_rounded,
+              color: cs.onSurface.withValues(alpha: 0.4),
+            ),
+        ],
       ),
     );
   }
@@ -1708,7 +1631,7 @@ class _PasswordDialogState extends State<_PasswordDialog> {
           const Text(
             'Enter your password to link your Google account:',
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: PinpointSpacing.md),
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
@@ -1750,155 +1673,6 @@ class _PasswordDialogState extends State<_PasswordDialog> {
           child: const Text('Verify'),
         ),
       ],
-    );
-  }
-}
-
-/// Manual sync button widget
-class _ManualSyncButton extends StatefulWidget {
-  const _ManualSyncButton();
-
-  @override
-  State<_ManualSyncButton> createState() => _ManualSyncButtonState();
-}
-
-class _ManualSyncButtonState extends State<_ManualSyncButton> {
-  bool _isSyncing = false;
-
-  Future<void> _performManualSync() async {
-    setState(() => _isSyncing = true);
-
-    try {
-      final syncManager = getIt<SyncManager>();
-
-      // Perform full bidirectional sync
-      final result = await syncManager.sync();
-
-      if (!mounted) return;
-
-      // Show result dialog
-      await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                result.success ? Icons.check_circle : Icons.error,
-                color: result.success ? Colors.green : Colors.red,
-              ),
-              const SizedBox(width: 8),
-              Text(result.success ? 'Sync Complete' : 'Sync Failed'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (result.success) ...[
-                if (result.notesSynced > 0)
-                  _buildSyncStat('Notes', result.notesSynced, Icons.note),
-                if (result.foldersSynced > 0) ...[
-                  const SizedBox(height: 8),
-                  _buildSyncStat('Folders', result.foldersSynced, Icons.folder),
-                ],
-                if (result.remindersSynced > 0) ...[
-                  const SizedBox(height: 8),
-                  _buildSyncStat('Reminders', result.remindersSynced, Icons.alarm),
-                ],
-                if (result.notesSynced == 0 &&
-                    result.foldersSynced == 0 &&
-                    result.remindersSynced == 0)
-                  const Text('Everything is already up to date.'),
-                if (result.notesFailed > 0) ...[
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 8),
-                  _buildSyncStat(
-                    'Failed',
-                    result.notesFailed,
-                    Icons.error_outline,
-                    isError: true,
-                  ),
-                ],
-                if (result.decryptionErrors > 0) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.shade200),
-                    ),
-                    child: Text(
-                      '${result.decryptionErrors} notes could not be decrypted.',
-                      style: TextStyle(fontSize: 12, color: Colors.red.shade900),
-                    ),
-                  ),
-                ],
-              ] else
-                Text(result.message),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Sync failed: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSyncing = false);
-      }
-    }
-  }
-
-  Widget _buildSyncStat(String label, int count, IconData icon,
-      {bool isError = false}) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: isError ? Colors.red : Colors.blue,
-        ),
-        const SizedBox(width: 8),
-        Text('$label: '),
-        Text(
-          '$count',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isError ? Colors.red : Colors.green,
-          ),
-        ),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _SettingsTile(
-      title: 'Sync Now',
-      subtitle: 'Pull latest data from server',
-      icon: _isSyncing ? Icons.sync : Icons.cloud_download_rounded,
-      trailing: _isSyncing
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : null,
-      onTap: _isSyncing ? () {} : _performManualSync,
     );
   }
 }
