@@ -1122,7 +1122,9 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
                 color: result.success ? PinpointColors.success : PinpointColors.error,
               ),
               const SizedBox(width: PinpointSpacing.sm),
-              Text(result.success ? 'Sync Complete' : 'Sync Failed'),
+              Expanded(
+                child: Text(result.success ? 'Sync Complete' : 'Sync Failed'),
+              ),
             ],
           ),
           content: Column(
