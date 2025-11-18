@@ -263,8 +263,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: ListView(
         padding: EdgeInsets.only(
-          left: PinpointSpacing.screenEdge,
-          right: PinpointSpacing.screenEdge,
+          left: PinpointSpacing.md,
+          right: PinpointSpacing.md,
           top: PinpointSpacing.screenEdge,
           bottom: 100, // Extra space for floating navigation bar
         ),
@@ -756,23 +756,18 @@ class _UsageLimitsCard extends StatelessWidget {
     return BrutalistCard(
       variant: BrutalistCardVariant.elevated,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with reset indicator
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Usage Limits',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              _MonthlyResetIndicator(),
-            ],
+          // Header
+          Text(
+            'Usage Limits',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: PinpointSpacing.lg),
 
-          // Cloud Sync
+          // Cloud Sync (Total limit - doesn't reset)
           _UsageLimitRow(
             icon: Icons.cloud_sync_rounded,
             label: 'Cloud Sync',
@@ -780,7 +775,35 @@ class _UsageLimitsCard extends StatelessWidget {
             limit: PremiumLimits.maxSyncedNotesForFree,
             isMonthly: false,
           ),
+          const SizedBox(height: PinpointSpacing.xs),
+          // Note about Cloud Sync not resetting
+          Padding(
+            padding: const EdgeInsets.only(left: 26),
+            child: Text(
+              'Total limit (doesn\'t reset)',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                fontSize: 11,
+              ),
+            ),
+          ),
           const SizedBox(height: PinpointSpacing.md),
+
+          // Monthly Limits Section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Monthly Limits',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.primary.withValues(alpha: 0.8),
+                ),
+              ),
+              _MonthlyResetIndicator(),
+            ],
+          ),
+          const SizedBox(height: PinpointSpacing.ms),
 
           // OCR Scans
           _UsageLimitRow(
