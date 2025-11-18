@@ -24,6 +24,7 @@ import '../services/premium_service.dart';
 import '../constants/premium_limits.dart';
 import '../navigation/app_navigation.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../sync/sync_manager.dart';
 import '../service_locators/init_service_locators.dart';
 
@@ -59,6 +60,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _showAboutDialog(BuildContext context) async {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+
+    // Get package info for version
+    final packageInfo = await PackageInfo.fromPlatform();
+    final version = packageInfo.version;
+    final buildNumber = packageInfo.buildNumber;
+
+    if (!context.mounted) return;
 
     showDialog(
       context: context,
@@ -119,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Version 1.1.0',
+                  'Version $version ($buildNumber)',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.primary,
                     fontWeight: FontWeight.w600,
