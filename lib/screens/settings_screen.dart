@@ -309,16 +309,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 12),
                     _ManualSyncButton(),
                     const SizedBox(height: 8),
-                    _SettingsTile(
-                      title: 'Sync Debug Info',
-                      subtitle: 'View sync status and troubleshoot issues',
-                      icon: Icons.bug_report_outlined,
-                      onTap: () {
-                        PinpointHaptics.medium();
-                        AppNavigation.router.push('/sync-debug');
-                      },
-                    ),
-                    const SizedBox(height: 12),
+                    // Sync Debug Info - only in debug mode
+                    if (kDebugMode) ...[
+                      _SettingsTile(
+                        title: 'Sync Debug Info',
+                        subtitle: 'View sync status and troubleshoot issues',
+                        icon: Icons.bug_report_outlined,
+                        onTap: () {
+                          PinpointHaptics.medium();
+                          AppNavigation.router.push('/sync-debug');
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    const SizedBox(height: 4),
                   ],
 
                   // Reuse the preserved child widget
