@@ -56,6 +56,188 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _showAboutDialog(BuildContext context) async {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(PinpointSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Logo
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: cs.primary.withValues(alpha: 0.3),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/images/pinpoint-logo.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: PinpointSpacing.lg),
+
+              // App Name
+              Text(
+                'Pinpoint',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: cs.primary,
+                ),
+              ),
+
+              const SizedBox(height: PinpointSpacing.xs),
+
+              // Version
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: PinpointSpacing.ms,
+                  vertical: PinpointSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Version 1.1.0',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: PinpointSpacing.lg),
+
+              // Description
+              Text(
+                'Your thoughts, perfectly organized. Capture notes, record audio, manage todos, and set reminders - all in one beautiful, secure app.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurface.withValues(alpha: 0.7),
+                  height: 1.5,
+                ),
+              ),
+
+              const SizedBox(height: PinpointSpacing.lg),
+
+              // Divider
+              Divider(
+                color: cs.outline.withValues(alpha: 0.2),
+                thickness: 1,
+              ),
+
+              const SizedBox(height: PinpointSpacing.lg),
+
+              // Developer Info
+              Column(
+                children: [
+                  Text(
+                    'Developed & Maintained By',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: PinpointSpacing.sm),
+                  InkWell(
+                    onTap: () async {
+                      PinpointHaptics.light();
+                      final uri = Uri.parse('https://pranta.dev');
+                      try {
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          showErrorToast(
+                            context: context,
+                            title: 'Error',
+                            description: 'Unable to open portfolio',
+                          );
+                        }
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: PinpointSpacing.md,
+                        vertical: PinpointSpacing.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: cs.primary.withValues(alpha: 0.3),
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Pranta Dutta',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: cs.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: PinpointSpacing.sm),
+                          Icon(
+                            Icons.open_in_new_rounded,
+                            size: 16,
+                            color: cs.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: PinpointSpacing.lg),
+
+              // Close Button
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    PinpointHaptics.light();
+                    Navigator.of(context).pop();
+                  },
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: PinpointSpacing.ms,
+                    ),
+                  ),
+                  child: const Text('Close'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -76,7 +258,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           left: PinpointSpacing.screenEdge,
           right: PinpointSpacing.screenEdge,
           top: PinpointSpacing.screenEdge,
-          bottom: 60,
+          bottom: 100, // Extra space for floating navigation bar
         ),
         children: [
           // Premium/Subscription Section
@@ -334,6 +516,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // About Section
           _SectionHeader(title: 'ABOUT'),
+          const SizedBox(height: PinpointSpacing.md),
+          _SettingsTile(
+            title: 'About Pinpoint',
+            subtitle: 'App info, version & developer',
+            icon: Icons.info_rounded,
+            onTap: () {
+              PinpointHaptics.medium();
+              _showAboutDialog(context);
+            },
+          ),
           const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
             title: 'Terms & Privacy',
