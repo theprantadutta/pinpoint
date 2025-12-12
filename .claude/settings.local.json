@@ -23,7 +23,8 @@
       "Bash(del \"G:\\MyProjects\\pinpoint\\lib\\utils\\markdown_converter.dart\")",
       "Bash(flutter pub run:*)",
       "Bash(find:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "WebFetch(domain:riverpod.dev)"
     ],
     "deny": [],
     "ask": []

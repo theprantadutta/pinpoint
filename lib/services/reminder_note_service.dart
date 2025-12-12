@@ -330,14 +330,14 @@ class ReminderNoteService {
       try {
         // Create new backend reminder with all recurrence fields
         final response = await ApiService().createReminder(
-          noteUuid: note.uuid!,
+          noteUuid: note.uuid,
           title: note.title!,
           notificationTitle: note.notificationTitle ?? note.title!,
           notificationContent: note.notificationContent,
-          reminderTime: note.reminderTime!,
-          recurrenceType: note.recurrenceType ?? 'once',
-          recurrenceInterval: note.recurrenceInterval ?? 1,
-          recurrenceEndType: note.recurrenceEndType ?? 'never',
+          reminderTime: note.reminderTime,
+          recurrenceType: note.recurrenceType,
+          recurrenceInterval: note.recurrenceInterval,
+          recurrenceEndType: note.recurrenceEndType,
           recurrenceEndValue: note.recurrenceEndValue,
         );
 

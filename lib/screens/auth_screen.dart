@@ -310,13 +310,13 @@ class _AuthScreenState extends State<AuthScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: isError
-            ? Colors.red.withOpacity(0.1)
-            : Colors.green.withOpacity(0.1),
+            ? Colors.red.withValues(alpha: 0.1)
+            : Colors.green.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isError
-              ? Colors.red.withOpacity(0.3)
-              : Colors.green.withOpacity(0.3),
+              ? Colors.red.withValues(alpha: 0.3)
+              : Colors.green.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -325,8 +325,8 @@ class _AuthScreenState extends State<AuthScreen> {
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: isError
-                  ? Colors.red.withOpacity(0.15)
-                  : Colors.green.withOpacity(0.15),
+                  ? Colors.red.withValues(alpha: 0.15)
+                  : Colors.green.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(
@@ -349,8 +349,8 @@ class _AuthScreenState extends State<AuthScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: isError
-                  ? Colors.red.withOpacity(0.2)
-                  : Colors.green.withOpacity(0.2),
+                  ? Colors.red.withValues(alpha: 0.2)
+                  : Colors.green.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(

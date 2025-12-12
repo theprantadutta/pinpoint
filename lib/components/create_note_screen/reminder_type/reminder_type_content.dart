@@ -471,7 +471,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
 
               // Recurrence Type Dropdown
               DropdownButtonFormField<String>(
-                value: widget.recurrenceType,
+                initialValue: widget.recurrenceType,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.repeat_rounded),
                   border: OutlineInputBorder(
@@ -565,7 +565,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                 const SizedBox(height: 12),
 
                 DropdownButtonFormField<String>(
-                  value: widget.recurrenceEndType,
+                  initialValue: widget.recurrenceEndType,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.event_repeat_rounded),
                     border: OutlineInputBorder(
