@@ -243,9 +243,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           _reminderNotificationTitleController.text = reminderNote.notificationTitle ?? reminderNote.title ?? '';
           _reminderNotificationContentController.text = reminderNote.notificationContent ?? '';
           _reminderDescriptionController.text = reminderNote.description ?? ''; // Deprecated, but kept for backward compatibility
-          _recurrenceType = reminderNote.recurrenceType ?? 'once';
-          _recurrenceInterval = reminderNote.recurrenceInterval ?? 1;
-          _recurrenceEndType = reminderNote.recurrenceEndType ?? 'never';
+          _recurrenceType = reminderNote.recurrenceType;
+          _recurrenceInterval = reminderNote.recurrenceInterval;
+          _recurrenceEndType = reminderNote.recurrenceEndType;
           _recurrenceEndValue = reminderNote.recurrenceEndValue;
         }
       }
@@ -890,25 +890,21 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                       Icon(Icons.file_download_rounded,
                           size: 20, color: cs.primary),
                       const SizedBox(width: 12),
-                      const Text('Export Markdown'),
-                      const SizedBox(width: 4),
-                      if (!PremiumService().isPremium)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: PinpointColors.mint.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'PRO',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: PinpointColors.mint,
-                            ),
-                          ),
-                        ),
+                      Builder(
+                        builder: (context) {
+                          final premiumService = PremiumService();
+                          final isPremium = premiumService.isPremium;
+                          final used = premiumService.getExportsThisMonth();
+                          final total = PremiumLimits.maxExportsPerMonthForFree;
+
+                          String text = 'Export Markdown';
+                          if (!isPremium) {
+                            text = 'Export Markdown ($used/$total)';
+                          }
+
+                          return Text(text);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -921,25 +917,21 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                       Icon(Icons.picture_as_pdf_rounded,
                           size: 20, color: cs.primary),
                       const SizedBox(width: 12),
-                      const Text('Export PDF'),
-                      const SizedBox(width: 4),
-                      if (!PremiumService().isPremium)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: PinpointColors.mint.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'PRO',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: PinpointColors.mint,
-                            ),
-                          ),
-                        ),
+                      Builder(
+                        builder: (context) {
+                          final premiumService = PremiumService();
+                          final isPremium = premiumService.isPremium;
+                          final used = premiumService.getExportsThisMonth();
+                          final total = PremiumLimits.maxExportsPerMonthForFree;
+
+                          String text = 'Export PDF';
+                          if (!isPremium) {
+                            text = 'Export PDF ($used/$total)';
+                          }
+
+                          return Text(text);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -1553,79 +1545,6 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     );
   }
 
-  Future<void> _pickReminderDateTime() async {
-    DateTime now = DateTime.now();
-    DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: now,
-      lastDate: DateTime(2100),
-    );
-
-    if (pickedDate != null && mounted) {
-      TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.now(),
-      );
-
-      if (pickedTime != null && mounted) {
-        setState(() {
-          _reminderTime = DateTime(
-            pickedDate.year,
-            pickedDate.month,
-            pickedDate.day,
-            pickedTime.hour,
-            pickedTime.minute,
-          );
-        });
-        _scheduleAutoSave();
-      }
-    }
-  }
-
-  String _formatReminderDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
-    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
-
-    String dateStr;
-    if (date == today) {
-      dateStr = 'Today';
-    } else if (date == tomorrow) {
-      dateStr = 'Tomorrow';
-    } else {
-      // Format as "Mon, Jan 1, 2025"
-      final months = [
-        '',
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec'
-      ];
-      final weekdays = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      dateStr =
-          '${weekdays[dateTime.weekday]}, ${months[dateTime.month]} ${dateTime.day}, ${dateTime.year}';
-    }
-
-    // Format time as 12-hour format
-    final hour = dateTime.hour > 12
-        ? dateTime.hour - 12
-        : (dateTime.hour == 0 ? 12 : dateTime.hour);
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
-
-    return '$dateStr at $hour:$minute $period';
-  }
-
   /// Check if note should be saved
   bool _shouldSave() {
     final hasTitle = _titleController.text.trim().isNotEmpty;
@@ -1962,9 +1881,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       return;
     }
 
-    Share.share(
-      '$title\n\n$content',
-      subject: title,
+    SharePlus.instance.share(
+      ShareParams(
+        text: '$title\n\n$content',
+        subject: title,
+      ),
     );
 
     PinpointHaptics.success();
@@ -2029,9 +1950,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       final file = File('${directory.path}/$fileName');
       await file.writeAsString(markdown.toString());
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: title.isNotEmpty ? title : 'Exported Note',
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: title.isNotEmpty ? title : 'Exported Note',
+        ),
       );
 
       if (!premiumService.isPremium) {
@@ -2156,9 +2079,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       final file = File('${directory.path}/$fileName');
       await file.writeAsBytes(await pdf.save());
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: title.isNotEmpty ? title : 'Exported Note',
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: title.isNotEmpty ? title : 'Exported Note',
+        ),
       );
 
       if (!premiumService.isPremium) {
