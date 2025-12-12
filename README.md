@@ -99,42 +99,17 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
 
 ## 📸 Screenshots
 
-<!-- Screenshot placeholders - Add your screenshots here -->
+### Light Mode
 
-### Home & Notes
+| Home | Notes | Create Note |
+|:----:|:-----:|:-----------:|
+| ![Home Light](docs/screenshots/home-light.png) | ![Notes Light](docs/screenshots/notes-light.png) | ![Create Light](docs/screenshots/create-light.png) |
 
-| Home Screen | Notes List | Search |
-|------------|------------|---------|
-| ![Home](docs/screenshots/home.png) | ![Notes](docs/screenshots/notes.png) | ![Search](docs/screenshots/search.png) |
-| *Main dashboard with folders and recent notes* | *All notes with sorting and filtering* | *Powerful search functionality* |
+### Dark Mode
 
-### Note Creation
-
-| Text Note | Todo List | Audio Note |
-|-----------|-----------|------------|
-| ![Text](docs/screenshots/text-note.png) | ![Todo](docs/screenshots/todo-note.png) | ![Audio](docs/screenshots/audio-note.png) |
-| *Rich text editor with formatting* | *Interactive checklist with auto-save* | *Voice recording with playback* |
-
-### Organization
-
-| Folders | Todo Overview | Archive |
-|---------|--------------|---------|
-| ![Folders](docs/screenshots/folders.png) | ![Todos](docs/screenshots/todos.png) | ![Archive](docs/screenshots/archive.png) |
-| *Organize notes into folders* | *All todos across all notes* | *Completed and archived notes* |
-
-### Customization
-
-| Theme Selection | Dark Mode | Light Mode |
-|----------------|-----------|------------|
-| ![Themes](docs/screenshots/themes.png) | ![Dark](docs/screenshots/dark-mode.png) | ![Light](docs/screenshots/light-mode.png) |
-| *Choose your accent color* | *Beautiful dark theme* | *Clean light theme* |
-
-### Security
-
-| Biometric Lock | Encryption | Settings |
-|---------------|------------|----------|
-| ![Biometric](docs/screenshots/biometric.png) | ![Encryption](docs/screenshots/encryption.png) | ![Settings](docs/screenshots/settings.png) |
-| *Secure app with fingerprint/face* | *End-to-end encrypted notes* | *Comprehensive settings* |
+| Home | Notes | Create Note |
+|:----:|:-----:|:-----------:|
+| ![Home Dark](docs/screenshots/home-dark.png) | ![Notes Dark](docs/screenshots/notes-dark.png) | ![Create Dark](docs/screenshots/create-dark.png) |
 
 ---
 
