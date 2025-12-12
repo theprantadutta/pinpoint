@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -15,8 +16,10 @@ class AccountLinkingRequiredException implements Exception {
 }
 
 class ApiService {
-  // Backend API configuration
-  static final String baseUrl = dotenv.env['API_BASE_URL']!;
+  // Backend API configuration - uses prod URL in release mode, dev URL otherwise
+  static final String baseUrl = kReleaseMode
+      ? dotenv.env['API_BASE_URL_PROD']!
+      : dotenv.env['API_BASE_URL_DEV']!;
   static const String apiV1 = '/api/v1';
 
   final Dio _dio = Dio();
@@ -490,6 +493,34 @@ class ApiService {
       final response = await _dio.post(
         '/usage/reconcile',
         data: {}, // Empty body required by backend
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Increment OCR scans counter on the backend
+  /// Called after each successful OCR operation
+  Future<Map<String, dynamic>> incrementOcrScans() async {
+    try {
+      final response = await _dio.post(
+        '/usage/ocr',
+        data: {},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Increment exports counter on the backend
+  /// Called after each successful export (PDF/Markdown)
+  Future<Map<String, dynamic>> incrementExports() async {
+    try {
+      final response = await _dio.post(
+        '/usage/export',
+        data: {},
       );
       return response.data;
     } on DioException catch (e) {

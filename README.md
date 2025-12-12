@@ -26,7 +26,8 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
 - 🗂️ **Organized**: Hierarchical folders, tags, pinning, and powerful search
 - 🌙 **Dark First**: Gorgeous dark mode with 5 accent color themes
 - ⚡ **Fast**: Optimized performance with high refresh rate support
-- 🔄 **Sync Ready**: Built-in cloud sync infrastructure
+- 🔄 **Cloud Sync**: Real-time sync across devices with backend API
+- 💎 **Freemium Model**: Free tier with generous limits, Premium for unlimited
 
 ---
 
@@ -71,8 +72,28 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
 - **Voice Transcription** - Speech-to-text for quick note creation
 - **Drawing Canvas** - Sketch and draw within notes
 - **Attachments** - Add images and files to notes
-- **Export** - Share notes as text, HTML, or PDF
+- **Export** - Share notes as PDF or Markdown
 - **Import/Export** - Backup and restore your notes
+
+### 💎 Premium & Usage Limits
+
+| Feature | Free Tier | Premium |
+|---------|-----------|---------|
+| Synced Notes | 50 total | Unlimited |
+| OCR Scans | 20/month | Unlimited |
+| Exports | 10/month | Unlimited |
+| Voice Recording | 2 minutes | Unlimited |
+| Folders | 5 | Unlimited |
+| Theme Colors | 2 | All 5 |
+| Attachments/Note | 3 | Unlimited |
+
+### 🔄 Cloud Sync
+
+- **Firebase Authentication** - Google Sign-In with secure token management
+- **End-to-End Encryption** - Notes encrypted before leaving device
+- **Real-time Sync** - Changes sync instantly across devices
+- **Offline Support** - Full functionality without internet
+- **Usage Tracking** - Cloud-based limits prevent bypass
 
 ---
 
@@ -150,9 +171,9 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
 - **Painter** - Drawing canvas
 
 ### Navigation & State
-- **Go Router** 17.0.0 - Declarative routing
-- **Get It** 9.0.5 - Dependency injection
-- **Provider** - State management where needed
+- **Go Router** - Declarative routing
+- **Riverpod** 3.0 - Modern reactive state management
+- **Get It** - Dependency injection
 
 ### Notifications
 - **Flutter Local Notifications** - Cross-platform notifications
@@ -176,11 +197,13 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
 
 ```
 lib/
-├── screens/              # UI screens (11 main screens)
+├── screens/              # UI screens
 │   ├── home_screen.dart
 │   ├── notes_screen.dart
 │   ├── todo_screen.dart
-│   ├── create_note_screen.dart
+│   ├── create_note_screen_v2.dart
+│   ├── subscription_screen.dart
+│   ├── sync_screen.dart
 │   └── ...
 ├── components/           # Reusable UI components
 │   ├── home_screen/
@@ -188,30 +211,28 @@ lib/
 │   └── shared/
 ├── services/            # Business logic layer
 │   ├── drift_note_service.dart
-│   ├── drift_note_folder_service.dart
+│   ├── api_service.dart          # Backend API client
+│   ├── premium_service.dart      # Usage limits & premium
+│   ├── subscription_manager.dart # Google Play billing
 │   ├── encryption_service.dart
-│   ├── auth_service.dart
 │   └── ...
-├── database/            # Data persistence
+├── database/            # Local data persistence
 │   └── database.dart
-├── entities/            # Database table definitions
+├── entities/            # Drift database tables
 │   ├── note.dart
 │   ├── note_folder.dart
 │   └── ...
-├── models/              # Data transfer objects
-│   ├── note_with_details.dart
-│   └── ...
+├── constants/           # App constants
+│   └── premium_limits.dart
 ├── design_system/       # Complete design system
 │   ├── colors.dart
 │   ├── typography.dart
 │   ├── gradients.dart
-│   ├── elevations.dart
-│   ├── theme.dart
-│   └── components/
-├── navigation/          # Routing configuration
+│   └── theme.dart
+├── navigation/          # Go Router configuration
 │   └── app_navigation.dart
-├── sync/               # Cloud sync infrastructure
-│   └── sync_manager.dart
+├── widgets/             # Shared widgets
+│   └── premium_gate_dialog.dart
 └── util/               # Utilities and helpers
 ```
 
@@ -259,15 +280,30 @@ tables:
    flutter pub get
    ```
 
-3. **Generate code** (Drift database)
+3. **Configure environment**
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit `.env` with your configuration:
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key
+   GOOGLE_WEB_CLIENT_ID=your_firebase_web_client_id
+   API_BASE_URL_DEV=http://localhost:8645
+   API_BASE_URL_PROD=https://your-api-domain.com
+   ```
+
+4. **Generate code** (Drift database)
    ```bash
    dart run build_runner build --delete-conflicting-outputs
    ```
 
-4. **Run the app**
+5. **Run the app**
    ```bash
    flutter run
    ```
+
+   > **Note**: Debug builds use `API_BASE_URL_DEV`, release builds use `API_BASE_URL_PROD`
 
 ### Platform-Specific Setup
 
@@ -319,6 +355,27 @@ Choose from 5 beautiful accent colors:
 
 ## 📝 Recent Updates
 
+### December 2025 - Cloud Sync & Premium System
+
+#### Cloud Sync Implementation
+- 🔄 Full cloud sync with FastAPI backend
+- 🔐 Firebase Authentication with Google Sign-In
+- 📊 Cloud-based usage tracking (OCR, exports synced to backend)
+- 🔁 Auto-reconciliation of synced notes count
+- 📱 Offline-first with background sync
+
+#### Premium & Subscription
+- 💎 Google Play Billing integration
+- 📈 Usage limits enforced locally and on backend
+- 🎁 Grace period support for expired subscriptions
+- 🔔 Premium gate dialogs with upgrade prompts
+- 📊 Usage indicators in menus (e.g., "Export PDF (5/10)")
+
+#### Environment Configuration
+- 🔧 Separate dev/prod API URLs
+- 🚀 Auto-switches based on build mode (debug vs release)
+- 📝 Added `.env.example` for easy setup
+
 ### January 2025 - Major Design & UX Overhaul
 
 #### Design System Enhancements
@@ -326,58 +383,42 @@ Choose from 5 beautiful accent colors:
 - 🎨 Added gradient backgrounds to headers and UI elements
 - 🔄 Unified design language with consistent pill-shaped components
 - 🌈 Enhanced light mode with optimized shadow intensities
-- 🎭 Fixed app bar theming for proper light/dark mode support
 
 #### Note Creation System
-- 🐛 Fixed critical todo note creation bug (empty list access)
 - ⚡ Implemented real-time auto-save for all note types
 - 🔢 Added temporary ID system for unsaved todo items
 - ✅ Improved validation and error handling
-- 💾 Enhanced save/discard workflow
-
-#### Todo System Overhaul
-- 📋 Redesigned todo screen with glassmorphic cards
-- 🔗 Implemented navigation from todos to parent notes
-- ✨ New todo card UI matching note card design
-- 🎯 Fixed overflow issues with long note titles
-- ⚡ Real-time todo status updates across screens
 
 #### Theme Customization
 - 🌓 Added light/dark theme toggle in settings
 - 💾 Persistent theme preference using SharedPreferences
 - 🎨 5 accent color themes with proper theming
-- 📱 Responsive design improvements
-
-#### Performance & Polish
-- ⚡ Optimized shadow rendering for light mode (70% reduction)
-- 🎭 Improved animation performance
-- 📱 Better high refresh rate support
-- 🔧 Code generation updates for database schema
 
 ---
 
 ## 🗺️ Roadmap
 
-### Upcoming Features
+### Completed
+- [x] **Cloud Sync** - Custom backend with FastAPI
+- [x] **Premium System** - Google Play Billing integration
+- [x] **Firebase Auth** - Google Sign-In authentication
+- [x] **Usage Tracking** - Cloud-based limits
 
-- [ ] **Cloud Sync** - Google Drive / Dropbox integration
+### Upcoming Features
 - [ ] **Collaboration** - Share and collaborate on notes
 - [ ] **Tags System** - Multi-tag support for notes
 - [ ] **Templates** - Pre-built note templates
 - [ ] **Web Clipper** - Save web content directly
-- [ ] **Markdown Support** - Full markdown editing
-- [ ] **Kanban Board** - Visual task management
+- [ ] **Markdown Editor** - Full markdown editing support
 - [ ] **Calendar View** - Timeline and calendar integration
 - [ ] **Widgets** - Home screen widgets
-- [ ] **Desktop Apps** - Native Windows, macOS, Linux builds
+- [ ] **iOS Release** - App Store deployment
 
 ### Testing & Quality
-
 - [ ] Unit tests for services
 - [ ] Widget tests for UI components
 - [ ] Integration tests for user flows
 - [ ] CI/CD pipeline setup
-- [ ] Automated releases
 
 ---
 

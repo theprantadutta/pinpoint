@@ -9,8 +9,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// - Tokens expire after 1 hour
 /// - All requests require admin JWT token
 class AdminApiService {
-  // Use same base URL as regular API
-  static final String baseUrl = dotenv.env['API_BASE_URL']!;
+  // Use same base URL as regular API - prod in release mode, dev otherwise
+  static final String baseUrl = kReleaseMode
+      ? dotenv.env['API_BASE_URL_PROD']!
+      : dotenv.env['API_BASE_URL_DEV']!;
   static const String apiV1 = '/api/v1';
 
   final Dio _dio = Dio();

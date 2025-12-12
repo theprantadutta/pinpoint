@@ -383,15 +383,35 @@ class PremiumService extends ChangeNotifier {
     return scans < PremiumLimits.maxOcrScansPerMonthForFree;
   }
 
-  /// Increment OCR scan count
+  /// Increment OCR scan count (locally and on backend)
   Future<void> incrementOcrScans() async {
     if (_prefs == null) return;
 
+    // 1. Increment locally first (for offline support and immediate UI update)
     final current = getOcrScansThisMonth();
     await _prefs!.setInt(UsageTrackingKeys.ocrScansThisMonth, current + 1);
 
     debugPrint(
         '📊 [PremiumService] OCR scans: ${current + 1}/${PremiumLimits.maxOcrScansPerMonthForFree}');
+
+    // 2. Sync to backend (fire and forget - don't block the user)
+    try {
+      final response = await ApiService().incrementOcrScans();
+      debugPrint('✅ [PremiumService] OCR scan synced to backend: $response');
+
+      // Update local count from backend response (authoritative source)
+      if (response['current'] != null) {
+        await _prefs!.setInt(
+          UsageTrackingKeys.ocrScansThisMonth,
+          response['current'] as int,
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ [PremiumService] Failed to sync OCR scan to backend: $e');
+      // Continue anyway - local count is already updated
+    }
+
+    notifyListeners();
   }
 
   /// Get remaining OCR scans this month
@@ -420,15 +440,35 @@ class PremiumService extends ChangeNotifier {
     return exports < PremiumLimits.maxExportsPerMonthForFree;
   }
 
-  /// Increment export count
+  /// Increment export count (locally and on backend)
   Future<void> incrementExports() async {
     if (_prefs == null) return;
 
+    // 1. Increment locally first (for offline support and immediate UI update)
     final current = getExportsThisMonth();
     await _prefs!.setInt(UsageTrackingKeys.exportsThisMonth, current + 1);
 
     debugPrint(
         '📊 [PremiumService] Exports: ${current + 1}/${PremiumLimits.maxExportsPerMonthForFree}');
+
+    // 2. Sync to backend (fire and forget - don't block the user)
+    try {
+      final response = await ApiService().incrementExports();
+      debugPrint('✅ [PremiumService] Export synced to backend: $response');
+
+      // Update local count from backend response (authoritative source)
+      if (response['current'] != null) {
+        await _prefs!.setInt(
+          UsageTrackingKeys.exportsThisMonth,
+          response['current'] as int,
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ [PremiumService] Failed to sync export to backend: $e');
+      // Continue anyway - local count is already updated
+    }
+
+    notifyListeners();
   }
 
   /// Get remaining exports this month
