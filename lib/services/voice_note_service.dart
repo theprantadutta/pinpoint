@@ -258,11 +258,10 @@ class VoiceNoteService {
       }
 
       // Delete audio file from backend if it exists on server
-      if (note.audioFilePath != null &&
-          note.audioFilePath!.isNotEmpty &&
-          !note.audioFilePath!.startsWith('/data/')) {
+      if (note.audioFilePath.isNotEmpty &&
+          !note.audioFilePath.startsWith('/data/')) {
         try {
-          await ApiService().deleteAudioFile(note.audioFilePath!);
+          await ApiService().deleteAudioFile(note.audioFilePath);
           debugPrint('✅ [VoiceNoteService] Deleted audio file from backend: ${note.audioFilePath}');
         } catch (e) {
           debugPrint('⚠️ [VoiceNoteService] Failed to delete audio from backend: $e');
@@ -271,9 +270,9 @@ class VoiceNoteService {
       }
 
       // Delete local audio file
-      if (note.audioFilePath != null && note.audioFilePath!.isNotEmpty) {
+      if (note.audioFilePath.isNotEmpty) {
         try {
-          final file = File(note.audioFilePath!);
+          final file = File(note.audioFilePath);
           if (await file.exists()) {
             await file.delete();
             debugPrint('✅ [VoiceNoteService] Deleted local audio file: ${note.audioFilePath}');

@@ -47,12 +47,12 @@ class ReminderSyncService {
       // Convert to DTOs for sync
       final reminderDtos = unsyncedReminders.map((note) {
         return ReminderDto.fromLocal(
-          noteUuid: note.uuid!,
+          noteUuid: note.uuid,
           title: note.title!,
           notificationTitle: note.notificationTitle ?? note.title!,
           notificationContent: note.notificationContent,
           description: note.description,
-          reminderTime: note.reminderTime!,
+          reminderTime: note.reminderTime,
           recurrenceType: note.recurrenceType,
           recurrenceInterval: note.recurrenceInterval,
           recurrenceEndType: note.recurrenceEndType,
@@ -114,14 +114,14 @@ class ReminderSyncService {
     for (final note in reminders) {
       try {
         await ApiService().createReminder(
-          noteUuid: note.uuid!,
+          noteUuid: note.uuid,
           title: note.title!,
           notificationTitle: note.notificationTitle ?? note.title!,
           notificationContent: note.notificationContent,
-          reminderTime: note.reminderTime!,
-          recurrenceType: note.recurrenceType ?? 'once',
-          recurrenceInterval: note.recurrenceInterval ?? 1,
-          recurrenceEndType: note.recurrenceEndType ?? 'never',
+          reminderTime: note.reminderTime,
+          recurrenceType: note.recurrenceType,
+          recurrenceInterval: note.recurrenceInterval,
+          recurrenceEndType: note.recurrenceEndType,
           recurrenceEndValue: note.recurrenceEndValue,
         );
 
