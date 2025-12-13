@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -17,6 +19,7 @@ import 'services/subscription_manager.dart';
 import 'services/firebase_notification_service.dart';
 import 'services/google_sign_in_service.dart';
 import 'services/filter_service.dart';
+import 'services/app_update_service.dart';
 
 // void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
@@ -70,6 +73,7 @@ void main() async {
         '🔑 [main.dart] Skipping encryption initialization - will initialize after auth check');
 
     // Run the main app
+    // Update check happens AFTER app renders (in MyApp.initState)
     runApp(const MyApp());
   } catch (error, stackTrace) {
     // Handle initialization errors gracefully
@@ -95,42 +99,20 @@ Future<void> _initializeCoreServices() async {
 
   initServiceLocators(); // Assuming this is synchronous
 
+  // Initialize notification service (fast, local only)
   await NotificationService.init();
 
-  // Initialize Firebase notifications (this also initializes Firebase Core)
-  try {
-    debugPrint('🔔 [main.dart] Initializing Firebase notifications...');
-    final firebaseNotifications = FirebaseNotificationService();
-    await firebaseNotifications.initialize();
-    debugPrint('✅ [main.dart] Firebase notifications initialized');
-  } catch (e, stackTrace) {
-    debugPrint('⚠️ [main.dart] Firebase notifications not initialized: $e');
-    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
-    // Continue without Firebase - app will still work
-  }
-
-  // Initialize Google Sign-In service
+  // Initialize Google Sign-In service (fast, no network call)
   try {
     debugPrint('🔐 [main.dart] Initializing Google Sign-In...');
-    // The service is a singleton and initializes itself on first access
     GoogleSignInService();
     debugPrint('✅ [main.dart] Google Sign-In service initialized');
   } catch (e, stackTrace) {
     debugPrint('⚠️ [main.dart] Google Sign-In not initialized: $e');
     debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
-    // Continue without Google Sign-In - users can still use email/password
   }
 
-  // NOTE: Sync manager initialization moved to auth_screen.dart
-  // It needs to happen AFTER authentication, not at app startup
-  // See auth_screen.dart -> _performInitialSync()
-
-  // NOTE: SubscriptionService and PremiumService initialization moved to home_screen.dart
-  // These services make API calls that require authentication, so they should only
-  // initialize after the user has logged in.
-  // See home_screen.dart -> _initializeAuthenticatedServices()
-
-  // Initialize FilterService
+  // Initialize FilterService (fast, local only)
   try {
     debugPrint('🔍 [main.dart] Initializing FilterService...');
     final filterService = FilterService();
@@ -141,7 +123,32 @@ Future<void> _initializeCoreServices() async {
     debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
   }
 
-  // Add any other core services here
+  // NOTE: Firebase initialization moved to background (see _initializeFirebaseInBackground)
+  // This prevents Firebase from blocking app startup
+
+  // NOTE: Sync manager initialization moved to auth_screen.dart
+  // It needs to happen AFTER authentication, not at app startup
+  // See auth_screen.dart -> _performInitialSync()
+
+  // NOTE: SubscriptionService and PremiumService initialization moved to home_screen.dart
+  // These services make API calls that require authentication, so they should only
+  // initialize after the user has logged in.
+  // See home_screen.dart -> _initializeAuthenticatedServices()
+}
+
+/// Initialize Firebase in background - non-blocking
+/// Called via addPostFrameCallback after first frame renders
+Future<void> _initializeFirebaseInBackground() async {
+  try {
+    debugPrint('🔔 [main.dart] Initializing Firebase in background...');
+    final firebaseNotifications = FirebaseNotificationService();
+    await firebaseNotifications.initialize();
+    debugPrint('✅ [main.dart] Firebase notifications initialized');
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ [main.dart] Firebase notifications not initialized: $e');
+    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
+    // Continue without Firebase - app will still work
+  }
 }
 
 Future<bool> _shouldShowBiometricAuth() async {
@@ -256,6 +263,183 @@ class InitializationErrorApp extends StatelessWidget {
                   child: Text('Retry'),
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Screen shown when a mandatory update is required.
+/// This blocks the user from using the app until they update.
+class UpdateRequiredScreen extends StatefulWidget {
+  const UpdateRequiredScreen({super.key});
+
+  @override
+  State<UpdateRequiredScreen> createState() => _UpdateRequiredScreenState();
+}
+
+class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
+  bool _isUpdating = false;
+
+  Future<void> _retryUpdate() async {
+    setState(() => _isUpdating = true);
+
+    try {
+      final updateService = AppUpdateService();
+      final hasUpdate = await updateService.checkForUpdate();
+
+      if (hasUpdate) {
+        await updateService.performImmediateUpdate();
+      } else {
+        // No update needed anymore, restart app
+        if (mounted) {
+          // Pop back to allow normal app flow
+          Navigator.of(context).pop();
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdating = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false, // Prevent back button from dismissing
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1a1a2e),
+                Color(0xFF16213e),
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Update icon
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(60),
+                      border: Border.all(
+                        color: Colors.amber.withValues(alpha: 0.5),
+                        width: 3,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.system_update,
+                      size: 64,
+                      color: Colors.amber,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Title
+                  const Text(
+                    'Update Required',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Description
+                  Text(
+                    'A new version of Pinpoint is available. '
+                    'Please update to continue using the app.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white.withValues(alpha: 0.8),
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'This update includes important improvements and bug fixes.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 48),
+
+                  // Update button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _isUpdating ? null : _retryUpdate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                        disabledBackgroundColor:
+                            Colors.amber.withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _isUpdating
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.black,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.download_rounded, size: 24),
+                                SizedBox(width: 12),
+                                Text(
+                                  'Update Now',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Exit button
+                  TextButton(
+                    onPressed: () {
+                      FlutterExitApp.exitApp(iosForceExit: true);
+                    },
+                    child: Text(
+                      'Exit App',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -388,15 +572,72 @@ class _MyAppState extends State<MyApp> {
     await FlutterDisplayMode.setPreferredMode(mostOptimalMode);
   }
 
+  bool _updateCheckCompleted = false;
+  bool _updateRequired = false;
+
   @override
   void initState() {
     super.initState();
     setOptimalDisplayMode();
     initializeSharedPreferences();
+
+    // Initialize background tasks AFTER the first frame renders
+    // This ensures the UI loads quickly and non-critical tasks run later
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Initialize Firebase in background (non-blocking)
+      _initializeFirebaseInBackground();
+
+      // Check for updates
+      _checkForMandatoryUpdate();
+    });
+  }
+
+  /// Check for mandatory app updates from Google Play Store.
+  /// Called after the first frame is rendered so app loads quickly.
+  Future<void> _checkForMandatoryUpdate() async {
+    // Only check on Android and only once
+    if (!Platform.isAndroid || _updateCheckCompleted) return;
+    _updateCheckCompleted = true;
+
+    try {
+      debugPrint('🔄 [MyApp] Checking for app updates...');
+      final updateService = AppUpdateService();
+      final hasUpdate = await updateService.checkForUpdate();
+
+      if (hasUpdate) {
+        debugPrint('⚠️ [MyApp] Update available - forcing immediate update');
+
+        // Try immediate update first
+        final updateStarted = await updateService.performImmediateUpdate();
+
+        if (!updateStarted && mounted) {
+          // If immediate update fails, show blocking update screen
+          debugPrint('❌ [MyApp] Immediate update failed - showing update screen');
+          setState(() => _updateRequired = true);
+        }
+      } else {
+        debugPrint('✅ [MyApp] App is up to date');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('⚠️ [MyApp] Update check failed: $e');
+      debugPrint('⚠️ [MyApp] Stack trace: $stackTrace');
+      // Don't block the app if update check fails
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // If update is required, show blocking update screen
+    if (_updateRequired) {
+      return MaterialApp(
+        title: 'Pinpoint',
+        themeMode: ThemeMode.dark,
+        darkTheme: ThemeData.dark(useMaterial3: true),
+        debugShowCheckedModeBanner: false,
+        home: const UpdateRequiredScreen(),
+      );
+    }
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(

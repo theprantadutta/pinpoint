@@ -1107,9 +1107,39 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
 
     try {
       final syncManager = getIt<SyncManager>();
+
+      // Check if sync service is configured
+      final isConfigured = await syncManager.isConfigured();
+      if (!isConfigured) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sync service not ready. Please wait a moment and try again.'),
+            backgroundColor: PinpointColors.warning,
+          ),
+        );
+        return;
+      }
+
       final result = await syncManager.sync();
 
       if (!mounted) return;
+
+      // Determine the message to show
+      String contentMessage;
+      if (result.success) {
+        final totalSynced = result.notesSynced + result.foldersSynced + result.remindersSynced;
+        if (totalSynced == 0) {
+          // Use the actual message from sync result (e.g., "No changes", "Sync already in progress")
+          contentMessage = result.message.isNotEmpty
+              ? result.message
+              : 'Everything is already up to date.';
+        } else {
+          contentMessage = ''; // Will show stats instead
+        }
+      } else {
+        contentMessage = result.message;
+      }
 
       // Show result dialog
       await showDialog(
@@ -1142,10 +1172,8 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
                   const SizedBox(height: PinpointSpacing.sm),
                   _buildSyncStat('Reminders', result.remindersSynced, Icons.alarm),
                 ],
-                if (result.notesSynced == 0 &&
-                    result.foldersSynced == 0 &&
-                    result.remindersSynced == 0)
-                  const Text('Everything is already up to date.'),
+                if (contentMessage.isNotEmpty)
+                  Text(contentMessage),
               ] else
                 Text(result.message),
             ],

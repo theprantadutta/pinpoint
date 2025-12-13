@@ -1,5 +1,14 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pinpoint/services/api_service.dart';
+
+/// Keys for caching auth state locally
+const String _kCachedUserId = 'cached_user_id';
+const String _kCachedUserEmail = 'cached_user_email';
+const String _kCachedIsPremium = 'cached_is_premium';
+const String _kCachedSubscriptionTier = 'cached_subscription_tier';
+const String _kCachedSubscriptionExpiry = 'cached_subscription_expiry';
+const String _kCachedAuthTimestamp = 'cached_auth_timestamp';
 
 class BackendAuthService extends ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -11,28 +20,164 @@ class BackendAuthService extends ChangeNotifier {
   String _subscriptionTier = 'free';
   DateTime? _subscriptionExpiresAt;
 
+  // Initialization state tracking
+  bool _isInitializing = false;
+  bool _isInitialized = false;
+  Future<void>? _initializationFuture;
+
   bool get isAuthenticated => _isAuthenticated;
   bool get isPremium => _isPremium;
   String? get userEmail => _userEmail;
   String? get userId => _userId;
   String get subscriptionTier => _subscriptionTier;
   DateTime? get subscriptionExpiresAt => _subscriptionExpiresAt;
+  bool get isInitialized => _isInitialized;
 
   /// Initialize authentication state
+  /// Safe to call multiple times - will only initialize once
   Future<void> initialize() async {
+    // If already initialized, return immediately
+    if (_isInitialized) {
+      debugPrint('🔐 [BackendAuthService] Already initialized, skipping');
+      return;
+    }
+
+    // If initialization is in progress, wait for it
+    if (_isInitializing && _initializationFuture != null) {
+      debugPrint('🔐 [BackendAuthService] Initialization in progress, waiting...');
+      await _initializationFuture;
+      return;
+    }
+
+    // Start initialization
+    _isInitializing = true;
+    _initializationFuture = _doInitialize();
+    await _initializationFuture;
+  }
+
+  /// Internal initialization logic
+  Future<void> _doInitialize() async {
     try {
+      debugPrint('🔐 [BackendAuthService] Starting initialization...');
+
+      // First, try to load cached auth state for instant UI (no network)
+      await _loadCachedAuthState();
+
       // Check if we have a token
       final hasToken = await _apiService.hasToken();
 
       if (hasToken) {
-        // Try to fetch current user
+        // If we have cached data and it's less than 5 minutes old, skip API call
+        final prefs = await SharedPreferences.getInstance();
+        final cachedTimestamp = prefs.getInt(_kCachedAuthTimestamp) ?? 0;
+        final cacheAge = DateTime.now().millisecondsSinceEpoch - cachedTimestamp;
+        final cacheMaxAge = 5 * 60 * 1000; // 5 minutes
+
+        if (_userId != null && cacheAge < cacheMaxAge) {
+          debugPrint('✅ [BackendAuthService] Using cached auth state (${cacheAge ~/ 1000}s old)');
+          _isAuthenticated = true;
+          _isInitialized = true;
+          _isInitializing = false;
+          notifyListeners();
+
+          // Refresh in background (don't await)
+          _refreshInBackground();
+          return;
+        }
+
+        // Cache is stale or missing, fetch from API
+        debugPrint('🔐 [BackendAuthService] Fetching fresh user info from API...');
         await refreshUserInfo();
+      } else {
+        debugPrint('🔐 [BackendAuthService] No token found, user not authenticated');
+        _isAuthenticated = false;
       }
+
+      _isInitialized = true;
+      _isInitializing = false;
+      debugPrint('✅ [BackendAuthService] Initialization complete');
     } catch (e) {
-      debugPrint('Auth initialization error: $e');
+      debugPrint('⚠️ [BackendAuthService] Auth initialization error: $e');
       _isAuthenticated = false;
+      _isInitialized = true;
+      _isInitializing = false;
       notifyListeners();
     }
+  }
+
+  /// Load cached auth state from SharedPreferences
+  Future<void> _loadCachedAuthState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      _userId = prefs.getString(_kCachedUserId);
+      _userEmail = prefs.getString(_kCachedUserEmail);
+      _isPremium = prefs.getBool(_kCachedIsPremium) ?? false;
+      _subscriptionTier = prefs.getString(_kCachedSubscriptionTier) ?? 'free';
+
+      final expiryString = prefs.getString(_kCachedSubscriptionExpiry);
+      if (expiryString != null) {
+        _subscriptionExpiresAt = DateTime.tryParse(expiryString);
+      }
+
+      if (_userId != null) {
+        _isAuthenticated = true;
+        debugPrint('🔐 [BackendAuthService] Loaded cached auth: $_userEmail');
+      }
+    } catch (e) {
+      debugPrint('⚠️ [BackendAuthService] Failed to load cached auth: $e');
+    }
+  }
+
+  /// Save auth state to SharedPreferences for instant startup
+  Future<void> _cacheAuthState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      if (_userId != null) {
+        await prefs.setString(_kCachedUserId, _userId!);
+      }
+      if (_userEmail != null) {
+        await prefs.setString(_kCachedUserEmail, _userEmail!);
+      }
+      await prefs.setBool(_kCachedIsPremium, _isPremium);
+      await prefs.setString(_kCachedSubscriptionTier, _subscriptionTier);
+      if (_subscriptionExpiresAt != null) {
+        await prefs.setString(_kCachedSubscriptionExpiry, _subscriptionExpiresAt!.toIso8601String());
+      }
+      await prefs.setInt(_kCachedAuthTimestamp, DateTime.now().millisecondsSinceEpoch);
+
+      debugPrint('✅ [BackendAuthService] Auth state cached');
+    } catch (e) {
+      debugPrint('⚠️ [BackendAuthService] Failed to cache auth state: $e');
+    }
+  }
+
+  /// Clear cached auth state (call on logout)
+  Future<void> _clearCachedAuthState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kCachedUserId);
+      await prefs.remove(_kCachedUserEmail);
+      await prefs.remove(_kCachedIsPremium);
+      await prefs.remove(_kCachedSubscriptionTier);
+      await prefs.remove(_kCachedSubscriptionExpiry);
+      await prefs.remove(_kCachedAuthTimestamp);
+    } catch (e) {
+      debugPrint('⚠️ [BackendAuthService] Failed to clear cached auth: $e');
+    }
+  }
+
+  /// Refresh user info in background (fire and forget)
+  void _refreshInBackground() {
+    Future.microtask(() async {
+      try {
+        await refreshUserInfo();
+        debugPrint('✅ [BackendAuthService] Background refresh complete');
+      } catch (e) {
+        debugPrint('⚠️ [BackendAuthService] Background refresh failed: $e');
+      }
+    });
   }
 
   /// Register new user
@@ -84,6 +229,10 @@ class BackendAuthService extends ChangeNotifier {
       _userId = null;
       _subscriptionTier = 'free';
       _subscriptionExpiresAt = null;
+      _isInitialized = false; // Allow re-initialization after logout
+
+      // Clear cached auth state
+      await _clearCachedAuthState();
 
       notifyListeners();
     }
@@ -177,6 +326,9 @@ class BackendAuthService extends ChangeNotifier {
             DateTime.parse(userInfo['subscription_expires_at']);
       }
 
+      // Cache the auth state for faster startup
+      await _cacheAuthState();
+
       notifyListeners();
     } catch (e) {
       throw Exception('Failed to fetch user info: $e');
@@ -194,6 +346,9 @@ class BackendAuthService extends ChangeNotifier {
       if (status['expires_at'] != null) {
         _subscriptionExpiresAt = DateTime.parse(status['expires_at']);
       }
+
+      // Update cache
+      await _cacheAuthState();
 
       notifyListeners();
     } catch (e) {
