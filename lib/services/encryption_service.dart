@@ -86,8 +86,8 @@ class SecureEncryptionService {
 
   /// Force fetch encryption key from cloud and replace local key
   /// Use this after login to ensure we have the correct key from cloud
-  /// Includes retry logic for reliability
-  static Future<bool> syncKeyFromCloud(dynamic apiService, {int maxRetries = 3}) async {
+  /// Includes fast retry logic for reliability
+  static Future<bool> syncKeyFromCloud(dynamic apiService, {int maxRetries = 2}) async {
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         debugPrint('🔄 [Encryption] Fetching encryption key from cloud (attempt $attempt/$maxRetries)...');
@@ -124,10 +124,9 @@ class SecureEncryptionService {
         debugPrint('❌ [Encryption] Attempt $attempt failed: $e');
 
         if (attempt < maxRetries) {
-          // Wait before retrying (exponential backoff)
-          final delaySeconds = attempt * 2; // 2s, 4s, 6s...
-          debugPrint('⏳ [Encryption] Retrying in ${delaySeconds}s...');
-          await Future.delayed(Duration(seconds: delaySeconds));
+          // Fast retry - only 500ms delay
+          debugPrint('⏳ [Encryption] Retrying in 500ms...');
+          await Future.delayed(const Duration(milliseconds: 500));
         } else {
           debugPrint('❌ [Encryption] All $maxRetries attempts failed to sync key from cloud');
           return false;

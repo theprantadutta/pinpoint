@@ -286,14 +286,14 @@ class ApiService {
 
   /// Delete notes
   Future<Map<String, dynamic>> deleteNotes({
-    required List<int> clientNoteIds,
+    required List<String> clientNoteUuids,
     bool hardDelete = false,
   }) async {
     try {
       final response = await _dio.delete(
         '/notes/notes',
         queryParameters: {'hard_delete': hardDelete},
-        data: {'client_note_ids': clientNoteIds},
+        data: {'client_note_uuids': clientNoteUuids},
       );
 
       return response.data;

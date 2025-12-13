@@ -348,7 +348,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           productId: SubscriptionService.premiumMonthly,
           title: 'Monthly',
           period: 'per month',
-          badge: '14-day free trial',
+          badge: '7-day free trial',
           colorScheme: colorScheme,
           isDark: isDark,
         ),

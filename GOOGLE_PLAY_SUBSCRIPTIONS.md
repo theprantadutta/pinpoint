@@ -34,7 +34,7 @@ Cancel anytime. Your privacy is always protected with end-to-end encryption.
 
 **Billing Period**: 1 month
 
-**Free Trial**: 14 days
+**Free Trial**: 7 days
 
 **Grace Period**: 3 days
 
@@ -69,9 +69,9 @@ Cancel anytime. Your privacy is always protected with end-to-end encryption.
 
 **Billing Period**: 1 year
 
-**Free Trial**: 14 days
+**Free Trial**: 7 days
 
-**Grace Period**: 7 days
+**Grace Period**: 3 days
 
 ---
 
@@ -106,18 +106,19 @@ One payment. Lifetime access. Your privacy protected forever.
 ## 🎯 Feature Comparison
 
 ### Free Tier
-- ✅ Basic note-taking (text, audio, todo, drawing)
+- ✅ Basic note-taking (text, audio, todo, reminders)
 - ✅ Local storage with encryption
-- ✅ Up to 10 folders
+- ✅ Up to 5 folders
 - ✅ Biometric lock
-- ✅ 2 color themes
-- ✅ Audio recording (5 min limit)
-- ✅ OCR (10 images/month)
-- ✅ Voice transcription (10 uses/month)
+- ✅ 2 color themes (Neon Mint, Blue Ocean)
+- ✅ Audio recording (2 min limit)
+- ✅ OCR (20 images/month)
+- ✅ Cloud sync (up to 50 notes)
+- ✅ Exports (10/month)
+- ✅ Up to 3 attachments per note
 - ✅ Local backup
-- ❌ Cloud sync
-- ❌ Multi-device
-- ❌ Premium themes
+- ❌ Multi-device unlimited sync
+- ❌ Premium themes (3 additional colors)
 
 ### Premium Tier (All Plans)
 - ✅ Everything in Free
@@ -156,7 +157,7 @@ One payment. Lifetime access. Your privacy protected forever.
 
 ### Subscription Benefits
 - ✅ Automatic renewal
-- ✅ 14-day free trial (Monthly & Yearly)
+- ✅ 7-day free trial (Monthly & Yearly)
 - ✅ Cancel anytime
 - ✅ Grace period for failed payments
 - ✅ Family Library sharing (optional)
@@ -164,7 +165,7 @@ One payment. Lifetime access. Your privacy protected forever.
 ### Renewal Settings
 - **Auto-renew**: Yes (Monthly & Yearly)
 - **Notification**: 3 days before renewal
-- **Grace period**: 3 days (Monthly), 7 days (Yearly)
+- **Grace period**: 3 days (Monthly & Yearly)
 - **Account hold**: 30 days
 
 ---
@@ -260,10 +261,10 @@ Track these metrics in Google Play Console:
 ### App Store Description
 
 **Free features:**
-Create notes, todos, voice memos, and drawings. All data encrypted locally.
+Create notes, todos, voice memos, and reminders. All data encrypted locally. Sync up to 50 notes to the cloud.
 
 **Premium features:**
-Unlock cloud sync, unlimited AI features, premium themes, and cross-device access. Try 14 days free!
+Unlock unlimited cloud sync, unlimited OCR, premium themes, and cross-device access. Try 7 days free!
 
 **Pricing:**
 - Monthly: $4.99/month
