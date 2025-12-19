@@ -24,7 +24,9 @@
       "Bash(flutter pub run:*)",
       "Bash(find:*)",
       "Bash(findstr:*)",
-      "WebFetch(domain:riverpod.dev)"
+      "WebFetch(domain:riverpod.dev)",
+      "Bash(grep:*)",
+      "Bash(git -C \"F:/Personal/MyProjects/pinpoint_backend\" status)"
     ],
     "deny": [],
     "ask": []
