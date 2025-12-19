@@ -183,9 +183,13 @@ class SubscriptionManager extends ChangeNotifier {
   }
 
   /// Verify purchase with backend
+  ///
+  /// Optionally pass [userId] to sync the subscription with the user's account.
+  /// When provided, both device and user records will be updated on the backend.
   Future<bool> verifyPurchase({
     required String purchaseToken,
     required String productId,
+    String? userId,
   }) async {
     if (_deviceId == null) {
       debugPrint('Device ID not available');
@@ -197,6 +201,7 @@ class SubscriptionManager extends ChangeNotifier {
         deviceId: _deviceId!,
         purchaseToken: purchaseToken,
         productId: productId,
+        userId: userId, // Pass user ID to sync with user record
       );
 
       if (response['success'] == true) {
@@ -208,9 +213,14 @@ class SubscriptionManager extends ChangeNotifier {
           _subscriptionExpiresAt = DateTime.parse(response['expires_at']);
         }
 
+        // Clear grace period on successful purchase
+        _isInGracePeriod = false;
+        _gracePeriodEndsAt = null;
+
         await _saveLocalSubscriptionStatus();
         notifyListeners();
 
+        debugPrint('Purchase verified: premium=$_isPremium, tier=$_subscriptionTier, userId=$userId');
         return true;
       }
 

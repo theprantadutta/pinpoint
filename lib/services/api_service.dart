@@ -370,19 +370,30 @@ class ApiService {
   }
 
   /// Verify purchase with device ID (no authentication required)
+  ///
+  /// Optionally pass [userId] to sync the subscription with the user's account
+  /// when they are authenticated. This keeps both device and user records in sync.
   Future<Map<String, dynamic>> verifyPurchaseWithDevice({
     required String deviceId,
     required String purchaseToken,
     required String productId,
+    String? userId,
   }) async {
     try {
+      final data = {
+        'device_id': deviceId,
+        'purchase_token': purchaseToken,
+        'product_id': productId,
+      };
+
+      // Include user_id if available to sync with user record
+      if (userId != null) {
+        data['user_id'] = userId;
+      }
+
       final response = await _dio.post(
         '/subscription/verify-device',
-        data: {
-          'device_id': deviceId,
-          'purchase_token': purchaseToken,
-          'product_id': productId,
-        },
+        data: data,
       );
 
       return response.data;
