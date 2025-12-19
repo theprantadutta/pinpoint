@@ -12,11 +12,13 @@ class SyncManager with ChangeNotifier {
   SyncService? _syncService;
   bool _isInitialized = false;
   bool _isSyncing = false; // Lock to prevent concurrent syncs
+  bool _hasCompletedInitialSync = false; // Track if initial sync done this session
 
   SyncStatus get status => _syncService?.status ?? SyncStatus.idle;
   String get lastSyncMessage => _syncService?.lastSyncMessage ?? '';
   int get lastSyncTimestamp => _syncService?.lastSyncTimestamp ?? 0;
   bool get isSyncing => _isSyncing;
+  bool get hasCompletedInitialSync => _hasCompletedInitialSync;
 
   /// Initialize the sync manager with a sync service
   Future<void> init({SyncService? syncService}) async {
@@ -79,6 +81,7 @@ class SyncManager with ChangeNotifier {
 
       // After successful sync, update usage stats from backend
       if (result.success) {
+        _hasCompletedInitialSync = true;
         await _syncUsageStatsWithBackend();
       }
 
@@ -90,15 +93,21 @@ class SyncManager with ChangeNotifier {
   }
 
   /// Sync usage stats with backend after sync operation
+  /// Only syncs if stats are stale (>1 hour old) to reduce API calls
   Future<void> _syncUsageStatsWithBackend() async {
     try {
       final premiumService = PremiumService();
 
-      // Fetch latest usage stats
-      await premiumService.syncUsageWithBackend();
-      debugPrint('✅ [SyncManager] Synced usage stats with backend');
+      // Only fetch usage stats if they're stale (reduces API calls)
+      if (premiumService.shouldRefreshUsageStats()) {
+        await premiumService.syncUsageWithBackend();
+        debugPrint('✅ [SyncManager] Synced usage stats with backend');
+      } else {
+        debugPrint(
+            '⏭️ [SyncManager] Usage stats still fresh, skipping sync');
+      }
 
-      // Auto-reconcile after every sync to keep backend count accurate
+      // Auto-reconcile if needed (already checks timing internally)
       await premiumService.autoReconcileIfNeeded();
     } catch (e) {
       debugPrint('⚠️ [SyncManager] Could not sync usage stats: $e');

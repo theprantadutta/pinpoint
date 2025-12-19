@@ -11,7 +11,9 @@ class GoogleSignInService {
   static final GoogleSignInService _instance = GoogleSignInService._internal();
   factory GoogleSignInService() => _instance;
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // Lazy initialization - don't access FirebaseAuth until actually needed
+  // This prevents errors when Firebase isn't initialized yet
+  FirebaseAuth get _auth => FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   GoogleSignInService._internal() {
