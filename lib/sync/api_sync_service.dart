@@ -80,13 +80,9 @@ class ApiSyncService extends SyncService {
 
   @override
   Future<bool> isConfigured() async {
-    // Check if user is authenticated
-    try {
-      await _apiService.getSubscriptionStatus();
-      return true;
-    } catch (e) {
-      return false;
-    }
+    // Check if auth token exists locally (no API call needed)
+    // Token validity is checked when actually used for sync operations
+    return await _apiService.hasToken();
   }
 
   @override

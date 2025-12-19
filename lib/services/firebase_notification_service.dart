@@ -33,6 +33,7 @@ class FirebaseNotificationService {
   String? _fcmToken;
   String? _deviceId;
   bool _initialized = false;
+  bool _tokenRegisteredThisSession = false;
 
   String? get fcmToken => _fcmToken;
   bool get isInitialized => _initialized;
@@ -145,7 +146,7 @@ class FirebaseNotificationService {
       _firebaseMessaging.onTokenRefresh.listen((newToken) {
         debugPrint('🔄 FCM Token refreshed: $newToken');
         _fcmToken = newToken;
-        registerTokenWithBackend(); // Auto-register on token refresh
+        registerTokenWithBackend(force: true); // Auto-register on token refresh
       });
     } catch (e) {
       debugPrint('❌ Error getting FCM token: $e');
@@ -173,7 +174,14 @@ class FirebaseNotificationService {
 
   /// Register FCM token with backend
   /// Should be called after successful user authentication
-  Future<void> registerTokenWithBackend() async {
+  /// Only registers once per app session to reduce API calls
+  Future<void> registerTokenWithBackend({bool force = false}) async {
+    // Skip if already registered this session (unless forced)
+    if (_tokenRegisteredThisSession && !force) {
+      debugPrint('⏭️ FCM token already registered this session, skipping');
+      return;
+    }
+
     if (_fcmToken == null || _deviceId == null) {
       debugPrint('⚠️ Cannot register token: Token or Device ID is null');
       return;
@@ -187,6 +195,7 @@ class FirebaseNotificationService {
         platform: Platform.isAndroid ? 'android' : 'ios',
       );
 
+      _tokenRegisteredThisSession = true;
       debugPrint('✅ FCM token registered with backend');
     } catch (e) {
       debugPrint('⚠️ Failed to register FCM token with backend: $e');

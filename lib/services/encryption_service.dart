@@ -7,6 +7,7 @@ class SecureEncryptionService {
   static const _storage = FlutterSecureStorage();
   static const String _keyStorageKey = 'encryption_key';
   static enc.Encrypter? _encrypter;
+  static bool _keySyncedThisSession = false;
 
   // Initialize the encryption service
   // apiService is optional - if provided, will sync key with cloud
@@ -87,7 +88,14 @@ class SecureEncryptionService {
   /// Force fetch encryption key from cloud and replace local key
   /// Use this after login to ensure we have the correct key from cloud
   /// Includes fast retry logic for reliability
-  static Future<bool> syncKeyFromCloud(dynamic apiService, {int maxRetries = 2}) async {
+  /// Only syncs once per session unless [force] is true
+  static Future<bool> syncKeyFromCloud(dynamic apiService, {int maxRetries = 2, bool force = false}) async {
+    // Skip if already synced this session (unless forced)
+    if (_keySyncedThisSession && !force) {
+      debugPrint('⏭️ [Encryption] Key already synced this session, skipping');
+      return true;
+    }
+
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         debugPrint('🔄 [Encryption] Fetching encryption key from cloud (attempt $attempt/$maxRetries)...');
@@ -104,6 +112,7 @@ class SecureEncryptionService {
           final key = enc.Key.fromBase64(cloudKey);
           _encrypter = enc.Encrypter(enc.AES(key));
 
+          _keySyncedThisSession = true;
           debugPrint('✅ [Encryption] Successfully synced key from cloud');
           return true;
         } else {
@@ -114,6 +123,7 @@ class SecureEncryptionService {
           if (localKey != null) {
             debugPrint('☁️ [Encryption] Uploading local key to cloud...');
             await apiService.storeEncryptionKey(localKey);
+            _keySyncedThisSession = true;
             debugPrint('✅ [Encryption] Local key uploaded to cloud');
             return true;
           }

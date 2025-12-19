@@ -112,16 +112,23 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Run background data sync (notes, folders, reminders)
   /// This initializes the sync service IMMEDIATELY (not in microtask) so it's ready
   /// when the user navigates to Settings, then performs actual sync in background
+  /// Only runs once per session to avoid repeated syncs on every navigation
   void _runBackgroundDataSync() {
     // Initialize sync service immediately so it's available for Settings
     _initializeSyncService();
+
+    // Check if we've already completed initial sync this session
+    final syncManager = getIt<SyncManager>();
+    if (syncManager.hasCompletedInitialSync) {
+      debugPrint(
+          '⏭️ [HomeScreen] Initial sync already done this session, skipping');
+      return;
+    }
 
     // Then run actual sync in background
     Future.microtask(() async {
       try {
         debugPrint('🔄 [HomeScreen] Starting background data sync...');
-
-        final syncManager = getIt<SyncManager>();
 
         // Perform sync in background
         final result = await syncManager.sync();
@@ -142,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Don't block app - sync failure is not critical
       }
 
-      // Also sync reminders
+      // Also sync reminders (only on initial sync)
       try {
         debugPrint('⏰ [HomeScreen] Syncing local reminders to backend...');
         final syncResult = await ReminderSyncService.syncAllReminders();

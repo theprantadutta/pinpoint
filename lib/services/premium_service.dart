@@ -55,10 +55,24 @@ class PremiumService extends ChangeNotifier {
       // First check local subscription manager
       final subscriptionManager = SubscriptionManager();
       _isPremium = subscriptionManager.isPremium;
+      _isInGracePeriod = subscriptionManager.isInGracePeriod;
       _subscriptionType = subscriptionManager.subscriptionType ?? 'free';
       _expiresAt = subscriptionManager.expirationDate;
+      _gracePeriodEndsAt = subscriptionManager.gracePeriodEndsAt;
 
-      // Then check backend for grace period status
+      // Skip backend call if SubscriptionManager has fresh data
+      // This reduces redundant API calls on app startup
+      if (subscriptionManager.hasFreshData) {
+        debugPrint(
+            '💎 [PremiumService] Using fresh data from SubscriptionManager');
+        debugPrint('   Premium status: $_isPremium');
+        debugPrint('   In grace period: $_isInGracePeriod');
+        debugPrint('   Subscription type: $_subscriptionType');
+        notifyListeners();
+        return;
+      }
+
+      // Only fetch from backend if SubscriptionManager data is stale
       try {
         final apiService = ApiService();
         final statusResponse = await apiService.getSubscriptionStatus();
@@ -236,10 +250,15 @@ class PremiumService extends ChangeNotifier {
     return DateTime.parse(lastReconcileString);
   }
 
-  /// Check if reconciliation is needed (always reconcile after every sync)
+  /// Check if reconciliation is needed (once per hour to reduce API calls)
   bool shouldReconcile() {
-    // Always reconcile after every sync to ensure backend count is accurate
-    return true;
+    final lastReconcile = getLastReconciliation();
+    if (lastReconcile == null) return true;
+
+    // Only reconcile if more than 1 hour has passed
+    final hoursSinceReconcile =
+        DateTime.now().difference(lastReconcile).inHours;
+    return hoursSinceReconcile >= 1;
   }
 
   /// Auto-reconcile usage if needed (called periodically)

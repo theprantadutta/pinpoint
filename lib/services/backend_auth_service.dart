@@ -25,6 +25,9 @@ class BackendAuthService extends ChangeNotifier {
   bool _isInitialized = false;
   Future<void>? _initializationFuture;
 
+  // Session cache for auth providers
+  Map<String, dynamic>? _cachedAuthProviders;
+
   bool get isAuthenticated => _isAuthenticated;
   bool get isPremium => _isPremium;
   String? get userEmail => _userEmail;
@@ -279,6 +282,9 @@ class BackendAuthService extends ChangeNotifier {
       // Refresh user info to get updated linked accounts
       await refreshUserInfo();
 
+      // Clear auth providers cache so it refreshes next time
+      clearAuthProvidersCache();
+
       notifyListeners();
     } catch (e) {
       throw Exception('Failed to link Google account: $e');
@@ -293,6 +299,9 @@ class BackendAuthService extends ChangeNotifier {
       // Refresh user info to get updated linked accounts
       await refreshUserInfo();
 
+      // Clear auth providers cache so it refreshes next time
+      clearAuthProvidersCache();
+
       notifyListeners();
     } catch (e) {
       throw Exception('Failed to unlink Google account: $e');
@@ -300,13 +309,26 @@ class BackendAuthService extends ChangeNotifier {
   }
 
   /// Get linked authentication providers
-  Future<Map<String, dynamic>> getAuthProviders() async {
+  /// Uses session cache to avoid repeated API calls
+  Future<Map<String, dynamic>> getAuthProviders({bool forceRefresh = false}) async {
+    // Return cached data if available (unless forced)
+    if (!forceRefresh && _cachedAuthProviders != null) {
+      debugPrint('⏭️ [BackendAuthService] Using cached auth providers');
+      return _cachedAuthProviders!;
+    }
+
     try {
       final response = await _apiService.getAuthProviders();
+      _cachedAuthProviders = response;
       return response;
     } catch (e) {
       throw Exception('Failed to get auth providers: $e');
     }
+  }
+
+  /// Clear cached auth providers (call after linking/unlinking accounts)
+  void clearAuthProvidersCache() {
+    _cachedAuthProviders = null;
   }
 
   /// Refresh user information and subscription status

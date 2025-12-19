@@ -16,6 +16,7 @@ class SubscriptionManager extends ChangeNotifier {
   DateTime? _subscriptionExpiresAt;
   DateTime? _gracePeriodEndsAt;
   String? _deviceId;
+  DateTime? _lastFetchTime;
 
   bool get isPremium => _isPremium || _isInGracePeriod;
   bool get isInGracePeriod => _isInGracePeriod;
@@ -25,6 +26,12 @@ class SubscriptionManager extends ChangeNotifier {
   DateTime? get gracePeriodEndsAt => _gracePeriodEndsAt;
   String? get deviceId => _deviceId;
 
+  /// Returns true if subscription data was fetched recently (within cache duration)
+  bool get hasFreshData {
+    if (_lastFetchTime == null) return false;
+    return DateTime.now().difference(_lastFetchTime!) < _cacheValidDuration;
+  }
+
   static const String _premiumKey = 'is_premium';
   static const String _gracePeriodKey = 'is_in_grace_period';
   static const String _tierKey = 'subscription_tier';
@@ -32,6 +39,8 @@ class SubscriptionManager extends ChangeNotifier {
   static const String _expiryKey = 'subscription_expires_at';
   static const String _gracePeriodExpiryKey = 'grace_period_ends_at';
   static const String _deviceIdKey = 'device_id';
+  static const String _lastFetchKey = 'subscription_last_fetch';
+  static const Duration _cacheValidDuration = Duration(minutes: 5);
 
   /// Initialize subscription manager
   Future<void> initialize() async {
@@ -116,6 +125,12 @@ class SubscriptionManager extends ChangeNotifier {
         }
       }
 
+      // Load last fetch timestamp
+      final lastFetchString = preferences.getString(_lastFetchKey);
+      if (lastFetchString != null) {
+        _lastFetchTime = DateTime.parse(lastFetchString);
+      }
+
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading subscription status: $e');
@@ -146,14 +161,28 @@ class SubscriptionManager extends ChangeNotifier {
       } else {
         await preferences.remove(_gracePeriodExpiryKey);
       }
+
+      // Save last fetch timestamp
+      if (_lastFetchTime != null) {
+        await preferences.setString(
+            _lastFetchKey, _lastFetchTime!.toIso8601String());
+      }
     } catch (e) {
       debugPrint('Error saving subscription status: $e');
     }
   }
 
   /// Check subscription status with backend
-  Future<void> checkSubscriptionStatus() async {
+  ///
+  /// Set [forceRefresh] to true to bypass cache (e.g., after purchase verification)
+  Future<void> checkSubscriptionStatus({bool forceRefresh = false}) async {
     if (_deviceId == null) return;
+
+    // Skip API call if cache is still fresh
+    if (!forceRefresh && hasFreshData) {
+      debugPrint('Using cached subscription status (cache still valid)');
+      return;
+    }
 
     try {
       final status =
@@ -173,6 +202,9 @@ class SubscriptionManager extends ChangeNotifier {
       } else {
         _gracePeriodEndsAt = null;
       }
+
+      // Update cache timestamp
+      _lastFetchTime = DateTime.now();
 
       await _saveLocalSubscriptionStatus();
       notifyListeners();
