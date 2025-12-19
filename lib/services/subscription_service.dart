@@ -4,6 +4,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/services/logger_service.dart';
+import 'package:pinpoint/services/backend_auth_service.dart';
 
 class SubscriptionService {
   static final SubscriptionService _instance = SubscriptionService._internal();
@@ -171,13 +172,21 @@ class SubscriptionService {
 
       if (purchaseToken != null) {
         final subscriptionManager = SubscriptionManager();
+
+        // Get user ID if authenticated (to sync subscription with user record)
+        final backendAuthService = BackendAuthService();
+        final userId = backendAuthService.isAuthenticated
+            ? backendAuthService.userId
+            : null;
+
         final verified = await subscriptionManager.verifyPurchase(
           purchaseToken: purchaseToken,
           productId: purchase.productID,
+          userId: userId, // Sync with user record if authenticated
         );
 
         if (verified) {
-          log.i('Purchase verified: ${purchase.productID}');
+          log.i('Purchase verified: ${purchase.productID}, userId: $userId');
         } else {
           log.e('Purchase verification failed');
         }
