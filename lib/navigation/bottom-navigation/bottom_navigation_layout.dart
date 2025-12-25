@@ -39,7 +39,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
       initialPage: selectedIndex,
     );
 
-    // Trigger walkthrough after first frame is rendered
+    // Trigger walkthrough check - service handles persistence via SharedPreferences
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         WalkthroughService().showWalkthroughIfNeeded(context);

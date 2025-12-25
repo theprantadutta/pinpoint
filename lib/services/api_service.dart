@@ -86,6 +86,12 @@ class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
 
+  // Refresh token state
+  bool _isRefreshing = false;
+
+  /// Callback for when session expires and user needs to re-login
+  VoidCallback? onSessionExpired;
+
   ApiService._internal() {
     _dio.options = BaseOptions(
       baseUrl: baseUrl + apiV1,
@@ -112,37 +118,148 @@ class ApiService {
           _logger.d('RESPONSE[${response.statusCode}] => ${response.data}');
           return handler.next(response);
         },
-        onError: (error, handler) {
+        onError: (error, handler) async {
           _logger.e('ERROR[${error.response?.statusCode}] => ${error.message}');
           if (error.response != null) {
             _logger.e('ERROR Response Data: ${error.response?.data}');
             _logger.e('ERROR Response Headers: ${error.response?.headers}');
           }
+
+          // Handle 401 Unauthorized - attempt token refresh
+          if (error.response?.statusCode == 401) {
+            // Don't try to refresh if we're already refreshing or if this is a refresh request
+            final isRefreshRequest = error.requestOptions.path.contains('/auth/refresh');
+            if (!_isRefreshing && !isRefreshRequest) {
+              _logger.i('🔄 Access token expired, attempting refresh...');
+              final refreshed = await _tryRefreshToken();
+
+              if (refreshed) {
+                _logger.i('✅ Token refreshed successfully, retrying request...');
+                // Retry the original request with new token
+                try {
+                  final opts = error.requestOptions;
+                  final newToken = await getToken();
+                  opts.headers['Authorization'] = 'Bearer $newToken';
+                  final response = await _dio.fetch(opts);
+                  return handler.resolve(response);
+                } catch (retryError) {
+                  _logger.e('❌ Retry after refresh failed: $retryError');
+                  return handler.next(error);
+                }
+              } else {
+                _logger.w('❌ Token refresh failed, session expired');
+                await _handleSessionExpired();
+              }
+            }
+          }
+
           return handler.next(error);
         },
       ),
     );
   }
 
+  /// Attempt to refresh the access token using the refresh token
+  Future<bool> _tryRefreshToken() async {
+    if (_isRefreshing) return false;
+    _isRefreshing = true;
+
+    try {
+      final refreshToken = await getRefreshToken();
+      if (refreshToken == null) {
+        _logger.w('No refresh token available');
+        return false;
+      }
+
+      _logger.d('Calling /auth/refresh endpoint...');
+
+      // Make refresh request without the interceptor adding auth header
+      final response = await _dio.post(
+        '/auth/refresh',
+        data: {'refresh_token': refreshToken},
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final newAccessToken = response.data['access_token'] as String;
+        final newRefreshToken = response.data['refresh_token'] as String?;
+
+        await saveToken(newAccessToken);
+        if (newRefreshToken != null) {
+          await saveRefreshToken(newRefreshToken);
+        }
+
+        _logger.i('🔐 Tokens refreshed successfully');
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      _logger.e('Token refresh failed: $e');
+      return false;
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+
+  /// Handle session expiration - clear tokens and notify
+  Future<void> _handleSessionExpired() async {
+    await deleteToken();
+    await deleteRefreshToken();
+    onSessionExpired?.call();
+  }
+
   // ============================================================================
   // Token Management
   // ============================================================================
 
+  static const String _accessTokenKey = 'auth_token';
+  static const String _refreshTokenKey = 'refresh_token';
+
   Future<void> saveToken(String token) async {
-    await _storage.write(key: 'auth_token', value: token);
+    await _storage.write(key: _accessTokenKey, value: token);
   }
 
   Future<String?> getToken() async {
-    return await _storage.read(key: 'auth_token');
+    return await _storage.read(key: _accessTokenKey);
   }
 
   Future<void> deleteToken() async {
-    await _storage.delete(key: 'auth_token');
+    await _storage.delete(key: _accessTokenKey);
   }
 
   Future<bool> hasToken() async {
     final token = await getToken();
     return token != null && token.isNotEmpty;
+  }
+
+  /// Save refresh token to secure storage
+  Future<void> saveRefreshToken(String token) async {
+    await _storage.write(key: _refreshTokenKey, value: token);
+  }
+
+  /// Get refresh token from secure storage
+  Future<String?> getRefreshToken() async {
+    return await _storage.read(key: _refreshTokenKey);
+  }
+
+  /// Delete refresh token from secure storage
+  Future<void> deleteRefreshToken() async {
+    await _storage.delete(key: _refreshTokenKey);
+  }
+
+  /// Save both access and refresh tokens
+  Future<void> saveTokens(String accessToken, String refreshToken) async {
+    await saveToken(accessToken);
+    await saveRefreshToken(refreshToken);
+  }
+
+  /// Delete both access and refresh tokens
+  Future<void> clearTokens() async {
+    await deleteToken();
+    await deleteRefreshToken();
   }
 
   // ============================================================================
@@ -160,9 +277,13 @@ class ApiService {
         },
       );
 
-      // Save token
-      final token = response.data['access_token'];
-      await saveToken(token);
+      // Save tokens
+      final accessToken = response.data['access_token'] as String;
+      final refreshToken = response.data['refresh_token'] as String?;
+      await saveToken(accessToken);
+      if (refreshToken != null) {
+        await saveRefreshToken(refreshToken);
+      }
 
       return response.data;
     } on DioException catch (e) {
@@ -181,9 +302,13 @@ class ApiService {
         },
       );
 
-      // Save token
-      final token = response.data['access_token'];
-      await saveToken(token);
+      // Save tokens
+      final accessToken = response.data['access_token'] as String;
+      final refreshToken = response.data['refresh_token'] as String?;
+      await saveToken(accessToken);
+      if (refreshToken != null) {
+        await saveRefreshToken(refreshToken);
+      }
 
       return response.data;
     } on DioException catch (e) {
@@ -208,7 +333,7 @@ class ApiService {
     } catch (e) {
       _logger.e('Logout error: $e');
     } finally {
-      await deleteToken();
+      await clearTokens();
     }
   }
 
@@ -229,9 +354,13 @@ class ApiService {
 
       _logger.i('✅ Firebase authentication successful');
 
-      // Save token
-      final token = response.data['access_token'];
-      await saveToken(token);
+      // Save tokens
+      final accessToken = response.data['access_token'] as String;
+      final refreshToken = response.data['refresh_token'] as String?;
+      await saveToken(accessToken);
+      if (refreshToken != null) {
+        await saveRefreshToken(refreshToken);
+      }
 
       return response.data;
     } on DioException catch (e) {
