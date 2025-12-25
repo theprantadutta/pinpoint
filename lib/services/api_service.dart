@@ -33,6 +33,45 @@ class RateLimitExceededException implements Exception {
       'RateLimitExceededException: $message${retryAfter != null ? ' (retry after ${retryAfter!.inSeconds}s)' : ''}';
 }
 
+/// Structured API error with user-friendly messaging
+class ApiError implements Exception {
+  final String userMessage;
+  final String? suggestion;
+  final int? statusCode;
+  final String? technicalDetails;
+  final ApiErrorType type;
+
+  ApiError({
+    required this.userMessage,
+    this.suggestion,
+    this.statusCode,
+    this.technicalDetails,
+    required this.type,
+  });
+
+  @override
+  String toString() => userMessage;
+
+  /// Get a combined message with suggestion
+  String get fullMessage => suggestion != null
+      ? '$userMessage $suggestion'
+      : userMessage;
+}
+
+/// Types of API errors for programmatic handling
+enum ApiErrorType {
+  network,
+  timeout,
+  unauthorized,
+  forbidden,
+  notFound,
+  conflict,
+  rateLimit,
+  serverError,
+  maintenance,
+  unknown,
+}
+
 class ApiService {
   // Backend API configuration - uses prod URL in release mode, dev URL otherwise
   static final String baseUrl = kReleaseMode
@@ -802,37 +841,170 @@ class ApiService {
 
   /// Handle DioException and return a user-friendly error message
   /// Throws [RateLimitExceededException] for 429 responses
+  /// Throws [ApiError] for structured error handling
   String _handleError(DioException error) {
-    if (error.response != null) {
-      final statusCode = error.response!.statusCode;
-      final data = error.response!.data;
-
-      // Handle rate limiting (HTTP 429)
-      if (statusCode == 429) {
-        final retryAfter = _parseRetryAfter(error.response!);
-        throw RateLimitExceededException(
-          'Too many requests. Please wait before trying again.',
-          retryAfter: retryAfter,
-        );
-      }
-
-      // Handle other errors
-      if (data is Map && data.containsKey('detail')) {
-        return data['detail'].toString();
-      }
-      return 'Error: ${error.response!.statusMessage}';
+    // Handle network/connection errors first
+    if (error.type == DioExceptionType.connectionTimeout) {
+      throw ApiError(
+        userMessage: 'Connection timed out.',
+        suggestion: 'Please check your internet connection and try again.',
+        type: ApiErrorType.timeout,
+        technicalDetails: error.message,
+      );
     }
 
-    if (error.type == DioExceptionType.connectionTimeout ||
-        error.type == DioExceptionType.receiveTimeout) {
-      return 'Connection timeout. Please check your internet connection.';
+    if (error.type == DioExceptionType.receiveTimeout) {
+      throw ApiError(
+        userMessage: 'Server is taking too long to respond.',
+        suggestion: 'Please try again in a moment.',
+        type: ApiErrorType.timeout,
+        technicalDetails: error.message,
+      );
     }
 
     if (error.type == DioExceptionType.connectionError) {
-      return 'Cannot connect to server. Please check your internet connection.';
+      throw ApiError(
+        userMessage: 'Unable to connect to server.',
+        suggestion: 'Please check your internet connection.',
+        type: ApiErrorType.network,
+        technicalDetails: error.message,
+      );
     }
 
-    return 'An unexpected error occurred: ${error.message}';
+    if (error.type == DioExceptionType.sendTimeout) {
+      throw ApiError(
+        userMessage: 'Request timed out while sending data.',
+        suggestion: 'Please check your connection and try again.',
+        type: ApiErrorType.timeout,
+        technicalDetails: error.message,
+      );
+    }
+
+    // Handle HTTP response errors
+    if (error.response != null) {
+      final statusCode = error.response!.statusCode ?? 0;
+      final data = error.response!.data;
+      final serverMessage = _extractServerMessage(data);
+
+      switch (statusCode) {
+        case 400:
+          throw ApiError(
+            userMessage: serverMessage ?? 'Invalid request.',
+            suggestion: 'Please check your input and try again.',
+            statusCode: statusCode,
+            type: ApiErrorType.unknown,
+            technicalDetails: data?.toString(),
+          );
+
+        case 401:
+          throw ApiError(
+            userMessage: 'Your session has expired.',
+            suggestion: 'Please sign in again to continue.',
+            statusCode: statusCode,
+            type: ApiErrorType.unauthorized,
+            technicalDetails: serverMessage,
+          );
+
+        case 403:
+          throw ApiError(
+            userMessage: serverMessage ?? 'Access denied.',
+            suggestion: 'You may need to upgrade your subscription.',
+            statusCode: statusCode,
+            type: ApiErrorType.forbidden,
+            technicalDetails: data?.toString(),
+          );
+
+        case 404:
+          throw ApiError(
+            userMessage: serverMessage ?? 'The requested resource was not found.',
+            suggestion: 'It may have been deleted or moved.',
+            statusCode: statusCode,
+            type: ApiErrorType.notFound,
+            technicalDetails: data?.toString(),
+          );
+
+        case 409:
+          throw ApiError(
+            userMessage: serverMessage ?? 'A conflict occurred.',
+            suggestion: 'Please refresh and try again.',
+            statusCode: statusCode,
+            type: ApiErrorType.conflict,
+            technicalDetails: data?.toString(),
+          );
+
+        case 429:
+          final retryAfter = _parseRetryAfter(error.response!);
+          throw RateLimitExceededException(
+            'Too many requests. Please wait before trying again.',
+            retryAfter: retryAfter,
+          );
+
+        case 500:
+          throw ApiError(
+            userMessage: 'Something went wrong on our end.',
+            suggestion: 'Please try again later. If the problem persists, contact support.',
+            statusCode: statusCode,
+            type: ApiErrorType.serverError,
+            technicalDetails: serverMessage ?? data?.toString(),
+          );
+
+        case 502:
+        case 503:
+        case 504:
+          throw ApiError(
+            userMessage: 'Server is temporarily unavailable.',
+            suggestion: 'Please try again in a few minutes.',
+            statusCode: statusCode,
+            type: ApiErrorType.maintenance,
+            technicalDetails: serverMessage ?? 'Status: $statusCode',
+          );
+
+        default:
+          throw ApiError(
+            userMessage: serverMessage ?? 'An error occurred.',
+            suggestion: 'Please try again.',
+            statusCode: statusCode,
+            type: ApiErrorType.unknown,
+            technicalDetails: data?.toString(),
+          );
+      }
+    }
+
+    // Fallback for unknown errors
+    throw ApiError(
+      userMessage: 'An unexpected error occurred.',
+      suggestion: 'Please try again later.',
+      type: ApiErrorType.unknown,
+      technicalDetails: error.message,
+    );
+  }
+
+  /// Extract user-friendly message from server response
+  String? _extractServerMessage(dynamic data) {
+    if (data == null) return null;
+
+    if (data is Map) {
+      // Common error message fields in order of preference
+      if (data.containsKey('detail')) {
+        final detail = data['detail'];
+        if (detail is String) return detail;
+        if (detail is List && detail.isNotEmpty) {
+          // FastAPI validation errors
+          final firstError = detail.first;
+          if (firstError is Map && firstError.containsKey('msg')) {
+            return firstError['msg'].toString();
+          }
+        }
+      }
+      if (data.containsKey('message')) return data['message'].toString();
+      if (data.containsKey('error')) return data['error'].toString();
+    }
+
+    if (data is String && data.isNotEmpty) {
+      return data;
+    }
+
+    return null;
   }
 
   /// Parse the Retry-After header from a 429 response

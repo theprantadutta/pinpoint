@@ -132,12 +132,25 @@ class ApiSyncService extends SyncService {
       debugPrint('\n🚀 [ApiSync] ========== STARTING SYNC ==========');
       debugPrint('🚀 [ApiSync] Direction: $direction');
 
-      // CRITICAL: ALWAYS sync folders FIRST to prevent race conditions
+      // Phase 1: Sync folders FIRST to prevent race conditions
+      updateProgress(SyncProgress(
+        phase: SyncPhase.preparingFolders,
+        message: 'Preparing folders...',
+        overallProgress: 0.05,
+      ));
+
       debugPrint('\n📁 [ApiSync] Phase 1/3: Syncing folders...');
+      updateProgress(SyncProgress(
+        phase: SyncPhase.syncingFolders,
+        message: 'Syncing folders...',
+        overallProgress: 0.1,
+      ));
+
       final folderResult = await _folderSyncService.syncFolders();
 
       if (!folderResult.success) {
         debugPrint('❌ [ApiSync] Folder sync failed: ${folderResult.message}');
+        updateProgress(SyncProgress.error('Folder sync failed'));
         return SyncResult(
           success: false,
           message: 'Folder sync failed: ${folderResult.message}',
@@ -145,15 +158,42 @@ class ApiSyncService extends SyncService {
       }
 
       debugPrint('✅ [ApiSync] Folders synced: ${folderResult.foldersSynced}');
+      updateProgress(SyncProgress(
+        phase: SyncPhase.syncingFolders,
+        message: 'Folders synced',
+        currentItem: folderResult.foldersSynced,
+        totalItems: folderResult.foldersSynced,
+        overallProgress: 0.2,
+      ));
 
-      // THEN sync notes using parent class logic
+      // Phase 2: Sync notes using parent class logic
       debugPrint('\n📝 [ApiSync] Phase 2/3: Syncing notes...');
+      updateProgress(SyncProgress(
+        phase: SyncPhase.preparingNotes,
+        message: 'Preparing notes...',
+        overallProgress: 0.25,
+      ));
+
       final noteResult = await super.sync(direction: direction);
 
-      // FINALLY sync reminders (independent note type in V2 architecture)
+      updateProgress(SyncProgress(
+        phase: SyncPhase.processingNotes,
+        message: 'Notes synced',
+        currentItem: noteResult.notesSynced,
+        totalItems: noteResult.notesSynced,
+        overallProgress: 0.8,
+      ));
+
+      // Phase 3: Sync reminders (independent note type in V2 architecture)
       debugPrint('\n⏰ [ApiSync] Phase 3/3: Syncing reminders...');
       int remindersSynced = 0;
       if (direction == SyncDirection.download || direction == SyncDirection.both) {
+        updateProgress(SyncProgress(
+          phase: SyncPhase.syncingReminders,
+          message: 'Syncing reminders...',
+          overallProgress: 0.85,
+        ));
+
         try {
           remindersSynced = await _downloadReminders();
           debugPrint('✅ [ApiSync] Reminders synced: $remindersSynced');
@@ -163,8 +203,23 @@ class ApiSyncService extends SyncService {
         }
       }
 
+      // Finalize
+      updateProgress(SyncProgress(
+        phase: SyncPhase.finalizing,
+        message: 'Finalizing...',
+        overallProgress: 0.95,
+      ));
+
       debugPrint('\n🚀 [ApiSync] ========== SYNC COMPLETE ==========');
       debugPrint('📊 [ApiSync] Folders: ${folderResult.foldersSynced}, Notes: ${noteResult.notesSynced}, Reminders: $remindersSynced');
+
+      // Save last sync time
+      _lastSyncTime = DateTime.now().millisecondsSinceEpoch;
+      await _saveLastSyncTime();
+
+      updateProgress(SyncProgress.completed(
+        message: 'Synced ${noteResult.notesSynced} notes, ${folderResult.foldersSynced} folders',
+      ));
 
       return SyncResult(
         success: noteResult.success,
@@ -180,6 +235,7 @@ class ApiSyncService extends SyncService {
     } catch (e, st) {
       debugPrint('❌ [ApiSync] Sync failed: $e');
       debugPrint('Stack trace: $st');
+      updateProgress(SyncProgress.error('Sync failed: ${e.toString()}'));
       return SyncResult(
         success: false,
         message: 'Sync failed: ${e.toString()}',

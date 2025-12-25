@@ -19,6 +19,7 @@ import 'services/subscription_manager.dart';
 import 'services/firebase_notification_service.dart';
 import 'services/google_sign_in_service.dart';
 import 'services/filter_service.dart';
+import 'services/search_service.dart';
 import 'services/app_update_service.dart';
 
 // void main() async {
@@ -648,6 +649,9 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(
           create: (_) => FilterService(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SearchService()..initialize(),
         ),
       ],
       child: MaterialApp.router(
