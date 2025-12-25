@@ -16,11 +16,19 @@ class TodoScreen extends StatefulWidget {
   State<TodoScreen> createState() => _TodoScreenState();
 }
 
-class _TodoScreenState extends State<TodoScreen> {
+class _TodoScreenState extends State<TodoScreen>
+    with AutomaticKeepAliveClientMixin {
   String _filter = 'all'; // all, completed, pending
+
+  // Cache for last loaded data to avoid loading flash
+  List<NoteWithDetails>? _cachedTodos;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
@@ -111,7 +119,12 @@ class _TodoScreenState extends State<TodoScreen> {
                 excludeNoteTypes: ['text', 'voice', 'reminder'], // Only show todo notes
               ),
               builder: (context, snapshot) {
+                // Use cached data while waiting to avoid loading flash
                 if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (_cachedTodos != null) {
+                    final filteredNotes = _filterTodoNotes(_cachedTodos!, _filter);
+                    return _buildTodoList(filteredNotes);
+                  }
                   return const Center(child: CircularProgressIndicator());
                 }
 
@@ -126,6 +139,8 @@ class _TodoScreenState extends State<TodoScreen> {
                 }
 
                 final allNotes = snapshot.data ?? [];
+                // Cache the data for next time
+                _cachedTodos = allNotes;
                 final filteredNotes = _filterTodoNotes(allNotes, _filter);
 
                 if (filteredNotes.isEmpty) {
@@ -142,49 +157,7 @@ class _TodoScreenState extends State<TodoScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100),
-                  itemCount: filteredNotes.length,
-                  itemBuilder: (context, index) {
-                    final note = filteredNotes[index];
-                    final hasTitle = note.note.noteTitle != null && note.note.noteTitle!.trim().isNotEmpty;
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: NoteCard(
-                        title: getNoteTitleOrPreview(note.note.noteTitle, note.textContent),
-                        excerpt: hasTitle ? note.textContent : null,
-                        lastModified: note.note.updatedAt,
-                        isPinned: note.note.isPinned,
-                        noteType: note.note.noteType,
-                        totalTasks: note.todoItems.length,
-                        completedTasks: note.todoItems.where((item) => item.isDone).length,
-                        tags: [
-                          ...note.folders.map(
-                            (f) => CardNoteTag(
-                              label: f.title,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                        onTap: () {
-                          PinpointHaptics.medium();
-                          context.push(
-                            CreateNoteScreenV2.kRouteName,
-                            extra: CreateNoteScreenArguments(
-                              noticeType: 'Todo List',
-                              existingNote: note,
-                            ),
-                          );
-                        },
-                        onPinToggle: () {
-                          PinpointHaptics.light();
-                          DriftNoteService.togglePinStatus(note.note.id, !note.note.isPinned);
-                        },
-                      ),
-                    );
-                  },
-                );
+                return _buildTodoList(filteredNotes);
               },
             ),
           ),
@@ -206,6 +179,52 @@ class _TodoScreenState extends State<TodoScreen> {
           child: const Icon(Icons.add_rounded),
         ),
       ),
+    );
+  }
+
+  Widget _buildTodoList(List<NoteWithDetails> filteredNotes) {
+    return ListView.builder(
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100),
+      itemCount: filteredNotes.length,
+      itemBuilder: (context, index) {
+        final note = filteredNotes[index];
+        final hasTitle = note.note.noteTitle != null && note.note.noteTitle!.trim().isNotEmpty;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: NoteCard(
+            title: getNoteTitleOrPreview(note.note.noteTitle, note.textContent),
+            excerpt: hasTitle ? note.textContent : null,
+            lastModified: note.note.updatedAt,
+            isPinned: note.note.isPinned,
+            noteType: note.note.noteType,
+            totalTasks: note.todoItems.length,
+            completedTasks: note.todoItems.where((item) => item.isDone).length,
+            tags: [
+              ...note.folders.map(
+                (f) => CardNoteTag(
+                  label: f.title,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
+            onTap: () {
+              PinpointHaptics.medium();
+              context.push(
+                CreateNoteScreenV2.kRouteName,
+                extra: CreateNoteScreenArguments(
+                  noticeType: 'Todo List',
+                  existingNote: note,
+                ),
+              );
+            },
+            onPinToggle: () {
+              PinpointHaptics.light();
+              DriftNoteService.togglePinStatus(note.note.id, !note.note.isPinned);
+            },
+          ),
+        );
+      },
     );
   }
 
