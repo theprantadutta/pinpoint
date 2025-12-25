@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../services/api_service.dart';
 import '../services/encryption_service.dart';
@@ -54,6 +55,8 @@ class _V2NoteWrapper {
 
 /// Cloud-based sync service using API backend
 class ApiSyncService extends SyncService {
+  static const String _lastSyncTimeKey = 'api_sync_last_sync_time';
+
   final ApiService _apiService;
   final AppDatabase _database;
   late final FolderSyncService _folderSyncService;
@@ -74,8 +77,44 @@ class ApiSyncService extends SyncService {
 
   @override
   Future<void> init() async {
-    // Load last sync time from preferences if needed
-    _lastSyncTime = 0; // TODO: Load from SharedPreferences
+    // Load last sync time from SharedPreferences
+    await _loadLastSyncTime();
+  }
+
+  /// Load last sync time from SharedPreferences
+  Future<void> _loadLastSyncTime() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _lastSyncTime = prefs.getInt(_lastSyncTimeKey) ?? 0;
+      debugPrint('📅 [ApiSync] Loaded last sync time: $_lastSyncTime');
+    } catch (e) {
+      debugPrint('⚠️ [ApiSync] Failed to load last sync time: $e');
+      _lastSyncTime = 0;
+    }
+  }
+
+  /// Save last sync time to SharedPreferences
+  Future<void> _saveLastSyncTime() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_lastSyncTimeKey, _lastSyncTime);
+      debugPrint('💾 [ApiSync] Saved last sync time: $_lastSyncTime');
+    } catch (e) {
+      debugPrint('⚠️ [ApiSync] Failed to save last sync time: $e');
+    }
+  }
+
+  /// Reset last sync time (forces full re-sync on next sync)
+  /// Call this when user logs out or needs to force a complete re-sync
+  Future<void> resetSyncTimestamp() async {
+    _lastSyncTime = 0;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_lastSyncTimeKey);
+      debugPrint('🔄 [ApiSync] Reset sync timestamp - next sync will be full sync');
+    } catch (e) {
+      debugPrint('⚠️ [ApiSync] Failed to reset sync timestamp: $e');
+    }
   }
 
   @override
@@ -396,8 +435,9 @@ class ApiSyncService extends SyncService {
         }
       }
 
-      // Update last sync time
+      // Update last sync time and persist to SharedPreferences
       _lastSyncTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      await _saveLastSyncTime();
 
       final messageParts = <String>[];
       if (successCount > 0) messageParts.add('$successCount notes restored');
