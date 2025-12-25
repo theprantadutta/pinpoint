@@ -20,6 +20,48 @@ class SyncManager with ChangeNotifier {
   bool get isSyncing => _isSyncing;
   bool get hasCompletedInitialSync => _hasCompletedInitialSync;
 
+  /// Get current sync progress
+  SyncProgress get progress => _syncService?.progress ?? SyncProgress.idle();
+
+  /// Get phase-specific message for UI display
+  String get currentPhaseMessage {
+    final p = progress;
+    switch (p.phase) {
+      case SyncPhase.idle:
+        return 'Ready to sync';
+      case SyncPhase.preparingFolders:
+        return 'Preparing folders...';
+      case SyncPhase.syncingFolders:
+        return p.totalItems > 0
+            ? 'Syncing folders (${p.currentItem}/${p.totalItems})'
+            : 'Syncing folders...';
+      case SyncPhase.preparingNotes:
+        return 'Preparing notes...';
+      case SyncPhase.uploadingNotes:
+        return p.totalItems > 0
+            ? 'Uploading notes (${p.currentItem}/${p.totalItems})'
+            : 'Uploading notes...';
+      case SyncPhase.downloadingNotes:
+        return p.totalItems > 0
+            ? 'Downloading notes (${p.currentItem}/${p.totalItems})'
+            : 'Downloading notes...';
+      case SyncPhase.processingNotes:
+        return p.totalItems > 0
+            ? 'Processing notes (${p.currentItem}/${p.totalItems})'
+            : 'Processing notes...';
+      case SyncPhase.syncingReminders:
+        return p.totalItems > 0
+            ? 'Syncing reminders (${p.currentItem}/${p.totalItems})'
+            : 'Syncing reminders...';
+      case SyncPhase.finalizing:
+        return 'Finalizing...';
+      case SyncPhase.completed:
+        return 'Sync completed';
+      case SyncPhase.error:
+        return p.message;
+    }
+  }
+
   /// Initialize the sync manager with a sync service
   Future<void> init({SyncService? syncService}) async {
     if (_isInitialized) return;

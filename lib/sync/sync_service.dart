@@ -13,6 +13,86 @@ enum SyncDirection {
   both, // Bidirectional
 }
 
+/// Sync phase for detailed progress tracking
+enum SyncPhase {
+  idle,
+  preparingFolders,
+  syncingFolders,
+  preparingNotes,
+  uploadingNotes,
+  downloadingNotes,
+  processingNotes,
+  syncingReminders,
+  finalizing,
+  completed,
+  error,
+}
+
+/// Detailed sync progress tracking
+class SyncProgress {
+  final SyncPhase phase;
+  final String message;
+  final int currentItem;
+  final int totalItems;
+  final String? currentItemType; // 'folder', 'note', 'reminder', etc.
+  final String? currentItemName; // Name of the item being processed
+  final double? overallProgress; // 0.0 to 1.0
+
+  const SyncProgress({
+    required this.phase,
+    required this.message,
+    this.currentItem = 0,
+    this.totalItems = 0,
+    this.currentItemType,
+    this.currentItemName,
+    this.overallProgress,
+  });
+
+  /// Create an idle progress state
+  factory SyncProgress.idle() => const SyncProgress(
+    phase: SyncPhase.idle,
+    message: 'Ready to sync',
+  );
+
+  /// Create a completed progress state
+  factory SyncProgress.completed({String? message}) => SyncProgress(
+    phase: SyncPhase.completed,
+    message: message ?? 'Sync completed',
+    overallProgress: 1.0,
+  );
+
+  /// Create an error progress state
+  factory SyncProgress.error(String error) => SyncProgress(
+    phase: SyncPhase.error,
+    message: error,
+  );
+
+  /// Get progress percentage (0-100)
+  int get percentComplete {
+    if (overallProgress != null) {
+      return (overallProgress! * 100).round();
+    }
+    if (totalItems == 0) return 0;
+    return ((currentItem / totalItems) * 100).round();
+  }
+
+  /// Get a display-friendly progress string
+  String get progressDisplay {
+    if (totalItems > 0 && currentItem > 0) {
+      return '$currentItem of $totalItems';
+    }
+    return '';
+  }
+
+  /// Whether sync is in an active state
+  bool get isActive => phase != SyncPhase.idle &&
+                        phase != SyncPhase.completed &&
+                        phase != SyncPhase.error;
+
+  @override
+  String toString() => 'SyncProgress(phase: $phase, $currentItem/$totalItems, $message)';
+}
+
 /// Sync result class
 class SyncResult {
   final bool success;
@@ -61,10 +141,22 @@ abstract class SyncService {
   SyncStatus _status = SyncStatus.idle;
   String _lastSyncMessage = '';
   int _lastSyncTimestamp = 0;
+  SyncProgress _progress = SyncProgress.idle();
+
+  /// Optional callback for detailed progress updates
+  void Function(SyncProgress progress)? onProgressUpdate;
 
   SyncStatus get status => _status;
   String get lastSyncMessage => _lastSyncMessage;
   int get lastSyncTimestamp => _lastSyncTimestamp;
+  SyncProgress get progress => _progress;
+
+  /// Update sync progress and notify listeners
+  void updateProgress(SyncProgress progress) {
+    _progress = progress;
+    onProgressUpdate?.call(progress);
+    notifyListeners();
+  }
 
   /// Initialize the sync service
   Future<void> init() async {
