@@ -7,6 +7,8 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../../constants/selectors.dart';
 import '../../screens/create_note_screen_v2.dart';
 import '../../design_system/design_system.dart';
+import '../../services/walkthrough_service.dart';
+import '../../walkthrough/walkthrough_keys.dart';
 import 'top_level_pages.dart';
 
 class BottomNavigationLayout extends StatefulWidget {
@@ -36,6 +38,13 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
     pageController = PageController(
       initialPage: selectedIndex,
     );
+
+    // Trigger walkthrough after first frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        WalkthroughService().showWalkthroughIfNeeded(context);
+      }
+    });
   }
 
   @override
@@ -244,6 +253,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
                               ),
                               // FAB in the middle - Large with gradient
                               Container(
+                                key: WalkthroughKeys.fabKey,
                                 width: 64,
                                 height: 64,
                                 decoration: BoxDecoration(
@@ -296,6 +306,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout>
                                 },
                               ),
                               _NavBarItem(
+                                key: WalkthroughKeys.navSettingsKey,
                                 icon: Symbols.settings,
                                 label: 'Settings',
                                 isSelected: selectedIndex == 3,
@@ -327,6 +338,7 @@ class _NavBarItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const _NavBarItem({
+    super.key,
     required this.icon,
     required this.label,
     required this.isSelected,

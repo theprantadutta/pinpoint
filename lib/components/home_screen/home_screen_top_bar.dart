@@ -12,6 +12,7 @@ import '../../services/filter_service.dart';
 import '../../widgets/filter_bottom_sheet.dart';
 import '../../sync/sync_manager.dart';
 import '../../service_locators/init_service_locators.dart';
+import '../../walkthrough/walkthrough_keys.dart';
 
 class HomeScreenTopBar extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
@@ -135,6 +136,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
 
                   // Search toggle button
                   IconButton(
+                    key: WalkthroughKeys.searchKey,
                     icon: const Icon(Symbols.search),
                     tooltip: 'Search',
                     onPressed: () {

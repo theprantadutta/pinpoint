@@ -73,6 +73,7 @@ dependencies:
   fleather: ^1.15.0
   parchment: ^1.15.0
   parchment_delta: ^1.0.0
+  tutorial_coach_mark: ^1.3.3
 
 dev_dependencies:
   flutter_test:
