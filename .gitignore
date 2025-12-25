@@ -68,4 +68,3 @@ lib/generated/
 lib/**/*.g.dart
 notes.txt
 firebase_admin_key.json
-.kiro/
