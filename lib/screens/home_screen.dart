@@ -24,15 +24,25 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with AutomaticKeepAliveClientMixin {
   String _searchQuery = '';
   final ScrollController _scrollController = ScrollController();
+
+  // Static flag to prevent re-initialization across widget rebuilds
+  static bool _servicesInitialized = false;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    // Initialize authenticated services after user logs in
-    _initializeAuthenticatedServices();
+    // Initialize authenticated services only once per app session
+    if (!_servicesInitialized) {
+      _initializeAuthenticatedServices();
+      _servicesInitialized = true;
+    }
   }
 
   /// Initialize services that require authentication
@@ -247,6 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return GradientScaffold(
       appBar: GlassAppBar(
         scrollController: _scrollController,

@@ -27,11 +27,18 @@ class HomeScreenRecentNotes extends StatefulWidget {
   State<HomeScreenRecentNotes> createState() => _HomeScreenRecentNotesState();
 }
 
-class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
+class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes>
+    with AutomaticKeepAliveClientMixin {
   String _viewType = 'list';
   String _sortType = 'updatedAt';
   String _sortDirection = 'desc';
   SharedPreferences? _preferences;
+
+  // Cache for last loaded data to avoid loading flash
+  List<NoteWithDetails>? _cachedNotes;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -52,6 +59,7 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
 
@@ -99,7 +107,11 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
                     sortDirection: _sortDirection,
                   ),
                   builder: (context, snapshot) {
+                    // Use cached data while waiting to avoid loading flash
                     if (snapshot.connectionState == ConnectionState.waiting) {
+                      if (_cachedNotes != null && _cachedNotes!.isNotEmpty) {
+                        return _buildNotesList(_cachedNotes!);
+                      }
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
@@ -118,30 +130,10 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
                     }
 
                     final data = snapshot.data!;
+                    // Cache the data for next time
+                    _cachedNotes = data;
 
-                    if (_viewType == 'grid') {
-                      return MasonryGridView.count(
-                        controller: widget.scrollController,
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        padding: const EdgeInsets.only(bottom: 100),
-                        itemCount: data.length,
-                        itemBuilder: (context, i) {
-                          return NoteListItem(note: data[i], showActions: true);
-                        },
-                      );
-                    } else {
-                      return ListView.separated(
-                        controller: widget.scrollController,
-                        padding: const EdgeInsets.only(top: 8, bottom: 100),
-                        itemCount: data.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, i) {
-                          return NoteListItem(note: data[i], showActions: true);
-                        },
-                      );
-                    }
+                    return _buildNotesList(data);
                   },
                 );
               },
@@ -150,6 +142,32 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes> {
         ],
       ),
     );
+  }
+
+  Widget _buildNotesList(List<NoteWithDetails> data) {
+    if (_viewType == 'grid') {
+      return MasonryGridView.count(
+        controller: widget.scrollController,
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        padding: const EdgeInsets.only(bottom: 100),
+        itemCount: data.length,
+        itemBuilder: (context, i) {
+          return NoteListItem(note: data[i], showActions: true);
+        },
+      );
+    } else {
+      return ListView.separated(
+        controller: widget.scrollController,
+        padding: const EdgeInsets.only(top: 8, bottom: 100),
+        itemCount: data.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, i) {
+          return NoteListItem(note: data[i], showActions: true);
+        },
+      );
+    }
   }
 }
 

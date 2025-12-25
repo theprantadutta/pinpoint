@@ -22,7 +22,8 @@ class NotesScreen extends StatefulWidget {
   State<NotesScreen> createState() => _NotesScreenState();
 }
 
-class _NotesScreenState extends State<NotesScreen> {
+class _NotesScreenState extends State<NotesScreen>
+    with AutomaticKeepAliveClientMixin {
   bool _isGridView = false;
   String _searchQuery = '';
   String _sortBy = 'updatedAt';
@@ -30,6 +31,12 @@ class _NotesScreenState extends State<NotesScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
+
+  // Cache for last loaded data to avoid loading flash
+  List<NoteWithDetails>? _cachedNotes;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -56,6 +63,7 @@ class _NotesScreenState extends State<NotesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
@@ -198,7 +206,13 @@ class _NotesScreenState extends State<NotesScreen> {
                     excludeNoteTypes: ['todo', 'reminder'], // Notes screen only shows text and voice notes
                   ),
                   builder: (context, snapshot) {
+                    // Use cached data while waiting to avoid loading flash
                     if (snapshot.connectionState == ConnectionState.waiting) {
+                      if (_cachedNotes != null) {
+                        return _isGridView
+                            ? _buildGridView(_cachedNotes!)
+                            : _buildListView(_cachedNotes!);
+                      }
                       return const Center(child: CircularProgressIndicator());
                     }
 
@@ -211,6 +225,8 @@ class _NotesScreenState extends State<NotesScreen> {
                     }
 
                     final notes = snapshot.data ?? [];
+                    // Cache the data for next time
+                    _cachedNotes = notes;
 
                     if (notes.isEmpty) {
                       return EmptyState(
