@@ -49,6 +49,9 @@ class WalkthroughService {
       return;
     }
 
+    // Mark as completed FIRST to ensure persistence even if app closes
+    await markWalkthroughCompleted();
+
     // Delay to ensure all widgets are rendered and mounted
     await Future.delayed(const Duration(milliseconds: 800));
 

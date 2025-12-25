@@ -21,6 +21,8 @@ import 'services/google_sign_in_service.dart';
 import 'services/filter_service.dart';
 import 'services/search_service.dart';
 import 'services/app_update_service.dart';
+import 'services/api_service.dart';
+import 'screens/auth_screen.dart';
 
 // void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
@@ -582,6 +584,9 @@ class _MyAppState extends State<MyApp> {
     setOptimalDisplayMode();
     initializeSharedPreferences();
 
+    // Register session expiry handler for automatic token refresh failures
+    _registerSessionExpiryHandler();
+
     // Initialize background tasks AFTER the first frame renders
     // This ensures the UI loads quickly and non-critical tasks run later
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -591,6 +596,20 @@ class _MyAppState extends State<MyApp> {
       // Check for updates
       _checkForMandatoryUpdate();
     });
+  }
+
+  /// Register callback for when user session expires (refresh token also expired)
+  void _registerSessionExpiryHandler() {
+    ApiService().onSessionExpired = () {
+      debugPrint('⚠️ [MyApp] Session expired - redirecting to login');
+
+      // Navigate to auth screen using GoRouter
+      // We need to do this after the current frame to avoid navigation during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Get the root navigator context and navigate to auth
+        AppNavigation.router.go(AuthScreen.kRouteName);
+      });
+    };
   }
 
   /// Check for mandatory app updates from Google Play Store.

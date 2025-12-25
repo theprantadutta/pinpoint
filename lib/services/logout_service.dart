@@ -296,12 +296,13 @@ class LogoutService {
     }
   }
 
-  /// Clear secure storage (auth token & encryption key)
+  /// Clear secure storage (auth tokens & encryption key)
   Future<void> _clearSecureStorage() async {
     try {
       debugPrint('🗑️ [LogoutService] Clearing secure storage...');
 
       await _secureStorage.delete(key: 'auth_token');
+      await _secureStorage.delete(key: 'refresh_token');
       await _secureStorage.delete(key: 'encryption_key');
 
       debugPrint('✅ [LogoutService] Secure storage cleared');
