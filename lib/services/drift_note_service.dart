@@ -116,8 +116,14 @@ class DriftNoteService {
   }
 
   /// Temporarily kept for backward compatibility
-  /// This method is deprecated and will be removed in the future
-  /// TODO: Replace all calls with type-specific methods
+  /// @deprecated Use type-specific methods instead:
+  /// - TextNoteService.upsertTextNote() for text notes
+  /// - VoiceNoteService.upsertVoiceNote() for voice notes
+  /// - TodoListNoteService.upsertTodoListNote() for todo lists
+  /// - ReminderNoteService.upsertReminderNote() for reminders
+  /// This method will be removed in a future version.
+  /// Currently used by: BackgroundSaveQueueService
+  @Deprecated('Use type-specific note services instead')
   static Future<int> upsertANewTitleContentNote(
     NotesCompanion note,
     int? previousNoteId,
@@ -531,8 +537,10 @@ class DriftNoteService {
       a.attachment_path AS attachment_path,
       a.attachment_name AS attachment_name,
       t.id AS todo_id,
+      t.uuid AS todo_uuid,
       t.todo_title AS todo_title,
-      t.is_done AS todo_is_done
+      t.is_done AS todo_is_done,
+      t.order_index AS todo_order_index
     FROM notes n
     LEFT JOIN text_notes tn ON n.id = tn.note_id
     LEFT JOIN note_attachments a ON n.id = a.note_id
@@ -624,7 +632,7 @@ class DriftNoteService {
                           noteUuid: row.read<String>('note_uuid'),
                           todoTitle: todoTitle,
                           isDone: row.read<bool>('todo_is_done'),
-                          orderIndex: 0,
+                          orderIndex: row.read<int?>('todo_order_index') ?? 0,
                         ),
                       );
                 }
@@ -722,8 +730,10 @@ class DriftNoteService {
       a.attachment_path AS attachment_path,
       a.attachment_name AS attachment_name,
       t.id AS todo_id,
+      t.uuid AS todo_uuid,
       t.todo_title AS todo_title,
-      t.is_done AS todo_is_done
+      t.is_done AS todo_is_done,
+      t.order_index AS todo_order_index
     FROM notes n
     LEFT JOIN text_notes tn ON n.id = tn.note_id
     LEFT JOIN note_attachments a ON n.id = a.note_id
@@ -815,7 +825,7 @@ class DriftNoteService {
                           noteUuid: row.read<String>('note_uuid'),
                           todoTitle: todoTitle,
                           isDone: row.read<bool>('todo_is_done'),
-                          orderIndex: 0,
+                          orderIndex: row.read<int?>('todo_order_index') ?? 0,
                         ),
                       );
                 }
@@ -933,8 +943,10 @@ class DriftNoteService {
       a.attachment_path AS attachment_path,
       a.attachment_name AS attachment_name,
       t.id AS todo_id,
+      t.uuid AS todo_uuid,
       t.todo_title AS todo_title,
-      t.is_done AS todo_is_done
+      t.is_done AS todo_is_done,
+      t.order_index AS todo_order_index
     FROM notes n
     LEFT JOIN text_notes tn ON n.id = tn.note_id
     LEFT JOIN note_attachments a ON n.id = a.note_id
@@ -1030,7 +1042,7 @@ class DriftNoteService {
                             noteUuid: row.read<String>('note_uuid'),
                             todoTitle: todoTitle,
                             isDone: row.read<bool>('todo_is_done'),
-                            orderIndex: 0, // TODO: Read from database
+                            orderIndex: row.read<int?>('todo_order_index') ?? 0,
                           ),
                         );
                   }
@@ -1217,7 +1229,7 @@ class DriftNoteService {
                           noteUuid: row.read<String>('note_uuid'),
                           todoTitle: todoTitle,
                           isDone: row.read<bool>('todo_is_done'),
-                          orderIndex: 0,
+                          orderIndex: row.read<int?>('todo_order_index') ?? 0,
                         ),
                       );
                 }
@@ -1249,6 +1261,7 @@ class DriftNoteService {
           t.note_id AS todo_note_id,
           t.todo_title AS todo_title,
           t.is_done AS todo_is_done,
+          t.order_index AS todo_order_index,
           n.uuid AS note_uuid,
           n.note_title AS note_title,
           tn.content AS note_content,
@@ -1259,7 +1272,7 @@ class DriftNoteService {
         INNER JOIN notes n ON t.note_id = n.id
         LEFT JOIN text_notes tn ON n.id = tn.note_id
         WHERE n.is_archived = 0 AND n.is_deleted = 0
-        ORDER BY n.is_pinned DESC, n.updated_at DESC, t.id ASC
+        ORDER BY n.is_pinned DESC, n.updated_at DESC, t.order_index ASC, t.id ASC
       ''';
 
       log.d('[watchAllTodoItems] SQL: $sql');
@@ -1292,7 +1305,7 @@ class DriftNoteService {
                     noteUuid: row.read<String>('note_uuid'),
                     todoTitle: row.read<String>('todo_title'),
                     isDone: row.read<bool>('todo_is_done'),
-                    orderIndex: 0, // TODO: Read from database
+                    orderIndex: row.read<int>('todo_order_index'),
                   ),
                   noteTitle: getNoteTitleOrPreview(noteTitle, noteContent),
                   noteContent: noteContent,

@@ -1302,11 +1302,13 @@ class _LogoutButtonState extends State<_LogoutButton> {
       final validation = await _logoutService!.validateLogout();
 
       if (!validation.canProceed) {
-        if (mounted) {
+        if (context.mounted) {
           await _showValidationErrorDialog(context, validation);
-          setState(() {
-            _isLoggingOut = false;
-          });
+          if (mounted) {
+            setState(() {
+              _isLoggingOut = false;
+            });
+          }
         }
         return;
       }
@@ -1321,10 +1323,13 @@ class _LogoutButtonState extends State<_LogoutButton> {
 
       final success = await _logoutService!.performLogout();
 
-      if (success && context.mounted) {
+      if (success) {
         PinpointHaptics.success();
+        // Navigate using static router - doesn't require context.mounted
+        // because AppNavigation.router is a global singleton
         AppNavigation.router.go('/auth');
 
+        // Only show toast if context is still mounted after navigation
         Future.delayed(const Duration(milliseconds: 500), () {
           if (context.mounted) {
             showSuccessToast(
@@ -1334,6 +1339,15 @@ class _LogoutButtonState extends State<_LogoutButton> {
             );
           }
         });
+      } else if (context.mounted) {
+        // This shouldn't normally happen since validation is done before
+        // performLogout(), but handle it for safety
+        PinpointHaptics.error();
+        showErrorToast(
+          context: context,
+          title: 'Sign Out Failed',
+          description: 'Unable to complete sign out. Please try again.',
+        );
       }
     } catch (e) {
       if (context.mounted) {

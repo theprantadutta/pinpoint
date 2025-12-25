@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -7,6 +8,27 @@ import 'package:pinpoint/services/api_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pinpoint/firebase_options.dart';
 import 'dart:io';
+
+/// Navigation intent from notification tap
+class NotificationNavigationIntent {
+  final String type;
+  final String? noteUuid;
+  final String? noteType;
+  final String? reminderId;
+  final Map<String, dynamic> rawData;
+
+  NotificationNavigationIntent({
+    required this.type,
+    this.noteUuid,
+    this.noteType,
+    this.reminderId,
+    required this.rawData,
+  });
+
+  @override
+  String toString() =>
+      'NotificationNavigationIntent(type: $type, noteUuid: $noteUuid, noteType: $noteType, reminderId: $reminderId)';
+}
 
 /// Background message handler - must be top-level function
 @pragma('vm:entry-point')
@@ -35,8 +57,22 @@ class FirebaseNotificationService {
   bool _initialized = false;
   bool _tokenRegisteredThisSession = false;
 
+  // Stream subscriptions for proper cleanup
+  StreamSubscription<String>? _tokenRefreshSubscription;
+  StreamSubscription<RemoteMessage>? _onMessageSubscription;
+  StreamSubscription<RemoteMessage>? _onMessageOpenedAppSubscription;
+
+  // Stream controller for navigation intents
+  final _navigationIntentController =
+      StreamController<NotificationNavigationIntent>.broadcast();
+
   String? get fcmToken => _fcmToken;
   bool get isInitialized => _initialized;
+
+  /// Stream of navigation intents from notification taps
+  /// Listen to this in your app to handle navigation
+  Stream<NotificationNavigationIntent> get navigationIntents =>
+      _navigationIntentController.stream;
 
   /// Initialize Firebase and notification services
   Future<void> initialize() async {
@@ -76,7 +112,7 @@ class FirebaseNotificationService {
       await _getFCMToken();
 
       // Set up message handlers
-      _setupMessageHandlers();
+      await _setupMessageHandlers();
 
       // Get device ID
       await _getDeviceId();
@@ -142,8 +178,10 @@ class FirebaseNotificationService {
       _fcmToken = await _firebaseMessaging.getToken();
       debugPrint('📱 FCM Token: $_fcmToken');
 
-      // Listen for token refresh
-      _firebaseMessaging.onTokenRefresh.listen((newToken) {
+      // Listen for token refresh (cancel any existing subscription first)
+      await _tokenRefreshSubscription?.cancel();
+      _tokenRefreshSubscription =
+          _firebaseMessaging.onTokenRefresh.listen((newToken) {
         debugPrint('🔄 FCM Token refreshed: $newToken');
         _fcmToken = newToken;
         registerTokenWithBackend(force: true); // Auto-register on token refresh
@@ -204,15 +242,21 @@ class FirebaseNotificationService {
   }
 
   /// Set up message handlers for different app states
-  void _setupMessageHandlers() {
+  Future<void> _setupMessageHandlers() async {
     // Background message handler (already registered at top level)
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
+    // Cancel any existing subscriptions first
+    await _onMessageSubscription?.cancel();
+    await _onMessageOpenedAppSubscription?.cancel();
+
     // Foreground messages
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    _onMessageSubscription =
+        FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
     // Messages when app is opened from notification
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationOpened);
+    _onMessageOpenedAppSubscription =
+        FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationOpened);
 
     // Check if app was opened from a terminated state
     _checkInitialMessage();
@@ -285,27 +329,64 @@ class FirebaseNotificationService {
     );
   }
 
-  /// Handle notification tap
+  /// Handle notification tap from local notifications
   void _onNotificationTapped(NotificationResponse response) {
     debugPrint('🔔 Notification tapped: ${response.payload}');
-    // TODO: Parse payload and navigate to appropriate screen
+
+    if (response.payload == null || response.payload!.isEmpty) {
+      debugPrint('⚠️ No payload in notification');
+      return;
+    }
+
+    try {
+      // Try to parse the payload as JSON
+      // The payload might be a toString() of a Map, so we need to handle that
+      Map<String, dynamic> data;
+
+      if (response.payload!.startsWith('{')) {
+        data = json.decode(response.payload!);
+      } else {
+        // Payload might be in format: {key: value, key2: value2}
+        // This is the toString() format of a Map
+        debugPrint('⚠️ Payload is not valid JSON, attempting to parse: ${response.payload}');
+        // For now, just create an empty data map
+        data = {'raw_payload': response.payload};
+      }
+
+      _handleNotificationData(data);
+    } catch (e) {
+      debugPrint('❌ Error parsing notification payload: $e');
+    }
   }
 
-  /// Handle notification data and navigate
+  /// Handle notification data and emit navigation intent
   void _handleNotificationData(Map<String, dynamic> data) {
     debugPrint('📱 Handling notification data: $data');
 
-    // Example: Navigate based on notification type
-    final type = data['type'];
-    final noteId = data['note_id'];
+    final type = data['type'] as String? ?? 'unknown';
+    final noteUuid = data['note_uuid'] as String? ?? data['note_id'] as String?;
+    final noteType = data['note_type'] as String?;
+    final reminderId = data['reminder_id'] as String?;
 
-    if (type == 'note_reminder' && noteId != null) {
-      // Navigate to note detail screen
-      debugPrint('Navigate to note: $noteId');
-      // TODO: Implement navigation
+    // Create navigation intent
+    final intent = NotificationNavigationIntent(
+      type: type,
+      noteUuid: noteUuid,
+      noteType: noteType,
+      reminderId: reminderId,
+      rawData: data,
+    );
+
+    debugPrint('📱 Emitting navigation intent: $intent');
+    _navigationIntentController.add(intent);
+
+    // Log specific navigation actions for debugging
+    if (type == 'reminder' && noteUuid != null) {
+      debugPrint('🔔 Navigate to reminder note: $noteUuid (type: $noteType)');
     } else if (type == 'sync_complete') {
-      // Show sync complete message
-      debugPrint('Sync completed');
+      debugPrint('✅ Sync completed notification');
+    } else {
+      debugPrint('ℹ️ Unhandled notification type: $type');
     }
   }
 
@@ -363,8 +444,26 @@ class FirebaseNotificationService {
     }
   }
 
-  /// Dispose resources
-  void dispose() {
-    // Nothing to dispose for now
+  /// Dispose resources and cancel all stream subscriptions
+  Future<void> dispose() async {
+    debugPrint('🧹 Disposing FirebaseNotificationService...');
+
+    // Cancel all stream subscriptions
+    await _tokenRefreshSubscription?.cancel();
+    _tokenRefreshSubscription = null;
+
+    await _onMessageSubscription?.cancel();
+    _onMessageSubscription = null;
+
+    await _onMessageOpenedAppSubscription?.cancel();
+    _onMessageOpenedAppSubscription = null;
+
+    // Close the navigation intent stream controller
+    await _navigationIntentController.close();
+
+    _initialized = false;
+    _tokenRegisteredThisSession = false;
+
+    debugPrint('✅ FirebaseNotificationService disposed');
   }
 }

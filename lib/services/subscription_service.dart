@@ -165,9 +165,8 @@ class SubscriptionService {
       // Verify purchase with backend
       String? purchaseToken;
 
-      if (Platform.isAndroid) {
-        final androidPurchase = purchase as GooglePlayPurchaseDetails;
-        purchaseToken = androidPurchase.billingClientPurchase.purchaseToken;
+      if (Platform.isAndroid && purchase is GooglePlayPurchaseDetails) {
+        purchaseToken = purchase.billingClientPurchase.purchaseToken;
       }
 
       if (purchaseToken != null) {

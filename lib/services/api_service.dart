@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -13,6 +14,23 @@ class AccountLinkingRequiredException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// Exception thrown when rate limit is exceeded (HTTP 429)
+class RateLimitExceededException implements Exception {
+  final String message;
+  final Duration? retryAfter;
+  final int? remainingRequests;
+
+  RateLimitExceededException(
+    this.message, {
+    this.retryAfter,
+    this.remainingRequests,
+  });
+
+  @override
+  String toString() =>
+      'RateLimitExceededException: $message${retryAfter != null ? ' (retry after ${retryAfter!.inSeconds}s)' : ''}';
 }
 
 class ApiService {
@@ -782,9 +800,23 @@ class ApiService {
   // Error Handling
   // ============================================================================
 
+  /// Handle DioException and return a user-friendly error message
+  /// Throws [RateLimitExceededException] for 429 responses
   String _handleError(DioException error) {
     if (error.response != null) {
+      final statusCode = error.response!.statusCode;
       final data = error.response!.data;
+
+      // Handle rate limiting (HTTP 429)
+      if (statusCode == 429) {
+        final retryAfter = _parseRetryAfter(error.response!);
+        throw RateLimitExceededException(
+          'Too many requests. Please wait before trying again.',
+          retryAfter: retryAfter,
+        );
+      }
+
+      // Handle other errors
       if (data is Map && data.containsKey('detail')) {
         return data['detail'].toString();
       }
@@ -801,5 +833,47 @@ class ApiService {
     }
 
     return 'An unexpected error occurred: ${error.message}';
+  }
+
+  /// Parse the Retry-After header from a 429 response
+  Duration? _parseRetryAfter(Response response) {
+    final retryAfterHeader = response.headers.value('retry-after');
+    if (retryAfterHeader == null) return null;
+
+    // Retry-After can be either seconds (integer) or HTTP-date
+    final seconds = int.tryParse(retryAfterHeader);
+    if (seconds != null) {
+      return Duration(seconds: seconds);
+    }
+
+    // Try to parse as HTTP-date (rare, but possible)
+    try {
+      final retryDate = HttpDate.parse(retryAfterHeader);
+      final now = DateTime.now();
+      if (retryDate.isAfter(now)) {
+        return retryDate.difference(now);
+      }
+    } catch (_) {
+      // Ignore parsing errors
+    }
+
+    // Default to 60 seconds if we can't parse the header
+    return const Duration(seconds: 60);
+  }
+
+  /// Check if an error is a rate limit error
+  static bool isRateLimitError(Object error) {
+    return error is RateLimitExceededException ||
+        (error is DioException && error.response?.statusCode == 429);
+  }
+
+  /// Check if an error is a network error (offline, timeout, etc.)
+  static bool isNetworkError(Object error) {
+    if (error is DioException) {
+      return error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.connectionError;
+    }
+    return false;
   }
 }
