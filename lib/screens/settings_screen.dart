@@ -27,6 +27,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../sync/sync_manager.dart';
 import '../service_locators/init_service_locators.dart';
+import '../services/walkthrough_service.dart';
+import '../navigation/bottom-navigation/bottom_navigation_layout.dart';
 
 class SettingsScreen extends StatefulWidget {
   static const String kRouteName = '/settings';
@@ -532,6 +534,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () {
               PinpointHaptics.medium();
               _showAboutDialog(context);
+            },
+          ),
+          const SizedBox(height: PinpointSpacing.md),
+          _SettingsTile(
+            title: 'Replay Tutorial',
+            subtitle: 'See the app walkthrough again',
+            icon: Icons.help_outline_rounded,
+            onTap: () async {
+              PinpointHaptics.medium();
+
+              // Reset walkthrough so it will show again
+              await WalkthroughService().resetWalkthrough();
+
+              if (!context.mounted) return;
+
+              // Navigate to home screen first
+              BottomNavigationLayout.of(context).gotoPage(0);
+
+              // Delay then show walkthrough
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (context.mounted) {
+                  WalkthroughService().showWalkthrough(context);
+                }
+              });
             },
           ),
           const SizedBox(height: PinpointSpacing.md),

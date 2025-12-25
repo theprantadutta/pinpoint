@@ -11,6 +11,7 @@ import 'package:pinpoint/services/logger_service.dart';
 import '../../database/database.dart';
 import '../../design_system/design_system.dart';
 import '../../navigation/app_navigation.dart';
+import '../../walkthrough/walkthrough_keys.dart';
 
 class HomeScreenMyFolders extends StatelessWidget {
   const HomeScreenMyFolders({super.key});
@@ -95,6 +96,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                   Tooltip(
                     message: 'Create folder',
                     child: InkWell(
+                      key: WalkthroughKeys.addFolderKey,
                       borderRadius: BorderRadius.circular(10),
                       onTap: () {
                         PinpointHaptics.light();
