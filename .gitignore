@@ -69,4 +69,4 @@ lib/**/*.g.dart
 .claude/
 notes.txt
 firebase_admin_key.json
-.kiro/
+.kiro/.claude/
