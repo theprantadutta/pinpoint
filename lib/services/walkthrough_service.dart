@@ -95,6 +95,53 @@ class WalkthroughService {
       opacityShadow: 0.85,
       hideSkip: false,
       textSkip: "SKIP",
+      textStyleSkip: const TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.5,
+      ),
+      skipWidget: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF4ECCA3), // PinpointColors.mint
+              Color(0xFF3DB890),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF4ECCA3).withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.close_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
+            SizedBox(width: 6),
+            Text(
+              'Skip',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
       paddingFocus: 10,
       focusAnimationDuration: const Duration(milliseconds: 300),
       pulseAnimationDuration: const Duration(milliseconds: 500),
