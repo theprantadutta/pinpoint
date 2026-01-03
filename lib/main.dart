@@ -660,8 +660,8 @@ class _MyAppState extends State<MyApp> {
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => SubscriptionManager()..initialize(),
+        ChangeNotifierProvider.value(
+          value: SubscriptionManager()..initialize(),
         ),
         ChangeNotifierProvider(
           create: (_) => BackendAuthService()..initialize(),

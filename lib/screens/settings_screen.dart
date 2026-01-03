@@ -608,6 +608,43 @@ class _PremiumSection extends StatelessWidget {
     required this.onManageSubscription,
   });
 
+  String _getPlanDisplayName(String? subscriptionType) {
+    switch (subscriptionType) {
+      case 'monthly':
+        return 'Monthly Plan';
+      case 'yearly':
+        return 'Yearly Plan';
+      case 'lifetime':
+        return 'Lifetime';
+      default:
+        return 'Premium';
+    }
+  }
+
+  String _getExpiryText(SubscriptionManager manager) {
+    if (manager.subscriptionType == 'lifetime') {
+      return 'Never expires';
+    }
+
+    final expiryDate = manager.expirationDate;
+    if (expiryDate == null) return '';
+
+    final now = DateTime.now();
+    final difference = expiryDate.difference(now);
+
+    // Format the date
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final formattedDate = '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
+
+    if (difference.isNegative) {
+      return 'Expired on $formattedDate';
+    } else if (manager.isInGracePeriod) {
+      return 'Payment pending - Expires $formattedDate';
+    } else {
+      return 'Renews $formattedDate';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -696,7 +733,7 @@ class _PremiumSection extends StatelessWidget {
                       isPremium
                           ? isInGracePeriod
                               ? 'Premium (Grace Period)'
-                              : 'Premium Active'
+                              : _getPlanDisplayName(subscriptionManager.subscriptionType)
                           : 'Upgrade to Premium',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -707,7 +744,7 @@ class _PremiumSection extends StatelessWidget {
                       isPremium
                           ? isInGracePeriod
                               ? 'Update payment method'
-                              : 'Thank you for your support!'
+                              : _getExpiryText(subscriptionManager)
                           : 'Unlock unlimited features',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: cs.onSurface.withValues(alpha: 0.7),

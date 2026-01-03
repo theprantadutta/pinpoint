@@ -7,6 +7,11 @@ import 'package:pinpoint/services/api_service.dart';
 /// Manages subscription status without requiring user authentication
 /// Uses device ID for identification and local storage for offline access
 class SubscriptionManager extends ChangeNotifier {
+  // Singleton pattern
+  static final SubscriptionManager _instance = SubscriptionManager._internal();
+  factory SubscriptionManager() => _instance;
+  SubscriptionManager._internal();
+
   final ApiService _apiService = ApiService();
 
   bool _isPremium = false;
@@ -17,6 +22,7 @@ class SubscriptionManager extends ChangeNotifier {
   DateTime? _gracePeriodEndsAt;
   String? _deviceId;
   DateTime? _lastFetchTime;
+  String? _productId;
 
   bool get isPremium => _isPremium || _isInGracePeriod;
   bool get isInGracePeriod => _isInGracePeriod;
@@ -25,6 +31,7 @@ class SubscriptionManager extends ChangeNotifier {
   DateTime? get expirationDate => _subscriptionExpiresAt;
   DateTime? get gracePeriodEndsAt => _gracePeriodEndsAt;
   String? get deviceId => _deviceId;
+  String? get productId => _productId;
 
   /// Returns true if subscription data was fetched recently (within cache duration)
   bool get hasFreshData {
@@ -40,6 +47,7 @@ class SubscriptionManager extends ChangeNotifier {
   static const String _gracePeriodExpiryKey = 'grace_period_ends_at';
   static const String _deviceIdKey = 'device_id';
   static const String _lastFetchKey = 'subscription_last_fetch';
+  static const String _productIdKey = 'subscription_product_id';
   static const Duration _cacheValidDuration = Duration(minutes: 5);
 
   /// Initialize subscription manager
@@ -98,6 +106,7 @@ class SubscriptionManager extends ChangeNotifier {
       _isInGracePeriod = preferences.getBool(_gracePeriodKey) ?? false;
       _subscriptionTier = preferences.getString(_tierKey) ?? 'free';
       _subscriptionType = preferences.getString(_typeKey);
+      _productId = preferences.getString(_productIdKey);
 
       final expiryString = preferences.getString(_expiryKey);
       if (expiryString != null) {
@@ -150,6 +159,10 @@ class SubscriptionManager extends ChangeNotifier {
         await preferences.setString(_typeKey, _subscriptionType!);
       }
 
+      if (_productId != null) {
+        await preferences.setString(_productIdKey, _productId!);
+      }
+
       if (_subscriptionExpiresAt != null) {
         await preferences.setString(
             _expiryKey, _subscriptionExpiresAt!.toIso8601String());
@@ -192,9 +205,12 @@ class SubscriptionManager extends ChangeNotifier {
       _isInGracePeriod = status['is_in_grace_period'] ?? false;
       _subscriptionTier = status['tier'] ?? 'free';
       _subscriptionType = status['subscription_type'];
+      _productId = status['product_id'];
 
       if (status['expires_at'] != null) {
         _subscriptionExpiresAt = DateTime.parse(status['expires_at']);
+      } else {
+        _subscriptionExpiresAt = null;
       }
 
       if (status['grace_period_ends_at'] != null) {

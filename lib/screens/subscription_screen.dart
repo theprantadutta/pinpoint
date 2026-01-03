@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:pinpoint/design_system/design_system.dart';
 import 'package:pinpoint/services/subscription_service.dart';
+import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -205,6 +208,62 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
                     const SizedBox(height: 32),
 
+                    // Current Plan Card (for premium users)
+                    Consumer<SubscriptionManager>(
+                      builder: (context, subscriptionManager, child) {
+                        if (!subscriptionManager.isPremium) {
+                          return const SizedBox.shrink();
+                        }
+                        return Column(
+                          children: [
+                            _buildCurrentPlanCard(
+                              subscriptionManager,
+                              colorScheme,
+                              isDark,
+                            ),
+                            const SizedBox(height: 24),
+                            // Divider with "Upgrade Options" text
+                            if (_hasUpgradeOptions(subscriptionManager))
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Divider(
+                                        color: isDark
+                                            ? PinpointColors.darkTextTertiary
+                                            : PinpointColors.lightTextTertiary,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      child: Text(
+                                        'Upgrade Options',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? PinpointColors.darkTextSecondary
+                                              : PinpointColors.lightTextSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Divider(
+                                        color: isDark
+                                            ? PinpointColors.darkTextTertiary
+                                            : PinpointColors.lightTextTertiary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(height: 16),
+                          ],
+                        );
+                      },
+                    ),
+
                     // Subscription plans
                     _buildSubscriptionPlans(colorScheme, isDark),
 
@@ -281,6 +340,187 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
+  /// Check if user has upgrade options available
+  bool _hasUpgradeOptions(SubscriptionManager manager) {
+    final currentType = manager.subscriptionType;
+    // Lifetime users can't upgrade
+    if (currentType == 'lifetime') return false;
+    // Monthly/yearly users can upgrade
+    return true;
+  }
+
+  /// Get plan display name
+  String _getPlanDisplayName(String? subscriptionType) {
+    switch (subscriptionType) {
+      case 'monthly':
+        return 'Monthly Plan';
+      case 'yearly':
+        return 'Yearly Plan';
+      case 'lifetime':
+        return 'Lifetime';
+      default:
+        return 'Premium';
+    }
+  }
+
+  /// Get expiry text for current plan
+  String _getExpiryText(SubscriptionManager manager) {
+    if (manager.subscriptionType == 'lifetime') {
+      return 'Never expires';
+    }
+
+    final expiryDate = manager.expirationDate;
+    if (expiryDate == null) return '';
+
+    final now = DateTime.now();
+    final difference = expiryDate.difference(now);
+
+    // Format the date
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final formattedDate = '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
+
+    if (difference.isNegative) {
+      return 'Expired on $formattedDate';
+    } else if (manager.isInGracePeriod) {
+      return 'Payment pending - Expires $formattedDate';
+    } else {
+      return 'Renews $formattedDate';
+    }
+  }
+
+  /// Open Google Play subscriptions page
+  Future<void> _openGooglePlaySubscriptions() async {
+    try {
+      final uri = Uri.parse('https://play.google.com/store/account/subscriptions');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
+  /// Build the current plan card for premium users
+  Widget _buildCurrentPlanCard(
+    SubscriptionManager manager,
+    ColorScheme colorScheme,
+    bool isDark,
+  ) {
+    final planName = _getPlanDisplayName(manager.subscriptionType);
+    final expiryText = _getExpiryText(manager);
+    final isGracePeriod = manager.isInGracePeriod;
+
+    return GlassContainer(
+      padding: EdgeInsets.zero,
+      borderRadius: 20,
+      border: Border.all(
+        color: isGracePeriod ? PinpointColors.warning : PinpointColors.mint,
+        width: 2,
+      ),
+      child: Stack(
+        children: [
+          // "Current Plan" badge
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isGracePeriod ? PinpointColors.warning : PinpointColors.mint,
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(12),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isGracePeriod ? Icons.warning_amber_rounded : Icons.check_circle,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    isGracePeriod ? 'PAYMENT PENDING' : 'CURRENT PLAN',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.workspace_premium,
+                      color: isGracePeriod ? PinpointColors.warning : PinpointColors.mint,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      planName,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? PinpointColors.darkTextPrimary
+                            : PinpointColors.lightTextPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  expiryText,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isGracePeriod
+                        ? PinpointColors.warning
+                        : (isDark
+                            ? PinpointColors.darkTextSecondary
+                            : PinpointColors.lightTextSecondary),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    onPressed: _openGooglePlaySubscriptions,
+                    icon: const Icon(Icons.settings_outlined, size: 18),
+                    label: const Text('Manage in Google Play'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isGracePeriod
+                          ? PinpointColors.warning
+                          : colorScheme.primary,
+                      side: BorderSide(
+                        color: isGracePeriod
+                            ? PinpointColors.warning.withValues(alpha: 0.5)
+                            : colorScheme.primary.withValues(alpha: 0.5),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSubscriptionPlans(ColorScheme colorScheme, bool isDark) {
     // Show loading state
     if (_isLoadingProducts) {
@@ -340,44 +580,97 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       );
     }
 
+    // Get current subscription type to filter plans
+    final subscriptionManager = SubscriptionManager();
+    final currentType = subscriptionManager.subscriptionType;
+
     // Show subscription plans with dynamic pricing
-    return Column(
-      children: [
-        // Monthly
-        _buildDynamicPlanCard(
-          productId: SubscriptionService.premiumMonthly,
-          title: 'Monthly',
-          period: 'per month',
-          badge: '7-day free trial',
-          colorScheme: colorScheme,
-          isDark: isDark,
-        ),
+    // Filter out plans based on current subscription
+    return Consumer<SubscriptionManager>(
+      builder: (context, manager, child) {
+        final widgets = <Widget>[];
 
-        const SizedBox(height: 16),
+        // Monthly - show if not already monthly/yearly/lifetime
+        if (currentType != 'monthly' && currentType != 'yearly' && currentType != 'lifetime') {
+          widgets.add(_buildDynamicPlanCard(
+            productId: SubscriptionService.premiumMonthly,
+            title: 'Monthly',
+            period: 'per month',
+            badge: '7-day free trial',
+            colorScheme: colorScheme,
+            isDark: isDark,
+          ));
+        }
 
-        // Yearly (Best Value)
-        _buildDynamicPlanCard(
-          productId: SubscriptionService.premiumYearly,
-          title: 'Yearly',
-          period: 'per year',
-          badge: 'BEST VALUE - Save 33%',
-          isPopular: true,
-          colorScheme: colorScheme,
-          isDark: isDark,
-        ),
+        // Yearly - show if not already yearly/lifetime (upgrade from monthly)
+        if (currentType != 'yearly' && currentType != 'lifetime') {
+          if (widgets.isNotEmpty) widgets.add(const SizedBox(height: 16));
+          widgets.add(_buildDynamicPlanCard(
+            productId: SubscriptionService.premiumYearly,
+            title: 'Yearly',
+            period: 'per year',
+            badge: currentType == 'monthly' ? 'UPGRADE - Save 33%' : 'BEST VALUE - Save 33%',
+            isPopular: true,
+            colorScheme: colorScheme,
+            isDark: isDark,
+          ));
+        }
 
-        const SizedBox(height: 16),
+        // Lifetime - show if not already lifetime
+        if (currentType != 'lifetime') {
+          if (widgets.isNotEmpty) widgets.add(const SizedBox(height: 16));
+          widgets.add(_buildDynamicPlanCard(
+            productId: SubscriptionService.premiumLifetime,
+            title: 'Lifetime',
+            period: 'one-time',
+            badge: 'Pay once, own forever',
+            colorScheme: colorScheme,
+            isDark: isDark,
+          ));
+        }
 
-        // Lifetime
-        _buildDynamicPlanCard(
-          productId: SubscriptionService.premiumLifetime,
-          title: 'Lifetime',
-          period: 'one-time',
-          badge: 'Pay once, own forever',
-          colorScheme: colorScheme,
-          isDark: isDark,
-        ),
-      ],
+        // If lifetime user, show thank you message
+        if (currentType == 'lifetime') {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.favorite,
+                    size: 48,
+                    color: PinpointColors.mint,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Thank you for your support!',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark
+                          ? PinpointColors.darkTextPrimary
+                          : PinpointColors.lightTextPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'You have lifetime access to all premium features.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark
+                          ? PinpointColors.darkTextSecondary
+                          : PinpointColors.lightTextSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Column(children: widgets);
+      },
     );
   }
 
@@ -471,29 +764,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      price,
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        price,
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      period,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark
-                            ? PinpointColors.darkTextSecondary
-                            : PinpointColors.lightTextSecondary,
+                      const SizedBox(width: 8),
+                      Text(
+                        period,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark
+                              ? PinpointColors.darkTextSecondary
+                              : PinpointColors.lightTextSecondary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
