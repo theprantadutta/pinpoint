@@ -239,18 +239,25 @@ class SubscriptionManager extends ChangeNotifier {
     required String productId,
     String? userId,
   }) async {
+    debugPrint('🔄 verifyPurchase called: productId=$productId, userId=$userId');
+
     if (_deviceId == null) {
-      debugPrint('Device ID not available');
+      debugPrint('❌ Device ID not available - cannot verify purchase');
       return false;
     }
 
+    debugPrint('📱 Using device ID: $_deviceId');
+
     try {
+      debugPrint('🌐 Calling API verifyPurchaseWithDevice...');
       final response = await _apiService.verifyPurchaseWithDevice(
         deviceId: _deviceId!,
         purchaseToken: purchaseToken,
         productId: productId,
         userId: userId, // Pass user ID to sync with user record
       );
+
+      debugPrint('📥 API Response: $response');
 
       if (response['success'] == true) {
         // Update premium status
@@ -268,13 +275,15 @@ class SubscriptionManager extends ChangeNotifier {
         await _saveLocalSubscriptionStatus();
         notifyListeners();
 
-        debugPrint('Purchase verified: premium=$_isPremium, tier=$_subscriptionTier, userId=$userId');
+        debugPrint('✅ Purchase verified: premium=$_isPremium, tier=$_subscriptionTier, userId=$userId');
         return true;
       }
 
+      debugPrint('❌ API returned success=false: ${response['message']}');
       return false;
-    } catch (e) {
-      debugPrint('Purchase verification error: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ Purchase verification error: $e');
+      debugPrint('Stack trace: $stackTrace');
       return false;
     }
   }

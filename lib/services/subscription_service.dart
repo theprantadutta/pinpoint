@@ -162,22 +162,35 @@ class SubscriptionService {
   /// Handle successful purchase
   Future<void> _handleSuccessfulPurchase(PurchaseDetails purchase) async {
     try {
+      log.i('🔔 _handleSuccessfulPurchase called for: ${purchase.productID}');
+
       // Verify purchase with backend
       String? purchaseToken;
 
       if (Platform.isAndroid && purchase is GooglePlayPurchaseDetails) {
         purchaseToken = purchase.billingClientPurchase.purchaseToken;
+        log.i('📦 Got purchase token: ${purchaseToken?.substring(0, 20)}...');
+      } else {
+        log.w('⚠️ Not Android or not GooglePlayPurchaseDetails');
       }
 
       if (purchaseToken != null) {
         final subscriptionManager = SubscriptionManager();
+        final deviceId = subscriptionManager.deviceId;
+        log.i('📱 Device ID: $deviceId');
+
+        if (deviceId == null) {
+          log.e('❌ Device ID is null! SubscriptionManager may not be initialized');
+        }
 
         // Get user ID if authenticated (to sync subscription with user record)
         final backendAuthService = BackendAuthService();
         final userId = backendAuthService.isAuthenticated
             ? backendAuthService.userId
             : null;
+        log.i('👤 User authenticated: ${backendAuthService.isAuthenticated}, userId: $userId');
 
+        log.i('🚀 Calling verifyPurchase...');
         final verified = await subscriptionManager.verifyPurchase(
           purchaseToken: purchaseToken,
           productId: purchase.productID,
@@ -185,16 +198,20 @@ class SubscriptionService {
         );
 
         if (verified) {
-          log.i('Purchase verified: ${purchase.productID}, userId: $userId');
+          log.i('✅ Purchase verified: ${purchase.productID}, userId: $userId');
         } else {
-          log.e('Purchase verification failed');
+          log.e('❌ Purchase verification failed for ${purchase.productID}');
         }
+      } else {
+        log.e('❌ Purchase token is null!');
       }
 
       // Complete the purchase
       await _iap.completePurchase(purchase);
-    } catch (e) {
-      log.e('Error handling purchase: $e');
+      log.i('✅ Purchase completed');
+    } catch (e, stackTrace) {
+      log.e('❌ Error handling purchase: $e');
+      log.e('Stack trace: $stackTrace');
     }
   }
 
