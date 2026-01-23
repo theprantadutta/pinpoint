@@ -14,6 +14,8 @@ import 'package:pinpoint/screens/account_linking_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 import 'package:pinpoint/screens/admin_panel_screen.dart';
 import 'package:pinpoint/screens/admin_user_details_screen.dart';
+import 'package:pinpoint/screens/admin_jobs_screen.dart';
+import 'package:pinpoint/screens/admin_job_history_screen.dart';
 import 'package:pinpoint/screens/sync_debug_screen.dart';
 
 import '../screens/settings_screen.dart';
@@ -296,6 +298,28 @@ class AppNavigation {
           return NoTransitionPage(
             key: state.pageKey,
             child: AdminUserDetailsScreen(userId: userId),
+          );
+        },
+      ),
+      // Admin Jobs Routes
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: AdminJobsScreen.kRouteName,
+        name: "Admin Jobs",
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const AdminJobsScreen(),
+        ),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: '${AdminJobsScreen.kRouteName}/:jobId',
+        name: "Admin Job History",
+        pageBuilder: (context, state) {
+          final jobId = state.pathParameters['jobId']!;
+          return NoTransitionPage(
+            key: state.pageKey,
+            child: AdminJobHistoryScreen(jobId: jobId),
           );
         },
       ),
