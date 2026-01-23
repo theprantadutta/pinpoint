@@ -22,6 +22,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   late SubscriptionService _subscriptionService;
   bool _isLoading = false;
   bool _isLoadingProducts = true;
+  bool _isRestoring = false;
   String? _selectedProductId;
   String? _productLoadError;
 
@@ -63,6 +64,42 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   void dispose() {
     _subscriptionService.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleRestore() async {
+    setState(() {
+      _isRestoring = true;
+    });
+
+    await _subscriptionService.restorePurchases(
+      onComplete: (restoredCount, hasError) {
+        if (!mounted) return;
+
+        setState(() {
+          _isRestoring = false;
+        });
+
+        if (hasError) {
+          showErrorToast(
+            context: context,
+            title: 'Restore Failed',
+            description: 'Could not restore purchases. Please try again.',
+          );
+        } else if (restoredCount > 0) {
+          showSuccessToast(
+            context: context,
+            title: 'Restore Complete',
+            description: '$restoredCount purchase(s) restored successfully!',
+          );
+        } else {
+          showInfoToast(
+            context: context,
+            title: 'No Purchases Found',
+            description: 'No previous purchases found to restore.',
+          );
+        }
+      },
+    );
   }
 
   Future<void> _purchaseSubscription(String productId) async {
@@ -133,18 +170,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       onPressed: () => context.pop(),
                     ),
                     const Spacer(),
-                    TextButton(
-                      onPressed: () async {
-                        await _subscriptionService.restorePurchases();
-                        if (!mounted) return;
-                        showSuccessToast(
-                          context: context,
-                          title: 'Restore Complete',
-                          description: 'Purchases restored',
-                        );
-                      },
-                      child: const Text('Restore'),
-                    ),
+                    _isRestoring
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : TextButton(
+                            onPressed: _handleRestore,
+                            child: const Text('Restore'),
+                          ),
                   ],
                 ),
               ),

@@ -32,6 +32,12 @@ class SubscriptionService {
   bool _isAvailable = false;
   bool get isAvailable => _isAvailable;
 
+  // Track restore state
+  bool _isRestoring = false;
+  bool get isRestoring => _isRestoring;
+  int _restoredCount = 0;
+  Function(int restoredCount, bool hasError)? _onRestoreComplete;
+
   /// Static initialize method for use in main.dart
   static Future<void> initialize() async {
     await _instance._initialize();
@@ -126,15 +132,42 @@ class SubscriptionService {
   }
 
   /// Restore previous purchases
-  Future<void> restorePurchases() async {
-    if (!_isAvailable) return;
+  ///
+  /// [onComplete] is called when restore finishes with the count of restored purchases
+  Future<void> restorePurchases({
+    Function(int restoredCount, bool hasError)? onComplete,
+  }) async {
+    if (!_isAvailable) {
+      onComplete?.call(0, true);
+      return;
+    }
 
     try {
+      _isRestoring = true;
+      _restoredCount = 0;
+      _onRestoreComplete = onComplete;
+
       await _iap.restorePurchases();
-      log.i('Purchases restored');
+      log.i('Restore purchases initiated');
+
+      // Give the purchase stream time to process restored purchases
+      // Then complete the restore operation
+      Future.delayed(const Duration(seconds: 3), () {
+        if (_isRestoring) {
+          _finishRestore(hasError: false);
+        }
+      });
     } catch (e) {
       log.e('Restore error: $e');
+      _finishRestore(hasError: true);
     }
+  }
+
+  void _finishRestore({required bool hasError}) {
+    _isRestoring = false;
+    _onRestoreComplete?.call(_restoredCount, hasError);
+    _onRestoreComplete = null;
+    log.i('Restore completed: $_restoredCount purchases restored');
   }
 
   /// Handle purchase updates
@@ -154,7 +187,13 @@ class SubscriptionService {
         await _iap.completePurchase(purchase);
       } else if (purchase.status == PurchaseStatus.restored) {
         // Purchase restored
+        log.i('Processing restored purchase: ${purchase.productID}');
         await _handleSuccessfulPurchase(purchase);
+
+        // Track restored count
+        if (_isRestoring) {
+          _restoredCount++;
+        }
       }
     }
   }
@@ -199,6 +238,10 @@ class SubscriptionService {
 
         if (verified) {
           log.i('✅ Purchase verified: ${purchase.productID}, userId: $userId');
+
+          // Force refresh subscription status to update UI immediately
+          await subscriptionManager.checkSubscriptionStatus(forceRefresh: true);
+          log.i('✅ Subscription status refreshed');
         } else {
           log.e('❌ Purchase verification failed for ${purchase.productID}');
         }
