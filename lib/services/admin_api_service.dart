@@ -231,6 +231,120 @@ class AdminApiService {
     debugPrint('[AdminAPI] Logged out');
   }
 
+  // ========== Job Management API ==========
+
+  /// Get all scheduled jobs
+  ///
+  /// Returns list of jobs with status and next run time
+  Future<Map<String, dynamic>> getJobs() async {
+    try {
+      final response = await _dio.get(
+        '/admin/jobs',
+        options: Options(
+          headers: {'Authorization': 'Bearer $_adminToken'},
+        ),
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      _handleError(e);
+    }
+  }
+
+  /// Get detailed information about a specific job
+  ///
+  /// Returns job details with statistics
+  Future<Map<String, dynamic>> getJobDetails(String jobId) async {
+    try {
+      final response = await _dio.get(
+        '/admin/jobs/$jobId',
+        options: Options(
+          headers: {'Authorization': 'Bearer $_adminToken'},
+        ),
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      _handleError(e);
+    }
+  }
+
+  /// Get job run history with pagination
+  ///
+  /// Returns paginated list of job runs
+  Future<Map<String, dynamic>> getJobHistory(
+    String jobId, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/admin/jobs/$jobId/history',
+        queryParameters: {
+          'page': page,
+          'page_size': pageSize,
+        },
+        options: Options(
+          headers: {'Authorization': 'Bearer $_adminToken'},
+        ),
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      _handleError(e);
+    }
+  }
+
+  /// Manually trigger a job
+  ///
+  /// Returns run ID and status
+  Future<Map<String, dynamic>> triggerJob(String jobId) async {
+    try {
+      final response = await _dio.post(
+        '/admin/jobs/$jobId/trigger',
+        options: Options(
+          headers: {'Authorization': 'Bearer $_adminToken'},
+        ),
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      _handleError(e);
+    }
+  }
+
+  /// Pause a scheduled job
+  Future<Map<String, dynamic>> pauseJob(String jobId) async {
+    try {
+      final response = await _dio.post(
+        '/admin/jobs/$jobId/pause',
+        options: Options(
+          headers: {'Authorization': 'Bearer $_adminToken'},
+        ),
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      _handleError(e);
+    }
+  }
+
+  /// Resume a paused job
+  Future<Map<String, dynamic>> resumeJob(String jobId) async {
+    try {
+      final response = await _dio.post(
+        '/admin/jobs/$jobId/resume',
+        options: Options(
+          headers: {'Authorization': 'Bearer $_adminToken'},
+        ),
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      _handleError(e);
+    }
+  }
+
   /// Handle DioException errors
   Never _handleError(DioException e) {
     if (e.response?.statusCode == 401) {
