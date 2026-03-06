@@ -54,3 +54,17 @@ void showErrorToast({
       type: ToastificationType.error,
       autoCloseDuration: Duration(seconds: 4),
     );
+
+void showInfoToast({
+  required BuildContext context,
+  required String title,
+  required String description,
+}) =>
+    toastification.show(
+      context: context,
+      title: Text(title),
+      description: Text(description),
+      style: ToastificationStyle.flatColored,
+      type: ToastificationType.info,
+      autoCloseDuration: Duration(seconds: 4),
+    );
