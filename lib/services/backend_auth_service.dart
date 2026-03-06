@@ -11,6 +11,11 @@ const String _kCachedSubscriptionExpiry = 'cached_subscription_expiry';
 const String _kCachedAuthTimestamp = 'cached_auth_timestamp';
 
 class BackendAuthService extends ChangeNotifier {
+  // Singleton pattern to ensure consistent state across the app
+  static final BackendAuthService _instance = BackendAuthService._internal();
+  factory BackendAuthService() => _instance;
+  BackendAuthService._internal();
+
   final ApiService _apiService = ApiService();
 
   bool _isAuthenticated = false;

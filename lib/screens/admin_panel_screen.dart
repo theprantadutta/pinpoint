@@ -90,6 +90,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.schedule),
+            onPressed: () {
+              context.push('/admin-panel/jobs');
+            },
+            tooltip: 'Scheduled Jobs',
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
               _adminApi.logout();
