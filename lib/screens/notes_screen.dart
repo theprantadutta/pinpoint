@@ -9,6 +9,8 @@ import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:provider/provider.dart';
 import '../constants/constants.dart';
 import '../design_system/design_system.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import '../services/filter_service.dart';
 import '../util/note_utils.dart';
 import '../widgets/filter_bottom_sheet.dart';
@@ -42,14 +44,19 @@ class _NotesScreenState extends State<NotesScreen>
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchInputChanged);
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Notes');
   }
 
   void _onSearchInputChanged() {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 280), () {
+      final query = _searchController.text;
       setState(() {
-        _searchQuery = _searchController.text;
+        _searchQuery = query;
       });
+      if (query.isNotEmpty) {
+        getIt<AnalyticsFacade>().trackSearchPerformed(query: query);
+      }
     });
   }
 
@@ -134,6 +141,7 @@ class _NotesScreenState extends State<NotesScreen>
               setState(() {
                 _isGridView = !_isGridView;
               });
+              getIt<AnalyticsFacade>().trackViewModeChanged(viewMode: _isGridView ? 'grid' : 'list');
             },
             tooltip: _isGridView ? 'List view' : 'Grid view',
           ),
@@ -152,6 +160,7 @@ class _NotesScreenState extends State<NotesScreen>
                   _sortDirection = result.substring(4);
                 }
               });
+              getIt<AnalyticsFacade>().trackSortChanged(sortBy: _sortBy, direction: _sortDirection);
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(

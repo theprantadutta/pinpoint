@@ -8,6 +8,8 @@ import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../design_system/design_system.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import '../services/filter_service.dart';
 
 class TrashScreen extends StatefulWidget {
@@ -171,6 +173,7 @@ class _TrashScreenState extends State<TrashScreen> {
                                       PinpointHaptics.light();
                                       await DriftNoteService.restoreNoteByIdV2(
                                           n.id, n.noteType);
+                                      getIt<AnalyticsFacade>().trackNoteRestoredFromTrash();
                                     }
                                   },
                                   onDelete: () async {

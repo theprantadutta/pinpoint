@@ -11,6 +11,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:image_picker/image_picker.dart';
 import 'package:fleather/fleather.dart';
 
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import '../components/create_note_screen/create_note_categories.dart';
 import '../components/create_note_screen/reminder_type/reminder_type_content.dart';
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
@@ -296,8 +298,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     );
   }
 
-  /// Save note based on current type
-  Future<void> _saveNote() async {
+  /// Save note based on current type.
+  /// [isExplicit] distinguishes user-initiated saves from auto-saves for analytics.
+  Future<void> _saveNote({bool isExplicit = false}) async {
     if (_isSaving) return;
 
     setState(() {
@@ -306,6 +309,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
     try {
       final title = _titleController.text.trim();
+      final isNew = _currentNoteId == null;
 
       // Ensure folders are selected
       if (selectedFolders.isEmpty) {
@@ -339,6 +343,16 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       }
 
       _currentNoteId = noteId;
+
+      // Track analytics: always track creates, only track explicit updates
+      final analytics = getIt<AnalyticsFacade>();
+      final noteTypeKey = _noteTypeToKey(selectedNoteType);
+      if (isNew) {
+        analytics.trackNoteCreated(noteType: noteTypeKey);
+      } else if (isExplicit) {
+        analytics.trackNoteUpdated(noteType: noteTypeKey);
+      }
+
       debugPrint('✅ [CreateNoteV2] Note saved successfully: $_currentNoteId');
     } catch (e, st) {
       debugPrint('❌ [CreateNoteV2] Failed to save note: $e');
@@ -350,6 +364,16 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           _isSaving = false;
         });
       }
+    }
+  }
+
+  String _noteTypeToKey(String noteType) {
+    switch (noteType) {
+      case 'Title Content': return 'text';
+      case 'Record Audio': return 'voice';
+      case 'Todo List': return 'todo';
+      case 'Reminder': return 'reminder';
+      default: return noteType.toLowerCase();
     }
   }
 
@@ -779,7 +803,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               switch (value) {
                 case 'save':
                   try {
-                    await _saveNote();
+                    await _saveNote(isExplicit: true);
                     if (mounted) {
                       Navigator.of(context).pop();
                     }
@@ -1616,6 +1640,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           _isRecording = false;
         });
         _scheduleAutoSave();
+        getIt<AnalyticsFacade>().trackAudioRecorded(durationSeconds: _recordedDuration.inSeconds);
         debugPrint(
             '✅ [VoiceNote] Stopped recording. Duration: $_audioDurationSeconds seconds');
         debugPrint('📁 [VoiceNote] Audio saved to: $path');
@@ -1759,6 +1784,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   break;
               }
 
+              getIt<AnalyticsFacade>().trackNoteDeleted(noteType: _noteTypeToKey(selectedNoteType));
+
               // Navigate back to previous screen using screen context, not dialog context
               if (mounted) {
                 Navigator.of(context).pop();
@@ -1888,6 +1915,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       ),
     );
 
+    getIt<AnalyticsFacade>().trackNoteShared();
     PinpointHaptics.success();
   }
 
@@ -1961,6 +1989,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         await premiumService.incrementExports();
       }
 
+      getIt<AnalyticsFacade>().trackNoteExported(format: 'markdown');
       PinpointHaptics.success();
 
       if (mounted) {
@@ -2090,6 +2119,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         await premiumService.incrementExports();
       }
 
+      getIt<AnalyticsFacade>().trackNoteExported(format: 'pdf');
       PinpointHaptics.success();
 
       if (mounted) {
@@ -2169,6 +2199,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
       await premiumService.incrementOcrScans();
 
+      getIt<AnalyticsFacade>().trackOcrPerformed();
       PinpointHaptics.success();
       if (mounted) {
         showSuccessToast(

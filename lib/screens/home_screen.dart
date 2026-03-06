@@ -6,6 +6,7 @@ import '../components/home_screen/home_screen_my_folders.dart';
 import '../components/home_screen/home_screen_recent_notes.dart';
 import '../components/home_screen/home_screen_top_bar.dart';
 import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import '../services/api_service.dart';
 import '../services/encryption_service.dart';
 import '../services/notification_service.dart';
@@ -38,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Home');
     // Initialize authenticated services only once per app session
     if (!_servicesInitialized) {
       _initializeAuthenticatedServices();

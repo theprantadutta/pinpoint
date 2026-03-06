@@ -5,6 +5,8 @@ import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:pinpoint/util/note_utils.dart';
 import '../design_system/design_system.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import 'create_note_screen_v2.dart';
 
 class TodoScreen extends StatefulWidget {
@@ -25,6 +27,12 @@ class _TodoScreenState extends State<TodoScreen>
 
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Todo');
+  }
 
   @override
   Widget build(BuildContext context) {

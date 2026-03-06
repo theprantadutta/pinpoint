@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
+import '../services/analytics/analytics_route_observer.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/folder_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
@@ -45,6 +48,9 @@ class AppNavigation {
     initialLocation: initial,
     debugLogDiagnostics: true,
     navigatorKey: rootNavigatorKey,
+    observers: [
+      AnalyticsRouteObserver(getIt<AnalyticsFacade>()),
+    ],
     routes: [
       /// Splash Screen
       GoRoute(

@@ -13,6 +13,7 @@ import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/encryption_service.dart';
 import 'package:pinpoint/design_system/colors.dart';
+import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:go_router/go_router.dart';
 
 /// Authentication screen with Google Sign-In and email/password options
@@ -464,6 +465,13 @@ class _AuthScreenState extends State<AuthScreen> {
         await _performInitialSync();
         debugPrint('✅ [Google Sign-In] Step 6 Complete: Sync finished');
 
+        // Track analytics
+        final analytics = getIt<AnalyticsFacade>();
+        analytics.trackLogin(method: 'google');
+        if (userCredential.user?.uid != null) {
+          analytics.setUserId(userCredential.user!.uid);
+        }
+
         // Success! Navigate to home
         debugPrint(
             '🎉 [Google Sign-In] Authentication flow complete! Navigating to home...');
@@ -564,6 +572,15 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint('🔄 [Email Auth] Syncing cloud data...');
       await _performInitialSync();
       debugPrint('✅ [Email Auth] Sync finished');
+
+      // Track analytics
+      final analytics = getIt<AnalyticsFacade>();
+      analytics.setUserId(backendAuthService.userId);
+      if (_isLogin) {
+        analytics.trackLogin(method: 'email');
+      } else {
+        analytics.trackSignUp(method: 'email');
+      }
 
       // Success! Navigate to home
       if (mounted) {

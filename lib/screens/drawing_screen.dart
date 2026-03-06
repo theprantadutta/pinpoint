@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:painter/painter.dart';
 import '../design_system/design_system.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 
 class DrawingScreen extends StatefulWidget {
   static const String kRouteName = '/drawing';
@@ -58,6 +60,7 @@ class _DrawingScreenState extends State<DrawingScreen> {
               final data = await image.toByteData(format: ImageByteFormat.png);
               if (!context.mounted) return;
               if (data != null) {
+                getIt<AnalyticsFacade>().trackDrawingSaved();
                 PinpointHaptics.success();
                 Navigator.of(context).pop(data.buffer.asUint8List());
               }

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/shared_preference_keys.dart';
 import '../design_system/design_system.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import 'auth_screen.dart';
 
 /// Terms and Privacy acceptance screen
@@ -68,6 +70,8 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
         kTermsAcceptedDateKey,
         DateTime.now().toIso8601String(),
       );
+
+      getIt<AnalyticsFacade>().trackTermsAccepted();
 
       if (!mounted) return;
 
