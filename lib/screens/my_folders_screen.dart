@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import '../database/database.dart';
 import '../design_system/design_system.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/dialog_service.dart';
 import '../services/premium_service.dart';
@@ -52,6 +54,7 @@ class MyFoldersScreen extends StatelessWidget {
           return;
         }
         await DriftNoteFolderService.insertNoteFolder(text);
+        getIt<AnalyticsFacade>().trackFolderCreated();
         if (!context.mounted) return;
         Navigator.of(context).pop();
         PinpointHaptics.success();
@@ -174,6 +177,7 @@ class MyFoldersScreen extends StatelessWidget {
                   if (confirmed == true) {
                     await DriftNoteFolderService.deleteFolder(
                         folder.noteFolderId);
+                    getIt<AnalyticsFacade>().trackFolderDeleted();
                     if (!context.mounted) return;
                     PinpointHaptics.success();
                     showSuccessToast(

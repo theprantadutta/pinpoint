@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
+import 'package:pinpoint/services/analytics/analytics_facade.dart';
+import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:go_router/go_router.dart';
 
 /// Screen for linking Google account to existing email/password account
@@ -53,6 +55,9 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
         firebaseToken: widget.firebaseToken,
         password: _passwordController.text,
       );
+
+      // Track account link
+      getIt<AnalyticsFacade>().trackAccountLink(method: 'google');
 
       // Success! Navigate to home
       if (mounted) {

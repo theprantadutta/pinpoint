@@ -7,6 +7,8 @@ import 'package:pinpoint/screens/create_note_screen_v2.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import '../services/filter_service.dart';
 
 class ArchiveScreen extends StatefulWidget {
@@ -159,6 +161,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                                     PinpointHaptics.light();
                                     await DriftNoteService.toggleArchiveStatus(
                                         n.id, false);
+                                    getIt<AnalyticsFacade>().trackNoteRestored(noteType: n.noteType);
                                   },
                                   onDelete: () async {
                                     final confirmed = await ConfirmSheet.show(

@@ -20,6 +20,7 @@ import 'package:pinpoint/screens/admin_panel_screen.dart';
 import 'package:pinpoint/widgets/admin_password_dialog.dart';
 import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
+import '../services/analytics/analytics_facade.dart';
 import '../services/premium_service.dart';
 import '../constants/premium_limits.dart';
 import '../navigation/app_navigation.dart';
@@ -39,6 +40,12 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Settings');
+  }
+
   Future<void> _openGooglePlaySubscriptions() async {
     try {
       final uri =

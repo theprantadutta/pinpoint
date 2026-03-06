@@ -5,6 +5,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/shared_preference_keys.dart';
 import '../design_system/design_system.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import 'terms_acceptance_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -76,6 +78,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _completeOnboarding() async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setBool(kHasCompletedOnboardingKey, true);
+
+    getIt<AnalyticsFacade>().trackOnboardingComplete();
 
     if (!mounted) return;
     context.go(TermsAcceptanceScreen.kRouteName);

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../sync/sync_manager.dart';
 import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import '../services/backend_auth_service.dart';
 import '../services/google_sign_in_service.dart';
 
@@ -78,6 +79,11 @@ class LogoutService {
   /// Main logout method - validates, syncs, and cleans up
   Future<bool> performLogout() async {
     try {
+      // Track analytics
+      final analytics = getIt<AnalyticsFacade>();
+      analytics.trackLogout();
+      analytics.setUserId(null);
+
       // Phase 1: Validation
       _updatePhase(LogoutPhase.validating);
       final validation = await validateLogout();

@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:pinpoint/design_system/design_system.dart';
+import 'package:pinpoint/service_locators/init_service_locators.dart';
+import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/services/subscription_service.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
@@ -30,6 +32,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     super.didChangeDependencies();
     _subscriptionService = SubscriptionService();
     _loadProducts();
+    getIt<AnalyticsFacade>().trackSubscriptionScreenViewed();
   }
 
   Future<void> _loadProducts() async {
@@ -71,18 +74,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       _selectedProductId = productId;
     });
 
+    final analytics = getIt<AnalyticsFacade>();
+    analytics.trackPurchaseInitiated(productId: productId);
+
     try {
       final success = await _subscriptionService.purchase(productId);
 
       if (!mounted) return;
 
       if (success) {
+        analytics.trackPurchaseCompleted(productId: productId);
         showSuccessToast(
           context: context,
           title: 'Purchase Initiated',
           description: 'Processing your purchase...',
         );
       } else {
+        analytics.trackPurchaseFailed(productId: productId, error: 'Unable to complete purchase');
         showErrorToast(
           context: context,
           title: 'Purchase Failed',
@@ -90,6 +98,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         );
       }
     } catch (e) {
+      analytics.trackPurchaseFailed(productId: productId, error: e.toString());
       if (!mounted) return;
 
       showErrorToast(

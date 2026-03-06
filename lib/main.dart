@@ -12,6 +12,7 @@ import 'constants/shared_preference_keys.dart';
 import 'design_system/design_system.dart';
 import 'navigation/app_navigation.dart';
 import 'service_locators/init_service_locators.dart';
+import 'services/analytics/analytics_facade.dart';
 import 'services/notification_service.dart';
 import 'services/auth_service.dart';
 import 'services/backend_auth_service.dart';
@@ -147,6 +148,9 @@ Future<void> _initializeFirebaseInBackground() async {
     final firebaseNotifications = FirebaseNotificationService();
     await firebaseNotifications.initialize();
     debugPrint('✅ [main.dart] Firebase notifications initialized');
+
+    // Flush queued analytics events now that Firebase is ready
+    getIt<AnalyticsFacade>().onFirebaseReady();
   } catch (e, stackTrace) {
     debugPrint('⚠️ [main.dart] Firebase notifications not initialized: $e');
     debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
@@ -492,6 +496,7 @@ class _MyAppState extends State<MyApp> {
       _isBiometricEnabled = isisBiometricEnabled;
       _sharedPreferences?.setBool(kBiometricKey, isisBiometricEnabled);
     });
+    getIt<AnalyticsFacade>().trackBiometricToggled(enabled: isisBiometricEnabled);
   }
 
   void changeAccentColor(Color color) {
@@ -499,6 +504,7 @@ class _MyAppState extends State<MyApp> {
       _accentColor = color;
       _sharedPreferences?.setInt('accent_color', color.toARGB32());
     });
+    getIt<AnalyticsFacade>().trackAccentColorChanged(colorName: '#${color.toARGB32().toRadixString(16)}');
   }
 
   void changeHighContrastMode(bool enabled) {
@@ -506,6 +512,7 @@ class _MyAppState extends State<MyApp> {
       _highContrastMode = enabled;
       _sharedPreferences?.setBool('high_contrast', enabled);
     });
+    getIt<AnalyticsFacade>().trackHighContrastToggled(enabled: enabled);
   }
 
   void changeTheme(ThemeMode themeMode) {
@@ -513,6 +520,7 @@ class _MyAppState extends State<MyApp> {
       _themeMode = themeMode;
       _sharedPreferences?.setBool(kIsDarkModeKey, themeMode == ThemeMode.dark);
     });
+    getIt<AnalyticsFacade>().trackThemeChanged(theme: themeMode == ThemeMode.dark ? 'dark' : 'light');
   }
 
   void changeFontFamily(String fontFamily) {
@@ -520,6 +528,7 @@ class _MyAppState extends State<MyApp> {
       _fontFamily = fontFamily;
       _sharedPreferences?.setString(kSelectedFontKey, fontFamily);
     });
+    getIt<AnalyticsFacade>().trackFontChanged(fontFamily: fontFamily);
   }
 
   Future<void> initializeSharedPreferences() async {
