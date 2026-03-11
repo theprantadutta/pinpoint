@@ -63,4 +63,19 @@ abstract class AnalyticsClient {
   // Trash
   Future<void> trackNoteRestoredFromTrash();
   Future<void> trackTrashEmptied();
+
+  // Todo
+  Future<void> trackTodoFilterChanged({required String filter});
+
+  // Premium
+  Future<void> trackPremiumGateShown({required String feature});
+
+  // Notifications
+  Future<void> trackNotificationPermissionResult({required bool granted});
+
+  // Subscription
+  Future<void> trackRestorePurchaseInitiated();
+
+  // Folders
+  Future<void> trackFolderRenamed();
 }

@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../design_system/design_system.dart';
 import '../screens/subscription_screen.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 
 /// Dialog shown when user hits a premium limit
 class PremiumGateDialog extends StatelessWidget {
@@ -175,6 +177,7 @@ class PremiumGateDialog extends StatelessWidget {
 
   /// Show premium gate dialog for sync limit
   static Future<void> showSyncLimit(BuildContext context, int remaining) {
+    getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'sync');
     return showDialog(
       context: context,
       builder: (context) => PremiumGateDialog(
@@ -190,6 +193,7 @@ class PremiumGateDialog extends StatelessWidget {
 
   /// Show premium gate dialog for OCR limit
   static Future<void> showOcrLimit(BuildContext context, int remaining) {
+    getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'ocr');
     return showDialog(
       context: context,
       builder: (context) => PremiumGateDialog(
@@ -204,6 +208,7 @@ class PremiumGateDialog extends StatelessWidget {
 
   /// Show premium gate dialog for export limit
   static Future<void> showExportLimit(BuildContext context) {
+    getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'export');
     return showDialog(
       context: context,
       builder: (context) => const PremiumGateDialog(
@@ -218,6 +223,7 @@ class PremiumGateDialog extends StatelessWidget {
 
   /// Show premium gate dialog for voice recording duration
   static Future<void> showVoiceRecordingLimit(BuildContext context) {
+    getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'voice_recording');
     return showDialog(
       context: context,
       builder: (context) => const PremiumGateDialog(
@@ -232,6 +238,7 @@ class PremiumGateDialog extends StatelessWidget {
 
   /// Show premium gate dialog for folder limit
   static Future<void> showFolderLimit(BuildContext context) {
+    getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'folders');
     return showDialog(
       context: context,
       builder: (context) => const PremiumGateDialog(
@@ -246,6 +253,7 @@ class PremiumGateDialog extends StatelessWidget {
 
   /// Show premium gate dialog for theme color
   static Future<void> showThemeLimit(BuildContext context) {
+    getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'theme');
     return showDialog(
       context: context,
       builder: (context) => const PremiumGateDialog(
@@ -261,6 +269,7 @@ class PremiumGateDialog extends StatelessWidget {
   /// Show premium gate dialog for file attachment limit
   static Future<void> showFileAttachmentLimit(
       BuildContext context, int current, int max) {
+    getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'file_attachment');
     return showDialog(
       context: context,
       builder: (context) => PremiumGateDialog(
@@ -275,6 +284,7 @@ class PremiumGateDialog extends StatelessWidget {
 
   /// Show premium gate for markdown export
   static Future<void> showMarkdownExportPremium(BuildContext context) {
+    getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'markdown_export');
     return showDialog(
       context: context,
       builder: (context) => const PremiumGateDialog(
@@ -289,6 +299,7 @@ class PremiumGateDialog extends StatelessWidget {
 
   /// Show premium gate for encrypted sharing
   static Future<void> showEncryptedSharingPremium(BuildContext context) {
+    getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'encrypted_sharing');
     return showDialog(
       context: context,
       builder: (context) => const PremiumGateDialog(

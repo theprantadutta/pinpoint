@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'analytics_client.dart';
 import 'firebase_analytics_client.dart';
 import 'logger_analytics_client.dart';
@@ -17,7 +18,13 @@ class AnalyticsFacade implements AnalyticsClient {
   AnalyticsFacade({LoggerAnalyticsClient? logger}) : _logger = logger;
 
   /// Call after Firebase.initializeApp() completes.
+  /// Firebase analytics only activates in release mode.
   void onFirebaseReady() {
+    if (kDebugMode) {
+      // Discard any queued events — no Firebase analytics in debug mode
+      _eventQueue.clear();
+      return;
+    }
     _firebaseClient = FirebaseAnalyticsClient();
     _firebaseReady = true;
     _flushQueue();
@@ -283,5 +290,40 @@ class AnalyticsFacade implements AnalyticsClient {
   Future<void> trackTrashEmptied() async {
     unawaited(_logger?.trackTrashEmptied());
     _trackFirebase((c) => c.trackTrashEmptied());
+  }
+
+  // Todo
+  @override
+  Future<void> trackTodoFilterChanged({required String filter}) async {
+    unawaited(_logger?.trackTodoFilterChanged(filter: filter));
+    _trackFirebase((c) => c.trackTodoFilterChanged(filter: filter));
+  }
+
+  // Premium
+  @override
+  Future<void> trackPremiumGateShown({required String feature}) async {
+    unawaited(_logger?.trackPremiumGateShown(feature: feature));
+    _trackFirebase((c) => c.trackPremiumGateShown(feature: feature));
+  }
+
+  // Notifications
+  @override
+  Future<void> trackNotificationPermissionResult({required bool granted}) async {
+    unawaited(_logger?.trackNotificationPermissionResult(granted: granted));
+    _trackFirebase((c) => c.trackNotificationPermissionResult(granted: granted));
+  }
+
+  // Subscription
+  @override
+  Future<void> trackRestorePurchaseInitiated() async {
+    unawaited(_logger?.trackRestorePurchaseInitiated());
+    _trackFirebase((c) => c.trackRestorePurchaseInitiated());
+  }
+
+  // Folders
+  @override
+  Future<void> trackFolderRenamed() async {
+    unawaited(_logger?.trackFolderRenamed());
+    _trackFirebase((c) => c.trackFolderRenamed());
   }
 }

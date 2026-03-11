@@ -6,6 +6,8 @@ import 'package:pinpoint/services/premium_service.dart';
 import 'package:pinpoint/widgets/premium_gate_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../design_system/design_system.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 
 class ThemeScreen extends StatefulWidget {
   static const String kRouteName = '/theme';
@@ -22,6 +24,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
   @override
   void initState() {
     super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Theme');
     _loadFontPreference();
   }
 

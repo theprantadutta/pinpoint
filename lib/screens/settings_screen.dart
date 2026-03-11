@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:pinpoint/main.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
@@ -504,6 +505,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   }
                 }
+              },
+            ),
+          ],
+
+          // Test Crash - only in debug mode
+          if (kDebugMode) ...[
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: 'Test Crash',
+              subtitle: 'Force a crash to test Crashlytics',
+              icon: Icons.bug_report_rounded,
+              onTap: () {
+                PinpointHaptics.medium();
+                FirebaseCrashlytics.instance.crash();
               },
             ),
           ],
