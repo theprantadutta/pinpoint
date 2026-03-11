@@ -145,7 +145,7 @@ class FirebaseNotificationService {
     );
 
     await _localNotifications.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
@@ -321,10 +321,10 @@ class FirebaseNotificationService {
     );
 
     await _localNotifications.show(
-      message.hashCode,
-      notification.title,
-      notification.body,
-      details,
+      id: message.hashCode,
+      title: notification.title,
+      body: notification.body,
+      notificationDetails: details,
       payload: message.data.toString(),
     );
   }
@@ -422,10 +422,10 @@ class FirebaseNotificationService {
     );
 
     await _localNotifications.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      '🎉 Test Notification',
-      'This is a test notification from Pinpoint!',
-      details,
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title: '🎉 Test Notification',
+      body: 'This is a test notification from Pinpoint!',
+      notificationDetails: details,
     );
 
     debugPrint('✅ Test notification sent');
