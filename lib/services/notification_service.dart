@@ -72,7 +72,7 @@ class NotificationService {
       );
 
       await _flutterLocalNotificationsPlugin.initialize(
-        initializationSettings,
+        settings: initializationSettings,
         onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
         onDidReceiveBackgroundNotificationResponse:
             _onDidReceiveBackgroundNotificationResponse,
@@ -238,10 +238,10 @@ class NotificationService {
     );
 
     await _flutterLocalNotificationsPlugin.show(
-      id,
-      title,
-      body,
-      notificationDetails,
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: notificationDetails,
       payload: payload,
     );
   }
@@ -286,14 +286,12 @@ class NotificationService {
     );
 
     await _flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduledTZDate,
-      notificationDetails,
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: scheduledTZDate,
+      notificationDetails: notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      // matchDateTimeComponents: DateTimeComponents.dateAndTime,
-      // uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
     );
   }
@@ -307,11 +305,11 @@ class NotificationService {
     String? payload,
   }) async {
     await _flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      const NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'pinpoint_recurring',
           'Recurring Reminders',
@@ -324,7 +322,6 @@ class NotificationService {
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      // uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents:
           DateTimeComponents.time, // This makes it recurring daily
       payload: payload,
@@ -355,11 +352,11 @@ class NotificationService {
     );
 
     await _flutterLocalNotificationsPlugin.periodicallyShow(
-      id,
-      title,
-      body,
-      repeatInterval,
-      notificationDetails,
+      id: id,
+      title: title,
+      body: body,
+      repeatInterval: repeatInterval,
+      notificationDetails: notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       payload: payload,
     );
@@ -367,7 +364,7 @@ class NotificationService {
 
   // Cancel specific notification
   static Future<void> cancelNotification(int id) async {
-    await _flutterLocalNotificationsPlugin.cancel(id);
+    await _flutterLocalNotificationsPlugin.cancel(id: id);
   }
 
   // Cancel all notifications
