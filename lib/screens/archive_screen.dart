@@ -29,6 +29,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
   @override
   void initState() {
     super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Archive');
     _searchController.addListener(_onSearchInputChanged);
   }
 

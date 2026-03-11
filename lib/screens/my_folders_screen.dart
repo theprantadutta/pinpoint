@@ -13,10 +13,21 @@ import '../widgets/premium_gate_dialog.dart';
 import '../util/show_a_toast.dart';
 import 'folder_screen.dart';
 
-class MyFoldersScreen extends StatelessWidget {
+class MyFoldersScreen extends StatefulWidget {
   static const String kRouteName = '/my-folders';
 
   const MyFoldersScreen({super.key});
+
+  @override
+  State<MyFoldersScreen> createState() => _MyFoldersScreenState();
+}
+
+class _MyFoldersScreenState extends State<MyFoldersScreen> {
+  @override
+  void initState() {
+    super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'MyFolders');
+  }
 
   Future<void> _addFolderFlow(BuildContext context) async {
     // Check premium limits first
@@ -154,6 +165,7 @@ class MyFoldersScreen extends StatelessWidget {
                   }
                   await DriftNoteFolderService.renameFolder(
                       folder.noteFolderId, text);
+                  getIt<AnalyticsFacade>().trackFolderRenamed();
                   if (!context.mounted) return;
                   PinpointHaptics.success();
                   showSuccessToast(

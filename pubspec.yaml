@@ -68,6 +68,7 @@ dependencies:
   google_sign_in: ^7.1.1
   firebase_analytics: ^12.1.2
   firebase_messaging: ^16.0.4
+  firebase_crashlytics: ^5.0.8
   async_queue: ^2.0.2
   url_launcher: ^6.3.1
   uuid: ^4.5.1

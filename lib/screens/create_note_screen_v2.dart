@@ -96,6 +96,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   @override
   void initState() {
     super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'CreateNote');
 
     // Set initial note type from arguments if provided
     if (widget.arguments?.noticeType != null) {

@@ -22,6 +22,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Onboarding');
+  }
+
   final List<OnboardingPage> _pages = [
     const OnboardingPage(
       icon: Symbols.edit_note_rounded,

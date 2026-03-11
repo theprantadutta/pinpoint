@@ -58,6 +58,7 @@ class _TodoScreenState extends State<TodoScreen>
             ),
             onSelected: (String result) {
               PinpointHaptics.selection();
+              getIt<AnalyticsFacade>().trackTodoFilterChanged(filter: result);
               setState(() {
                 _filter = result;
               });

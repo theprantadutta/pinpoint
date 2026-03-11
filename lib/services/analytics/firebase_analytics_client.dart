@@ -162,4 +162,24 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
   @override
   Future<void> trackTrashEmptied() =>
       _analytics.logEvent(name: 'trash_emptied');
+
+  @override
+  Future<void> trackTodoFilterChanged({required String filter}) =>
+      _analytics.logEvent(name: 'todo_filter_changed', parameters: {'filter': filter});
+
+  @override
+  Future<void> trackPremiumGateShown({required String feature}) =>
+      _analytics.logEvent(name: 'premium_gate_shown', parameters: {'feature': feature});
+
+  @override
+  Future<void> trackNotificationPermissionResult({required bool granted}) =>
+      _analytics.logEvent(name: 'notification_permission_result', parameters: {'granted': granted});
+
+  @override
+  Future<void> trackRestorePurchaseInitiated() =>
+      _analytics.logEvent(name: 'restore_purchase_initiated');
+
+  @override
+  Future<void> trackFolderRenamed() =>
+      _analytics.logEvent(name: 'folder_renamed');
 }

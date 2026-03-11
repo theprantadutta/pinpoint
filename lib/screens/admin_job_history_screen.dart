@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pinpoint/services/admin_api_service.dart';
 import 'package:pinpoint/design_system/design_system.dart';
+import 'package:pinpoint/service_locators/init_service_locators.dart';
+import 'package:pinpoint/services/analytics/analytics_facade.dart';
 
 /// Admin Job History Screen
 ///
@@ -31,6 +33,7 @@ class _AdminJobHistoryScreenState extends State<AdminJobHistoryScreen> {
   @override
   void initState() {
     super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'AdminJobHistory');
     _loadData();
   }
 

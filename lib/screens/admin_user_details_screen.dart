@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pinpoint/services/admin_api_service.dart';
 import 'package:pinpoint/design_system/design_system.dart';
+import 'package:pinpoint/service_locators/init_service_locators.dart';
+import 'package:pinpoint/services/analytics/analytics_facade.dart';
 
 /// Admin User Details Screen
 ///
@@ -30,6 +32,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen>
   @override
   void initState() {
     super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'AdminUserDetails');
     _tabController = TabController(length: 5, vsync: this);
     _loadUserDetails();
   }

@@ -20,6 +20,7 @@ class _DrawingScreenState extends State<DrawingScreen> {
   @override
   void initState() {
     super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Drawing');
     _controller.backgroundColor = Colors.white;
   }
 

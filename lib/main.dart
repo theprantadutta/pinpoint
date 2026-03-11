@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -7,6 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'firebase_options.dart';
 
 import 'constants/shared_preference_keys.dart';
 import 'design_system/design_system.dart';
@@ -57,6 +62,16 @@ void main() async {
     // Initialize core services first
     await _initializeCoreServices();
 
+    // Set up Crashlytics error handlers (release mode only)
+    if (!kDebugMode && Firebase.apps.isNotEmpty) {
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+      PlatformDispatcher.instance.onError = (error, stack) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        return true;
+      };
+    }
+
     // Handle biometric authentication
     final shouldAuthenticate = await _shouldShowBiometricAuth();
 
@@ -83,6 +98,15 @@ void main() async {
     // Handle initialization errors gracefully
     debugPrint('App initialization error: $error');
     debugPrint('Stack trace: $stackTrace');
+
+    // Report to Crashlytics if available (release mode only)
+    if (!kDebugMode) {
+      try {
+        if (Firebase.apps.isNotEmpty) {
+          FirebaseCrashlytics.instance.recordError(error, stackTrace, fatal: true);
+        }
+      } catch (_) {}
+    }
 
     // Run error app instead of crashing
     runApp(InitializationErrorApp(error: error.toString()));
@@ -127,8 +151,16 @@ Future<void> _initializeCoreServices() async {
     debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
   }
 
-  // NOTE: Firebase initialization moved to background (see _initializeFirebaseInBackground)
-  // This prevents Firebase from blocking app startup
+  // NOTE: Firebase core initializes here so Crashlytics can capture crashes from first frame.
+  // FirebaseNotificationService (the slow part) still initializes in background.
+  try {
+    debugPrint('🔥 [main.dart] Initializing Firebase core...');
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    debugPrint('✅ [main.dart] Firebase core initialized');
+  } catch (e, stackTrace) {
+    debugPrint('⚠️ [main.dart] Firebase core init failed: $e');
+    debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
+  }
 
   // NOTE: Sync manager initialization moved to auth_screen.dart
   // It needs to happen AFTER authentication, not at app startup

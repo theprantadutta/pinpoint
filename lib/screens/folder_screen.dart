@@ -8,6 +8,8 @@ import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:provider/provider.dart';
 import '../constants/constants.dart';
 import '../design_system/design_system.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import '../services/filter_service.dart';
 import '../util/note_utils.dart';
 
@@ -35,6 +37,7 @@ class _FolderScreenState extends State<FolderScreen> {
   @override
   void initState() {
     super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Folder');
     _searchController.addListener(_onSearchInputChanged);
   }
 

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:pinpoint/services/api_service.dart';
 
 /// Keys for caching auth state locally
@@ -113,6 +115,16 @@ class BackendAuthService extends ChangeNotifier {
     }
   }
 
+  /// Set user identifier on Crashlytics for crash attribution (release mode only)
+  void _setCrashlyticsUser(String? userId) {
+    if (kDebugMode) return;
+    try {
+      if (Firebase.apps.isNotEmpty) {
+        FirebaseCrashlytics.instance.setUserIdentifier(userId ?? '');
+      }
+    } catch (_) {}
+  }
+
   /// Load cached auth state from SharedPreferences
   Future<void> _loadCachedAuthState() async {
     try {
@@ -130,6 +142,7 @@ class BackendAuthService extends ChangeNotifier {
 
       if (_userId != null) {
         _isAuthenticated = true;
+        _setCrashlyticsUser(_userId);
         debugPrint('🔐 [BackendAuthService] Loaded cached auth: $_userEmail');
       }
     } catch (e) {
@@ -196,6 +209,7 @@ class BackendAuthService extends ChangeNotifier {
       _userId = response['user_id'];
       _userEmail = email;
       _isAuthenticated = true;
+      _setCrashlyticsUser(_userId);
 
       // Fetch full user info
       await refreshUserInfo();
@@ -214,6 +228,7 @@ class BackendAuthService extends ChangeNotifier {
       _userId = response['user_id'];
       _userEmail = email;
       _isAuthenticated = true;
+      _setCrashlyticsUser(_userId);
 
       // Fetch full user info
       await refreshUserInfo();
@@ -235,6 +250,7 @@ class BackendAuthService extends ChangeNotifier {
       _isPremium = false;
       _userEmail = null;
       _userId = null;
+      _setCrashlyticsUser(null);
       _subscriptionTier = 'free';
       _subscriptionExpiresAt = null;
       _isInitialized = false; // Allow re-initialization after logout
@@ -258,6 +274,7 @@ class BackendAuthService extends ChangeNotifier {
 
       _userId = response['user_id'];
       _isAuthenticated = true;
+      _setCrashlyticsUser(_userId);
       debugPrint('✅ [BackendAuthService] User authenticated, ID: $_userId');
 
       // Fetch full user info

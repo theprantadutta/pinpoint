@@ -23,6 +23,7 @@ class _SyncScreenState extends State<SyncScreen> {
   @override
   void initState() {
     super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Sync');
     _syncManager = getIt<SyncManager>();
     _syncManager.addListener(_onSyncStatusChanged);
   }

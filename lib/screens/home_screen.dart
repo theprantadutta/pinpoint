@@ -250,6 +250,9 @@ class _HomeScreenState extends State<HomeScreen>
         // Request permission if user agreed
         if (shouldRequest == true) {
           await NotificationService.requestBasicNotificationPermission();
+          getIt<AnalyticsFacade>().trackNotificationPermissionResult(granted: true);
+        } else {
+          getIt<AnalyticsFacade>().trackNotificationPermissionResult(granted: false);
         }
       }
     } catch (e) {

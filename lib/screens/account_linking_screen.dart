@@ -33,6 +33,12 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'AccountLinking');
+  }
+
+  @override
   void dispose() {
     _passwordController.dispose();
     super.dispose();

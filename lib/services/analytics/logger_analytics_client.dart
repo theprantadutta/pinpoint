@@ -151,4 +151,23 @@ class LoggerAnalyticsClient implements AnalyticsClient {
 
   @override
   Future<void> trackTrashEmptied() async => _log('trash_emptied');
+
+  @override
+  Future<void> trackTodoFilterChanged({required String filter}) async =>
+      _log('todo_filter_changed', {'filter': filter});
+
+  @override
+  Future<void> trackPremiumGateShown({required String feature}) async =>
+      _log('premium_gate_shown', {'feature': feature});
+
+  @override
+  Future<void> trackNotificationPermissionResult({required bool granted}) async =>
+      _log('notification_permission_result', {'granted': granted});
+
+  @override
+  Future<void> trackRestorePurchaseInitiated() async =>
+      _log('restore_purchase_initiated');
+
+  @override
+  Future<void> trackFolderRenamed() async => _log('folder_renamed');
 }

@@ -29,6 +29,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   String? _productLoadError;
 
   @override
+  void initState() {
+    super.initState();
+    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Subscription');
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _subscriptionService = SubscriptionService();
@@ -70,6 +76,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<void> _handleRestore() async {
+    getIt<AnalyticsFacade>().trackRestorePurchaseInitiated();
     setState(() {
       _isRestoring = true;
     });
