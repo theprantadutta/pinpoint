@@ -426,14 +426,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final now = DateTime.now();
     final difference = expiryDate.difference(now);
 
-    // Format the date
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final formattedDate = '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
 
     if (difference.isNegative) {
       return 'Expired on $formattedDate';
     } else if (manager.isInGracePeriod) {
-      return 'Payment pending - Expires $formattedDate';
+      return 'Payment pending — expires $formattedDate';
+    } else if (manager.isCancelledButActive) {
+      return 'Cancelled — access until $formattedDate';
     } else {
       return 'Renews $formattedDate';
     }
@@ -460,24 +461,41 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final planName = _getPlanDisplayName(manager.subscriptionType);
     final expiryText = _getExpiryText(manager);
     final isGracePeriod = manager.isInGracePeriod;
+    final isCancelledButActive = manager.isCancelledButActive;
+
+    final accent = isGracePeriod
+        ? PinpointColors.warning
+        : isCancelledButActive
+            ? PinpointColors.amber
+            : PinpointColors.mint;
+    final badgeLabel = isGracePeriod
+        ? 'PAYMENT PENDING'
+        : isCancelledButActive
+            ? 'CANCELLED'
+            : 'CURRENT PLAN';
+    final badgeIcon = isGracePeriod
+        ? Icons.warning_amber_rounded
+        : isCancelledButActive
+            ? Icons.cancel_schedule_send
+            : Icons.check_circle;
 
     return GlassContainer(
       padding: EdgeInsets.zero,
       borderRadius: 20,
       border: Border.all(
-        color: isGracePeriod ? PinpointColors.warning : PinpointColors.mint,
+        color: accent,
         width: 2,
       ),
       child: Stack(
         children: [
-          // "Current Plan" badge
+          // Status badge
           Positioned(
             top: 0,
             right: 0,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: isGracePeriod ? PinpointColors.warning : PinpointColors.mint,
+                color: accent,
                 borderRadius: const BorderRadius.only(
                   topRight: Radius.circular(20),
                   bottomLeft: Radius.circular(12),
@@ -487,13 +505,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isGracePeriod ? Icons.warning_amber_rounded : Icons.check_circle,
+                    badgeIcon,
                     color: Colors.white,
                     size: 14,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    isGracePeriod ? 'PAYMENT PENDING' : 'CURRENT PLAN',
+                    badgeLabel,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 11,
@@ -513,7 +531,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   children: [
                     Icon(
                       Icons.workspace_premium,
-                      color: isGracePeriod ? PinpointColors.warning : PinpointColors.mint,
+                      color: accent,
                       size: 28,
                     ),
                     const SizedBox(width: 12),
@@ -534,13 +552,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   expiryText,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isGracePeriod
-                        ? PinpointColors.warning
+                    color: (isGracePeriod || isCancelledButActive)
+                        ? accent
                         : (isDark
                             ? PinpointColors.darkTextSecondary
                             : PinpointColors.lightTextSecondary),
                   ),
                 ),
+                if (isCancelledButActive) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Changed your mind? Resubscribe in Google Play to keep premium going.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark
+                          ? PinpointColors.darkTextSecondary
+                          : PinpointColors.lightTextSecondary,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
@@ -548,15 +578,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _openGooglePlaySubscriptions,
                     icon: const Icon(Icons.settings_outlined, size: 18),
-                    label: const Text('Manage in Google Play'),
+                    label: Text(isCancelledButActive ? 'Resubscribe in Google Play' : 'Manage in Google Play'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: isGracePeriod
-                          ? PinpointColors.warning
+                      foregroundColor: (isGracePeriod || isCancelledButActive)
+                          ? accent
                           : colorScheme.primary,
                       side: BorderSide(
-                        color: isGracePeriod
-                            ? PinpointColors.warning.withValues(alpha: 0.5)
-                            : colorScheme.primary.withValues(alpha: 0.5),
+                        color: ((isGracePeriod || isCancelledButActive) ? accent : colorScheme.primary)
+                            .withValues(alpha: 0.5),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
