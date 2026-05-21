@@ -23,6 +23,9 @@ class SubscriptionManager extends ChangeNotifier {
   String? _deviceId;
   DateTime? _lastFetchTime;
   String? _productId;
+  bool _autoRenewing = true;
+  DateTime? _cancelledAt;
+  String? _cancellationReason;
 
   bool get isPremium => _isPremium || _isInGracePeriod;
   bool get isInGracePeriod => _isInGracePeriod;
@@ -32,6 +35,13 @@ class SubscriptionManager extends ChangeNotifier {
   DateTime? get gracePeriodEndsAt => _gracePeriodEndsAt;
   String? get deviceId => _deviceId;
   String? get productId => _productId;
+  bool get autoRenewing => _autoRenewing;
+  DateTime? get cancelledAt => _cancelledAt;
+  String? get cancellationReason => _cancellationReason;
+
+  /// True when the user has cancelled but still has paid access until expirationDate.
+  bool get isCancelledButActive =>
+      _cancelledAt != null && !_autoRenewing && isPremium && _subscriptionType != 'lifetime';
 
   /// Returns true if subscription data was fetched recently (within cache duration)
   bool get hasFreshData {
@@ -48,6 +58,9 @@ class SubscriptionManager extends ChangeNotifier {
   static const String _deviceIdKey = 'device_id';
   static const String _lastFetchKey = 'subscription_last_fetch';
   static const String _productIdKey = 'subscription_product_id';
+  static const String _autoRenewingKey = 'subscription_auto_renewing';
+  static const String _cancelledAtKey = 'subscription_cancelled_at';
+  static const String _cancellationReasonKey = 'subscription_cancellation_reason';
   static const Duration _cacheValidDuration = Duration(minutes: 5);
 
   /// Initialize subscription manager
@@ -107,6 +120,12 @@ class SubscriptionManager extends ChangeNotifier {
       _subscriptionTier = preferences.getString(_tierKey) ?? 'free';
       _subscriptionType = preferences.getString(_typeKey);
       _productId = preferences.getString(_productIdKey);
+      _autoRenewing = preferences.getBool(_autoRenewingKey) ?? true;
+      _cancellationReason = preferences.getString(_cancellationReasonKey);
+      final cancelledAtString = preferences.getString(_cancelledAtKey);
+      if (cancelledAtString != null) {
+        _cancelledAt = DateTime.parse(cancelledAtString);
+      }
 
       final expiryString = preferences.getString(_expiryKey);
       if (expiryString != null) {
@@ -175,6 +194,18 @@ class SubscriptionManager extends ChangeNotifier {
         await preferences.remove(_gracePeriodExpiryKey);
       }
 
+      await preferences.setBool(_autoRenewingKey, _autoRenewing);
+      if (_cancelledAt != null) {
+        await preferences.setString(_cancelledAtKey, _cancelledAt!.toIso8601String());
+      } else {
+        await preferences.remove(_cancelledAtKey);
+      }
+      if (_cancellationReason != null) {
+        await preferences.setString(_cancellationReasonKey, _cancellationReason!);
+      } else {
+        await preferences.remove(_cancellationReasonKey);
+      }
+
       // Save last fetch timestamp
       if (_lastFetchTime != null) {
         await preferences.setString(
@@ -206,6 +237,8 @@ class SubscriptionManager extends ChangeNotifier {
       _subscriptionTier = status['tier'] ?? 'free';
       _subscriptionType = status['subscription_type'];
       _productId = status['product_id'];
+      _autoRenewing = status['auto_renewing'] ?? true;
+      _cancellationReason = status['cancellation_reason'];
 
       if (status['expires_at'] != null) {
         _subscriptionExpiresAt = DateTime.parse(status['expires_at']);
@@ -217,6 +250,12 @@ class SubscriptionManager extends ChangeNotifier {
         _gracePeriodEndsAt = DateTime.parse(status['grace_period_ends_at']);
       } else {
         _gracePeriodEndsAt = null;
+      }
+
+      if (status['cancelled_at'] != null) {
+        _cancelledAt = DateTime.parse(status['cancelled_at']);
+      } else {
+        _cancelledAt = null;
       }
 
       // Update cache timestamp
