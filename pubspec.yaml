@@ -81,6 +81,7 @@ dependencies:
   # are used directly by lib/database/secure_database.dart.
   sqlite3: ^3.3.2
   path: ^1.9.1
+  pointycastle: ^3.9.1
 
 dev_dependencies:
   flutter_test:
