@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:encrypt/encrypt.dart' as enc;
 import 'package:flutter_test/flutter_test.dart';
@@ -76,5 +77,44 @@ void main() {
 
     expect(envelopeOf(reEncrypted)['v'], 2);
     expect(SecureEncryptionService.decrypt(reEncrypted), plain);
+  });
+
+  // --- Phase 3 (F5): binary audio-blob encryption ---------------------------
+
+  // Stand-in for raw audio bytes.
+  final audio = Uint8List.fromList(
+    List<int>.generate(5000, (i) => (i * 31 + 7) % 256),
+  );
+
+  test('binary blob round-trips and is marked encrypted', () {
+    final blob = SecureEncryptionService.encryptBytes(audio);
+
+    expect(SecureEncryptionService.isEncryptedBlob(blob), isTrue);
+    expect(SecureEncryptionService.decryptBytes(blob), equals(audio));
+  });
+
+  test('plaintext (legacy) audio is not mistaken for an encrypted blob', () {
+    // A real m4a starts with an ftyp box, never our "PPAENC" magic.
+    final legacyAudio = Uint8List.fromList([
+      0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, // ...ftyp
+      ...List<int>.generate(200, (i) => i % 256),
+    ]);
+    expect(SecureEncryptionService.isEncryptedBlob(legacyAudio), isFalse);
+  });
+
+  test('tampered audio blob is rejected', () {
+    final blob = SecureEncryptionService.encryptBytes(audio);
+    // Flip a byte inside the ciphertext (past the 19-byte header).
+    blob[25] = blob[25] ^ 0x01;
+    expect(
+      () => SecureEncryptionService.decryptBytes(blob),
+      throwsA(isA<Exception>()),
+    );
+  });
+
+  test('every audio encryption uses a fresh nonce', () {
+    final a = SecureEncryptionService.encryptBytes(audio);
+    final b = SecureEncryptionService.encryptBytes(audio);
+    expect(a, isNot(equals(b)));
   });
 }
