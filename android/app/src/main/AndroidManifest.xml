@@ -25,7 +25,10 @@
     <application
         android:label="PinPoint"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"><!-- Phase 1/F2: prevent the on-device DB from being pulled via ADB/cloud backup -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

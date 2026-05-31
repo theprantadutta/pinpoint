@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
-import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart';
+
+import 'secure_database.dart';
 
 import '../entities/note.dart';
 import '../entities/note_attachments.dart';
@@ -116,8 +117,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   static QueryExecutor _openConnection() {
-    return driftDatabase(
-      name: 'pinpoint',
-    );
+    // At-rest encrypted (SQLCipher) connection with no-data-loss migration of
+    // any pre-existing plaintext database. See secure_database.dart.
+    return openSecureDatabase();
   }
 }
