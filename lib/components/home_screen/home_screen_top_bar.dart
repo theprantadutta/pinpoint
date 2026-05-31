@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import '../../design_system/design_system.dart';
 import '../../services/filter_service.dart';
+import '../../services/connectivity_service.dart';
 import '../../widgets/filter_bottom_sheet.dart';
 import '../../sync/sync_manager.dart';
 import '../../service_locators/init_service_locators.dart';
@@ -57,47 +58,59 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Top row: Menu, Logo, and Search trigger
+          // Top row: [Menu, Connectivity] · Logo · [Filter, Search]
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Menu button
-              _buildMenuButton(context, theme),
-
-              // Logo
+              // Left group: menu + connectivity status
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.2),
-                          blurRadius: 4,
-                          spreadRadius: 1,
+                  _buildMenuButton(context, theme),
+                  _buildConnectivityIndicator(context, theme),
+                ],
+              ),
+
+              // Logo (flexible so it never overflows on narrow screens)
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.2),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(
+                          'assets/images/pinpoint-logo.png',
+                          fit: BoxFit.cover,
                         ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        'assets/images/pinpoint-logo.png',
-                        fit: BoxFit.cover,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Pinpoint',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      letterSpacing: -0.2,
-                      fontWeight: FontWeight.w800,
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        'Pinpoint',
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          letterSpacing: -0.2,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
 
               // Filter and Search buttons
@@ -160,6 +173,31 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
           ],
         ],
       ),
+    );
+  }
+
+  /// Always-visible connectivity status: subtle when online, highlighted when
+  /// offline. Kept compact so the app bar stays balanced and responsive.
+  Widget _buildConnectivityIndicator(BuildContext context, ThemeData theme) {
+    final cs = theme.colorScheme;
+    return Consumer<ConnectivityService>(
+      builder: (context, connectivity, _) {
+        final offline = connectivity.isOffline;
+        // Pure status indicator — no tap action, just a colored icon.
+        return Tooltip(
+          message: offline
+              ? 'Offline — changes are saved and will sync when you reconnect'
+              : 'Online',
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Icon(
+              offline ? Symbols.cloud_off : Symbols.cloud_done,
+              fill: offline ? 1 : 0,
+              color: offline ? cs.error : cs.primary,
+            ),
+          ),
+        );
+      },
     );
   }
 

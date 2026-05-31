@@ -26,6 +26,7 @@ import 'services/firebase_notification_service.dart';
 import 'services/google_sign_in_service.dart';
 import 'services/filter_service.dart';
 import 'services/search_service.dart';
+import 'services/connectivity_service.dart';
 import 'services/app_update_service.dart';
 import 'services/api_service.dart';
 import 'screens/auth_screen.dart';
@@ -129,6 +130,14 @@ Future<void> _initializeCoreServices() async {
 
   // Initialize notification service (fast, local only)
   await NotificationService.init();
+
+  // Initialize connectivity monitoring (fast, local) so the offline indicator
+  // and offline-first logic have an accurate status from launch.
+  try {
+    await ConnectivityService().initialize();
+  } catch (e) {
+    debugPrint('⚠️ [main.dart] Connectivity service not initialized: $e');
+  }
 
   // Initialize Google Sign-In service (fast, no network call)
   try {
@@ -712,6 +721,9 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(
           create: (_) => SearchService()..initialize(),
+        ),
+        ChangeNotifierProvider.value(
+          value: ConnectivityService(),
         ),
       ],
       child: MaterialApp.router(
