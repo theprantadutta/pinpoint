@@ -20,6 +20,8 @@ import 'package:pinpoint/screens/admin_user_details_screen.dart';
 import 'package:pinpoint/screens/admin_jobs_screen.dart';
 import 'package:pinpoint/screens/admin_job_history_screen.dart';
 import 'package:pinpoint/screens/sync_debug_screen.dart';
+import 'package:pinpoint/screens/unlock_screen.dart';
+import 'package:pinpoint/screens/encryption_settings_screen.dart';
 
 import '../screens/settings_screen.dart';
 import '../screens/create_note_screen_v2.dart';
@@ -93,6 +95,25 @@ class AppNavigation {
           key: state.pageKey,
           child: const AuthScreen(),
         ),
+      ),
+
+      /// Unlock Screen (zero-knowledge accounts)
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: UnlockScreen.kRouteName,
+        name: "Unlock",
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const UnlockScreen(),
+        ),
+      ),
+
+      /// Encryption Settings Screen
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: EncryptionSettingsScreen.kRouteName,
+        name: "Encryption Settings",
+        builder: (context, state) => const EncryptionSettingsScreen(),
       ),
 
       /// Account Linking Screen

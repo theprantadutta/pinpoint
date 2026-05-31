@@ -671,6 +671,54 @@ class ApiService {
     }
   }
 
+  /// Get the full dual-mode key material. Returns null if none exists yet.
+  ///
+  /// For standard accounts this includes the plaintext `encryption_key`; for
+  /// zero-knowledge accounts it returns only wrapped material + KDF salt/params.
+  Future<Map<String, dynamic>?> getKeyMaterial() async {
+    try {
+      final response = await _dio.get('/encryption/key/material');
+      if (response.statusCode == 200) {
+        return Map<String, dynamic>.from(response.data as Map);
+      }
+      return null;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return null; // no material yet
+      }
+      _logger.e('Get key material error: ${_handleError(e)}');
+      throw Exception(_handleError(e));
+    }
+  }
+
+  /// Store key material in standard or zero-knowledge mode. For zero-knowledge,
+  /// pass the wrapped fields and the server clears any plaintext key atomically.
+  Future<void> storeKeyMaterial({
+    required String mode,
+    String? encryptionKey,
+    String? wrappedKey,
+    String? wrappedKeyRecovery,
+    String? kdfSalt,
+    Map<String, dynamic>? kdfParams,
+  }) async {
+    try {
+      await _dio.post(
+        '/encryption/key/material',
+        data: {
+          'mode': mode,
+          if (encryptionKey != null) 'encryption_key': encryptionKey,
+          if (wrappedKey != null) 'wrapped_key': wrappedKey,
+          if (wrappedKeyRecovery != null) 'wrapped_key_recovery': wrappedKeyRecovery,
+          if (kdfSalt != null) 'kdf_salt': kdfSalt,
+          if (kdfParams != null) 'kdf_params': kdfParams,
+        },
+      );
+    } on DioException catch (e) {
+      _logger.e('Store key material error: ${_handleError(e)}');
+      throw Exception(_handleError(e));
+    }
+  }
+
   // ============================================================================
   // Usage Tracking Endpoints
   // ============================================================================

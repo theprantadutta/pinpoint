@@ -5,8 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/shared_preference_keys.dart';
 import '../services/backend_auth_service.dart';
 import '../services/encryption_service.dart';
+import '../services/zero_knowledge_service.dart';
 import 'auth_screen.dart';
 import 'home_screen.dart';
+import 'unlock_screen.dart';
 import 'onboarding_screen.dart';
 import 'terms_acceptance_screen.dart';
 
@@ -82,6 +84,30 @@ class _SplashScreenState extends State<SplashScreen> {
     if (backendAuth.isAuthenticated) {
       debugPrint('✅ [Splash] User authenticated, setting up encryption...');
       _updateStatus('Setting up...');
+
+      // Zero-knowledge accounts: NEVER generate a key here (that would diverge
+      // from the real, wrapped key). Only load an existing local key, then gate
+      // on unlock. Standard accounts keep the original fast local-init path.
+      final isZk = await ZeroKnowledgeService.isZeroKnowledge();
+      if (isZk) {
+        try {
+          if (await SecureEncryptionService.hasLocalKey() &&
+              !SecureEncryptionService.isInitialized) {
+            await SecureEncryptionService.initialize();
+          }
+        } catch (e) {
+          debugPrint('⚠️ [Splash] ZK local key load failed: $e');
+        }
+        if (!mounted) return;
+        final mustUnlock = await ZeroKnowledgeService.needsUnlock();
+        if (!mounted) return;
+        if (mustUnlock) {
+          context.go(UnlockScreen.kRouteName);
+          return;
+        }
+        context.go(HomeScreen.kRouteName);
+        return;
+      }
 
       // Initialize encryption with LOCAL key only (fast, no network)
       // Cloud sync will happen in background on home screen
