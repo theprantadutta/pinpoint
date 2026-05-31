@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:pinpoint/services/encryption_service.dart';
 
 /// Exception thrown when account linking is required
 class AccountLinkingRequiredException implements Exception {
@@ -863,11 +864,20 @@ class ApiService {
 
   /// Upload an audio file to the backend
   /// Returns the server file path
+  ///
+  /// The audio is encrypted client-side (AES-GCM) before upload so the server
+  /// only ever stores ciphertext (F5). The original extension/content-type are
+  /// preserved so the backend's audio-type check and storage are unaffected.
   Future<String> uploadAudioFile(String localFilePath) async {
     try {
-      final file = await MultipartFile.fromFile(
-        localFilePath,
-        filename: localFilePath.split('/').last,
+      final plainBytes = await File(localFilePath).readAsBytes();
+      final encryptedBytes = SecureEncryptionService.encryptBytes(plainBytes);
+
+      final filename = localFilePath.split('/').last;
+      final file = MultipartFile.fromBytes(
+        encryptedBytes,
+        filename: filename, // keep original extension for server storage
+        contentType: DioMediaType('audio', 'm4a'), // satisfy server audio check
       );
 
       final formData = FormData.fromMap({
@@ -908,11 +918,21 @@ class ApiService {
       final userId = parts[0];
       final filename = parts[1];
 
-      // Download file
-      await _dio.download(
+      // Download as bytes so we can decrypt before writing to disk.
+      final response = await _dio.get<List<int>>(
         '/audio/download/$userId/$filename',
-        localSavePath,
+        options: Options(responseType: ResponseType.bytes),
       );
+
+      final downloaded = Uint8List.fromList(response.data ?? const []);
+
+      // New uploads are encrypted (magic header); legacy audio already on the
+      // server is plaintext and must be written through untouched.
+      final outBytes = SecureEncryptionService.isEncryptedBlob(downloaded)
+          ? SecureEncryptionService.decryptBytes(downloaded)
+          : downloaded;
+
+      await File(localSavePath).writeAsBytes(outBytes, flush: true);
 
       return localSavePath;
     } on DioException catch (e) {

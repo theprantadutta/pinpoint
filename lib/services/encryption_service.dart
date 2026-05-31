@@ -1,6 +1,7 @@
 import 'package:encrypt/encrypt.dart' as enc;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 
 class SecureEncryptionService {
@@ -218,6 +219,68 @@ class SecureEncryptionService {
     } catch (e) {
       throw Exception('Failed to decrypt data: $e');
     }
+  }
+
+  // ===========================================================================
+  // Binary blob encryption (Phase 3 / F5) — used for audio files.
+  //
+  // Produces a self-describing blob so it can be told apart from a legacy,
+  // unencrypted file already stored on the server:
+  //   [magic "PPAENC" (6)] [version (1)] [iv (12)] [ciphertext + GCM tag]
+  // ===========================================================================
+
+  /// Magic prefix identifying a Pinpoint-encrypted binary blob ("PPAENC").
+  static const List<int> _blobMagic = [0x50, 0x50, 0x41, 0x45, 0x4E, 0x43];
+
+  /// True if [data] starts with our magic header (i.e. it's encrypted by us).
+  /// Lets callers leave pre-existing plaintext audio untouched.
+  static bool isEncryptedBlob(Uint8List data) {
+    if (data.length < _blobMagic.length) return false;
+    for (var i = 0; i < _blobMagic.length; i++) {
+      if (data[i] != _blobMagic[i]) return false;
+    }
+    return true;
+  }
+
+  /// Encrypts arbitrary bytes with authenticated AES-GCM into a magic-prefixed
+  /// blob. Used for audio before upload so the server only ever sees ciphertext.
+  static Uint8List encryptBytes(Uint8List plain) {
+    if (_gcm == null) {
+      throw Exception(
+          'EncryptionService not initialized. Call initialize() first.');
+    }
+
+    final iv = enc.IV.fromSecureRandom(_gcmIvLength);
+    final encrypted = _gcm!.encryptBytes(plain, iv: iv);
+
+    final out = BytesBuilder(copy: false);
+    out.add(_blobMagic);
+    out.addByte(_currentEnvelopeVersion);
+    out.add(iv.bytes);
+    out.add(encrypted.bytes); // ciphertext + 128-bit auth tag
+    return out.toBytes();
+  }
+
+  /// Decrypts a blob produced by [encryptBytes]. Throws if it isn't our format
+  /// or if authentication fails (tampered/corrupt data).
+  static Uint8List decryptBytes(Uint8List blob) {
+    if (_gcm == null) {
+      throw Exception(
+          'EncryptionService not initialized. Call initialize() first.');
+    }
+    if (!isEncryptedBlob(blob)) {
+      throw Exception('Not a Pinpoint-encrypted blob (missing magic header).');
+    }
+
+    final headerLen = _blobMagic.length + 1; // magic + version byte
+    final ivBytes = blob.sublist(headerLen, headerLen + _gcmIvLength);
+    final cipherBytes = blob.sublist(headerLen + _gcmIvLength);
+
+    final decrypted = _gcm!.decryptBytes(
+      enc.Encrypted(Uint8List.fromList(cipherBytes)),
+      iv: enc.IV(Uint8List.fromList(ivBytes)),
+    );
+    return Uint8List.fromList(decrypted);
   }
 
   // Optional: Clear stored key (useful for logout/reset)
