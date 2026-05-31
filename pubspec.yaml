@@ -76,6 +76,11 @@ dependencies:
   parchment: ^1.15.0
   parchment_delta: ^1.0.0
   tutorial_coach_mark: ^1.3.3
+  # At-rest DB encryption (Phase 1 / F2): sqlite3 3.x selects the encrypted
+  # "SQLite Multiple Ciphers" build via the `hooks:` block below. sqlite3 + path
+  # are used directly by lib/database/secure_database.dart.
+  sqlite3: ^3.3.2
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:
@@ -84,6 +89,13 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.24.0
   build_runner: ^2.4.14
+
+# Phase 1 / F2: build the encrypted "SQLite Multiple Ciphers" native library
+# (supports PRAGMA key/rekey) instead of plain sqlite3, for at-rest DB encryption.
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
 
 # TODO: Remove this override once firebase_analytics > 12.4.1 ships with the AGP 9 / built-in Kotlin fix.
 # Tracking: https://github.com/firebase/flutterfire/issues/18297 (PR branch: analytics_18297)
