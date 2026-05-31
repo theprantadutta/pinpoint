@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'api_service.dart';
+import 'connectivity_service.dart';
 import 'encryption_service.dart';
 import 'key_wrapping_service.dart';
 
@@ -59,12 +60,23 @@ class ZeroKnowledgeService {
     if (!await isZeroKnowledge()) return false;
 
     // No usable key loaded yet (e.g. fresh install of a zero-knowledge account).
+    // Unlocking needs the server's wrapped material, so this can only proceed
+    // online — unavoidable on a brand-new device.
     if (!SecureEncryptionService.isInitialized) return true;
 
     final last = await _storage.read(key: _lastUnlockKey);
     final at = last == null ? null : DateTime.tryParse(last);
     if (at == null) return true;
-    return DateTime.now().difference(at) > relockAfter;
+
+    final repromptDue = DateTime.now().difference(at) > relockAfter;
+    if (!repromptDue) return false;
+
+    // The 7-day re-prompt is due, but re-verifying needs the server (wrapped
+    // material). If we're offline and the data key is already cached locally,
+    // defer the prompt rather than locking the user out of their own notes —
+    // they'll be re-prompted on the next online launch.
+    if (ConnectivityService().isOffline) return false;
+    return true;
   }
 
   // --- setup / upgrade ------------------------------------------------------

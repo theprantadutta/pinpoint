@@ -161,6 +161,11 @@ class ApiService {
   }
 
   /// Attempt to refresh the access token using the refresh token
+  /// Proactively roll the session tokens (called on app open so an active user
+  /// effectively never has to log in again). Non-fatal: returns false on
+  /// failure (e.g. offline or no refresh token) without clearing the session.
+  Future<bool> proactivelyRefreshToken() => _tryRefreshToken();
+
   Future<bool> _tryRefreshToken() async {
     if (_isRefreshing) return false;
     _isRefreshing = true;

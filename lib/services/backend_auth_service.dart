@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:pinpoint/services/api_service.dart';
+import 'package:pinpoint/services/connectivity_service.dart';
 
 /// Keys for caching auth state locally
 const String _kCachedUserId = 'cached_user_id';
@@ -77,27 +78,34 @@ class BackendAuthService extends ChangeNotifier {
       final hasToken = await _apiService.hasToken();
 
       if (hasToken) {
-        // If we have cached data and it's less than 5 minutes old, skip API call
-        final prefs = await SharedPreferences.getInstance();
-        final cachedTimestamp = prefs.getInt(_kCachedAuthTimestamp) ?? 0;
-        final cacheAge = DateTime.now().millisecondsSinceEpoch - cachedTimestamp;
-        final cacheMaxAge = 5 * 60 * 1000; // 5 minutes
-
-        if (_userId != null && cacheAge < cacheMaxAge) {
-          debugPrint('✅ [BackendAuthService] Using cached auth state (${cacheAge ~/ 1000}s old)');
+        if (_userId != null) {
+          // OFFLINE-FIRST: trust the cached session immediately. We have a token
+          // and a known user, and the backend JWT is long-lived (30-day access /
+          // 90-day refresh). Never block startup or force re-login on a network
+          // failure — refresh the profile in the BACKGROUND instead. That refresh
+          // is non-fatal and self-corrects on a genuine 401 via the API client's
+          // refresh/logout interceptor; a mere offline error leaves the session
+          // intact. (Previously a >5-min-old cache triggered a blocking /auth/me
+          // call whose offline failure logged the user out.)
+          debugPrint('✅ [BackendAuthService] Trusting cached session; refreshing in background');
           _isAuthenticated = true;
           _isInitialized = true;
           _isInitializing = false;
           notifyListeners();
 
-          // Refresh in background (don't await)
           _refreshInBackground();
           return;
         }
 
-        // Cache is stale or missing, fetch from API
-        debugPrint('🔐 [BackendAuthService] Fetching fresh user info from API...');
-        await refreshUserInfo();
+        // Token present but no cached user yet (rare). Try once to populate it,
+        // but do NOT force logout just because we're offline — keep the token.
+        try {
+          debugPrint('🔐 [BackendAuthService] Token present, no cached user — fetching once...');
+          await refreshUserInfo();
+        } catch (e) {
+          debugPrint('⚠️ [BackendAuthService] Could not fetch user info (likely offline): $e');
+          _isAuthenticated = _userId != null;
+        }
       } else {
         debugPrint('🔐 [BackendAuthService] No token found, user not authenticated');
         _isAuthenticated = false;
@@ -108,7 +116,9 @@ class BackendAuthService extends ChangeNotifier {
       debugPrint('✅ [BackendAuthService] Initialization complete');
     } catch (e) {
       debugPrint('⚠️ [BackendAuthService] Auth initialization error: $e');
-      _isAuthenticated = false;
+      // OFFLINE-FIRST: never drop a cached session on a transient/local error.
+      // Only treat as logged-out if we genuinely have no cached user identity.
+      _isAuthenticated = _userId != null;
       _isInitialized = true;
       _isInitializing = false;
       notifyListeners();
@@ -193,6 +203,12 @@ class BackendAuthService extends ChangeNotifier {
   void _refreshInBackground() {
     Future.microtask(() async {
       try {
+        // Roll the session forward on app open (when online) so an active user
+        // effectively never has to log in again. Non-fatal — failure offline or
+        // otherwise leaves the existing tokens untouched.
+        if (ConnectivityService().isOnline) {
+          await _apiService.proactivelyRefreshToken();
+        }
         await refreshUserInfo();
         debugPrint('✅ [BackendAuthService] Background refresh complete');
       } catch (e) {
