@@ -524,10 +524,11 @@ packages:
   firebase_analytics:
     dependency: "direct main"
     description:
-      name: firebase_analytics
-      sha256: "56641bc6dd7b6a8c63ad5f5d46664af5b66db452f1c5ad052b1eec0188cf3183"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/firebase_analytics/firebase_analytics"
+      ref: analytics_18297
+      resolved-ref: ea4aa777c37dfa1890245095ea600589b05a1f0e
+      url: "https://github.com/firebase/flutterfire.git"
+    source: git
     version: "12.4.1"
   firebase_analytics_platform_interface:
     dependency: transitive
