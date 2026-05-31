@@ -51,7 +51,7 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
     try {
       final result = await _premiumService.reconcileUsageWithBackend();
 
-      if (mounted && result != null) {
+      if (context.mounted && result != null) {
         final reconciled = result['reconciled'] as bool;
         final oldCount = result['old_count'] as int;
         final newCount = result['new_count'] as int;
@@ -73,7 +73,7 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
         }
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to reconcile: $e'),

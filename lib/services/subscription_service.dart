@@ -208,7 +208,7 @@ class SubscriptionService {
 
       if (Platform.isAndroid && purchase is GooglePlayPurchaseDetails) {
         purchaseToken = purchase.billingClientPurchase.purchaseToken;
-        log.i('📦 Got purchase token: ${purchaseToken?.substring(0, 20)}...');
+        log.i('📦 Got purchase token: ${purchaseToken.substring(0, 20)}...');
       } else {
         log.w('⚠️ Not Android or not GooglePlayPurchaseDetails');
       }

@@ -135,11 +135,13 @@ class ConnectivityService with ChangeNotifier {
   }
 
   /// Dispose the service
+  @override
   Future<void> dispose() async {
     await _connectivitySubscription?.cancel();
     _connectivitySubscription = null;
     await _statusController.close();
     _initialized = false;
     debugPrint('🧹 [Connectivity] Service disposed');
+    super.dispose();
   }
 }
