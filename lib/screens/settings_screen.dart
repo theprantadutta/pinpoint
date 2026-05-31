@@ -16,6 +16,7 @@ import 'package:pinpoint/services/google_sign_in_service.dart';
 import 'package:pinpoint/services/logout_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
+import 'package:pinpoint/screens/encryption_settings_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 import 'package:pinpoint/screens/admin_panel_screen.dart';
 import 'package:pinpoint/widgets/admin_password_dialog.dart';
@@ -440,6 +441,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               PinpointHaptics.light();
               final current = MyApp.of(context).isBiometricEnabled;
               MyApp.of(context).changeBiometricEnabledEnabled(!current);
+            },
+          ),
+          _SettingsTile(
+            title: 'Encryption',
+            subtitle: 'Standard or Maximum Privacy (zero-knowledge)',
+            icon: Icons.enhanced_encryption_rounded,
+            onTap: () {
+              PinpointHaptics.light();
+              AppNavigation.router.push(EncryptionSettingsScreen.kRouteName);
             },
           ),
 

@@ -12,6 +12,8 @@ import 'package:pinpoint/sync/api_sync_service.dart';
 import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/encryption_service.dart';
+import 'package:pinpoint/services/zero_knowledge_service.dart';
+import 'package:pinpoint/screens/unlock_screen.dart';
 import 'package:pinpoint/design_system/colors.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:go_router/go_router.dart';
@@ -437,6 +439,18 @@ class _AuthScreenState extends State<AuthScreen> {
             '🔵 [Google Sign-In] Step 5: Syncing encryption key from cloud...');
         try {
           final apiService = ApiService();
+          // Zero-knowledge accounts unlock with a passphrase — never sync or
+          // generate a server-held key for them.
+          final zkMode =
+              await ZeroKnowledgeService.refreshModeFromServer(apiService);
+          if (zkMode == ZeroKnowledgeService.modeZeroKnowledge) {
+            if (await SecureEncryptionService.hasLocalKey() &&
+                !SecureEncryptionService.isInitialized) {
+              await SecureEncryptionService.initialize();
+            }
+            if (mounted) context.go(UnlockScreen.kRouteName);
+            return;
+          }
           final syncSuccess =
               await SecureEncryptionService.syncKeyFromCloud(apiService);
 
@@ -546,6 +560,18 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint('🔵 [Email Auth] Syncing encryption key from cloud...');
       try {
         final apiService = ApiService();
+        // Zero-knowledge accounts unlock with a passphrase — never sync or
+        // generate a server-held key for them.
+        final zkMode =
+            await ZeroKnowledgeService.refreshModeFromServer(apiService);
+        if (zkMode == ZeroKnowledgeService.modeZeroKnowledge) {
+          if (await SecureEncryptionService.hasLocalKey() &&
+              !SecureEncryptionService.isInitialized) {
+            await SecureEncryptionService.initialize();
+          }
+          if (mounted) context.go(UnlockScreen.kRouteName);
+          return;
+        }
         final syncSuccess =
             await SecureEncryptionService.syncKeyFromCloud(apiService);
 

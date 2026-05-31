@@ -40,6 +40,32 @@ class SecureEncryptionService {
   @visibleForTesting
   static void debugInitializeWithKey(enc.Key key) => _applyKey(key);
 
+  /// Whether a data key already exists in local secure storage. Used to avoid
+  /// generating a divergent key for a zero-knowledge account on a fresh device
+  /// (such accounts must obtain the key by unwrapping, never by generation).
+  static Future<bool> hasLocalKey() async {
+    final keyString = await _storage.read(key: _keyStorageKey);
+    return keyString != null && keyString.isNotEmpty;
+  }
+
+  /// Export the raw data-key bytes (for zero-knowledge wrapping). Reads the key
+  /// from secure storage; returns null if no key exists yet.
+  static Future<Uint8List?> exportDataKeyBytes() async {
+    final keyString = await _storage.read(key: _keyStorageKey);
+    if (keyString == null || keyString.isEmpty) return null;
+    return enc.Key.fromBase64(keyString).bytes;
+  }
+
+  /// Load a data key directly from raw bytes (e.g. after a zero-knowledge
+  /// unlock), persist it locally, and activate the ciphers. Unlike
+  /// [initialize], this NEVER generates a new key — so a zero-knowledge account
+  /// can only ever use the key recovered by unwrapping, not a divergent one.
+  static Future<void> applyDataKeyBytes(Uint8List keyBytes) async {
+    final key = enc.Key(keyBytes);
+    await _storage.write(key: _keyStorageKey, value: key.base64);
+    _applyKey(key);
+  }
+
   // Get existing key or create a new one
   // Priority: Local storage > Cloud backup > Generate new
   static Future<enc.Key> _getOrCreateKey({dynamic apiService}) async {
