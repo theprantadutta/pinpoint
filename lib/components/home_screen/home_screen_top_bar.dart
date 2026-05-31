@@ -127,6 +127,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
                         isLabelVisible: hasFilters,
                         label: Text(filterCount.toString()),
                         child: IconButton(
+                          visualDensity: VisualDensity.compact,
                           icon: Icon(
                             hasFilters
                                 ? Symbols.filter_alt
@@ -150,6 +151,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
                   // Search toggle button
                   IconButton(
                     key: WalkthroughKeys.searchKey,
+                    visualDensity: VisualDensity.compact,
                     icon: const Icon(Symbols.search),
                     tooltip: 'Search',
                     onPressed: () {
@@ -189,7 +191,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
               ? 'Offline — changes are saved and will sync when you reconnect'
               : 'Online',
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
             child: Icon(
               offline ? Symbols.cloud_off : Symbols.cloud_done,
               fill: offline ? 1 : 0,
