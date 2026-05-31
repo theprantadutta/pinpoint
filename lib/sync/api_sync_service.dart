@@ -407,8 +407,21 @@ class ApiSyncService extends SyncService {
       int decryptionErrorCount = 0;
       final List<String> errors = [];
 
+      final int totalToProcess = response.length;
+      int processedIndex = 0;
+
       // Process each note
       for (final encryptedNote in response) {
+        // Real, per-note progress mapped into the notes band (0.30 -> 0.75).
+        processedIndex++;
+        updateProgress(SyncProgress(
+          phase: SyncPhase.downloadingNotes,
+          message: 'Restoring your notes…',
+          currentItem: processedIndex,
+          totalItems: totalToProcess,
+          currentItemType: 'note',
+          overallProgress: 0.30 + (processedIndex / totalToProcess) * 0.45,
+        ));
         try {
           final clientNoteUuid = encryptedNote['client_note_uuid'] as String;
           final encryptedData = encryptedNote['encrypted_data'] as String;

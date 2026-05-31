@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pinpoint/services/google_sign_in_service.dart';
@@ -85,14 +86,23 @@ class _AuthScreenState extends State<AuthScreen> {
 
       SyncResult? result;
 
-      // Show loading dialog with animated progress
+      // Show a loading dialog driven by REAL, live sync progress.
       if (mounted) {
-        // Use a completer to track sync completion
+        final progressNotifier = ValueNotifier<SyncProgress>(
+          const SyncProgress(
+            phase: SyncPhase.preparingFolders,
+            message: 'Connecting to the cloud…',
+            overallProgress: 0.02,
+          ),
+        );
+        // Forward live progress events from the sync service to the dialog.
+        apiSyncService.onProgressUpdate = (p) => progressNotifier.value = p;
+
         result = await showDialog<SyncResult>(
           context: context,
           barrierDismissible: false,
           builder: (dialogContext) {
-            // Start the sync and update progress
+            // Start the sync; the dialog re-renders from progressNotifier.
             Future.delayed(Duration.zero, () async {
               try {
                 final syncResult = await syncManager.sync();
@@ -109,9 +119,12 @@ class _AuthScreenState extends State<AuthScreen> {
               }
             });
 
-            return const _SyncProgressDialog();
+            return _SyncProgressDialog(progress: progressNotifier);
           },
         );
+
+        apiSyncService.onProgressUpdate = null;
+        progressNotifier.dispose();
       }
 
       // Use the result from the dialog
@@ -927,142 +940,211 @@ class _AuthScreenState extends State<AuthScreen> {
 }
 
 /// Animated sync progress dialog
-class _SyncProgressDialog extends StatefulWidget {
-  const _SyncProgressDialog();
+/// Restore dialog driven by REAL, live sync progress (folders → notes →
+/// reminders), with a per-note counter and a step checklist.
+class _SyncProgressDialog extends StatelessWidget {
+  final ValueListenable<SyncProgress> progress;
+  const _SyncProgressDialog({required this.progress});
 
-  @override
-  State<_SyncProgressDialog> createState() => _SyncProgressDialogState();
-}
-
-class _SyncProgressDialogState extends State<_SyncProgressDialog>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _progressAnimation;
-  String _statusMessage = 'Preparing to sync...';
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    );
-
-    _progressAnimation = Tween<double>(begin: 0.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-
-    _controller.forward();
-
-    // Animate status messages
-    _animateStatusMessages();
-  }
-
-  void _animateStatusMessages() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (mounted) {
-      setState(() => _statusMessage = 'Downloading your notes...');
-    }
-
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (mounted) {
-      setState(() => _statusMessage = 'Decrypting data...');
-    }
-
-    await Future.delayed(const Duration(milliseconds: 1000));
-    if (mounted) {
-      setState(() => _statusMessage = 'Almost done...');
+  /// Map a fine-grained sync phase to one of three high-level steps.
+  static int _stepOf(SyncPhase phase) {
+    switch (phase) {
+      case SyncPhase.idle:
+      case SyncPhase.preparingFolders:
+      case SyncPhase.syncingFolders:
+        return 0; // Folders
+      case SyncPhase.preparingNotes:
+      case SyncPhase.uploadingNotes:
+      case SyncPhase.downloadingNotes:
+      case SyncPhase.processingNotes:
+        return 1; // Notes
+      case SyncPhase.syncingReminders:
+        return 2; // Reminders
+      case SyncPhase.finalizing:
+      case SyncPhase.completed:
+      case SyncPhase.error:
+        return 3; // Done
     }
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  IconData _heroIcon(int step) {
+    switch (step) {
+      case 0:
+        return Icons.folder_rounded;
+      case 1:
+        return Icons.lock_open_rounded; // decrypting notes
+      case 2:
+        return Icons.alarm_rounded;
+      default:
+        return Icons.check_circle_rounded;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
     final brightness = theme.brightness;
 
     return Dialog(
       backgroundColor: brightness == Brightness.dark
           ? PinpointColors.darkSurface1
           : PinpointColors.lightSurface1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Icon
-            Icon(
-              Icons.cloud_download_outlined,
-              size: 48,
-              color: colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
+        child: ValueListenableBuilder<SyncProgress>(
+          valueListenable: progress,
+          builder: (context, p, _) {
+            final step = _stepOf(p.phase);
+            final isError = p.phase == SyncPhase.error;
+            final fraction = (p.overallProgress ??
+                    (p.totalItems > 0 ? p.currentItem / p.totalItems : 0.0))
+                .clamp(0.0, 1.0);
+            final accent = isError ? cs.error : cs.primary;
 
-            // Title
-            Text(
-              'Restoring Your Notes',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Animated Progress Bar
-            AnimatedBuilder(
-              animation: _progressAnimation,
-              builder: (context, child) {
-                return Column(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: _progressAnimation.value,
-                        minHeight: 8,
-                        backgroundColor: colorScheme.surfaceContainerHighest,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '${(_progressAnimation.value * 100).toInt()}%',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Status message
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: Text(
-                _statusMessage,
-                key: ValueKey(_statusMessage),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Hero phase icon in a soft circle
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: accent.withValues(alpha: 0.12),
+                  ),
+                  child: Icon(
+                    isError ? Icons.error_rounded : _heroIcon(step),
+                    size: 32,
+                    color: accent,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
+                const SizedBox(height: 16),
+                Text(
+                  'Restoring your notes',
+                  style: theme.textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                // Live status message (+ per-item counter when available)
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: Text(
+                    (p.totalItems > 1 && p.currentItem > 0)
+                        ? '${p.message}  (${p.currentItem} of ${p.totalItems})'
+                        : p.message,
+                    key: ValueKey(
+                        '${p.message}-${p.currentItem}-${p.totalItems}'),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Real, smoothly-animated progress bar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0, end: fraction),
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                    builder: (context, value, _) => LinearProgressIndicator(
+                      value: value,
+                      minHeight: 8,
+                      backgroundColor: cs.surfaceContainerHighest,
+                      valueColor: AlwaysStoppedAnimation<Color>(accent),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '${(fraction * 100).round()}%',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Step checklist
+                _StepRow(
+                    label: 'Folders',
+                    icon: Icons.folder_rounded,
+                    index: 0,
+                    step: step),
+                const SizedBox(height: 8),
+                _StepRow(
+                    label: 'Notes',
+                    icon: Icons.notes_rounded,
+                    index: 1,
+                    step: step),
+                const SizedBox(height: 8),
+                _StepRow(
+                    label: 'Reminders',
+                    icon: Icons.alarm_rounded,
+                    index: 2,
+                    step: step),
+              ],
+            );
+          },
         ),
       ),
+    );
+  }
+}
+
+/// A single line in the restore step checklist: done (check), active (spinner)
+/// or pending (outline).
+class _StepRow extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final int index;
+  final int step;
+  const _StepRow({
+    required this.label,
+    required this.icon,
+    required this.index,
+    required this.step,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final done = step > index;
+    final active = step == index;
+    final muted = cs.onSurfaceVariant.withValues(alpha: 0.5);
+
+    Widget leading;
+    if (done) {
+      leading = Icon(Icons.check_circle_rounded, size: 20, color: cs.primary);
+    } else if (active) {
+      leading = SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.2,
+          valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+        ),
+      );
+    } else {
+      leading = Icon(Icons.circle_outlined, size: 20, color: muted);
+    }
+
+    return Row(
+      children: [
+        SizedBox(width: 24, child: Center(child: leading)),
+        const SizedBox(width: 12),
+        Icon(icon, size: 18, color: (done || active) ? cs.primary : muted),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: (done || active) ? cs.onSurface : muted,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }
