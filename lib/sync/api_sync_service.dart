@@ -614,13 +614,13 @@ class ApiSyncService extends SyncService {
     // Encrypt the JSON
     final encryptedData = SecureEncryptionService.encrypt(jsonString);
 
-    // Build metadata (non-sensitive)
+    // Minimal plaintext metadata — only what the server needs for sync (F6).
+    // has_audio / has_attachments / is_archived were removed: they leaked note
+    // details and are carried inside the encrypted blob anyway (reconstructed on
+    // download).
     final metadata = {
       'type': noteWrapper.type,
       'updated_at': noteData['updatedAt'],
-      'has_audio': noteWrapper.type == 'voice',
-      'has_attachments': false,
-      'is_archived': noteData['isArchived'] ?? false,
       'is_deleted': noteData['isDeleted'] ?? false,
     };
 
