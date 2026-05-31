@@ -454,7 +454,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.file_upload_rounded,
             onTap: () async {
               PinpointHaptics.medium();
-              final result = await FilePicker.platform.pickFiles(
+              final result = await FilePicker.pickFiles(
                 type: FileType.custom,
                 allowedExtensions: ['pinpoint-note'],
               );

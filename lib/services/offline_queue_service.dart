@@ -326,11 +326,13 @@ class OfflineQueueService with ChangeNotifier {
   }
 
   /// Dispose the service
+  @override
   Future<void> dispose() async {
     await _connectivitySubscription?.cancel();
     _connectivitySubscription = null;
     await _queueController.close();
     _initialized = false;
     debugPrint('🧹 [OfflineQueue] Disposed');
+    super.dispose();
   }
 }

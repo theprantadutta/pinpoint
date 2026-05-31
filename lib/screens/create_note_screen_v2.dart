@@ -747,7 +747,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 }
               }
 
-              if (mounted) {
+              if (context.mounted) {
                 Navigator.of(context).pop();
               }
             },
@@ -805,11 +805,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 case 'save':
                   try {
                     await _saveNote(isExplicit: true);
-                    if (mounted) {
+                    if (context.mounted) {
                       Navigator.of(context).pop();
                     }
                   } catch (e) {
-                    if (mounted) {
+                    if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(e.toString().replaceAll('Exception: ', '')),
@@ -1477,7 +1477,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           onSubmitted: (value) async {
             if (value.trim().isNotEmpty) {
               await _saveTodoItemToDatabase(value.trim());
-              if (mounted) {
+              if (context.mounted) {
                 Navigator.pop(context);
               }
             }
@@ -1492,7 +1492,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             onPressed: () async {
               if (controller.text.trim().isNotEmpty) {
                 await _saveTodoItemToDatabase(controller.text.trim());
-                if (mounted) {
+                if (context.mounted) {
                   Navigator.pop(context);
                 }
               }
@@ -1788,7 +1788,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               getIt<AnalyticsFacade>().trackNoteDeleted(noteType: _noteTypeToKey(selectedNoteType));
 
               // Navigate back to previous screen using screen context, not dialog context
-              if (mounted) {
+              if (context.mounted) {
                 Navigator.of(context).pop();
               }
             },
@@ -1993,7 +1993,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       getIt<AnalyticsFacade>().trackNoteExported(format: 'markdown');
       PinpointHaptics.success();
 
-      if (mounted) {
+      if (context.mounted) {
         showSuccessToast(
           context: context,
           title: 'Exported!',
@@ -2004,7 +2004,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       debugPrint('Error exporting markdown: $e');
       PinpointHaptics.error();
 
-      if (mounted) {
+      if (context.mounted) {
         showErrorToast(
           context: context,
           title: 'Export Failed',
@@ -2123,7 +2123,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       getIt<AnalyticsFacade>().trackNoteExported(format: 'pdf');
       PinpointHaptics.success();
 
-      if (mounted) {
+      if (context.mounted) {
         showSuccessToast(
           context: context,
           title: 'Exported!',
@@ -2134,7 +2134,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       debugPrint('Error exporting PDF: $e');
       PinpointHaptics.error();
 
-      if (mounted) {
+      if (context.mounted) {
         showErrorToast(
           context: context,
           title: 'Export Failed',
@@ -2162,7 +2162,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
       if (image == null) return;
 
-      if (mounted) {
+      if (context.mounted) {
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -2174,13 +2174,13 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
       final String recognizedText = await OCRService.recognizeText(image.path);
 
-      if (mounted) {
+      if (context.mounted) {
         Navigator.of(context).pop();
       }
 
       if (recognizedText.isEmpty) {
         PinpointHaptics.error();
-        if (mounted) {
+        if (context.mounted) {
           showErrorToast(
             context: context,
             title: 'No Text Found',
@@ -2202,7 +2202,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
       getIt<AnalyticsFacade>().trackOcrPerformed();
       PinpointHaptics.success();
-      if (mounted) {
+      if (context.mounted) {
         showSuccessToast(
           context: context,
           title: 'Text Extracted!',
@@ -2213,11 +2213,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       debugPrint('Error performing OCR: $e');
       PinpointHaptics.error();
 
-      if (mounted && Navigator.canPop(context)) {
+      if (context.mounted && Navigator.canPop(context)) {
         Navigator.of(context).pop();
       }
 
-      if (mounted) {
+      if (context.mounted) {
         showErrorToast(
           context: context,
           title: 'OCR Failed',
