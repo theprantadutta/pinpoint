@@ -60,114 +60,117 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes>
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
-    final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        children: [
-          // Header
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                'Recent notes',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: (dark ? Colors.white : Colors.black)
-                      .withAlpha(dark ? 15 : 20),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  'Live',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          // Content
-          Expanded(
-            child: Consumer<FilterService>(
-              builder: (context, filterService, _) {
-                return StreamBuilder<List<NoteWithDetails>>(
-                  stream: DriftNoteService.watchNotesWithDetailsV2(
-                    searchQuery: widget.searchQuery,
-                    sortType: _sortType,
-                    sortDirection: _sortDirection,
-                  ),
-                  builder: (context, snapshot) {
-                    // Use cached data while waiting to avoid loading flash
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      if (_cachedNotes != null && _cachedNotes!.isNotEmpty) {
-                        return _buildNotesList(_cachedNotes!);
-                      }
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return EmptyState(
-                        icon: Icons.error_outline_rounded,
-                        title: 'Something went wrong',
-                        message: 'Please try again later',
-                      );
-                    }
-                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return EmptyState(
-                        icon: Icons.note_add_rounded,
-                        title: 'No notes yet',
-                        message: 'Create your first note to get started',
-                      );
-                    }
-
-                    final data = snapshot.data!;
-                    // Cache the data for next time
-                    _cachedNotes = data;
-
-                    return _buildNotesList(data);
-                  },
-                );
-              },
+      child: Consumer<FilterService>(
+        builder: (context, filterService, _) {
+          return StreamBuilder<List<NoteWithDetails>>(
+            stream: DriftNoteService.watchNotesWithDetailsV2(
+              searchQuery: widget.searchQuery,
+              sortType: _sortType,
+              sortDirection: _sortDirection,
             ),
-          ),
-        ],
+            builder: (context, snapshot) {
+              // Use cached data while waiting to avoid loading flash
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                if (_cachedNotes != null && _cachedNotes!.isNotEmpty) {
+                  return _buildNotesList(_cachedNotes!);
+                }
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return EmptyState(
+                  icon: Icons.error_outline_rounded,
+                  title: 'Something went wrong',
+                  message: 'Please try again later',
+                );
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return EmptyState(
+                  icon: Icons.note_add_rounded,
+                  title: 'No notes yet',
+                  message: 'Create your first note to get started',
+                );
+              }
+
+              final data = snapshot.data!;
+              _cachedNotes = data;
+
+              return _buildNotesList(data);
+            },
+          );
+        },
       ),
     );
   }
 
+  /// Builds the notes view, split into PINNED / OTHERS sections (Keep-style).
   Widget _buildNotesList(List<NoteWithDetails> data) {
+    final pinned = data.where((n) => n.note.isPinned).toList();
+    final others = data.where((n) => !n.note.isPinned).toList();
+    final hasPinned = pinned.isNotEmpty;
+
+    final slivers = <Widget>[];
+
+    if (hasPinned) {
+      slivers.add(_sectionHeaderSliver('PINNED'));
+      slivers.add(_notesSliver(pinned));
+      if (others.isNotEmpty) slivers.add(_sectionHeaderSliver('OTHERS'));
+    }
+    if (others.isNotEmpty) {
+      slivers.add(_notesSliver(others));
+    }
+
+    return CustomScrollView(
+      controller: widget.scrollController,
+      slivers: [
+        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+        ...slivers,
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+      ],
+    );
+  }
+
+  Widget _sectionHeaderSliver(String label) {
+    return SliverToBoxAdapter(
+      child: Builder(
+        builder: (context) {
+          final cs = Theme.of(context).colorScheme;
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.0,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _notesSliver(List<NoteWithDetails> items) {
     if (_viewType == 'grid') {
-      return MasonryGridView.count(
-        controller: widget.scrollController,
+      return SliverMasonryGrid.count(
         crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        padding: const EdgeInsets.only(bottom: 100),
-        itemCount: data.length,
-        itemBuilder: (context, i) {
-          return NoteListItem(note: data[i], showActions: true);
-        },
-      );
-    } else {
-      return ListView.separated(
-        controller: widget.scrollController,
-        padding: const EdgeInsets.only(top: 8, bottom: 100),
-        itemCount: data.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, i) {
-          return NoteListItem(note: data[i], showActions: true);
-        },
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childCount: items.length,
+        itemBuilder: (context, i) =>
+            NoteListItem(note: items[i], showActions: true),
       );
     }
+    return SliverList.separated(
+      itemCount: items.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, i) =>
+          NoteListItem(note: items[i], showActions: true),
+    );
   }
 }
 
