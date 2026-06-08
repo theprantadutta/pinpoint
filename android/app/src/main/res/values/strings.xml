@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Default FCM / local-notification channel. Must match the channel id
+         used by firebase_notification_service.dart and the backend FCM sender. -->
+    <string name="default_notification_channel_id">pinpoint_default_channel</string>
+    <string name="default_notification_channel_name">Pinpoint Notifications</string>
+    <string name="default_notification_channel_desc">Reminders and updates from Pinpoint</string>
+</resources>
