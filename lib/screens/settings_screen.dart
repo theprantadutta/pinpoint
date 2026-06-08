@@ -31,7 +31,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../sync/sync_manager.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/walkthrough_service.dart';
-import '../navigation/bottom-navigation/bottom_navigation_layout.dart';
 
 class SettingsScreen extends StatefulWidget {
   static const String kRouteName = '/settings';
@@ -581,8 +580,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               if (!context.mounted) return;
 
-              // Navigate to home screen first
-              BottomNavigationLayout.of(context).gotoPage(0);
+              // Return to the home screen first (settings is a pushed route)
+              Navigator.of(context).pop();
 
               // Delay then show walkthrough
               Future.delayed(const Duration(milliseconds: 500), () {

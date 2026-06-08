@@ -5,6 +5,8 @@ import '../design_system/design_system.dart';
 import '../components/home_screen/home_screen_my_folders.dart';
 import '../components/home_screen/home_screen_recent_notes.dart';
 import '../components/home_screen/home_screen_top_bar.dart';
+import '../design_system/components/keep_fab.dart';
+import '../navigation/keep_drawer.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/api_service.dart';
@@ -264,6 +266,8 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
     return GradientScaffold(
+      drawer: const KeepDrawer(),
+      floatingActionButton: const KeepFab(),
       appBar: GlassAppBar(
         scrollController: _scrollController,
         title: HomeScreenTopBar(

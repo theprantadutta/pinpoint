@@ -44,8 +44,6 @@ class AppNavigation {
       GlobalKey<NavigatorState>(debugLabel: 'shellFolder');
   static final _shellNavigatorTodo =
       GlobalKey<NavigatorState>(debugLabel: 'shellTodo');
-  static final _shellNavigatorAccount =
-      GlobalKey<NavigatorState>(debugLabel: 'shellAccount');
 
   // GoRouter configuration
   static final GoRouter router = GoRouter(
@@ -194,21 +192,18 @@ class AppNavigation {
               ),
             ],
           ),
-
-          StatefulShellBranch(
-            navigatorKey: _shellNavigatorAccount,
-            routes: <RouteBase>[
-              GoRoute(
-                path: SettingsScreen.kRouteName,
-                name: "Account",
-                pageBuilder: (context, state) => reusableTransitionPage(
-                  state: state,
-                  child: const SettingsScreen(),
-                ),
-              ),
-            ],
-          ),
         ],
+      ),
+
+      /// Settings (root route — reached from the Keep drawer)
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: SettingsScreen.kRouteName,
+        name: "Settings",
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const SettingsScreen(),
+        ),
       ),
 
       /// Create Note Screen V2 (Architecture V8)
