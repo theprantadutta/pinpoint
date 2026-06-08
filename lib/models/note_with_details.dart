@@ -10,11 +10,15 @@ class NoteWithDetails {
   final List<NoteTodoItem> todoItems;
   final String? textContent; // Content from TextNotes table
 
+  /// Keep-style color swatch name (e.g. 'storm'); null = default card color.
+  final String? color;
+
   NoteWithDetails({
     required this.note,
     required this.folders,
     required this.attachments,
     required this.todoItems,
     this.textContent,
+    this.color,
   });
 }

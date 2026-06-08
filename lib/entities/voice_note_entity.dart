@@ -30,6 +30,9 @@ class VoiceNotesV2 extends Table {
   /// May differ from createdAt if imported from external source
   DateTimeColumn get recordedAt => dateTime().nullable()();
 
+  /// Optional Keep-style color swatch name (e.g. 'storm'); null = default.
+  TextColumn get color => text().nullable()();
+
   /// Whether the note is pinned to the top of the list
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
 

@@ -194,6 +194,7 @@ class NoteListItem extends StatelessWidget {
     final cs = theme.colorScheme;
     final n = note.note;
     final hasTitle = n.noteTitle != null && n.noteTitle!.trim().isNotEmpty;
+    final bgColor = PinpointColors.noteColor(note.color, theme.brightness);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.98, end: 1),
@@ -210,6 +211,7 @@ class NoteListItem extends StatelessWidget {
         lastModified: n.updatedAt,
         isPinned: n.isPinned,
         noteType: n.noteType,
+        backgroundColor: bgColor,
         checklist: n.noteType == 'todo'
             ? note.todoItems
                 .map((item) => NoteChecklistItem(
