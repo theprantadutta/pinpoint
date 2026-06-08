@@ -13,7 +13,6 @@ import 'package:fleather/fleather.dart';
 
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
-import '../components/create_note_screen/create_note_categories.dart';
 import '../components/create_note_screen/reminder_type/reminder_type_content.dart';
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
 import '../constants/constants.dart';
@@ -606,13 +605,36 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 slivers: [
-                  // Note Type Selection
-                  CreateNoteCategories(
-                    selectedType: selectedNoteType,
-                    onSelectedTypeChanged: (type) {
-                      PinpointHaptics.light();
-                      setState(() => selectedNoteType = type);
-                    },
+                  // (Keep-style: no note-type selector — the type is chosen from
+                  // the FAB speed-dial, and notes convert between text/checklist.)
+
+                  // Title (in the body, Keep-style)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                      child: TextField(
+                        controller: _titleController,
+                        focusNode: _titleFocusNode,
+                        decoration: InputDecoration(
+                          hintText: 'Title',
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                          hintStyle: TextStyle(
+                            color: cs.onSurface.withValues(alpha: 0.4),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 22,
+                          ),
+                        ),
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 22,
+                        ),
+                        maxLines: null,
+                        textInputAction: TextInputAction.next,
+                      ),
+                    ),
                   ),
 
                   // Folder Selection
@@ -779,39 +801,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           const SizedBox(width: 5),
 
           // Title Input
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: TextField(
-                controller: _titleController,
-                focusNode: _titleFocusNode,
-                decoration: InputDecoration(
-                  hintText: 'Untitled',
-                  border: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-                  isDense: true,
-                  hintStyle: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.4),
-                    fontWeight: FontWeight.w500,
-                    fontSize: 20,
-                  ),
-                ),
-                style: TextStyle(
-                  color: cs.onSurface,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 20,
-                ),
-                maxLines: 1,
-                textInputAction: TextInputAction.done,
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 5),
+          const Spacer(),
 
           // Pin toggle
           IconButton(
