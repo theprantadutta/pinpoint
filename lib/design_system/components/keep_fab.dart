@@ -90,14 +90,14 @@ class _KeepFabState extends State<KeepFab> with SingleTickerProviderStateMixin {
       _SpeedDialItem(
         icon: Icons.check_box_outlined,
         label: 'List',
-        onTap: () => _openEditor(noticeType: 'todo'),
+        onTap: () => _openEditor(noticeType: 'Todo List'),
         animation: _controller,
         index: 3,
       ),
       _SpeedDialItem(
         icon: Icons.text_fields_rounded,
         label: 'Text',
-        onTap: () => _openEditor(noticeType: 'text'),
+        onTap: () => _openEditor(noticeType: 'Title Content'),
         animation: _controller,
         index: 4,
       ),
