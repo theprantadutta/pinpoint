@@ -81,6 +81,10 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   // Keep-style note color (swatch name); null = default card color.
   String? _selectedColor;
 
+  // Keep-style note attributes.
+  bool _isPinned = false;
+  bool _isArchived = false;
+
   // Reminder fields
   DateTime? _reminderTime;
   late TextEditingController _reminderNotificationTitleController;
@@ -208,6 +212,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       _currentNoteId = note.id;
       _titleController.text = note.noteTitle ?? '';
       _selectedColor = existingNote.color;
+      _isPinned = note.isPinned;
+      _isArchived = note.isArchived;
 
       // Set folders
       selectedFolders = existingNote.folders
@@ -355,8 +361,10 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       final analytics = getIt<AnalyticsFacade>();
       final noteTypeKey = _noteTypeToKey(selectedNoteType);
 
-      // Persist the Keep-style note color.
+      // Persist the Keep-style note attributes (color, pin, archive).
       await DriftNoteService.setNoteColor(noteId, noteTypeKey, _selectedColor);
+      await DriftNoteService.setNotePinned(noteId, noteTypeKey, _isPinned);
+      await DriftNoteService.setNoteArchived(noteId, noteTypeKey, _isArchived);
       if (isNew) {
         analytics.trackNoteCreated(noteType: noteTypeKey);
       } else if (isExplicit) {
@@ -805,10 +813,56 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
           const SizedBox(width: 5),
 
+          // Pin toggle
+          IconButton(
+            icon: Icon(
+              Symbols.push_pin,
+              color: cs.onSurface,
+              fill: _isPinned ? 1 : 0,
+            ),
+            iconSize: 24,
+            visualDensity: VisualDensity.compact,
+            tooltip: _isPinned ? 'Unpin' : 'Pin',
+            onPressed: () async {
+              PinpointHaptics.light();
+              setState(() => _isPinned = !_isPinned);
+              if (_currentNoteId != null) {
+                await DriftNoteService.setNotePinned(
+                  _currentNoteId!,
+                  _noteTypeToKey(selectedNoteType),
+                  _isPinned,
+                );
+              }
+            },
+          ),
+
+          // Archive toggle
+          IconButton(
+            icon: Icon(
+              _isArchived ? Symbols.unarchive : Symbols.archive,
+              color: cs.onSurface,
+            ),
+            iconSize: 24,
+            visualDensity: VisualDensity.compact,
+            tooltip: _isArchived ? 'Unarchive' : 'Archive',
+            onPressed: () async {
+              PinpointHaptics.light();
+              setState(() => _isArchived = !_isArchived);
+              if (_currentNoteId != null) {
+                await DriftNoteService.setNoteArchived(
+                  _currentNoteId!,
+                  _noteTypeToKey(selectedNoteType),
+                  _isArchived,
+                );
+              }
+            },
+          ),
+
           // Color (palette) button
           IconButton(
             icon: Icon(Symbols.palette, color: cs.onSurface),
             iconSize: 24,
+            visualDensity: VisualDensity.compact,
             tooltip: 'Color',
             onPressed: () async {
               PinpointHaptics.light();

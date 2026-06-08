@@ -447,6 +447,88 @@ class DriftNoteService {
         .write(NotesCompanion(isPinned: Value(isPinned)));
   }
 
+  /// Set pinned state on a note, addressing the correct V2 table by id + type.
+  static Future<void> setNotePinned(
+      int noteId, String noteTypeKey, bool isPinned) async {
+    final database = getIt<AppDatabase>();
+    final now = DateTime.now();
+    switch (noteTypeKey) {
+      case 'text':
+        await (database.update(database.textNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(TextNotesV2Companion(
+                isPinned: Value(isPinned),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+      case 'todo':
+        await (database.update(database.todoListNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(TodoListNotesV2Companion(
+                isPinned: Value(isPinned),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+      case 'voice':
+        await (database.update(database.voiceNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(VoiceNotesV2Companion(
+                isPinned: Value(isPinned),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+      case 'reminder':
+        await (database.update(database.reminderNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(ReminderNotesV2Companion(
+                isPinned: Value(isPinned),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+    }
+  }
+
+  /// Set archived state on a note, addressing the correct V2 table by id + type.
+  static Future<void> setNoteArchived(
+      int noteId, String noteTypeKey, bool isArchived) async {
+    final database = getIt<AppDatabase>();
+    final now = DateTime.now();
+    switch (noteTypeKey) {
+      case 'text':
+        await (database.update(database.textNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(TextNotesV2Companion(
+                isArchived: Value(isArchived),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+      case 'todo':
+        await (database.update(database.todoListNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(TodoListNotesV2Companion(
+                isArchived: Value(isArchived),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+      case 'voice':
+        await (database.update(database.voiceNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(VoiceNotesV2Companion(
+                isArchived: Value(isArchived),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+      case 'reminder':
+        await (database.update(database.reminderNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(ReminderNotesV2Companion(
+                isArchived: Value(isArchived),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+    }
+  }
+
   /// Set the Keep-style color swatch name on a note, addressing the correct V2
   /// table by its id + type key ('text' | 'todo' | 'voice' | 'reminder').
   /// Pass null/'default' to clear the color. Marks the note unsynced.
