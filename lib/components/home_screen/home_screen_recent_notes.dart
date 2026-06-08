@@ -29,7 +29,7 @@ class HomeScreenRecentNotes extends StatefulWidget {
 
 class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes>
     with AutomaticKeepAliveClientMixin {
-  String _viewType = 'list';
+  String _viewType = 'grid'; // Keep-style masonry by default
   String _sortType = 'updatedAt';
   String _sortDirection = 'desc';
   SharedPreferences? _preferences;
@@ -49,7 +49,7 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes>
   Future<void> _loadSettings() async {
     _preferences = await SharedPreferences.getInstance();
     setState(() {
-      _viewType = _preferences?.getString(kHomeScreenViewTypeKey) ?? 'list';
+      _viewType = _preferences?.getString(kHomeScreenViewTypeKey) ?? 'grid';
       _sortType =
           _preferences?.getString(kHomeScreenSortTypeKey) ?? 'updatedAt';
       _sortDirection =
@@ -207,6 +207,14 @@ class NoteListItem extends StatelessWidget {
         lastModified: n.updatedAt,
         isPinned: n.isPinned,
         noteType: n.noteType,
+        checklist: n.noteType == 'todo'
+            ? note.todoItems
+                .map((item) => NoteChecklistItem(
+                      label: item.todoTitle,
+                      isDone: item.isDone,
+                    ))
+                .toList()
+            : null,
         totalTasks: n.noteType == 'todo' ? note.todoItems.length : null,
         completedTasks: n.noteType == 'todo'
             ? note.todoItems.where((item) => item.isDone).length

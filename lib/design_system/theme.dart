@@ -22,34 +22,36 @@ class PinpointTheme {
     bool highContrast = false,
     String? fontFamily,
   }) {
-    final accent = accentColor ?? PinpointColors.mint;
+    final accent = accentColor ?? PinpointColors.accentRefined;
 
     final colorScheme = ColorScheme.dark(
       primary: accent,
-      onPrimary: Colors.white,
+      onPrimary: PinpointColors.onAccentRefined,
       primaryContainer: _darken(accent, 0.3),
       onPrimaryContainer: Colors.white,
-      secondary: PinpointColors.iris,
+      secondary: accent,
       onSecondary: Colors.white,
-      secondaryContainer: _darken(PinpointColors.iris, 0.3),
+      secondaryContainer: _darken(accent, 0.3),
       onSecondaryContainer: Colors.white,
-      tertiary: PinpointColors.ocean,
+      tertiary: accent,
       onTertiary: Colors.white,
       error: PinpointColors.rose,
       onError: Colors.white,
       surface: highContrast
           ? PinpointColors.darkSurface1
-          : PinpointColors.darkSurface2,
-      onSurface: highContrast ? Colors.white : PinpointColors.darkTextPrimary,
-      onSurfaceVariant: PinpointColors.darkTextSecondary,
-      outline: PinpointColors.darkBorder,
-      outlineVariant: PinpointColors.darkBorderSubtle,
+          : PinpointColors.keepDarkCard,
+      surfaceContainerHighest: PinpointColors.keepDarkPill,
+      onSurface:
+          highContrast ? Colors.white : PinpointColors.keepDarkTextPrimary,
+      onSurfaceVariant: PinpointColors.keepDarkTextSecondary,
+      outline: PinpointColors.keepDarkDivider,
+      outlineVariant: PinpointColors.keepDarkDivider,
       shadow: PinpointColors.shadowColor,
       scrim: Colors.black.withValues(alpha: 0.5),
       inverseSurface: PinpointColors.lightSurface2,
       onInverseSurface: PinpointColors.lightTextPrimary,
       inversePrimary: _darken(accent, 0.2),
-      surfaceTint: accent,
+      surfaceTint: Colors.transparent,
     );
 
     return ThemeData(
@@ -77,23 +79,23 @@ class PinpointTheme {
       ),
 
       // Scaffold
-      scaffoldBackgroundColor: PinpointColors.darkSurface1,
+      scaffoldBackgroundColor: PinpointColors.keepDarkCanvas,
 
-      // Card
+      // Card — borderless, flat, Keep-style
       cardTheme: CardThemeData(
         elevation: 0,
-        color: PinpointColors.darkSurface2,
-        shadowColor: PinpointColors.shadowColor,
+        color: PinpointColors.keepDarkCard,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
 
       // Chip
       chipTheme: ChipThemeData(
-        backgroundColor: PinpointColors.darkSurface3,
+        backgroundColor: PinpointColors.keepDarkPill,
         selectedColor: accent.withValues(alpha: 0.2),
-        disabledColor: PinpointColors.darkSurface3.withValues(alpha: 0.5),
+        disabledColor: PinpointColors.keepDarkPill.withValues(alpha: 0.5),
         labelStyle: PinpointTypography.tagChip(brightness: Brightness.dark),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
@@ -104,7 +106,7 @@ class PinpointTheme {
       // Input
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: PinpointColors.darkSurface3,
+        fillColor: PinpointColors.keepDarkPill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(999),
           borderSide: BorderSide.none,
@@ -125,47 +127,47 @@ class PinpointTheme {
             const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
 
-      // Floating Action Button
+      // Floating Action Button — Keep-style rounded square
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: accent,
-        foregroundColor: Colors.white,
+        foregroundColor: PinpointColors.onAccentRefined,
         elevation: 4,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
 
       // Bottom Navigation Bar
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: PinpointColors.darkSurface2.withValues(alpha: 0.8),
+        backgroundColor: PinpointColors.keepDarkBar,
         selectedItemColor: accent,
-        unselectedItemColor: PinpointColors.darkTextSecondary,
+        unselectedItemColor: PinpointColors.keepDarkTextSecondary,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
 
       // Dialog
       dialogTheme: DialogThemeData(
-        backgroundColor: PinpointColors.darkSurface2,
+        backgroundColor: PinpointColors.keepDarkCard,
         elevation: 8,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
 
       // Bottom Sheet
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: PinpointColors.darkSurface2,
-        modalBackgroundColor: PinpointColors.darkSurface2,
+        backgroundColor: PinpointColors.keepDarkBar,
+        modalBackgroundColor: PinpointColors.keepDarkBar,
         elevation: 8,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
 
       // Divider
       dividerTheme: DividerThemeData(
-        color: PinpointColors.darkBorder,
+        color: PinpointColors.keepDarkDivider,
         thickness: 1,
         space: 1,
       ),
@@ -193,32 +195,34 @@ class PinpointTheme {
     bool highContrast = false,
     String? fontFamily,
   }) {
-    final accent = accentColor ?? PinpointColors.mint;
+    final accent = accentColor ?? PinpointColors.accentRefined;
 
     final colorScheme = ColorScheme.light(
       primary: accent,
-      onPrimary: Colors.white,
+      onPrimary: PinpointColors.onAccentRefined,
       primaryContainer: _lighten(accent, 0.7),
       onPrimaryContainer: _darken(accent, 0.3),
-      secondary: PinpointColors.iris,
+      secondary: accent,
       onSecondary: Colors.white,
-      secondaryContainer: _lighten(PinpointColors.iris, 0.7),
-      onSecondaryContainer: _darken(PinpointColors.iris, 0.3),
-      tertiary: PinpointColors.ocean,
+      secondaryContainer: _lighten(accent, 0.7),
+      onSecondaryContainer: _darken(accent, 0.3),
+      tertiary: accent,
       onTertiary: Colors.white,
       error: PinpointColors.rose,
       onError: Colors.white,
-      surface: highContrast ? Colors.white : PinpointColors.lightSurface1,
-      onSurface: highContrast ? Colors.black : PinpointColors.lightTextPrimary,
-      onSurfaceVariant: PinpointColors.lightTextSecondary,
-      outline: PinpointColors.lightBorder,
-      outlineVariant: PinpointColors.lightBorderSubtle,
+      surface: highContrast ? Colors.white : PinpointColors.keepLightCanvas,
+      surfaceContainerHighest: PinpointColors.keepLightPill,
+      onSurface:
+          highContrast ? Colors.black : PinpointColors.keepLightTextPrimary,
+      onSurfaceVariant: PinpointColors.keepLightTextSecondary,
+      outline: PinpointColors.keepLightDivider,
+      outlineVariant: PinpointColors.keepLightCardBorder,
       shadow: PinpointColors.shadowColor,
       scrim: Colors.black.withValues(alpha: 0.5),
       inverseSurface: PinpointColors.darkSurface2,
       onInverseSurface: PinpointColors.darkTextPrimary,
       inversePrimary: _lighten(accent, 0.2),
-      surfaceTint: accent,
+      surfaceTint: Colors.transparent,
     );
 
     return ThemeData(
@@ -246,23 +250,23 @@ class PinpointTheme {
       ),
 
       // Scaffold
-      scaffoldBackgroundColor: PinpointColors.lightSurface1,
+      scaffoldBackgroundColor: PinpointColors.keepLightCanvas,
 
-      // Card
+      // Card — borderless, flat, Keep-style
       cardTheme: CardThemeData(
         elevation: 0,
-        color: PinpointColors.lightSurface2,
-        shadowColor: PinpointColors.shadowColor,
+        color: PinpointColors.keepLightCard,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
 
       // Chip
       chipTheme: ChipThemeData(
-        backgroundColor: PinpointColors.lightSurface3,
+        backgroundColor: PinpointColors.keepLightPill,
         selectedColor: accent.withValues(alpha: 0.15),
-        disabledColor: PinpointColors.lightSurface3.withValues(alpha: 0.5),
+        disabledColor: PinpointColors.keepLightPill.withValues(alpha: 0.5),
         labelStyle: PinpointTypography.tagChip(brightness: Brightness.light),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
@@ -273,7 +277,7 @@ class PinpointTheme {
       // Input
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: PinpointColors.lightSurface3,
+        fillColor: PinpointColors.keepLightPill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(999),
           borderSide: BorderSide.none,
@@ -294,47 +298,47 @@ class PinpointTheme {
             const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
 
-      // Floating Action Button
+      // Floating Action Button — Keep-style rounded square
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: accent,
-        foregroundColor: Colors.white,
+        foregroundColor: PinpointColors.onAccentRefined,
         elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
 
       // Bottom Navigation Bar
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: PinpointColors.lightSurface2.withValues(alpha: 0.9),
+        backgroundColor: PinpointColors.keepLightBar,
         selectedItemColor: accent,
-        unselectedItemColor: PinpointColors.lightTextSecondary,
+        unselectedItemColor: PinpointColors.keepLightTextSecondary,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
 
       // Dialog
       dialogTheme: DialogThemeData(
-        backgroundColor: PinpointColors.lightSurface2,
+        backgroundColor: PinpointColors.keepLightCard,
         elevation: 8,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
 
       // Bottom Sheet
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: PinpointColors.lightSurface2,
-        modalBackgroundColor: PinpointColors.lightSurface2,
+        backgroundColor: PinpointColors.keepLightBar,
+        modalBackgroundColor: PinpointColors.keepLightBar,
         elevation: 8,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
 
       // Divider
       dividerTheme: DividerThemeData(
-        color: PinpointColors.lightBorder,
+        color: PinpointColors.keepLightDivider,
         thickness: 1,
         space: 1,
       ),
@@ -523,25 +527,25 @@ class ListItemStyle extends ThemeExtension<ListItemStyle> {
 
   factory ListItemStyle.dark({Color? accentColor}) {
     return ListItemStyle(
-      backgroundColor: PinpointColors.darkSurface2,
-      hoverColor: PinpointColors.darkSurface3,
-      pressedColor: PinpointColors.darkSurface4,
-      borderColor: PinpointColors.darkBorderSubtle,
-      borderRadius: BorderRadius.circular(24),
-      padding: const EdgeInsets.all(16),
-      elevation: PinpointElevations.sm(Brightness.dark),
+      backgroundColor: PinpointColors.keepDarkCard,
+      hoverColor: PinpointColors.keepDarkPill,
+      pressedColor: PinpointColors.keepDarkPill,
+      borderColor: Colors.transparent, // borderless in dark
+      borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.all(14),
+      elevation: const [],
     );
   }
 
   factory ListItemStyle.light({Color? accentColor}) {
     return ListItemStyle(
-      backgroundColor: PinpointColors.lightSurface2,
-      hoverColor: PinpointColors.lightSurface3,
-      pressedColor: PinpointColors.lightSurface4,
-      borderColor: PinpointColors.lightBorderSubtle,
-      borderRadius: BorderRadius.circular(24),
-      padding: const EdgeInsets.all(16),
-      elevation: PinpointElevations.sm(Brightness.light),
+      backgroundColor: PinpointColors.keepLightCard,
+      hoverColor: PinpointColors.keepLightPill,
+      pressedColor: PinpointColors.keepLightPill,
+      borderColor: PinpointColors.keepLightCardBorder, // hairline in light
+      borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.all(14),
+      elevation: const [],
     );
   }
 
@@ -661,7 +665,7 @@ class ToolbarStyle extends ThemeExtension<ToolbarStyle> {
   });
 
   factory ToolbarStyle.dark({Color? accentColor}) {
-    final accent = accentColor ?? PinpointColors.mint;
+    final accent = accentColor ?? PinpointColors.accentRefined;
     return ToolbarStyle(
       backgroundColor: PinpointColors.darkSurface3,
       backgroundGradient: PinpointGradients.glassOverlay(Brightness.dark),
@@ -674,7 +678,7 @@ class ToolbarStyle extends ThemeExtension<ToolbarStyle> {
   }
 
   factory ToolbarStyle.light({Color? accentColor}) {
-    final accent = accentColor ?? PinpointColors.mint;
+    final accent = accentColor ?? PinpointColors.accentRefined;
     return ToolbarStyle(
       backgroundColor: PinpointColors.lightSurface3,
       backgroundGradient: PinpointGradients.glassOverlay(Brightness.light),

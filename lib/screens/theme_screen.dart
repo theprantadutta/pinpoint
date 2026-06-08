@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
-import 'package:pinpoint/main.dart';
 import 'package:pinpoint/services/premium_service.dart';
 import 'package:pinpoint/widgets/premium_gate_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
+import '../services/theme_controller.dart';
 
 class ThemeScreen extends StatefulWidget {
   static const String kRouteName = '/theme';
@@ -90,6 +91,13 @@ class _ThemeScreenState extends State<ThemeScreen> {
             Icons.dark_mode_rounded,
             ThemeMode.dark,
           ),
+          const SizedBox(height: 8),
+          _buildThemeModeOption(
+            context,
+            'System default',
+            Icons.brightness_auto_rounded,
+            ThemeMode.system,
+          ),
 
           const SizedBox(height: 32),
 
@@ -144,8 +152,11 @@ class _ThemeScreenState extends State<ThemeScreen> {
                       }
 
                       PinpointHaptics.medium();
-                      final myAppState = MyApp.of(context);
-                      myAppState.changeAccentColor(accent['color'] as Color);
+                      context
+                          .read<ThemeController>()
+                          .setAccent(accent['color'] as Color);
+                      getIt<AnalyticsFacade>().trackAccentColorChanged(
+                          colorName: colorName);
                     },
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
@@ -258,9 +269,8 @@ class _ThemeScreenState extends State<ThemeScreen> {
       BuildContext context, String label, IconData icon, ThemeMode mode) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final myAppState = MyApp.of(context);
-    final isSelected = (mode == ThemeMode.dark && myAppState.isDarkMode) ||
-        (mode == ThemeMode.light && !myAppState.isDarkMode);
+    final themeController = context.watch<ThemeController>();
+    final isSelected = themeController.mode == mode;
 
     return Container(
       decoration: BoxDecoration(
@@ -288,7 +298,9 @@ class _ThemeScreenState extends State<ThemeScreen> {
         child: InkWell(
           onTap: () {
             PinpointHaptics.medium();
-            myAppState.changeTheme(mode);
+            themeController.setMode(mode);
+            getIt<AnalyticsFacade>().trackThemeChanged(
+                theme: ThemeController.modeAnalyticsLabel(mode));
           },
           borderRadius: BorderRadius.circular(16),
           child: Padding(
@@ -362,8 +374,8 @@ class _ThemeScreenState extends State<ThemeScreen> {
               PinpointHaptics.medium();
               _saveFontPreference(fontName);
               // Apply font change to theme
-              final myAppState = MyApp.of(context);
-              myAppState.changeFontFamily(fontName);
+              context.read<ThemeController>().setFontFamily(fontName);
+              getIt<AnalyticsFacade>().trackFontChanged(fontFamily: fontName);
             },
             borderRadius: BorderRadius.circular(16),
             child: Padding(

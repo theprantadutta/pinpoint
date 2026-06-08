@@ -29,6 +29,7 @@ import 'services/search_service.dart';
 import 'services/connectivity_service.dart';
 import 'services/app_update_service.dart';
 import 'services/api_service.dart';
+import 'services/theme_controller.dart';
 import 'screens/auth_screen.dart';
 
 // void main() async {
@@ -509,28 +510,15 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  ThemeMode _themeMode = ThemeMode.dark; // Dark-first design
-  Color _accentColor = PinpointColors.mint; // Default accent
   bool _isBiometricEnabled = false;
-  bool _highContrastMode = false;
-  String _fontFamily = 'Inter'; // Default font
   SharedPreferences? _sharedPreferences;
 
-  /// Accent color presets
-  // static const List<Color> _accentColors = [
-  //   PinpointColors.mint,
-  //   PinpointColors.iris,
-  //   PinpointColors.rose,
-  //   PinpointColors.amber,
-  //   PinpointColors.ocean,
-  // ];
+  /// Appearance (theme mode / accent / contrast / font) is owned by
+  /// [ThemeController] — a reactive ChangeNotifier provided below. Only the
+  /// non-theme biometric toggle remains here.
+  final ThemeController _themeController = ThemeController();
 
-  /// This is needed for components that may have a different theme data
-  bool get isDarkMode => _themeMode == ThemeMode.dark;
-  Color get accentColor => _accentColor;
   bool get isBiometricEnabled => _isBiometricEnabled;
-  bool get highContrastMode => _highContrastMode;
-  String get fontFamily => _fontFamily;
 
   void changeBiometricEnabledEnabled(bool isisBiometricEnabled) {
     setState(() {
@@ -540,71 +528,16 @@ class _MyAppState extends State<MyApp> {
     getIt<AnalyticsFacade>().trackBiometricToggled(enabled: isisBiometricEnabled);
   }
 
-  void changeAccentColor(Color color) {
-    setState(() {
-      _accentColor = color;
-      _sharedPreferences?.setInt('accent_color', color.toARGB32());
-    });
-    getIt<AnalyticsFacade>().trackAccentColorChanged(colorName: '#${color.toARGB32().toRadixString(16)}');
-  }
-
-  void changeHighContrastMode(bool enabled) {
-    setState(() {
-      _highContrastMode = enabled;
-      _sharedPreferences?.setBool('high_contrast', enabled);
-    });
-    getIt<AnalyticsFacade>().trackHighContrastToggled(enabled: enabled);
-  }
-
-  void changeTheme(ThemeMode themeMode) {
-    setState(() {
-      _themeMode = themeMode;
-      _sharedPreferences?.setBool(kIsDarkModeKey, themeMode == ThemeMode.dark);
-    });
-    getIt<AnalyticsFacade>().trackThemeChanged(theme: themeMode == ThemeMode.dark ? 'dark' : 'light');
-  }
-
-  void changeFontFamily(String fontFamily) {
-    setState(() {
-      _fontFamily = fontFamily;
-      _sharedPreferences?.setString(kSelectedFontKey, fontFamily);
-    });
-    getIt<AnalyticsFacade>().trackFontChanged(fontFamily: fontFamily);
-  }
-
   Future<void> initializeSharedPreferences() async {
     _sharedPreferences = await SharedPreferences.getInstance();
 
-    // Load theme mode
-    final isDarkMode = _sharedPreferences?.getBool(kIsDarkModeKey);
-    if (isDarkMode != null) {
-      setState(
-        () => _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      );
-    }
-
-    // Load accent color
-    final accentColorValue = _sharedPreferences?.getInt('accent_color');
-    if (accentColorValue != null) {
-      setState(() => _accentColor = Color(accentColorValue));
-    }
-
-    // Load high contrast mode
-    final highContrast = _sharedPreferences?.getBool('high_contrast');
-    if (highContrast != null) {
-      setState(() => _highContrastMode = highContrast);
-    }
+    // Load appearance preferences into the reactive controller.
+    await _themeController.load();
 
     // Load biometric setting
     final isFingerPrintEnabled = _sharedPreferences?.getBool(kBiometricKey);
     if (isFingerPrintEnabled != null) {
       setState(() => _isBiometricEnabled = isFingerPrintEnabled);
-    }
-
-    // Load font family
-    final fontFamily = _sharedPreferences?.getString(kSelectedFontKey);
-    if (fontFamily != null) {
-      setState(() => _fontFamily = fontFamily);
     }
   }
 
@@ -710,6 +643,7 @@ class _MyAppState extends State<MyApp> {
 
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: _themeController),
         ChangeNotifierProvider.value(
           value: SubscriptionManager()..initialize(),
         ),
@@ -726,26 +660,30 @@ class _MyAppState extends State<MyApp> {
           value: ConnectivityService(),
         ),
       ],
-      child: MaterialApp.router(
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-        ],
-        title: 'Pinpoint',
-        routerConfig: AppNavigation.router,
-        themeMode: _themeMode,
-        theme: PinpointTheme.light(
-          accentColor: _accentColor,
-          highContrast: _highContrastMode,
-          fontFamily: _fontFamily,
-        ),
-        darkTheme: PinpointTheme.dark(
-          accentColor: _accentColor,
-          highContrast: _highContrastMode,
-          fontFamily: _fontFamily,
-        ),
-        debugShowCheckedModeBanner: false,
+      child: Consumer<ThemeController>(
+        builder: (context, themeController, _) {
+          return MaterialApp.router(
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+            ],
+            title: 'Pinpoint',
+            routerConfig: AppNavigation.router,
+            themeMode: themeController.mode,
+            theme: PinpointTheme.light(
+              accentColor: themeController.accent,
+              highContrast: themeController.highContrast,
+              fontFamily: themeController.fontFamily,
+            ),
+            darkTheme: PinpointTheme.dark(
+              accentColor: themeController.accent,
+              highContrast: themeController.highContrast,
+              fontFamily: themeController.fontFamily,
+            ),
+            debugShowCheckedModeBanner: false,
+          );
+        },
       ),
     );
   }

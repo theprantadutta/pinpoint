@@ -1,5 +1,8 @@
 // main file keys
-const kIsDarkModeKey = 'is_dark_mode_key';
+const kIsDarkModeKey = 'is_dark_mode_key'; // legacy bool (migrated to kThemeModeKey)
+const kThemeModeKey = 'theme_mode_key'; // 'system' | 'light' | 'dark'
+const kAccentColorKey = 'accent_color';
+const kHighContrastKey = 'high_contrast';
 const kFlexSchemeKey = 'is_flex_scheme_key';
 const kBiometricKey = 'biometric_key';
 const String kSelectedFontKey = 'selected-font-key';

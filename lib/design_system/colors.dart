@@ -151,6 +151,96 @@ class PinpointColors {
   /// High contrast overlays for emphasis
   static const Color highContrastLight = Color(0xFFFFFFFF);
   static const Color highContrastDark = Color(0xFF000000);
+
+  // ============================================
+  // "Keep, refined" — borderless flat design system
+  // (matched light + dark pair; single shared accent)
+  // ============================================
+
+  /// Refined indigo-blue accent — used in BOTH light and dark
+  /// (FAB, cursor, selection ring, active drawer item, focused field).
+  static const Color accentRefined = Color(0xFF6C8FF5);
+  static const Color onAccentRefined = Color(0xFFFFFFFF);
+
+  // --- Dark surfaces ---
+  static const Color keepDarkCanvas = Color(0xFF0E0F11); // scaffold bg
+  static const Color keepDarkCard = Color(0xFF1A1C1E); // note card / default note
+  static const Color keepDarkBar = Color(0xFF17191B); // top bar / drawer
+  static const Color keepDarkPill = Color(0xFF2A2D31); // search pill / chips
+  static const Color keepDarkTextPrimary = Color(0xFFE8EAED);
+  static const Color keepDarkTextSecondary = Color(0xFF9AA0A6);
+  static const Color keepDarkTextHint = Color(0xFF5F6368);
+  static const Color keepDarkDivider = Color(0xFF26282B);
+
+  // --- Light surfaces ---
+  static const Color keepLightCanvas = Color(0xFFFFFFFF); // scaffold bg
+  static const Color keepLightCard = Color(0xFFFFFFFF); // note card / default note
+  static const Color keepLightCardBorder = Color(0xFFE0E0E0); // hairline outline
+  static const Color keepLightBar = Color(0xFFFFFFFF); // top bar / drawer
+  static const Color keepLightPill = Color(0xFFF1F3F4); // search pill / chips
+  static const Color keepLightTextPrimary = Color(0xFF202124);
+  static const Color keepLightTextSecondary = Color(0xFF5F6368);
+  static const Color keepLightTextHint = Color(0xFF80868B);
+  static const Color keepLightDivider = Color(0xFFE8EAED);
+
+  /// Resolve a note-color swatch (by stable name) to the right shade for the
+  /// current brightness. Only the NAME is persisted (and encrypted), so colors
+  /// survive light/dark switches and encryption round-trips.
+  /// A null/unknown/"default" name returns null → caller uses the default card color.
+  static Color? noteColor(String? name, Brightness brightness) {
+    if (name == null || name.isEmpty || name == 'default') return null;
+    final swatch = NoteSwatch.byName(name);
+    if (swatch == null) return null;
+    return brightness == Brightness.dark ? swatch.dark : swatch.light;
+  }
+}
+
+/// A Keep-style note color swatch. Persisted by [name] only.
+class NoteSwatch {
+  final String name; // stable key stored in the encrypted payload
+  final String label; // human-facing label
+  final Color dark; // dark-mode background
+  final Color light; // light-mode background
+
+  const NoteSwatch({
+    required this.name,
+    required this.label,
+    required this.dark,
+    required this.light,
+  });
+
+  /// The default (no color) option — renders as the theme's normal card color.
+  static const NoteSwatch defaultSwatch = NoteSwatch(
+    name: 'default',
+    label: 'Default',
+    dark: PinpointColors.keepDarkCard,
+    light: PinpointColors.keepLightCard,
+  );
+
+  /// The 11 colored swatches (Keep parity), each with a dark + light shade.
+  static const List<NoteSwatch> colored = [
+    NoteSwatch(name: 'coral', label: 'Coral', dark: Color(0xFF5C2B29), light: Color(0xFFFAAFA8)),
+    NoteSwatch(name: 'peach', label: 'Peach', dark: Color(0xFF614A19), light: Color(0xFFF39F76)),
+    NoteSwatch(name: 'sand', label: 'Sand', dark: Color(0xFF635D19), light: Color(0xFFFFF8B8)),
+    NoteSwatch(name: 'mint', label: 'Mint', dark: Color(0xFF345920), light: Color(0xFFE2F6D3)),
+    NoteSwatch(name: 'sage', label: 'Sage', dark: Color(0xFF16504B), light: Color(0xFFB4DDD3)),
+    NoteSwatch(name: 'fog', label: 'Fog', dark: Color(0xFF2D555E), light: Color(0xFFD4E4ED)),
+    NoteSwatch(name: 'storm', label: 'Storm', dark: Color(0xFF1E3A5F), light: Color(0xFFAECCDC)),
+    NoteSwatch(name: 'dusk', label: 'Dusk', dark: Color(0xFF42275E), light: Color(0xFFD3BFDB)),
+    NoteSwatch(name: 'blossom', label: 'Blossom', dark: Color(0xFF5B2245), light: Color(0xFFF6E2DD)),
+    NoteSwatch(name: 'clay', label: 'Clay', dark: Color(0xFF442F19), light: Color(0xFFE9E3D4)),
+    NoteSwatch(name: 'chalk', label: 'Chalk', dark: Color(0xFF3C3F43), light: Color(0xFFEFEFF1)),
+  ];
+
+  /// Default + all colored swatches (for the color-picker UI).
+  static const List<NoteSwatch> all = [defaultSwatch, ...colored];
+
+  static NoteSwatch? byName(String name) {
+    for (final s in all) {
+      if (s.name == name) return s;
+    }
+    return null;
+  }
 }
 
 /// Material 3 Color Scheme Extensions
