@@ -51,11 +51,11 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Keep-style search bar: [hamburger] [ Search your notes ] [filter]
+          // Keep-style search bar: [ Search your notes ] [filter]
+          // (The hamburger is the Scaffold's automatic drawer button in the
+          // app bar leading slot — we don't add a second one here.)
           Row(
             children: [
-              _buildMenuButton(context, theme),
-              const SizedBox(width: 4),
               Expanded(
                 child: _isSearchActive
                     ? SearchBarSticky(
@@ -128,16 +128,6 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
     );
   }
 
-  Widget _buildMenuButton(BuildContext context, ThemeData theme) {
-    // Opens the Keep-style navigation drawer hosted by the home Scaffold.
-    return IconButton(
-      visualDensity: VisualDensity.compact,
-      icon: const Icon(Symbols.menu),
-      tooltip: 'Menu',
-      onPressed: () => Scaffold.of(context).openDrawer(),
-    );
-  }
-
   /// Tappable "Search your notes" pill (Keep-style). Tapping reveals an inline
   /// search field in its place.
   Widget _buildSearchPill(BuildContext context, ThemeData theme) {
@@ -155,10 +145,14 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
             children: [
               Icon(Symbols.search, size: 22, color: cs.onSurfaceVariant),
               const SizedBox(width: 12),
-              Text(
-                'Search your notes',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: cs.onSurfaceVariant,
+              Expanded(
+                child: Text(
+                  'Search your notes',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],

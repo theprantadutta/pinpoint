@@ -107,8 +107,10 @@ class _KeepFabState extends State<KeepFab> with SingleTickerProviderStateMixin {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        ...actions,
-        const SizedBox(height: 8),
+        // Only present while open so the closed FAB stays compact and pinned
+        // to the bottom-right (a collapsed SizeTransition still reserves width).
+        if (_open) ...actions,
+        if (_open) const SizedBox(height: 8),
         FloatingActionButton(
           key: WalkthroughKeys.fabKey,
           onPressed: _toggle,
