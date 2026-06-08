@@ -20,6 +20,9 @@ class TextNotesV2 extends Table {
   /// Stored as plain text markdown, rendered as HTML in UI
   TextColumn get content => text()();
 
+  /// Optional Keep-style color swatch name (e.g. 'storm'); null = default.
+  TextColumn get color => text().nullable()();
+
   /// Whether the note is pinned to the top of the list
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
 

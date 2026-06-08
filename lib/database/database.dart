@@ -54,7 +54,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration {
@@ -111,6 +111,16 @@ class AppDatabase extends _$AppDatabase {
           ''');
 
           debugPrint('✅ [Database] Migration to v9 completed - recurring reminders ready');
+        }
+
+        if (from < 10 && to >= 10) {
+          // V9 → V10: Add Keep-style note color to each note type.
+          debugPrint('🔄 [Database] Adding color column to note tables');
+          await m.addColumn(textNotesV2, textNotesV2.color);
+          await m.addColumn(todoListNotesV2, todoListNotesV2.color);
+          await m.addColumn(voiceNotesV2, voiceNotesV2.color);
+          await m.addColumn(reminderNotesV2, reminderNotesV2.color);
+          debugPrint('✅ [Database] Migration to v10 completed - note colors ready');
         }
       },
     );

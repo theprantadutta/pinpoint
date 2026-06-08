@@ -655,6 +655,7 @@ class ApiSyncService extends SyncService {
       'noteTitle': note.title ?? '',
       'noteType': 'text',
       'content': note.content,
+      'color': note.color,
       'isPinned': note.isPinned,
       'isArchived': note.isArchived,
       'isDeleted': note.isDeleted,
@@ -673,6 +674,7 @@ class ApiSyncService extends SyncService {
       'audioDuration': note.durationSeconds,
       'transcription': note.transcription,
       'recordedAt': note.recordedAt?.toIso8601String(),
+      'color': note.color,
       'isPinned': note.isPinned,
       'isArchived': note.isArchived,
       'isDeleted': note.isDeleted,
@@ -690,6 +692,7 @@ class ApiSyncService extends SyncService {
       'uuid': note.uuid,
       'noteTitle': note.title ?? '',
       'noteType': 'todo',
+      'color': note.color,
       'todoItems': items
           .map((item) => {
                 'uuid': item.uuid,
@@ -712,6 +715,7 @@ class ApiSyncService extends SyncService {
       'uuid': note.uuid,
       'noteTitle': note.title ?? '',
       'noteType': 'reminder',
+      'color': note.color,
       'notificationTitle': note.notificationTitle ?? note.title ?? '',
       'notificationContent': note.notificationContent,
       'reminderDescription': note.description, // For backward compatibility
@@ -993,6 +997,7 @@ class ApiSyncService extends SyncService {
     final isPinned = noteData['isPinned'] as bool? ?? false;
     final isArchived = noteData['isArchived'] as bool? ?? false;
     final isDeleted = noteData['isDeleted'] as bool? ?? false;
+    final color = noteData['color'] as String?;
 
     debugPrint('🔄 [ApiSync] Updating existing V2 ${existingNote.type} note: $uuid');
 
@@ -1004,6 +1009,7 @@ class ApiSyncService extends SyncService {
           TextNotesV2Companion(
             title: Value(title),
             content: Value(noteData['content'] as String? ?? ''),
+            color: Value(color),
             isPinned: Value(isPinned),
             isArchived: Value(isArchived),
             isDeleted: Value(isDeleted),
@@ -1027,6 +1033,7 @@ class ApiSyncService extends SyncService {
             audioFilePath: Value(serverAudioPath),
             durationSeconds: Value(noteData['audioDuration'] as int?),
             transcription: Value(noteData['transcription'] as String?),
+            color: Value(color),
             isPinned: Value(isPinned),
             isArchived: Value(isArchived),
             isDeleted: Value(isDeleted),
@@ -1050,6 +1057,7 @@ class ApiSyncService extends SyncService {
             .write(
           TodoListNotesV2Companion(
             title: Value(title),
+            color: Value(color),
             isPinned: Value(isPinned),
             isArchived: Value(isArchived),
             isDeleted: Value(isDeleted),
@@ -1101,6 +1109,7 @@ class ApiSyncService extends SyncService {
             .write(
           ReminderNotesV2Companion(
             title: Value(title),
+            color: Value(color),
             description: Value(noteData['reminderDescription'] as String?),
             reminderTime: Value(DateTime.parse(noteData['reminderTime'] as String)),
             isTriggered: Value(noteData['isTriggered'] as bool? ?? false),
@@ -1136,6 +1145,7 @@ class ApiSyncService extends SyncService {
       final isPinned = noteData['isPinned'] as bool? ?? false;
       final isArchived = noteData['isArchived'] as bool? ?? false;
       final isDeleted = noteData['isDeleted'] as bool? ?? false;
+      final color = noteData['color'] as String?;
 
       // Create type-specific note in V2 tables
       switch (noteType) {
@@ -1145,6 +1155,7 @@ class ApiSyncService extends SyncService {
               uuid: Value(clientNoteUuid),
               title: Value(title),
               content: Value(noteData['content'] as String? ?? ''),
+              color: Value(color),
               isPinned: Value(isPinned),
               isArchived: Value(isArchived),
               isDeleted: Value(isDeleted),
@@ -1172,6 +1183,7 @@ class ApiSyncService extends SyncService {
               recordedAt: Value(noteData['recordedAt'] != null
                   ? DateTime.parse(noteData['recordedAt'] as String)
                   : createdAt),
+              color: Value(color),
               isPinned: Value(isPinned),
               isArchived: Value(isArchived),
               isDeleted: Value(isDeleted),
@@ -1197,6 +1209,7 @@ class ApiSyncService extends SyncService {
             TodoListNotesV2Companion(
               uuid: Value(clientNoteUuid),
               title: Value(title),
+              color: Value(color),
               isPinned: Value(isPinned),
               isArchived: Value(isArchived),
               isDeleted: Value(isDeleted),
@@ -1236,6 +1249,7 @@ class ApiSyncService extends SyncService {
             ReminderNotesV2Companion(
               uuid: Value(clientNoteUuid),
               title: Value(title),
+              color: Value(color),
               description: Value(noteData['reminderDescription'] as String?),
               reminderTime: Value(DateTime.parse(noteData['reminderTime'] as String)),
               isTriggered: Value(noteData['isTriggered'] as bool? ?? false),

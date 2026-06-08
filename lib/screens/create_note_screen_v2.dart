@@ -19,6 +19,8 @@ import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
 import '../constants/constants.dart';
 import '../database/database.dart';
 import '../design_system/design_system.dart';
+import '../design_system/components/note_color_picker.dart';
+import '../services/drift_note_service.dart';
 import '../dtos/note_folder_dto.dart';
 import '../screen_arguments/create_note_screen_arguments.dart';
 import '../constants/premium_limits.dart';
@@ -75,6 +77,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   // Todo list fields
   List<TodoItemEntity> _todoItems = [];
   String? _todoListNoteUuid;
+
+  // Keep-style note color (swatch name); null = default card color.
+  String? _selectedColor;
 
   // Reminder fields
   DateTime? _reminderTime;
@@ -202,6 +207,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       // Set note ID and basic info
       _currentNoteId = note.id;
       _titleController.text = note.noteTitle ?? '';
+      _selectedColor = existingNote.color;
 
       // Set folders
       selectedFolders = existingNote.folders
@@ -348,6 +354,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       // Track analytics: always track creates, only track explicit updates
       final analytics = getIt<AnalyticsFacade>();
       final noteTypeKey = _noteTypeToKey(selectedNoteType);
+
+      // Persist the Keep-style note color.
+      await DriftNoteService.setNoteColor(noteId, noteTypeKey, _selectedColor);
       if (isNew) {
         analytics.trackNoteCreated(noteType: noteTypeKey);
       } else if (isExplicit) {
@@ -570,9 +579,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
+    final noteBg =
+        PinpointColors.noteColor(_selectedColor, theme.brightness) ?? cs.surface;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: cs.surface,
+      backgroundColor: noteBg,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -712,10 +724,13 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   }
 
   Widget _buildHeader(BuildContext context, ColorScheme cs, bool isDark) {
+    final noteBg = PinpointColors.noteColor(
+            _selectedColor, Theme.of(context).brightness) ??
+        cs.surface;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: cs.surface,
+        color: noteBg,
         border: Border(
           bottom: BorderSide(
             color: cs.outline.withValues(alpha: 0.1),
@@ -789,6 +804,32 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           ),
 
           const SizedBox(width: 5),
+
+          // Color (palette) button
+          IconButton(
+            icon: Icon(Symbols.palette, color: cs.onSurface),
+            iconSize: 24,
+            tooltip: 'Color',
+            onPressed: () async {
+              PinpointHaptics.light();
+              final picked = await showNoteColorPicker(
+                context,
+                selected: _selectedColor,
+              );
+              if (picked != null && mounted) {
+                setState(() =>
+                    _selectedColor = picked == 'default' ? null : picked);
+                // Persist immediately for already-saved notes.
+                if (_currentNoteId != null) {
+                  await DriftNoteService.setNoteColor(
+                    _currentNoteId!,
+                    _noteTypeToKey(selectedNoteType),
+                    _selectedColor,
+                  );
+                }
+              }
+            },
+          ),
 
           // Three-dot menu
           PopupMenuButton<String>(

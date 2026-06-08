@@ -447,6 +447,50 @@ class DriftNoteService {
         .write(NotesCompanion(isPinned: Value(isPinned)));
   }
 
+  /// Set the Keep-style color swatch name on a note, addressing the correct V2
+  /// table by its id + type key ('text' | 'todo' | 'voice' | 'reminder').
+  /// Pass null/'default' to clear the color. Marks the note unsynced.
+  static Future<void> setNoteColor(
+      int noteId, String noteTypeKey, String? color) async {
+    final database = getIt<AppDatabase>();
+    final now = DateTime.now();
+    final value = (color == null || color == 'default') ? null : color;
+    switch (noteTypeKey) {
+      case 'text':
+        await (database.update(database.textNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(TextNotesV2Companion(
+                color: Value(value),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+      case 'todo':
+        await (database.update(database.todoListNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(TodoListNotesV2Companion(
+                color: Value(value),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+      case 'voice':
+        await (database.update(database.voiceNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(VoiceNotesV2Companion(
+                color: Value(value),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+      case 'reminder':
+        await (database.update(database.reminderNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .write(ReminderNotesV2Companion(
+                color: Value(value),
+                updatedAt: Value(now),
+                isSynced: const Value(false)));
+        break;
+    }
+  }
+
   static Future<void> removeReminder(int noteId) async {
     final database = getIt<AppDatabase>();
     // Delete the reminder note data from ReminderNotes table
@@ -1511,6 +1555,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: _extractPlainTextFromContent(textNote.content),
+          color: textNote.color,
         ));
         }
       }
@@ -1579,6 +1624,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: voicePreview,
+          color: voiceNote.color,
         ));
         }
       }
@@ -1661,6 +1707,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: convertedTodoItems,
           textContent: todoPreview,
+          color: todoNote.color,
         ));
         }
       }
@@ -1715,6 +1762,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: reminderNote.description,
+          color: reminderNote.color,
         ));
         }
       }
@@ -1815,6 +1863,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: _extractPlainTextFromContent(textNote.content),
+          color: textNote.color,
         ));
         }
       }
@@ -1883,6 +1932,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: voicePreview,
+          color: voiceNote.color,
         ));
         }
       }
@@ -1965,6 +2015,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: convertedTodoItems,
           textContent: todoPreview,
+          color: todoNote.color,
         ));
         }
       }
@@ -2019,6 +2070,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: reminderNote.description,
+          color: reminderNote.color,
         ));
         }
       }
@@ -2119,6 +2171,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: _extractPlainTextFromContent(textNote.content),
+          color: textNote.color,
         ));
         }
       }
@@ -2187,6 +2240,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: voicePreview,
+          color: voiceNote.color,
         ));
         }
       }
@@ -2269,6 +2323,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: convertedTodoItems,
           textContent: todoPreview,
+          color: todoNote.color,
         ));
         }
       }
@@ -2323,6 +2378,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: reminderNote.description,
+          color: reminderNote.color,
         ));
         }
       }
@@ -2427,6 +2483,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: _extractPlainTextFromContent(textNote.content),
+          color: textNote.color,
         ));
         }
       }
@@ -2498,6 +2555,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: voicePreview,
+          color: voiceNote.color,
         ));
         }
       }
@@ -2583,6 +2641,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: convertedTodoItems,
           textContent: todoPreview,
+          color: todoNote.color,
         ));
         }
       }
@@ -2640,6 +2699,7 @@ class DriftNoteService {
           attachments: [],
           todoItems: [],
           textContent: reminderNote.description,
+          color: reminderNote.color,
         ));
         }
       }

@@ -15,6 +15,9 @@ class ReminderNotesV2 extends Table {
   /// Optional title for the reminder (for app organization)
   TextColumn get title => text().nullable()();
 
+  /// Optional Keep-style color swatch name (e.g. 'storm'); null = default.
+  TextColumn get color => text().nullable()();
+
   /// Title shown in the push notification
   TextColumn get notificationTitle => text().nullable()();
 

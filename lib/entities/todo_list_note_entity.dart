@@ -16,6 +16,9 @@ class TodoListNotesV2 extends Table {
   /// Optional title for the todo list
   TextColumn get title => text().nullable()();
 
+  /// Optional Keep-style color swatch name (e.g. 'storm'); null = default.
+  TextColumn get color => text().nullable()();
+
   /// Whether the note is pinned to the top of the list
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
 
