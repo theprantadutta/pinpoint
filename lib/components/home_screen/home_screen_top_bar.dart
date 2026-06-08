@@ -51,121 +51,53 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Top row: [Menu, Connectivity] · Logo · [Filter, Search]
+          // Keep-style search bar: [hamburger] [ Search your notes ] [filter]
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Left group: menu + connectivity status
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildMenuButton(context, theme),
-                  _buildConnectivityIndicator(context, theme),
-                ],
+              _buildMenuButton(context, theme),
+              const SizedBox(width: 4),
+              Expanded(
+                child: _isSearchActive
+                    ? SearchBarSticky(
+                        controller: _searchController,
+                        hint: 'Search your notes',
+                        onSearch: widget.onSearchChanged,
+                        autoFocus: true,
+                      )
+                    : _buildSearchPill(context, theme),
               ),
+              const SizedBox(width: 4),
+              _buildConnectivityIndicator(context, theme),
+              // Filter button with badge
+              Consumer<FilterService>(
+                builder: (context, filterService, _) {
+                  final hasFilters = filterService.hasActiveFilters;
+                  final filterCount = filterService.activeFilterCount;
 
-              // Logo (flexible so it never overflows on narrow screens)
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.2),
-                            blurRadius: 4,
-                            spreadRadius: 1,
-                          ),
-                        ],
+                  return Badge(
+                    isLabelVisible: hasFilters,
+                    label: Text(filterCount.toString()),
+                    child: IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(
+                        Symbols.filter_alt,
+                        fill: hasFilters ? 1 : 0,
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.asset(
-                          'assets/images/pinpoint-logo.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                      tooltip: 'Filters',
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => const FilterBottomSheet(),
+                        );
+                      },
                     ),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: Text(
-                        'Pinpoint',
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          letterSpacing: -0.2,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Filter and Search buttons
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Filter button with badge
-                  Consumer<FilterService>(
-                    builder: (context, filterService, _) {
-                      final hasFilters = filterService.hasActiveFilters;
-                      final filterCount = filterService.activeFilterCount;
-
-                      return Badge(
-                        isLabelVisible: hasFilters,
-                        label: Text(filterCount.toString()),
-                        child: IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(
-                            hasFilters
-                                ? Symbols.filter_alt
-                                : Symbols.filter_alt,
-                            fill: hasFilters ? 1 : 0,
-                          ),
-                          tooltip: 'Filters',
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => const FilterBottomSheet(),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Search toggle button
-                  IconButton(
-                    key: WalkthroughKeys.searchKey,
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Symbols.search),
-                    tooltip: 'Search',
-                    onPressed: () {
-                      setState(() => _isSearchActive = !_isSearchActive);
-                    },
-                  ),
-                ],
+                  );
+                },
               ),
             ],
           ),
-
-          // Search bar (expandable)
-          if (_isSearchActive) ...[
-            const SizedBox(height: 12),
-            SearchBarSticky(
-              controller: _searchController,
-              hint: 'Search notes...',
-              onSearch: widget.onSearchChanged,
-              autoFocus: true,
-            ),
-          ],
         ],
       ),
     );
@@ -203,6 +135,36 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
       icon: const Icon(Symbols.menu),
       tooltip: 'Menu',
       onPressed: () => Scaffold.of(context).openDrawer(),
+    );
+  }
+
+  /// Tappable "Search your notes" pill (Keep-style). Tapping reveals an inline
+  /// search field in its place.
+  Widget _buildSearchPill(BuildContext context, ThemeData theme) {
+    final cs = theme.colorScheme;
+    return Material(
+      key: WalkthroughKeys.searchKey,
+      color: cs.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: () => setState(() => _isSearchActive = true),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(Symbols.search, size: 22, color: cs.onSurfaceVariant),
+              const SizedBox(width: 12),
+              Text(
+                'Search your notes',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
