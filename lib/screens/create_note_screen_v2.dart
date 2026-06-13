@@ -313,11 +313,15 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   /// Save note based on current type.
   /// [isExplicit] distinguishes user-initiated saves from auto-saves for analytics.
   Future<void> _saveNote({bool isExplicit = false}) async {
-    if (_isSaving) return;
-
-    setState(() {
-      _isSaving = true;
-    });
+    // Serialize saves: if a save (e.g. the 2-second auto-save) is already
+    // running, wait for it to finish instead of bailing out. Bailing out is
+    // what made a quick "paste then back" sometimes drop the latest title or
+    // body — the explicit back-save would no-op because an auto-save was
+    // mid-flight. Waiting guarantees the newest content is persisted.
+    while (_isSaving) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    _isSaving = true;
 
     try {
       final title = _titleController.text.trim();
@@ -376,11 +380,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       debugPrint('Stack trace: $st');
       rethrow;
     } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
+      // Always release the lock (no setState needed — build doesn't read it).
+      _isSaving = false;
     }
   }
 
@@ -608,28 +609,34 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   // (Keep-style: no note-type selector — the type is chosen from
                   // the FAB speed-dial, and notes convert between text/checklist.)
 
-                  // Title (in the body, Keep-style)
+                  // Title (in the body, Keep-style) — clean borderless field
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
                       child: TextField(
                         controller: _titleController,
                         focusNode: _titleFocusNode,
                         decoration: InputDecoration(
                           hintText: 'Title',
+                          // Borderless + unfilled: override the global input
+                          // theme so there's no pill background or focus ring.
+                          filled: false,
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
                           isDense: true,
-                          contentPadding: EdgeInsets.zero,
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 6),
                           hintStyle: TextStyle(
                             color: cs.onSurface.withValues(alpha: 0.4),
                             fontWeight: FontWeight.w600,
-                            fontSize: 22,
+                            fontSize: 18,
                           ),
                         ),
                         style: TextStyle(
                           color: cs.onSurface,
                           fontWeight: FontWeight.w600,
-                          fontSize: 22,
+                          fontSize: 18,
                         ),
                         maxLines: null,
                         textInputAction: TextInputAction.next,

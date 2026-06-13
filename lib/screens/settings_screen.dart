@@ -442,6 +442,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               MyApp.of(context).changeBiometricEnabledEnabled(!current);
             },
           ),
+          const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
             title: 'Encryption',
             subtitle: 'Standard or Maximum Privacy (zero-knowledge)',
