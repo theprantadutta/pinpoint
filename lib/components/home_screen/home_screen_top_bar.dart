@@ -51,11 +51,18 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Keep-style search bar: [ Search your notes ] [filter]
-          // (The hamburger is the Scaffold's automatic drawer button in the
-          // app bar leading slot — we don't add a second one here.)
+          // Keep-style search bar: [hamburger] [ Search your notes ] [filter]
           Row(
             children: [
+              Builder(
+                builder: (context) => IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Symbols.menu),
+                  tooltip: 'Menu',
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+              const SizedBox(width: 2),
               Expanded(
                 child: _isSearchActive
                     ? SearchBarSticky(

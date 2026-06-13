@@ -265,21 +265,40 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
-    return GradientScaffold(
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final barColor =
+        isDark ? PinpointColors.keepDarkBar : PinpointColors.keepLightBar;
+
+    // Flat, Keep-style home: a solid app-bar surface (with breathing room
+    // beneath the search field) over a flat canvas — no gradient/glass.
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const KeepDrawer(),
       floatingActionButton: const KeepFab(),
-      appBar: GlassAppBar(
-        scrollController: _scrollController,
-        title: HomeScreenTopBar(
-          onSearchChanged: (query) {
-            setState(() {
-              _searchQuery = query;
-            });
-          },
-        ),
-      ),
       body: Column(
         children: [
+          // Top bar surface
+          Material(
+            color: barColor,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: PinpointSpacing.sm),
+                child: HomeScreenTopBar(
+                  onSearchChanged: (query) {
+                    setState(() {
+                      _searchQuery = query;
+                    });
+                  },
+                ),
+              ),
+            ),
+          ),
+
+          // Space under the app bar
+          SizedBox(height: PinpointSpacing.md),
+
           // Folders Section (Compact)
           const HomeScreenMyFolders(),
 

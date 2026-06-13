@@ -166,9 +166,9 @@ class PinpointColors {
   // Cool, subtly indigo-tinted neutrals (hue ~222, very low saturation) so
   // surfaces feel related to the indigo-blue accent instead of flat gray.
   static const Color keepDarkCanvas = Color(0xFF0F1116); // scaffold bg
-  static const Color keepDarkCard = Color(0xFF191C23); // note card / default note
-  static const Color keepDarkBar = Color(0xFF14161C); // top bar / drawer
-  static const Color keepDarkPill = Color(0xFF262A34); // search pill / chips
+  static const Color keepDarkCard = Color(0xFF1D212B); // note card / default note
+  static const Color keepDarkBar = Color(0xFF16181F); // top bar / drawer
+  static const Color keepDarkPill = Color(0xFF2A2F3A); // search pill / chips
   static const Color keepDarkTextPrimary = Color(0xFFE8EAED);
   static const Color keepDarkTextSecondary = Color(0xFF9AA0A6);
   static const Color keepDarkTextHint = Color(0xFF5F6368);
