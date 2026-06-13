@@ -161,9 +161,11 @@ class _BrutalistCardState extends State<BrutalistCard>
     switch (widget.variant) {
       case BrutalistCardVariant.elevated:
         return _CardStyle(
+          // Use the Keep surface tokens so elevated cards (settings tiles, etc.)
+          // match the home note cards and the indigo-tinted palette.
           backgroundColor: brightness == Brightness.dark
-              ? PinpointColors.darkSurface2
-              : PinpointColors.lightSurface1,
+              ? PinpointColors.keepDarkCard
+              : PinpointColors.keepLightCard,
           borderColor: Colors.transparent,
           borderWidth: 0,
           borderRadius: 20,

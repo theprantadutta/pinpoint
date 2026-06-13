@@ -163,25 +163,29 @@ class PinpointColors {
   static const Color onAccentRefined = Color(0xFFFFFFFF);
 
   // --- Dark surfaces ---
-  static const Color keepDarkCanvas = Color(0xFF0E0F11); // scaffold bg
-  static const Color keepDarkCard = Color(0xFF1A1C1E); // note card / default note
-  static const Color keepDarkBar = Color(0xFF17191B); // top bar / drawer
-  static const Color keepDarkPill = Color(0xFF2A2D31); // search pill / chips
+  // Cool, subtly indigo-tinted neutrals (hue ~222, very low saturation) so
+  // surfaces feel related to the indigo-blue accent instead of flat gray.
+  static const Color keepDarkCanvas = Color(0xFF0F1116); // scaffold bg
+  static const Color keepDarkCard = Color(0xFF191C23); // note card / default note
+  static const Color keepDarkBar = Color(0xFF14161C); // top bar / drawer
+  static const Color keepDarkPill = Color(0xFF262A34); // search pill / chips
   static const Color keepDarkTextPrimary = Color(0xFFE8EAED);
   static const Color keepDarkTextSecondary = Color(0xFF9AA0A6);
   static const Color keepDarkTextHint = Color(0xFF5F6368);
-  static const Color keepDarkDivider = Color(0xFF26282B);
+  static const Color keepDarkDivider = Color(0xFF2A2E38);
 
   // --- Light surfaces ---
-  static const Color keepLightCanvas = Color(0xFFFFFFFF); // scaffold bg
+  // White cards on a faint cool canvas; borders/pills carry a light indigo
+  // tint to harmonize with the accent.
+  static const Color keepLightCanvas = Color(0xFFF5F6FB); // scaffold bg
   static const Color keepLightCard = Color(0xFFFFFFFF); // note card / default note
-  static const Color keepLightCardBorder = Color(0xFFE0E0E0); // hairline outline
+  static const Color keepLightCardBorder = Color(0xFFE3E6F1); // hairline outline
   static const Color keepLightBar = Color(0xFFFFFFFF); // top bar / drawer
-  static const Color keepLightPill = Color(0xFFF1F3F4); // search pill / chips
-  static const Color keepLightTextPrimary = Color(0xFF202124);
-  static const Color keepLightTextSecondary = Color(0xFF5F6368);
-  static const Color keepLightTextHint = Color(0xFF80868B);
-  static const Color keepLightDivider = Color(0xFFE8EAED);
+  static const Color keepLightPill = Color(0xFFEBEEF7); // search pill / chips
+  static const Color keepLightTextPrimary = Color(0xFF1F2230);
+  static const Color keepLightTextSecondary = Color(0xFF5A5F6E);
+  static const Color keepLightTextHint = Color(0xFF8A8F9C);
+  static const Color keepLightDivider = Color(0xFFE7E9F2);
 
   /// Resolve a note-color swatch (by stable name) to the right shade for the
   /// current brightness. Only the NAME is persisted (and encrypted), so colors
