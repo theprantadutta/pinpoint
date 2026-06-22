@@ -32,6 +32,9 @@ class _HomeScreenState extends State<HomeScreen>
   String _searchQuery = '';
   final ScrollController _scrollController = ScrollController();
 
+  // Whether the notes list has scrolled under the top bar (drives the hairline).
+  bool _scrolledUnder = false;
+
   // Static flag to prevent re-initialization across widget rebuilds
   static bool _servicesInitialized = false;
 
@@ -41,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     getIt<AnalyticsFacade>().trackScreenView(screenName: 'Home');
     // Initialize authenticated services only once per app session
     if (!_servicesInitialized) {
@@ -204,8 +208,17 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  void _onScroll() {
+    final scrolledUnder =
+        _scrollController.hasClients && _scrollController.offset > 0;
+    if (scrolledUnder != _scrolledUnder) {
+      setState(() => _scrolledUnder = scrolledUnder);
+    }
+  }
+
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -277,9 +290,19 @@ class _HomeScreenState extends State<HomeScreen>
       floatingActionButton: const KeepFab(),
       body: Column(
         children: [
-          // Top bar surface
-          Material(
-            color: barColor,
+          // Top bar surface — a subtle hairline appears once the list scrolls.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: barColor,
+              border: Border(
+                bottom: BorderSide(
+                  color: _scrolledUnder
+                      ? theme.dividerColor
+                      : Colors.transparent,
+                  width: 0.5,
+                ),
+              ),
+            ),
             child: SafeArea(
               bottom: false,
               child: Padding(

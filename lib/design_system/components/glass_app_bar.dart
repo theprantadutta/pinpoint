@@ -56,12 +56,46 @@ class GlassAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _GlassAppBarState extends State<GlassAppBar> {
+  ScrollNotificationObserverState? _scrollObserver;
+  bool _scrolledUnder = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final observer = ScrollNotificationObserver.maybeOf(context);
+    if (observer != _scrollObserver) {
+      _scrollObserver?.removeListener(_handleScrollNotification);
+      _scrollObserver = observer;
+      _scrollObserver?.addListener(_handleScrollNotification);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollObserver?.removeListener(_handleScrollNotification);
+    _scrollObserver = null;
+    super.dispose();
+  }
+
+  void _handleScrollNotification(ScrollNotification notification) {
+    if (notification is ScrollUpdateNotification &&
+        defaultScrollNotificationPredicate(notification)) {
+      final scrolledUnder = notification.depth == 0 &&
+          notification.metrics.axis == Axis.vertical &&
+          notification.metrics.extentBefore > 0;
+      if (scrolledUnder != _scrolledUnder) {
+        setState(() => _scrolledUnder = scrolledUnder);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     // Flat Keep aesthetic: a solid app bar that matches the scaffold canvas so
-    // it blends into the background (no glass blur / overlay / divider).
+    // it blends into the background. A subtle hairline only appears once
+    // content scrolls under the bar, to separate it from the scrolling list.
     return AppBar(
       systemOverlayStyle: theme.brightness == Brightness.dark
           ? SystemUiOverlayStyle.light
@@ -70,6 +104,9 @@ class _GlassAppBarState extends State<GlassAppBar> {
       scrolledUnderElevation: 0,
       backgroundColor: widget.backgroundColor ?? theme.scaffoldBackgroundColor,
       surfaceTintColor: Colors.transparent,
+      shape: _scrolledUnder
+          ? Border(bottom: BorderSide(color: theme.dividerColor, width: 0.5))
+          : null,
       centerTitle: widget.centerTitle,
       leading: widget.leading,
       title: widget.title,
