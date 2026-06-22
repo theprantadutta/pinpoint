@@ -318,9 +318,6 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
 
-          // Space under the app bar
-          SizedBox(height: PinpointSpacing.md),
-
           // Folders Section (Compact)
           const HomeScreenMyFolders(),
 
