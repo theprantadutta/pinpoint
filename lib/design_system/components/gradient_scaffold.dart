@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../colors.dart';
-import '../gradients.dart';
 import '../animations.dart';
 
 /// GradientScaffold - Base screen with animated background gradient
@@ -36,7 +35,7 @@ class GradientScaffold extends StatefulWidget {
     this.drawer,
     this.backgroundColor,
     this.backgroundGradient,
-    this.animateGradient = true,
+    this.animateGradient = false,
     this.safeArea = true,
     this.extendBodyBehindAppBar = false,
     this.padding,
@@ -122,8 +121,8 @@ class _GradientScaffoldState extends State<GradientScaffold>
                       _getDefaultGradient(brightness),
                   backgroundColor: widget.backgroundColor ??
                       (brightness == Brightness.dark
-                          ? PinpointColors.darkSurface1
-                          : PinpointColors.lightSurface1),
+                          ? PinpointColors.keepDarkCanvas
+                          : PinpointColors.keepLightCanvas),
                 );
               },
             ),
@@ -140,11 +139,12 @@ class _GradientScaffoldState extends State<GradientScaffold>
   }
 
   Gradient _getDefaultGradient(Brightness brightness) {
-    if (brightness == Brightness.dark) {
-      return PinpointGradients.crescentInk;
-    } else {
-      return PinpointGradients.oceanQuartz;
-    }
+    // Flat Keep aesthetic: a single-color "gradient" so the canvas is a solid
+    // surface that every screen shares (matches the home).
+    final c = brightness == Brightness.dark
+        ? PinpointColors.keepDarkCanvas
+        : PinpointColors.keepLightCanvas;
+    return LinearGradient(colors: [c, c]);
   }
 }
 

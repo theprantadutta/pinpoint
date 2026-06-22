@@ -56,83 +56,25 @@ class GlassAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _GlassAppBarState extends State<GlassAppBar> {
-  double _scrollOffset = 0.0;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.scrollController?.addListener(_onScroll);
-  }
-
-  @override
-  void didUpdateWidget(GlassAppBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.scrollController != widget.scrollController) {
-      oldWidget.scrollController?.removeListener(_onScroll);
-      widget.scrollController?.addListener(_onScroll);
-    }
-  }
-
-  @override
-  void dispose() {
-    widget.scrollController?.removeListener(_onScroll);
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (widget.scrollController != null) {
-      setState(() {
-        _scrollOffset = widget.scrollController!.offset;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final glassSurface = theme.glassSurface;
-    final motionSettings = MotionSettings.fromMediaQuery(context);
 
-    // Calculate opacity based on scroll
-    final opacity = (_scrollOffset / 100).clamp(0.0, 1.0);
-    final blurIntensity = motionSettings.reduceMotion
-        ? (widget.blurAmount ?? glassSurface.blurAmount)
-        : ((widget.blurAmount ?? glassSurface.blurAmount) *
-            (0.5 + opacity * 0.5));
-
+    // Flat Keep aesthetic: a solid app bar that matches the scaffold canvas so
+    // it blends into the background (no glass blur / overlay / divider).
     return AppBar(
       systemOverlayStyle: theme.brightness == Brightness.dark
           ? SystemUiOverlayStyle.light
           : SystemUiOverlayStyle.dark,
       elevation: 0,
-      backgroundColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      backgroundColor: widget.backgroundColor ?? theme.scaffoldBackgroundColor,
+      surfaceTintColor: Colors.transparent,
       centerTitle: widget.centerTitle,
       leading: widget.leading,
       title: widget.title,
       actions: widget.actions,
       bottom: widget.bottom,
-      flexibleSpace: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: blurIntensity,
-            sigmaY: blurIntensity,
-          ),
-          child: AnimatedContainer(
-            duration: motionSettings.getDuration(PinpointAnimations.fast),
-            curve: motionSettings.getCurve(PinpointAnimations.standard),
-            decoration: BoxDecoration(
-              color: (widget.backgroundColor ?? glassSurface.overlayColor)
-                  .withValues(alpha: glassSurface.opacity + (opacity * 0.1)),
-              border: Border(
-                bottom: BorderSide(
-                  color: glassSurface.borderColor.withValues(alpha: opacity),
-                  width: 1,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

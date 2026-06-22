@@ -266,9 +266,8 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final barColor =
-        isDark ? PinpointColors.keepDarkBar : PinpointColors.keepLightBar;
+    // Match the app-bar surface to the home canvas so it blends in.
+    final barColor = theme.scaffoldBackgroundColor;
 
     // Flat, Keep-style home: a solid app-bar surface (with breathing room
     // beneath the search field) over a flat canvas — no gradient/glass.
