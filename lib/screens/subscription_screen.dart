@@ -344,14 +344,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   Widget _buildFeaturesList(bool isDark) {
     final features = [
-      _Feature(Symbols.cloud_sync, 'Unlimited cloud sync'),
-      _Feature(Symbols.devices, 'Multi-device access'),
-      _Feature(Symbols.mic, 'Unlimited voice recording'),
-      _Feature(Symbols.text_fields, 'Unlimited OCR'),
-      _Feature(Symbols.palette, 'All premium themes'),
-      _Feature(Symbols.file_download, 'Export to PDF/Markdown'),
-      _Feature(Symbols.share, 'Encrypted sharing'),
-      _Feature(Symbols.support_agent, 'Priority email support'),
+      _Feature(Symbols.cloud_sync, 'Unlimited notes synced to the cloud'),
+      _Feature(Symbols.folder, 'Unlimited folders'),
+      _Feature(Symbols.image, 'Unlimited images & attachments'),
+      _Feature(Symbols.mic, 'Unlimited voice recording length'),
+      _Feature(Symbols.text_fields, 'Unlimited OCR text scanning'),
+      _Feature(Symbols.file_download, 'Unlimited PDF & Markdown export'),
+      _Feature(Symbols.draw, 'Drawing notes'),
+      _Feature(Symbols.share, 'Encrypted note sharing'),
+      _Feature(Symbols.palette, 'All accent colors & themes'),
+      _Feature(Symbols.support_agent, 'Priority support'),
     ];
 
     return Column(
@@ -676,7 +678,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             productId: SubscriptionService.premiumMonthly,
             title: 'Monthly',
             period: 'per month',
-            badge: '7-day free trial',
+            // Trial is shown under the price (per-plan: 3-day monthly).
             colorScheme: colorScheme,
             isDark: isDark,
           ));
@@ -796,6 +798,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }) {
     final isSelected = _selectedProductId == productId;
     final isCurrentlyLoading = _isLoading && isSelected;
+    final trialText = _subscriptionService.getTrialPeriodText(productId);
 
     return GlassContainer(
       padding: EdgeInsets.zero,
@@ -872,6 +875,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     ],
                   ),
                 ),
+                if (trialText.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.card_giftcard_rounded,
+                          size: 15, color: colorScheme.primary),
+                      const SizedBox(width: 6),
+                      Text(
+                        trialText,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,

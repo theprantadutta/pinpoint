@@ -53,17 +53,17 @@ class _KeepFabState extends State<KeepFab>
 
   List<_SpeedDialAction> get _actions => [
         // Top of the stack first; the last item sits closest to the FAB.
+        // Audio & Image are free (with caps enforced in the editor: 2-min voice,
+        // 3 attachments/note). Drawing is premium-only.
         _SpeedDialAction(
           icon: Icons.mic_none_rounded,
           label: 'Audio',
-          locked: true,
-          onTap: () => _select(() => PremiumGate.require(context, 'Audio')),
+          onTap: () => _select(() => _openEditor('Record Audio')),
         ),
         _SpeedDialAction(
           icon: Icons.image_outlined,
           label: 'Image',
-          locked: true,
-          onTap: () => _select(() => PremiumGate.require(context, 'Image')),
+          onTap: () => _select(() => _openEditor('Title Content')),
         ),
         _SpeedDialAction(
           icon: Icons.brush_outlined,

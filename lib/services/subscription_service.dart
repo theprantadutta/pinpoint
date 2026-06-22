@@ -258,28 +258,37 @@ class SubscriptionService {
     }
   }
 
-  /// Check if product has trial (monthly and yearly have 7-day trial)
+  /// Check if product has a free trial. Both subscriptions do (configured as
+  /// free-trial offers in Google Play): monthly = 3 days, yearly = 7 days.
   bool hasTrialPeriod(String productId) {
     return productId == premiumMonthly || productId == premiumYearly;
   }
 
-  /// Get trial period text for UI
-  String getTrialPeriodText(String productId) {
-    if (hasTrialPeriod(productId)) {
-      return '7-day free trial';
-    }
-    return '';
+  /// Number of free-trial days for a product (0 if none). Matches the Play
+  /// Console offers: 3-day monthly, 7-day yearly.
+  int getTrialDays(String productId) {
+    if (productId == premiumMonthly) return 3;
+    if (productId == premiumYearly) return 7;
+    return 0;
   }
 
-  /// Get price text with trial info
+  /// Get trial period text for UI (e.g. '3-day free trial').
+  String getTrialPeriodText(String productId) {
+    final days = getTrialDays(productId);
+    if (days <= 0) return '';
+    return '$days-day free trial';
+  }
+
+  /// Get price text with trial info.
   String getPriceTextWithTrial(ProductDetails product) {
     final basePrice = product.price;
+    final days = getTrialDays(product.id);
 
-    if (hasTrialPeriod(product.id)) {
+    if (days > 0) {
       if (product.id == premiumMonthly) {
-        return 'Free for 7 days, then $basePrice/month';
+        return 'Free for $days days, then $basePrice/month';
       } else if (product.id == premiumYearly) {
-        return 'Free for 7 days, then $basePrice/year';
+        return 'Free for $days days, then $basePrice/year';
       }
     }
 
