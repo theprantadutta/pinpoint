@@ -279,9 +279,39 @@ class SubscriptionService {
     return '$days-day free trial';
   }
 
+  /// The recurring price to display for a product.
+  ///
+  /// Google Play exposes `ProductDetails.price` as the FIRST pricing phase of
+  /// the subscription offer — which, when a free-trial offer is configured, is
+  /// the trial phase and renders as "Free". This digs into the offer's pricing
+  /// phases and returns the first PAID phase (priceAmountMicros > 0), i.e. the
+  /// real recurring price. Falls back to `product.price` (non-Android / no
+  /// offer details).
+  String getDisplayPrice(ProductDetails product) {
+    if (product is GooglePlayProductDetails) {
+      try {
+        final offers = product.productDetails.subscriptionOfferDetails;
+        if (offers != null && offers.isNotEmpty) {
+          final idx = (product.subscriptionIndex != null &&
+                  product.subscriptionIndex! >= 0 &&
+                  product.subscriptionIndex! < offers.length)
+              ? product.subscriptionIndex!
+              : 0;
+          final phases = offers[idx].pricingPhases;
+          final paid =
+              phases.where((p) => p.priceAmountMicros > 0).toList();
+          if (paid.isNotEmpty) return paid.last.formattedPrice;
+        }
+      } catch (e) {
+        log.w('⚠️ getDisplayPrice fallback for ${product.id}: $e');
+      }
+    }
+    return product.price;
+  }
+
   /// Get price text with trial info.
   String getPriceTextWithTrial(ProductDetails product) {
-    final basePrice = product.price;
+    final basePrice = getDisplayPrice(product);
     final days = getTrialDays(product.id);
 
     if (days > 0) {

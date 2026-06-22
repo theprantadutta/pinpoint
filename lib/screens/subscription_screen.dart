@@ -773,11 +773,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       return const SizedBox.shrink();
     }
 
-    // Use dynamic price from Google Play
+    // Use dynamic price from Google Play. Use getDisplayPrice (not
+    // product.price) so the recurring price shows instead of the free-trial
+    // phase, which Google Play reports as "Free" when a trial offer exists.
     return _buildPlanCard(
       productId: productId,
       title: title,
-      price: product.price, // DYNAMIC PRICE FROM GOOGLE PLAY!
+      price: _subscriptionService.getDisplayPrice(product),
       period: period,
       badge: badge,
       isPopular: isPopular,
