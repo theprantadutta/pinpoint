@@ -10,6 +10,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
+import 'package:pinpoint/services/app_review_service.dart';
 import 'package:pinpoint/services/firebase_notification_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/google_sign_in_service.dart';
@@ -566,6 +567,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () {
               PinpointHaptics.medium();
               _showAboutDialog(context);
+            },
+          ),
+          const SizedBox(height: PinpointSpacing.md),
+          _SettingsTile(
+            title: 'Rate Pinpoint',
+            subtitle: 'Enjoying the app? Leave a review',
+            icon: Icons.star_rounded,
+            onTap: () {
+              PinpointHaptics.medium();
+              AppReviewService().openStoreListing();
             },
           ),
           const SizedBox(height: PinpointSpacing.md),
