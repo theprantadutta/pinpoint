@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -146,13 +148,21 @@ class _KeepFabState extends State<KeepFab>
       builder: (context, _) {
         return Stack(
           children: [
-            // Dismiss scrim
+            // Dismiss scrim — blurred + darkened so the page recedes and the
+            // speed-dial labels are easy to read.
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _close,
-                child: ColoredBox(
-                  color: Colors.black.withValues(alpha: 0.45 * _controller.value),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(
+                    sigmaX: 8 * _controller.value,
+                    sigmaY: 8 * _controller.value,
+                  ),
+                  child: ColoredBox(
+                    color: Colors.black
+                        .withValues(alpha: 0.6 * _controller.value),
+                  ),
                 ),
               ),
             ),
