@@ -6,6 +6,7 @@ import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/api_service.dart';
 import 'package:pinpoint/services/firebase_notification_service.dart';
 import 'package:pinpoint/services/drift_note_folder_service.dart';
+import 'package:pinpoint/services/connectivity_service.dart';
 import 'package:pinpoint/screens/home_screen.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
 import 'package:pinpoint/sync/sync_service.dart';
@@ -84,6 +85,15 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint(
           '✅ [Auth] Sync Manager initialized with authenticated API service');
 
+      // Offline-first: if there's no network right now, skip the blocking
+      // initial sync and go straight to home. SyncManager auto-syncs once
+      // connectivity is restored, so no data is lost and the user is never
+      // trapped on a spinner.
+      if (ConnectivityService().isOffline) {
+        debugPrint('📴 [Auth] Offline — skipping initial sync; will sync on reconnect');
+        return true;
+      }
+
       SyncResult? result;
 
       // Show a loading dialog driven by REAL, live sync progress.
@@ -105,7 +115,17 @@ class _AuthScreenState extends State<AuthScreen> {
             // Start the sync; the dialog re-renders from progressNotifier.
             Future.delayed(Duration.zero, () async {
               try {
-                final syncResult = await syncManager.sync();
+                // Never let a slow/dropped network trap the user on this
+                // dialog — time out and proceed; the background sync (and
+                // reconnect auto-sync) will finish the job.
+                final syncResult = await syncManager.sync().timeout(
+                  const Duration(seconds: 25),
+                  onTimeout: () => SyncResult(
+                    success: false,
+                    message:
+                        'Sync is taking a while — it will finish in the background.',
+                  ),
+                );
                 if (dialogContext.mounted) {
                   Navigator.of(dialogContext).pop(syncResult);
                 }

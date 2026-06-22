@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:pinpoint/sync/sync_service.dart';
 import 'package:pinpoint/services/premium_service.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
+import 'package:pinpoint/services/connectivity_service.dart';
 
 /// Sync manager to handle sync operations throughout the app
 class SyncManager with ChangeNotifier {
@@ -13,6 +16,10 @@ class SyncManager with ChangeNotifier {
   bool _isInitialized = false;
   bool _isSyncing = false; // Lock to prevent concurrent syncs
   bool _hasCompletedInitialSync = false; // Track if initial sync done this session
+
+  // Offline-first: auto-flush pending changes when connectivity is restored.
+  StreamSubscription<ConnectivityStatus>? _connectivitySub;
+  Timer? _reconnectDebounce;
 
   SyncStatus get status => _syncService?.status ?? SyncStatus.idle;
   String get lastSyncMessage => _syncService?.lastSyncMessage ?? '';
@@ -72,7 +79,29 @@ class SyncManager with ChangeNotifier {
     }
 
     _isInitialized = true;
+    _listenForReconnect();
     notifyListeners();
+  }
+
+  /// Auto-flush pending changes when connectivity is restored (offline-first):
+  /// edits made offline upload as soon as the network returns — no need to wait
+  /// for the next app launch or a manual sync. Debounced and guarded against
+  /// concurrent syncs. Subscription is set up once (this is a singleton).
+  void _listenForReconnect() {
+    if (_connectivitySub != null) return;
+    _connectivitySub = ConnectivityService().onStatusChange.listen((status) {
+      if (status != ConnectivityStatus.online) return;
+      _reconnectDebounce?.cancel();
+      _reconnectDebounce = Timer(const Duration(seconds: 2), () async {
+        if (_syncService == null || _isSyncing) return;
+        try {
+          debugPrint('🌐 [SyncManager] Connectivity restored — syncing');
+          await sync();
+        } catch (e) {
+          debugPrint('⚠️ [SyncManager] Reconnect sync failed: $e');
+        }
+      });
+    });
   }
 
   /// Set the sync service (can be called after initialization)
@@ -208,6 +237,8 @@ class SyncManager with ChangeNotifier {
 
   @override
   void dispose() {
+    _reconnectDebounce?.cancel();
+    _connectivitySub?.cancel();
     _syncService?.dispose();
     super.dispose();
   }
