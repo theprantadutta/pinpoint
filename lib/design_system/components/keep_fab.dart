@@ -7,77 +7,192 @@ import '../../services/premium_gate.dart';
 import '../../walkthrough/walkthrough_keys.dart';
 import '../animations.dart';
 
-/// Google-Keep-style create button: a blue rounded-square FAB that opens a
-/// bottom sheet of note-creation options (Text, List, and the premium-gated
-/// Drawing / Image / Audio). A bottom sheet keeps placement reliable across
-/// screen sizes and text directions.
-class KeepFab extends StatelessWidget {
+/// A speed-dial create button (Keep-style). Tapping the FAB expands a vertical
+/// stack of labelled mini-buttons above it, over a dismiss scrim. The expanded
+/// items + scrim are rendered in an [Overlay] anchored to the FAB's real
+/// position — this is the reliable way to do a speed dial (a multi-child column
+/// placed directly in the Scaffold FAB slot lays out unpredictably).
+class KeepFab extends StatefulWidget {
   const KeepFab({super.key});
 
-  void _openEditor(BuildContext context, String noticeType) {
+  @override
+  State<KeepFab> createState() => _KeepFabState();
+}
+
+class _SpeedDialAction {
+  final IconData icon;
+  final String label;
+  final bool locked;
+  final VoidCallback onTap;
+  const _SpeedDialAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.locked = false,
+  });
+}
+
+class _KeepFabState extends State<KeepFab>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 220),
+  );
+  OverlayEntry? _entry;
+  bool _isOpen = false;
+
+  @override
+  void dispose() {
+    _entry?.remove();
+    _entry = null;
+    _controller.dispose();
+    super.dispose();
+  }
+
+  List<_SpeedDialAction> get _actions => [
+        // Top of the stack first; the last item sits closest to the FAB.
+        _SpeedDialAction(
+          icon: Icons.mic_none_rounded,
+          label: 'Audio',
+          locked: true,
+          onTap: () => _select(() => PremiumGate.require(context, 'Audio')),
+        ),
+        _SpeedDialAction(
+          icon: Icons.image_outlined,
+          label: 'Image',
+          locked: true,
+          onTap: () => _select(() => PremiumGate.require(context, 'Image')),
+        ),
+        _SpeedDialAction(
+          icon: Icons.brush_outlined,
+          label: 'Drawing',
+          locked: true,
+          onTap: () => _select(() => PremiumGate.require(context, 'Drawing')),
+        ),
+        _SpeedDialAction(
+          icon: Icons.check_box_outlined,
+          label: 'List',
+          onTap: () => _select(() => _openEditor('Todo List')),
+        ),
+        _SpeedDialAction(
+          icon: Icons.text_fields_rounded,
+          label: 'Text',
+          onTap: () => _select(() => _openEditor('Title Content')),
+        ),
+      ];
+
+  void _openEditor(String noticeType) {
     context.push(
       CreateNoteScreenV2.kRouteName,
       extra: CreateNoteScreenArguments(noticeType: noticeType),
     );
   }
 
-  void _showCreateMenu(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _CreateOption(
-                icon: Icons.text_fields_rounded,
-                label: 'Text note',
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _openEditor(context, 'Title Content');
-                },
+  /// Run an action: tear down the menu immediately, then perform it.
+  void _select(VoidCallback action) {
+    _removeOverlay();
+    action();
+  }
+
+  void _toggle() {
+    PinpointHaptics.light();
+    if (_isOpen) {
+      _close();
+    } else {
+      _open();
+    }
+  }
+
+  void _open() {
+    _entry = OverlayEntry(builder: _buildOverlay);
+    Overlay.of(context).insert(_entry!);
+    setState(() => _isOpen = true);
+    _controller.forward();
+  }
+
+  Future<void> _close() async {
+    if (!_isOpen) return;
+    try {
+      await _controller.reverse();
+    } catch (_) {}
+    _removeOverlay();
+  }
+
+  void _removeOverlay() {
+    _entry?.remove();
+    _entry = null;
+    _controller.value = 0;
+    if (mounted) setState(() => _isOpen = false);
+  }
+
+  Widget _buildOverlay(BuildContext overlayContext) {
+    final media = MediaQuery.of(overlayContext);
+
+    // Anchor the stack to the FAB's actual on-screen rect.
+    final fabBox =
+        WalkthroughKeys.fabKey.currentContext?.findRenderObject() as RenderBox?;
+    double rightInset = 16;
+    double bottomInset = media.padding.bottom + 16 + 56 + 12;
+    if (fabBox != null && fabBox.hasSize) {
+      final topLeft = fabBox.localToGlobal(Offset.zero);
+      rightInset = media.size.width - (topLeft.dx + fabBox.size.width);
+      bottomInset = media.size.height - topLeft.dy + 12;
+    }
+
+    final actions = _actions;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Stack(
+          children: [
+            // Dismiss scrim
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _close,
+                child: ColoredBox(
+                  color: Colors.black.withValues(alpha: 0.45 * _controller.value),
+                ),
               ),
-              _CreateOption(
-                icon: Icons.check_box_outlined,
-                label: 'List',
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _openEditor(context, 'Todo List');
-                },
+            ),
+            // Action stack, anchored just above the FAB
+            Positioned(
+              right: rightInset,
+              bottom: bottomInset,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (int i = 0; i < actions.length; i++)
+                    _buildAnimatedItem(actions[i], i, actions.length),
+                ],
               ),
-              _CreateOption(
-                icon: Icons.brush_outlined,
-                label: 'Drawing',
-                locked: true,
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  PremiumGate.require(context, 'Drawing');
-                },
-              ),
-              _CreateOption(
-                icon: Icons.image_outlined,
-                label: 'Image',
-                locked: true,
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  PremiumGate.require(context, 'Image');
-                },
-              ),
-              _CreateOption(
-                icon: Icons.mic_none_rounded,
-                label: 'Audio',
-                locked: true,
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  PremiumGate.require(context, 'Audio');
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
+            ),
+          ],
         );
       },
+    );
+  }
+
+  Widget _buildAnimatedItem(_SpeedDialAction action, int index, int total) {
+    // Stagger from the bottom (closest to the FAB) upward.
+    final reverseIndex = total - 1 - index;
+    final start = (reverseIndex * 0.06).clamp(0.0, 0.5);
+    final anim = CurvedAnimation(
+      parent: _controller,
+      curve: Interval(start, 1.0, curve: Curves.easeOutBack),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: FadeTransition(
+        opacity: anim,
+        child: ScaleTransition(
+          scale: anim,
+          alignment: Alignment.bottomRight,
+          child: _SpeedDialRow(action: action),
+        ),
+      ),
     );
   }
 
@@ -86,50 +201,82 @@ class KeepFab extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return FloatingActionButton(
       key: WalkthroughKeys.fabKey,
-      onPressed: () {
-        PinpointHaptics.light();
-        _showCreateMenu(context);
-      },
+      onPressed: _toggle,
       backgroundColor: cs.primary,
       foregroundColor: cs.onPrimary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Icon(Icons.add, size: 30),
+      child: AnimatedRotation(
+        turns: _isOpen ? 0.125 : 0,
+        duration: const Duration(milliseconds: 220),
+        child: const Icon(Icons.add, size: 30),
+      ),
     );
   }
 }
 
-class _CreateOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool locked;
-  final VoidCallback onTap;
-
-  const _CreateOption({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.locked = false,
-  });
+/// A single speed-dial row: a label chip and a circular mini-button.
+class _SpeedDialRow extends StatelessWidget {
+  final _SpeedDialAction action;
+  const _SpeedDialRow({required this.action});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    return ListTile(
-      leading: Icon(icon, color: cs.onSurfaceVariant),
-      title: Text(
-        label,
-        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
-      ),
-      trailing: locked
-          ? Icon(Icons.lock_outline_rounded, size: 18, color: cs.onSurfaceVariant)
-          : null,
-      onTap: () {
-        PinpointHaptics.light();
-        onTap();
-      },
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Label chip
+        Material(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          elevation: 2,
+          shadowColor: Colors.black.withValues(alpha: 0.2),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: action.onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    action.label,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (action.locked) ...[
+                    const SizedBox(width: 6),
+                    Icon(Icons.lock_outline_rounded,
+                        size: 14, color: cs.onSurfaceVariant),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Mini circular button
+        Material(
+          color: cs.surfaceContainerHighest,
+          shape: const CircleBorder(),
+          elevation: 3,
+          shadowColor: Colors.black.withValues(alpha: 0.25),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: action.onTap,
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(action.icon, size: 22, color: cs.primary),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
