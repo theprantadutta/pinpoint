@@ -129,16 +129,23 @@ class _KeepFabState extends State<KeepFab>
 
   Widget _buildOverlay(BuildContext overlayContext) {
     final media = MediaQuery.of(overlayContext);
+    final cs = Theme.of(overlayContext).colorScheme;
 
     // Anchor the stack to the FAB's actual on-screen rect.
     final fabBox =
         WalkthroughKeys.fabKey.currentContext?.findRenderObject() as RenderBox?;
     double rightInset = 16;
-    double bottomInset = media.padding.bottom + 16 + 56 + 12;
+    double itemsBottom = media.padding.bottom + 16 + 56 + 12;
+    double fabBottom = media.padding.bottom + 16;
+    double fabW = 56;
+    double fabH = 56;
     if (fabBox != null && fabBox.hasSize) {
       final topLeft = fabBox.localToGlobal(Offset.zero);
       rightInset = media.size.width - (topLeft.dx + fabBox.size.width);
-      bottomInset = media.size.height - topLeft.dy + 12;
+      itemsBottom = media.size.height - topLeft.dy + 12;
+      fabBottom = media.size.height - (topLeft.dy + fabBox.size.height);
+      fabW = fabBox.size.width;
+      fabH = fabBox.size.height;
     }
 
     final actions = _actions;
@@ -169,7 +176,7 @@ class _KeepFabState extends State<KeepFab>
             // Action stack, anchored just above the FAB
             Positioned(
               right: rightInset,
-              bottom: bottomInset,
+              bottom: itemsBottom,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -177,6 +184,31 @@ class _KeepFabState extends State<KeepFab>
                   for (int i = 0; i < actions.length; i++)
                     _buildAnimatedItem(actions[i], i, actions.length),
                 ],
+              ),
+            ),
+            // Close (×) button drawn on top of the scrim, over the real FAB
+            // (which is hidden behind the scrim).
+            Positioned(
+              right: rightInset,
+              bottom: fabBottom,
+              child: SizedBox(
+                width: fabW,
+                height: fabH,
+                child: Material(
+                  color: cs.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: _close,
+                    child: AnimatedRotation(
+                      turns: _controller.value * 0.125,
+                      duration: Duration.zero,
+                      child: Icon(Icons.add, size: 30, color: cs.onPrimary),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
