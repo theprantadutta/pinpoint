@@ -125,3 +125,8 @@ flutter:
     - .env
     - assets/images/
     - assets/legal/
+    # Bundled Google Fonts (all weights + italics) so google_fonts loads them
+    # from assets instead of fetching over the network at runtime. Discovered
+    # automatically by google_fonts via the asset manifest; do NOT also list
+    # them under `fonts:`. See lib/main.dart (allowRuntimeFetching = false).
+    - assets/fonts/google_fonts/

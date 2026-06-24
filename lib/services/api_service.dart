@@ -922,13 +922,28 @@ class ApiService {
   /// only ever stores ciphertext (F5). The original extension/content-type are
   /// preserved so the backend's audio-type check and storage are unaffected.
   Future<String> uploadAudioFile(String localFilePath) async {
+    // Encrypt to a temporary file and upload via MultipartFile.fromFile so Dio
+    // streams the body from disk during the (potentially slow) network transfer
+    // instead of pinning the whole encrypted byte array in its multipart buffer.
+    // The produced ciphertext is identical to the previous fromBytes path, so
+    // the server payload and the download/decrypt path are unchanged.
+    //
+    // NOTE: encryptBytes still works on the full buffer (AES-GCM produces a
+    // single authenticated envelope), so peak memory during the brief encrypt
+    // step is unchanged. True chunked/streaming encryption would alter the
+    // envelope format and is intentionally avoided here.
+    File? tempEncryptedFile;
     try {
       final plainBytes = await File(localFilePath).readAsBytes();
       final encryptedBytes = SecureEncryptionService.encryptBytes(plainBytes);
 
+      tempEncryptedFile = await File(
+        '${Directory.systemTemp.path}/pp_upload_${DateTime.now().microsecondsSinceEpoch}.enc',
+      ).writeAsBytes(encryptedBytes, flush: true);
+
       final filename = localFilePath.split('/').last;
-      final file = MultipartFile.fromBytes(
-        encryptedBytes,
+      final file = await MultipartFile.fromFile(
+        tempEncryptedFile.path,
         filename: filename, // keep original extension for server storage
         contentType: DioMediaType('audio', 'm4a'), // satisfy server audio check
       );
@@ -952,6 +967,13 @@ class ApiService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
+    } finally {
+      // Best-effort cleanup of the temporary ciphertext file.
+      try {
+        if (tempEncryptedFile != null && await tempEncryptedFile.exists()) {
+          await tempEncryptedFile.delete();
+        }
+      } catch (_) {}
     }
   }
 

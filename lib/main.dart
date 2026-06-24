@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 
 import 'constants/shared_preference_keys.dart';
@@ -60,6 +61,13 @@ void main() async {
   // Always call this first in async main
   WidgetsFlutterBinding.ensureInitialized();
 
+  // All Google Fonts are bundled as app assets (assets/fonts/google_fonts/),
+  // so never reach out to the network at runtime. This removes the
+  // "Failed to load font with url: ..." crashes seen when a device is offline
+  // or fonts.gstatic.com is unreachable. google_fonts discovers the bundled
+  // TTFs automatically via the asset manifest.
+  GoogleFonts.config.allowRuntimeFetching = false;
+
   try {
     // Initialize core services first
     await _initializeCoreServices();
@@ -67,9 +75,28 @@ void main() async {
     // Set up Crashlytics error handlers (release mode only)
     if (!kDebugMode && Firebase.apps.isNotEmpty) {
       await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
-      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+      FlutterError.onError = (FlutterErrorDetails details) {
+        // Font loading happens via a fire-and-forget future inside
+        // google_fonts; a failure there should never take down the app.
+        // The fleather rich-text editor can also throw a null-check during an
+        // animated scroll that rebuilds the selection overlay against a stale
+        // position (RenderEditableContainerBox.childAtPosition) — a package
+        // race we cannot fix and should not crash on.
+        final nonFatal = _isNonFatalFontError(details.exception) ||
+            _isNonFatalEditorError(details.stack);
+        FirebaseCrashlytics.instance.recordFlutterError(
+          details,
+          fatal: !nonFatal,
+        );
+      };
       PlatformDispatcher.instance.onError = (error, stack) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        final nonFatal =
+            _isNonFatalFontError(error) || _isNonFatalEditorError(stack);
+        FirebaseCrashlytics.instance.recordError(
+          error,
+          stack,
+          fatal: !nonFatal,
+        );
         return true;
       };
     }
@@ -113,6 +140,42 @@ void main() async {
     // Run error app instead of crashing
     runApp(InitializationErrorApp(error: error.toString()));
   }
+}
+
+/// Whether [error] is a (non-fatal) google_fonts font-loading failure.
+///
+/// google_fonts loads each font in a fire-and-forget future with no
+/// `catchError`, so a load failure surfaces as an unhandled async error in
+/// `PlatformDispatcher.onError`. With fonts now bundled as assets this should
+/// not happen, but we classify these so a stray font error is recorded as
+/// non-fatal instead of crashing the app.
+bool _isNonFatalFontError(Object? error) {
+  final message = error.toString().toLowerCase();
+  return message.contains('failed to load font') ||
+      message.contains('google_fonts') ||
+      message.contains('allowruntimefetching') ||
+      (message.contains('font') &&
+          message.contains('was not found in the application assets'));
+}
+
+/// Whether [stack] points at the known fleather editor selection/scroll race.
+///
+/// fleather's `RenderEditableContainerBox.childAtPosition` does
+/// `return targetChild!;` and throws "Null check operator used on a null value"
+/// when an animated scroll (`DrivenScrollActivity`) rebuilds the text-selection
+/// overlay against a position whose render child no longer exists. It is a
+/// package-internal race (present in the latest fleather, 1.27.0) that we cannot
+/// fix from app code. We only ever downgrade fatal -> non-fatal here, and only
+/// when the stack is clearly from fleather's editor, so unrelated null-check
+/// bugs are never masked. No-op on obfuscated release stacks (matches nothing).
+bool _isNonFatalEditorError(StackTrace? stack) {
+  if (stack == null) return false;
+  final frames = stack.toString();
+  return frames.contains('childAtPosition') ||
+      frames.contains('EditorTextSelectionOverlay') ||
+      frames.contains('RenderEditableContainerBox') ||
+      frames.contains('editable_box.dart') ||
+      frames.contains('editable_text_block.dart');
 }
 
 Future<void> _initializeCoreServices() async {
@@ -669,7 +732,14 @@ class _MyAppState extends State<MyApp> {
               GlobalWidgetsLocalizations.delegate,
             ],
             title: 'Pinpoint',
-            routerConfig: AppNavigation.router,
+            // NOTE: the explicit router pieces (instead of `routerConfig`) are
+            // used so we can supply a guarded back-button dispatcher that
+            // shields against a go_router `popRoute` null-check crash.
+            routerDelegate: AppNavigation.router.routerDelegate,
+            routeInformationParser: AppNavigation.router.routeInformationParser,
+            routeInformationProvider:
+                AppNavigation.router.routeInformationProvider,
+            backButtonDispatcher: AppNavigation.backButtonDispatcher,
             themeMode: themeController.mode,
             theme: PinpointTheme.light(
               accentColor: themeController.accent,

@@ -233,11 +233,15 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
 
   IconData _getNoteTypeIcon(String noteType) {
     switch (noteType) {
+      case 'text':
       case 'title_content':
         return Icons.description_rounded;
+      case 'todo':
       case 'todo_list':
         return Icons.checklist_rounded;
+      case 'voice':
       case 'voice_recording':
+      case 'audio':
         return Icons.mic_rounded;
       case 'reminder':
         return Icons.alarm_rounded;

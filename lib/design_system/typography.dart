@@ -21,7 +21,7 @@ class PinpointTypography {
   static String get monospaceFontFamily => 'JetBrains Mono';
 
   /// Writing font for editor (optimized for long-form writing)
-  static String get writingFontFamily => 'Source Sans Pro';
+  static String get writingFontFamily => 'Source Sans 3';
 
   // ============================================
   // Text Themes

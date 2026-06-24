@@ -2250,7 +2250,15 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
     try {
       final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      // Cap the long edge so a very large gallery image (e.g. 48MP) can't spike
+      // memory / OOM while being read for OCR. 3000px keeps text crisp enough
+      // for ML Kit recognition on normal photos; quality stays high (no
+      // imageQuality downsizing) to preserve fine text edges.
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 3000,
+        maxHeight: 3000,
+      );
 
       if (image == null) return;
 

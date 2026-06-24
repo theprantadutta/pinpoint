@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'safe_back_button_dispatcher.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/analytics/analytics_route_observer.dart';
@@ -35,6 +36,12 @@ class AppNavigation {
   AppNavigation._();
 
   static String initial = SplashScreen.kRouteName;
+
+  /// Guards the Android system back button against a known go_router
+  /// null-check crash in `popRoute`. Single instance — must not be recreated
+  /// on rebuilds. See [SafeBackButtonDispatcher].
+  static final SafeBackButtonDispatcher backButtonDispatcher =
+      SafeBackButtonDispatcher();
 
   // Private navigators
   static final rootNavigatorKey = GlobalKey<NavigatorState>();

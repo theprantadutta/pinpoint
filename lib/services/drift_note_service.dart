@@ -346,15 +346,22 @@ class DriftNoteService {
     try {
       log.i("Restoring V2 note $noteId of type $noteType...");
 
+      // Canonical note types are 'text' | 'todo' | 'voice' | 'reminder'.
+      // Legacy aliases ('title_content' | 'todo_list' | 'voice_recording' |
+      // 'audio') are kept for backward compatibility with older data.
       switch (noteType) {
+        case 'voice':
         case 'voice_recording':
+        case 'audio':
           await VoiceNoteService.restoreVoiceNote(noteId);
           break;
 
+        case 'text':
         case 'title_content':
           await TextNoteService.restoreTextNote(noteId);
           break;
 
+        case 'todo':
         case 'todo_list':
           await TodoListNoteService.restoreTodoListNote(noteId);
           break;
@@ -384,15 +391,22 @@ class DriftNoteService {
     try {
       log.i("Permanently deleting V2 note $noteId of type $noteType...");
 
+      // Canonical note types are 'text' | 'todo' | 'voice' | 'reminder'.
+      // Legacy aliases ('title_content' | 'todo_list' | 'voice_recording' |
+      // 'audio') are kept for backward compatibility with older data.
       switch (noteType) {
+        case 'voice':
         case 'voice_recording':
+        case 'audio':
           await VoiceNoteService.permanentlyDeleteVoiceNote(noteId);
           break;
 
+        case 'text':
         case 'title_content':
           await TextNoteService.permanentlyDeleteTextNote(noteId);
           break;
 
+        case 'todo':
         case 'todo_list':
           await TodoListNoteService.permanentlyDeleteTodoListNote(noteId);
           break;

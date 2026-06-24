@@ -14,6 +14,15 @@ import 'package:pinpoint/design_system/design_system.dart';
 import 'package:pinpoint/constants/premium_limits.dart';
 
 class NoteInputField extends StatelessWidget {
+  // Picked images are downscaled/recompressed at selection time so we don't
+  // store (and later decode) full-resolution camera originals — a 12MP photo
+  // (~5MB, ~48MB decoded) becomes a few hundred KB with no visible loss at the
+  // sizes notes display. Long edge is capped and JPEG quality reduced. These
+  // only affect images; videos picked via pickMultipleMedia pass through
+  // untouched. See also the on-screen decode cap in note_attachments.dart.
+  static const double _kMaxImageDimension = 2048;
+  static const int _kImageQuality = 85;
+
   final String title;
   final TextEditingController textEditingController;
   final int maxLines;
@@ -36,8 +45,13 @@ class NoteInputField extends StatelessWidget {
 
     // Request storage permission (only needed on Android)
     if (await _requestStoragePermission()) {
-      // Pick multiple images and videos.
-      final List<XFile> medias = await picker.pickMultipleMedia();
+      // Pick multiple images and videos. maxWidth/maxHeight/imageQuality are
+      // applied to images only (videos are returned untouched).
+      final List<XFile> medias = await picker.pickMultipleMedia(
+        maxWidth: _kMaxImageDimension,
+        maxHeight: _kMaxImageDimension,
+        imageQuality: _kImageQuality,
+      );
       final Directory appDir =
           await getApplicationDocumentsDirectory(); // Safe storage location
 

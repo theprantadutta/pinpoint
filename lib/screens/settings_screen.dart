@@ -469,8 +469,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 type: FileType.custom,
                 allowedExtensions: ['pinpoint-note'],
               );
-              if (result != null) {
-                final file = File(result.files.single.path!);
+              if (result != null && result.files.isNotEmpty) {
+                final path = result.files.first.path;
+                if (path == null) {
+                  return;
+                }
+                final file = File(path);
                 final jsonString = await file.readAsString();
                 await DriftNoteService.importNoteFromJson(jsonString);
                 final ctx = context;
