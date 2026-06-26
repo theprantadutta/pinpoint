@@ -34,7 +34,7 @@ Cancel anytime. Your privacy is always protected with end-to-end encryption.
 
 **Billing Period**: 1 month
 
-**Free Trial**: 7 days
+**Free Trial**: None
 
 **Grace Period**: 3 days
 
@@ -69,7 +69,7 @@ Cancel anytime. Your privacy is always protected with end-to-end encryption.
 
 **Billing Period**: 1 year
 
-**Free Trial**: 7 days
+**Free Trial**: None
 
 **Grace Period**: 3 days
 
@@ -157,7 +157,7 @@ One payment. Lifetime access. Your privacy protected forever.
 
 ### Subscription Benefits
 - ✅ Automatic renewal
-- ✅ 7-day free trial (Monthly & Yearly)
+- ✅ No free trial
 - ✅ Cancel anytime
 - ✅ Grace period for failed payments
 - ✅ Family Library sharing (optional)
@@ -180,7 +180,7 @@ One payment. Lifetime access. Your privacy protected forever.
 4. Add Title and Description
 5. Set Base plan (Monthly/Yearly)
 6. Configure pricing
-7. Add free trial period
+7. Do not add a free trial offer
 8. Save and activate
 
 ### 2. Create One-Time Product (Lifetime)
@@ -244,13 +244,12 @@ This ensures:
 Track these metrics in Google Play Console:
 
 1. **Conversion Rate**: Free → Premium
-2. **Trial Conversion**: Trial → Paid
-3. **Churn Rate**: Cancellations
-4. **ARPU**: Average Revenue Per User
-5. **LTV**: Lifetime Value
+2. **Churn Rate**: Cancellations
+3. **ARPU**: Average Revenue Per User
+4. **LTV**: Lifetime Value
 
 **Target metrics:**
-- Trial → Paid conversion: >40%
+- Free → Premium conversion: >5%
 - Monthly churn: <5%
 - Yearly churn: <10%
 
@@ -264,7 +263,7 @@ Track these metrics in Google Play Console:
 Create notes, todos, voice memos, and reminders. All data encrypted locally. Sync up to 50 notes to the cloud.
 
 **Premium features:**
-Unlock unlimited cloud sync, unlimited OCR, premium themes, and cross-device access. Try 7 days free!
+Unlock unlimited cloud sync, unlimited OCR, premium themes, and cross-device access.
 
 **Pricing:**
 - Monthly: $4.99/month
@@ -279,7 +278,7 @@ Before launching subscriptions:
 
 - [ ] Create all 3 products in Google Play Console
 - [ ] Set up pricing for all countries
-- [ ] Enable free trials (Monthly & Yearly)
+- [ ] Do not enable free trials (Monthly & Yearly)
 - [ ] Test purchase flow
 - [ ] Verify backend integration
 - [ ] Test subscription status checking

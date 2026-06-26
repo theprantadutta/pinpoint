@@ -678,7 +678,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             productId: SubscriptionService.premiumMonthly,
             title: 'Monthly',
             period: 'per month',
-            // Trial is shown under the price (per-plan: 3-day monthly).
             colorScheme: colorScheme,
             isDark: isDark,
           ));
@@ -774,8 +773,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
 
     // Use dynamic price from Google Play. Use getDisplayPrice (not
-    // product.price) so the recurring price shows instead of the free-trial
-    // phase, which Google Play reports as "Free" when a trial offer exists.
+    // product.price) so the real recurring price shows, skipping any
+    // zero-priced intro pricing phase Google Play may report first.
     return _buildPlanCard(
       productId: productId,
       title: title,
@@ -800,7 +799,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }) {
     final isSelected = _selectedProductId == productId;
     final isCurrentlyLoading = _isLoading && isSelected;
-    final trialText = _subscriptionService.getTrialPeriodText(productId);
 
     return GlassContainer(
       padding: EdgeInsets.zero,
@@ -877,25 +875,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     ],
                   ),
                 ),
-                if (trialText.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.card_giftcard_rounded,
-                          size: 15, color: colorScheme.primary),
-                      const SizedBox(width: 6),
-                      Text(
-                        trialText,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,

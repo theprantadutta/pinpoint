@@ -258,35 +258,13 @@ class SubscriptionService {
     }
   }
 
-  /// Check if product has a free trial. Both subscriptions do (configured as
-  /// free-trial offers in Google Play): monthly = 3 days, yearly = 7 days.
-  bool hasTrialPeriod(String productId) {
-    return productId == premiumMonthly || productId == premiumYearly;
-  }
-
-  /// Number of free-trial days for a product (0 if none). Matches the Play
-  /// Console offers: 3-day monthly, 7-day yearly.
-  int getTrialDays(String productId) {
-    if (productId == premiumMonthly) return 3;
-    if (productId == premiumYearly) return 7;
-    return 0;
-  }
-
-  /// Get trial period text for UI (e.g. '3-day free trial').
-  String getTrialPeriodText(String productId) {
-    final days = getTrialDays(productId);
-    if (days <= 0) return '';
-    return '$days-day free trial';
-  }
-
   /// The recurring price to display for a product.
   ///
   /// Google Play exposes `ProductDetails.price` as the FIRST pricing phase of
-  /// the subscription offer — which, when a free-trial offer is configured, is
-  /// the trial phase and renders as "Free". This digs into the offer's pricing
-  /// phases and returns the first PAID phase (priceAmountMicros > 0), i.e. the
-  /// real recurring price. Falls back to `product.price` (non-Android / no
-  /// offer details).
+  /// the subscription offer. This digs into the offer's pricing phases and
+  /// returns the first PAID phase (priceAmountMicros > 0), i.e. the real
+  /// recurring price, so any zero-priced intro phase is skipped. Falls back to
+  /// `product.price` (non-Android / no offer details).
   String getDisplayPrice(ProductDetails product) {
     if (product is GooglePlayProductDetails) {
       try {
@@ -307,22 +285,6 @@ class SubscriptionService {
       }
     }
     return product.price;
-  }
-
-  /// Get price text with trial info.
-  String getPriceTextWithTrial(ProductDetails product) {
-    final basePrice = getDisplayPrice(product);
-    final days = getTrialDays(product.id);
-
-    if (days > 0) {
-      if (product.id == premiumMonthly) {
-        return 'Free for $days days, then $basePrice/month';
-      } else if (product.id == premiumYearly) {
-        return 'Free for $days days, then $basePrice/year';
-      }
-    }
-
-    return basePrice;
   }
 
   /// Dispose subscription
