@@ -16,11 +16,13 @@ class TodoItemsV2 extends Table {
 
   /// Foreign key to TodoListNotesV2 table (local ID)
   /// CASCADE DELETE: When todo list note is deleted, all its items are also deleted
+  @ReferenceName('todoItemsV2ById')
   IntColumn get todoListNoteId =>
       integer().references(TodoListNotesV2, #id, onDelete: KeyAction.cascade)();
 
   /// Foreign key to TodoListNotesV2 table (UUID for sync)
   /// Used for cross-device sync to link items to their parent todo list
+  @ReferenceName('todoItemsV2ByUuid')
   TextColumn get todoListNoteUuid =>
       text().references(TodoListNotesV2, #uuid)();
 

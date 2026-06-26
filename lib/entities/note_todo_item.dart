@@ -16,11 +16,13 @@ class NoteTodoItems extends Table {
   /// Foreign key to Notes table (local reference)
   /// CASCADE DELETE: When note is deleted, all its todo items are also deleted
   /// Note: This references Notes.id directly, which is the same as TodoNotes.noteId
+  @ReferenceName('noteTodoItemsById')
   IntColumn get noteId =>
       integer().references(Notes, #id, onDelete: KeyAction.cascade)();
 
   /// Parent note UUID (for sync)
   /// This references the parent note's UUID for cross-device sync
+  @ReferenceName('noteTodoItemsByUuid')
   TextColumn get noteUuid => text().references(Notes, #uuid)();
 
   /// The text content of the todo item
