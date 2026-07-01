@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 2.1.0+21
+version: 2.2.0+22
 
 environment:
   sdk: ^3.6.0
@@ -55,6 +55,12 @@ dependencies:
   flutter_timezone: ^5.0.1
   in_app_purchase: ^3.2.0
   in_app_purchase_android: ^0.5.1
+  # iOS StoreKit backend for in_app_purchase (App Store billing on iOS)
+  in_app_purchase_storekit: ^0.4.3
+  # Sign in with Apple (required by App Store Guideline 4.8 alongside Google Sign-In)
+  sign_in_with_apple: ^8.1.0
+  # SHA-256 nonce hashing for Sign in with Apple (was transitive; now used directly)
+  crypto: ^3.0.6
   in_app_update: ^4.2.3
   in_app_review: ^2.0.12
   dio: ^5.7.0
