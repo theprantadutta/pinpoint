@@ -60,6 +60,14 @@ void main() async {
   // Always call this first in async main
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Silence all debugPrint output in release builds. debugPrint still prints in
+  // release by default; several services log status (including encryption/sync
+  // key handling) via debugPrint. Raw key bytes are never printed, but gagging
+  // it in release avoids leaking any operational detail into device logs.
+  if (kReleaseMode) {
+    debugPrint = (String? message, {int? wrapWidth}) {};
+  }
+
   // All Google Fonts are bundled as app assets (assets/fonts/google_fonts/),
   // so never reach out to the network at runtime. This removes the
   // "Failed to load font with url: ..." crashes seen when a device is offline
