@@ -405,6 +405,7 @@ class ApiSyncService extends SyncService {
       int conflictCount = 0;
       int failedCount = 0;
       int decryptionErrorCount = 0;
+      int legacyMigrationCount = 0;
       final List<String> errors = [];
 
       final int totalToProcess = response.length;
@@ -486,6 +487,16 @@ class ApiSyncService extends SyncService {
             // Update or create the note
             await _applyNoteToDatabase(clientNoteUuid, noteData, serverUpdatedAt);
             successCount++;
+
+            // Lazy migration (F1): if the server copy was a legacy v1
+            // (unauthenticated AES-CBC) envelope, flag the note for re-upload
+            // so it is re-encrypted as authenticated v2 (AES-GCM) and the v1
+            // blob is replaced server-side. Converges after one round: once the
+            // server holds v2, subsequent downloads are no longer legacy.
+            if (SecureEncryptionService.isLegacyEnvelope(encryptedData)) {
+              legacyMigrationCount++;
+              await _markNoteForReupload(clientNoteUuid);
+            }
           }
         } catch (e) {
           failedCount++;
@@ -519,6 +530,11 @@ class ApiSyncService extends SyncService {
       if (decryptionErrorCount > 0) {
         debugPrint('⚠️ [ApiSync] CRITICAL: $decryptionErrorCount decryption errors detected!');
         debugPrint('⚠️ [ApiSync] This usually means the encryption key is incorrect.');
+      }
+      if (legacyMigrationCount > 0) {
+        // Telemetry for the v1(AES-CBC)->v2(AES-GCM) migration: once this stays
+        // at 0 across users, the legacy CBC read path can be removed.
+        debugPrint('🔐 [ApiSync] Flagged $legacyMigrationCount legacy v1 note(s) for re-encryption to v2 (AES-GCM)');
       }
       debugPrint('🔽 [ApiSync] ========== DOWNLOAD COMPLETE ==========\n');
 
@@ -966,6 +982,37 @@ class ApiSyncService extends SyncService {
     final noteData = jsonDecode(jsonString) as Map<String, dynamic>;
 
     return noteData;
+  }
+
+  /// Mark a note (by UUID) as unsynced so the next upload cycle re-encrypts and
+  /// re-uploads it. Used by the lazy v1(AES-CBC)->v2(AES-GCM) migration: the
+  /// upload path always encrypts with authenticated AES-GCM, so re-uploading a
+  /// legacy note replaces its v1 blob on the server.
+  Future<void> _markNoteForReupload(String uuid) async {
+    final note = await _getNoteByUuidV2(uuid);
+    if (note == null) return;
+    switch (note.type) {
+      case 'text':
+        await (_database.update(_database.textNotesV2)
+              ..where((tbl) => tbl.uuid.equals(uuid)))
+            .write(const TextNotesV2Companion(isSynced: Value(false)));
+        break;
+      case 'voice':
+        await (_database.update(_database.voiceNotesV2)
+              ..where((tbl) => tbl.uuid.equals(uuid)))
+            .write(const VoiceNotesV2Companion(isSynced: Value(false)));
+        break;
+      case 'todo':
+        await (_database.update(_database.todoListNotesV2)
+              ..where((tbl) => tbl.uuid.equals(uuid)))
+            .write(const TodoListNotesV2Companion(isSynced: Value(false)));
+        break;
+      case 'reminder':
+        await (_database.update(_database.reminderNotesV2)
+              ..where((tbl) => tbl.uuid.equals(uuid)))
+            .write(const ReminderNotesV2Companion(isSynced: Value(false)));
+        break;
+    }
   }
 
   /// Apply downloaded note to local database

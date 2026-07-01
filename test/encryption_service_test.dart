@@ -79,6 +79,28 @@ void main() {
     expect(SecureEncryptionService.decrypt(reEncrypted), plain);
   });
 
+  test('isLegacyEnvelope flags v1 (CBC) but not v2 (GCM)', () {
+    final legacyBlob = legacyCbcEncrypt('old note');
+    final v2Blob = SecureEncryptionService.encrypt('new note');
+
+    expect(SecureEncryptionService.isLegacyEnvelope(legacyBlob), isTrue);
+    expect(SecureEncryptionService.isLegacyEnvelope(v2Blob), isFalse);
+  });
+
+  test('isLegacyEnvelope returns false for non-envelope input', () {
+    expect(SecureEncryptionService.isLegacyEnvelope('not base64 %%%'), isFalse);
+    expect(SecureEncryptionService.isLegacyEnvelope(''), isFalse);
+  });
+
+  test('a v1 note flagged legacy becomes non-legacy after upgrade', () {
+    final legacyBlob = legacyCbcEncrypt('upgrade me');
+    expect(SecureEncryptionService.isLegacyEnvelope(legacyBlob), isTrue);
+
+    final upgraded = SecureEncryptionService.encrypt(
+        SecureEncryptionService.decrypt(legacyBlob));
+    expect(SecureEncryptionService.isLegacyEnvelope(upgraded), isFalse);
+  });
+
   // --- Phase 3 (F5): binary audio-blob encryption ---------------------------
 
   // Stand-in for raw audio bytes.

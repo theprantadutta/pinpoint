@@ -247,6 +247,22 @@ class SecureEncryptionService {
     }
   }
 
+  /// Whether [stored] is a legacy v1 (unauthenticated AES-CBC) envelope, i.e.
+  /// one that should be re-encrypted as authenticated v2 (AES-GCM). A v1
+  /// envelope has no `v` field (treated as version 1). Returns false for
+  /// anything that isn't a parseable envelope, so v2/GCM and unknown data are
+  /// left untouched. Used by the lazy v1->v2 migration on sync.
+  static bool isLegacyEnvelope(String stored) {
+    try {
+      final decoded =
+          json.decode(utf8.decode(base64Decode(stored))) as Map<String, dynamic>;
+      final version = (decoded['v'] as int?) ?? 1;
+      return version < 2;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // ===========================================================================
   // Binary blob encryption (Phase 3 / F5) — used for audio files.
   //
