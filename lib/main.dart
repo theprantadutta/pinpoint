@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -314,14 +313,6 @@ class AuthenticationFailedApp extends StatelessWidget {
                 },
                 child: Text('Try Again'),
               ),
-              SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  // Exit the app
-                  FlutterExitApp.exitApp(iosForceExit: true);
-                },
-                child: Text('Exit App'),
-              ),
             ],
           ),
         ),
@@ -533,21 +524,6 @@ class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
                                 ),
                               ],
                             ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Exit button
-                  TextButton(
-                    onPressed: () {
-                      FlutterExitApp.exitApp(iosForceExit: true);
-                    },
-                    child: Text(
-                      'Exit App',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 16,
-                      ),
                     ),
                   ),
                 ],
