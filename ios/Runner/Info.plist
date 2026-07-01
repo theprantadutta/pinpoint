@@ -92,9 +92,12 @@
 		<string>remote-notification</string>
 	</array>
 
-	<!-- Encryption export compliance: app uses only standard/exempt encryption -->
+	<!-- Encryption export compliance: app uses standard encryption (AES) beyond
+	     HTTPS/Apple OS crypto, which is non-exempt but qualifies for the
+	     mass-market exemption (EAR §740.17(b)(1)). Declared true; exemption
+	     claimed in App Store Connect + annual BIS self-classification filed. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
+	<true/>
 
 	<!-- Google Sign-In URL Schemes -->
 	<!-- Value is the REVERSED_CLIENT_ID from ios/Runner/GoogleService-Info.plist -->
