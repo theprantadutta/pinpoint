@@ -24,7 +24,10 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
       context: context,
       controller: controller,
       title: 'Add Todo',
-      hintText: 'Enter todo',
+      subtitle: 'What needs to get done?',
+      hintText: 'e.g. Buy groceries',
+      icon: Icons.add_task_rounded,
+      primaryLabel: 'Add',
       onAddPressed: () async {
         if (controller.text.isNotEmpty) {
           // Create a temporary todo item with a negative ID to indicate it's not yet saved
@@ -85,7 +88,10 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
       context: context,
       controller: controller,
       title: 'Update Todo',
-      hintText: 'Enter todo',
+      subtitle: 'Edit this task’s title.',
+      hintText: 'e.g. Buy groceries',
+      icon: Icons.edit_rounded,
+      primaryLabel: 'Save',
       onAddPressed: () async {
         if (controller.text.isNotEmpty) {
           widget.onTodoChanged([
