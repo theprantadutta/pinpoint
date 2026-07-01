@@ -44,7 +44,6 @@ dependencies:
   timezone: ^0.11.0
   local_auth: ^3.0.0
   encrypt: ^5.0.1
-  google_mlkit_text_recognition: ^0.15.0
   speech_to_text: ^7.1.0
   logger: ^2.4.0
   share_plus: ^13.1.0
