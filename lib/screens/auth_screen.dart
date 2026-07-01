@@ -1,7 +1,12 @@
+import 'dart:io' show Platform;
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:pinpoint/services/google_sign_in_service.dart';
+import 'package:pinpoint/services/apple_sign_in_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/api_service.dart';
 import 'package:pinpoint/services/firebase_notification_service.dart';
@@ -37,11 +42,16 @@ class _AuthScreenState extends State<AuthScreen> {
 
   bool _isLogin = true;
   bool _isGoogleLoading = false;
+  bool _isAppleLoading = false;
   bool _isEmailLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
 
+  /// Whether any auth flow is currently in progress (used to disable buttons).
+  bool get _isBusy => _isGoogleLoading || _isAppleLoading || _isEmailLoading;
+
   final GoogleSignInService _googleSignInService = GoogleSignInService();
+  final AppleSignInService _appleSignInService = AppleSignInService();
 
   @override
   void initState() {
@@ -448,97 +458,13 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint(
           '   - Token preview: ${firebaseToken.substring(0, firebaseToken.length > 100 ? 100 : firebaseToken.length)}...');
 
-      // 3. Authenticate with backend using Firebase token
-      debugPrint('🔵 [Google Sign-In] Step 3: Authenticating with backend...');
-      try {
-        await backendAuthService.authenticateWithGoogle(firebaseToken);
-        debugPrint(
-            '✅ [Google Sign-In] Step 3 Complete: Backend authentication successful');
-
-        // 4. Register FCM token with backend now that user is authenticated
-        debugPrint('🔵 [Google Sign-In] Step 4: Registering FCM token...');
-        try {
-          final firebaseNotifications = FirebaseNotificationService();
-          await firebaseNotifications.registerTokenWithBackend();
-          debugPrint(
-              '✅ [Google Sign-In] Step 4 Complete: FCM token registered');
-        } catch (e) {
-          debugPrint(
-              '⚠️ [Google Sign-In] Failed to register FCM token (non-critical): $e');
-        }
-
-        // 5. Force sync encryption key from cloud
-        debugPrint(
-            '🔵 [Google Sign-In] Step 5: Syncing encryption key from cloud...');
-        try {
-          final apiService = ApiService();
-          // Zero-knowledge accounts unlock with a passphrase — never sync or
-          // generate a server-held key for them.
-          final zkMode =
-              await ZeroKnowledgeService.refreshModeFromServer(apiService);
-          if (zkMode == ZeroKnowledgeService.modeZeroKnowledge) {
-            if (await SecureEncryptionService.hasLocalKey() &&
-                !SecureEncryptionService.isInitialized) {
-              await SecureEncryptionService.initialize();
-            }
-            if (mounted) context.go(UnlockScreen.kRouteName);
-            return;
-          }
-          final syncSuccess =
-              await SecureEncryptionService.syncKeyFromCloud(apiService);
-
-          if (syncSuccess) {
-            debugPrint(
-                '✅ [Google Sign-In] Step 5 Complete: Encryption key synced from cloud');
-          } else {
-            debugPrint(
-                '⚠️ [Google Sign-In] Cloud key sync returned false, initializing encryption locally...');
-            // Fallback: Initialize encryption locally
-            // This ensures encryption is initialized even if cloud sync fails
-            if (!SecureEncryptionService.isInitialized) {
-              await SecureEncryptionService.initialize(apiService: apiService);
-              debugPrint(
-                  '✅ [Google Sign-In] Encryption initialized locally as fallback');
-            }
-          }
-        } catch (e) {
-          debugPrint(
-              '❌ [Google Sign-In] Encryption key sync failed with exception: $e');
-          // Critical fallback: Initialize encryption locally
-          if (!SecureEncryptionService.isInitialized) {
-            debugPrint(
-                '🔑 [Google Sign-In] Initializing encryption locally after failure...');
-            await SecureEncryptionService.initialize(apiService: ApiService());
-            debugPrint('✅ [Google Sign-In] Encryption initialized locally');
-          }
-        }
-
-        // 6. Perform initial sync to restore cloud data
-        debugPrint('🔵 [Google Sign-In] Step 6: Syncing cloud data...');
-        await _performInitialSync();
-        debugPrint('✅ [Google Sign-In] Step 6 Complete: Sync finished');
-
-        // Track analytics
-        final analytics = getIt<AnalyticsFacade>();
-        analytics.trackLogin(method: 'google');
-        if (userCredential.user?.uid != null) {
-          analytics.setUserId(userCredential.user!.uid);
-        }
-
-        // Success! Navigate to home
-        debugPrint(
-            '🎉 [Google Sign-In] Authentication flow complete! Navigating to home...');
-        if (mounted) {
-          context.go(HomeScreen.kRouteName);
-        }
-      } on AccountLinkingRequiredException catch (e) {
-        debugPrint('⚠️ [Google Sign-In] Account linking required');
-        debugPrint('   - Message: ${e.message}');
-        // Account linking required - navigate to account linking screen
-        if (mounted) {
-          context.push('/account-linking', extra: firebaseToken);
-        }
-      }
+      // 3-6. Backend auth, FCM, encryption sync, initial sync, navigation.
+      await _completeSocialSignIn(
+        backendAuthService: backendAuthService,
+        userCredential: userCredential,
+        firebaseToken: firebaseToken,
+        method: 'google',
+      );
     } catch (e, stackTrace) {
       debugPrint('❌ [Google Sign-In] ERROR: $e');
       debugPrint('❌ [Google Sign-In] Stack trace: $stackTrace');
@@ -551,6 +477,152 @@ class _AuthScreenState extends State<AuthScreen> {
       if (mounted) {
         setState(() {
           _isGoogleLoading = false;
+        });
+      }
+    }
+  }
+
+  /// Shared completion for social sign-in (Google / Apple) once we hold a
+  /// Firebase credential and a backend-ready Firebase ID token.
+  ///
+  /// Handles: backend authentication, FCM token registration, encryption-key
+  /// sync (incl. zero-knowledge unlock routing), initial data sync, analytics,
+  /// and navigation. On [AccountLinkingRequiredException] it routes to the
+  /// account-linking screen. [method] is the analytics label ('google'/'apple').
+  Future<void> _completeSocialSignIn({
+    required BackendAuthService backendAuthService,
+    required UserCredential userCredential,
+    required String firebaseToken,
+    required String method,
+  }) async {
+    final tag = method == 'apple' ? 'Apple Sign-In' : 'Google Sign-In';
+    try {
+      // Backend authentication (shared /auth/firebase verification).
+      debugPrint('🔵 [$tag] Authenticating with backend...');
+      if (method == 'apple') {
+        await backendAuthService.authenticateWithApple(firebaseToken);
+      } else {
+        await backendAuthService.authenticateWithGoogle(firebaseToken);
+      }
+      debugPrint('✅ [$tag] Backend authentication successful');
+
+      // Register FCM token now that the user is authenticated.
+      debugPrint('🔵 [$tag] Registering FCM token...');
+      try {
+        final firebaseNotifications = FirebaseNotificationService();
+        await firebaseNotifications.registerTokenWithBackend();
+        debugPrint('✅ [$tag] FCM token registered');
+      } catch (e) {
+        debugPrint('⚠️ [$tag] Failed to register FCM token (non-critical): $e');
+      }
+
+      // Sync the encryption key from the cloud.
+      debugPrint('🔵 [$tag] Syncing encryption key from cloud...');
+      try {
+        final apiService = ApiService();
+        // Zero-knowledge accounts unlock with a passphrase — never sync or
+        // generate a server-held key for them.
+        final zkMode =
+            await ZeroKnowledgeService.refreshModeFromServer(apiService);
+        if (zkMode == ZeroKnowledgeService.modeZeroKnowledge) {
+          if (await SecureEncryptionService.hasLocalKey() &&
+              !SecureEncryptionService.isInitialized) {
+            await SecureEncryptionService.initialize();
+          }
+          if (mounted) context.go(UnlockScreen.kRouteName);
+          return;
+        }
+        final syncSuccess =
+            await SecureEncryptionService.syncKeyFromCloud(apiService);
+
+        if (syncSuccess) {
+          debugPrint('✅ [$tag] Encryption key synced from cloud');
+        } else {
+          debugPrint(
+              '⚠️ [$tag] Cloud key sync returned false, initializing encryption locally...');
+          if (!SecureEncryptionService.isInitialized) {
+            await SecureEncryptionService.initialize(apiService: apiService);
+            debugPrint('✅ [$tag] Encryption initialized locally as fallback');
+          }
+        }
+      } catch (e) {
+        debugPrint('❌ [$tag] Encryption key sync failed with exception: $e');
+        if (!SecureEncryptionService.isInitialized) {
+          debugPrint('🔑 [$tag] Initializing encryption locally after failure...');
+          await SecureEncryptionService.initialize(apiService: ApiService());
+          debugPrint('✅ [$tag] Encryption initialized locally');
+        }
+      }
+
+      // Perform initial sync to restore cloud data.
+      debugPrint('🔵 [$tag] Syncing cloud data...');
+      await _performInitialSync();
+      debugPrint('✅ [$tag] Sync finished');
+
+      // Track analytics.
+      final analytics = getIt<AnalyticsFacade>();
+      analytics.trackLogin(method: method);
+      if (userCredential.user?.uid != null) {
+        analytics.setUserId(userCredential.user!.uid);
+      }
+
+      // Success! Navigate to home.
+      debugPrint('🎉 [$tag] Authentication flow complete! Navigating to home...');
+      if (mounted) {
+        context.go(HomeScreen.kRouteName);
+      }
+    } on AccountLinkingRequiredException catch (e) {
+      debugPrint('⚠️ [$tag] Account linking required: ${e.message}');
+      if (mounted) {
+        context.push('/account-linking', extra: firebaseToken);
+      }
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    setState(() {
+      _isAppleLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      debugPrint('🍎 [Apple Sign-In] Starting Apple Sign-In flow...');
+
+      // Capture provider before any await.
+      final backendAuthService = context.read<BackendAuthService>();
+
+      // 1. Sign in with Apple and get a Firebase credential.
+      final userCredential = await _appleSignInService.signInWithApple();
+      if (userCredential == null) {
+        throw Exception('Sign in with Apple was cancelled or failed');
+      }
+      debugPrint('✅ [Apple Sign-In] Firebase user: ${userCredential.user?.uid}');
+
+      // 2. Get Firebase ID token.
+      final firebaseToken = await _appleSignInService.getFirebaseIdToken();
+      if (firebaseToken == null) {
+        throw Exception('Failed to get Firebase token');
+      }
+
+      // 3-6. Shared completion (backend, FCM, encryption, sync, navigation).
+      await _completeSocialSignIn(
+        backendAuthService: backendAuthService,
+        userCredential: userCredential,
+        firebaseToken: firebaseToken,
+        method: 'apple',
+      );
+    } catch (e, stackTrace) {
+      debugPrint('❌ [Apple Sign-In] ERROR: $e');
+      debugPrint('❌ [Apple Sign-In] Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAppleLoading = false;
         });
       }
     }
@@ -713,6 +785,12 @@ class _AuthScreenState extends State<AuthScreen> {
               // Google Sign-In Button (Primary)
               _buildGoogleSignInButton(theme, cs),
 
+              // Sign in with Apple (iOS only — App Store Guideline 4.8)
+              if (Platform.isIOS) ...[
+                const SizedBox(height: 12),
+                _buildAppleSignInButton(theme, cs),
+              ],
+
               const SizedBox(height: 24),
 
               // Divider
@@ -839,7 +917,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
                     // Login/Register Button
                     FilledButton(
-                      onPressed: (_isGoogleLoading || _isEmailLoading) ? null : _handleEmailPasswordAuth,
+                      onPressed: _isBusy ? null : _handleEmailPasswordAuth,
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -919,7 +997,7 @@ class _AuthScreenState extends State<AuthScreen> {
         ],
       ),
       child: FilledButton.tonalIcon(
-        onPressed: (_isGoogleLoading || _isEmailLoading) ? null : _handleGoogleSignIn,
+        onPressed: _isBusy ? null : _handleGoogleSignIn,
         icon: _isGoogleLoading
             ? const SizedBox(
                 height: 20,
@@ -955,6 +1033,54 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  /// HIG-compliant "Sign in with Apple" button (iOS only).
+  ///
+  /// Uses the official [SignInWithAppleButton] so the appearance/text satisfy
+  /// App Review. The button adapts to the current theme brightness.
+  Widget _buildAppleSignInButton(ThemeData theme, ColorScheme cs) {
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: _isAppleLoading
+          ? Container(
+              height: 52,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white : Colors.black,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isDark ? Colors.black : Colors.white,
+                  ),
+                ),
+              ),
+            )
+          : SignInWithAppleButton(
+              onPressed: _isBusy ? () {} : _handleAppleSignIn,
+              text: 'Continue with Apple',
+              height: 52,
+              borderRadius: BorderRadius.circular(12),
+              style: isDark
+                  ? SignInWithAppleButtonStyle.white
+                  : SignInWithAppleButtonStyle.black,
+            ),
     );
   }
 }

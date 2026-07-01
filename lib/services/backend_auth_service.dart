@@ -306,6 +306,33 @@ class BackendAuthService extends ChangeNotifier {
     }
   }
 
+  /// Authenticate with the backend using a Firebase ID token from Sign in with
+  /// Apple. The backend verifies the token via the shared /auth/firebase flow
+  /// (provider is derived from the token), so this mirrors [authenticateWithGoogle].
+  Future<void> authenticateWithApple(String firebaseToken) async {
+    try {
+      debugPrint(
+          '🔐 [BackendAuthService] Authenticating with Apple (Firebase token)...');
+      final response =
+          await _apiService.authenticateWithFirebase(firebaseToken);
+      debugPrint('✅ [BackendAuthService] Authentication response received');
+
+      _userId = response['user_id'];
+      _isAuthenticated = true;
+      _setCrashlyticsUser(_userId);
+      debugPrint('✅ [BackendAuthService] User authenticated, ID: $_userId');
+
+      await refreshUserInfo();
+      debugPrint('✅ [BackendAuthService] User info loaded: $_userEmail');
+
+      notifyListeners();
+    } catch (e, stackTrace) {
+      debugPrint('❌ [BackendAuthService] Apple authentication failed: $e');
+      debugPrint('❌ [BackendAuthService] Stack trace: $stackTrace');
+      throw Exception('Apple authentication failed: $e');
+    }
+  }
+
   /// Link Google account to existing account (requires password verification)
   Future<void> linkGoogleAccount({
     required String firebaseToken,
