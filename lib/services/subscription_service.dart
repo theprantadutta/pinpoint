@@ -68,7 +68,7 @@ class SubscriptionService {
     await restorePurchases();
   }
 
-  /// Load subscription products from Google Play
+  /// Load subscription products from the active store (Google Play / App Store).
   Future<void> loadProducts() async {
     if (!_isAvailable) return;
 
@@ -82,7 +82,16 @@ class SubscriptionService {
       }
 
       _products = response.productDetails;
-      log.i('Loaded ${_products.length} products');
+      log.i('Loaded ${_products.length}/${productIds.length} products: '
+          '${_products.map((p) => p.id).toList()}');
+
+      // notFoundIDs is the #1 symptom of a store-config mismatch: the product
+      // ID doesn't exist / isn't Approved / bundle-id mismatch (iOS) or isn't
+      // active (Android). Surface it clearly instead of a silently empty paywall.
+      if (response.notFoundIDs.isNotEmpty) {
+        log.w('⚠️ Products NOT found in store (check IDs/approval/status): '
+            '${response.notFoundIDs}');
+      }
     } catch (e) {
       log.e('Error loading products: $e');
     }
