@@ -30,9 +30,14 @@ class NotificationService {
       // Darwin (iOS/macOS) initialization settings
       final DarwinInitializationSettings initializationSettingsDarwin =
           DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
+        // Do NOT request permission during init() (which runs at startup).
+        // On iOS, flutter_local_notifications prompts immediately when these
+        // are true. Permission is requested explicitly later, from the home
+        // screen (_requestNotificationPermissionIfNeeded ->
+        // requestBasicNotificationPermission), after an explanation dialog.
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
         // Add notification categories if you need actions
         notificationCategories: [
           DarwinNotificationCategory(
