@@ -48,10 +48,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     getIt<AnalyticsFacade>().trackScreenView(screenName: 'Settings');
   }
 
-  Future<void> _openGooglePlaySubscriptions() async {
+  Future<void> _openManageSubscriptions() async {
     try {
-      final uri =
-          Uri.parse('https://play.google.com/store/account/subscriptions');
+      // App Store on iOS, Google Play on Android — store policy requires the
+      // correct destination for managing/cancelling a subscription.
+      final uri = Uri.parse(
+        Platform.isIOS
+            ? 'https://apps.apple.com/account/subscriptions'
+            : 'https://play.google.com/store/account/subscriptions',
+      );
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
@@ -62,7 +67,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         showErrorToast(
           context: context,
           title: 'Error',
-          description: 'Unable to open Google Play subscriptions',
+          description: Platform.isIOS
+              ? 'Unable to open App Store subscriptions'
+              : 'Unable to open Google Play subscriptions',
         );
       }
     }
@@ -285,7 +292,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, subscriptionManager, child) {
               return _PremiumSection(
                 subscriptionManager: subscriptionManager,
-                onManageSubscription: _openGooglePlaySubscriptions,
+                onManageSubscription: _openManageSubscriptions,
               );
             },
           ),
@@ -837,7 +844,7 @@ class _PremiumSection extends StatelessWidget {
           const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
             title: 'Manage Subscription',
-            subtitle: 'View in Google Play Store',
+            subtitle: Platform.isIOS ? 'View in the App Store' : 'View in Google Play Store',
             icon: Icons.manage_accounts_rounded,
             onTap: () {
               PinpointHaptics.medium();

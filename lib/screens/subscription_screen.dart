@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -498,10 +500,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
   }
 
-  /// Open Google Play subscriptions page
-  Future<void> _openGooglePlaySubscriptions() async {
+  /// Name of the current platform's store, for UI labels.
+  String get _storeName => Platform.isIOS ? 'App Store' : 'Google Play';
+
+  /// Open the platform's subscription-management page — App Store on iOS,
+  /// Google Play on Android. (Store policy requires linking to the correct one.)
+  Future<void> _openManageSubscriptions() async {
     try {
-      final uri = Uri.parse('https://play.google.com/store/account/subscriptions');
+      final uri = Uri.parse(
+        Platform.isIOS
+            ? 'https://apps.apple.com/account/subscriptions'
+            : 'https://play.google.com/store/account/subscriptions',
+      );
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
@@ -634,9 +644,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   width: double.infinity,
                   height: 48,
                   child: OutlinedButton.icon(
-                    onPressed: _openGooglePlaySubscriptions,
+                    onPressed: _openManageSubscriptions,
                     icon: const Icon(Icons.settings_outlined, size: 18),
-                    label: Text(isCancelledButActive ? 'Resubscribe in Google Play' : 'Manage in Google Play'),
+                    label: Text(isCancelledButActive ? 'Resubscribe in $_storeName' : 'Manage in $_storeName'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: (isGracePeriod || isCancelledButActive)
                           ? accent
