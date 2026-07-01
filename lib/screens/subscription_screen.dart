@@ -359,8 +359,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         Text(
           'Subscriptions automatically renew unless auto-renew is turned off at '
           'least 24 hours before the end of the current period. Payment is '
-          'charged to your App Store or Google Play account at confirmation of '
-          'purchase. Manage or cancel anytime in your store account settings. '
+          'charged to your $_storeName account at confirmation of purchase. '
+          'Manage or cancel anytime in your $_storeName account settings. '
           'The lifetime plan is a one-time purchase and does not renew.',
           style: theme.textTheme.bodySmall?.copyWith(color: tertiary, fontSize: 11),
           textAlign: TextAlign.center,
@@ -630,7 +630,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 if (isCancelledButActive) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Changed your mind? Resubscribe in Google Play to keep premium going.',
+                    'Changed your mind? Resubscribe in $_storeName to keep premium going.',
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark
