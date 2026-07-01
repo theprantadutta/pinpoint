@@ -343,6 +343,19 @@ class ApiService {
     }
   }
 
+  /// Permanently delete the authenticated user's account on the backend.
+  ///
+  /// Throws on failure so the caller can keep the user signed in and show an
+  /// error. Local tokens are cleared only after the backend confirms deletion.
+  Future<void> deleteAccount() async {
+    try {
+      await _dio.delete('/auth/account');
+      await clearTokens();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   /// Authenticate with Firebase token (Google Sign-In)
   Future<Map<String, dynamic>> authenticateWithFirebase(
       String firebaseToken) async {

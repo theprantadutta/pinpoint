@@ -124,6 +124,45 @@ class LogoutService {
     }
   }
 
+  /// Permanently delete the account: backend deletion + full local wipe.
+  ///
+  /// Unlike [performLogout], this intentionally does NOT sync pending changes or
+  /// block on local audio notes — all data is being destroyed by design
+  /// (App Store Guideline 5.1.1(v) / Google Play in-app account deletion).
+  ///
+  /// Order matters: the backend delete happens first (it needs a valid auth
+  /// token); only then do we tear down local data and sign out of providers.
+  Future<bool> performAccountDeletion() async {
+    try {
+      final analytics = getIt<AnalyticsFacade>();
+      analytics.trackLogout();
+      analytics.setUserId(null);
+
+      // 1. Delete the account on the backend (requires a valid token).
+      _updatePhase(LogoutPhase.signingOut);
+      await _backendAuthService.deleteAccount();
+
+      // 2. Sign out of Google/Firebase (Firebase sign-out also covers Apple).
+      try {
+        await _googleSignInService.signOut();
+      } catch (e) {
+        debugPrint('⚠️ [LogoutService] Provider sign-out during deletion: $e');
+      }
+
+      // 3. Wipe all local data.
+      _updatePhase(LogoutPhase.cleaningData);
+      await _cleanupLocalData();
+
+      _updatePhase(LogoutPhase.completed);
+      debugPrint('✅ [LogoutService] Account deletion completed successfully');
+      return true;
+    } catch (e, stackTrace) {
+      debugPrint('❌ [LogoutService] Account deletion failed: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    }
+  }
+
   /// Validate if logout can proceed
   Future<LogoutValidationResult> validateLogout() async {
     try {

@@ -1359,8 +1359,69 @@ class _LogoutButton extends StatefulWidget {
 
 class _LogoutButtonState extends State<_LogoutButton> {
   bool _isLoggingOut = false;
+  bool _isDeleting = false;
   String _logoutStatus = 'Preparing...';
   LogoutService? _logoutService;
+
+  Future<void> _handleDeleteAccount(BuildContext context) async {
+    if (_isDeleting || _isLoggingOut) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'This permanently deletes your account and all of your data — notes, '
+          'folders, reminders, audio, and settings — from our servers and this '
+          'device.\n\nThis action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: PinpointColors.rose),
+            child: const Text('Delete Account'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isDeleting = true);
+    try {
+      final logoutService = LogoutService.fromServiceLocator(
+        backendAuthService: widget.backendAuth,
+        googleSignInService: GoogleSignInService(),
+      );
+      await logoutService.performAccountDeletion();
+
+      PinpointHaptics.success();
+      AppNavigation.router.go('/auth');
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (context.mounted) {
+          showSuccessToast(
+            context: context,
+            title: 'Account Deleted',
+            description: 'Your account and all data have been permanently deleted.',
+          );
+        }
+      });
+    } catch (e) {
+      if (mounted) setState(() => _isDeleting = false);
+      if (context.mounted) {
+        PinpointHaptics.error();
+        showErrorToast(
+          context: context,
+          title: 'Deletion Failed',
+          description: 'Could not delete your account. Please try again.',
+        );
+      }
+    }
+  }
 
   Future<void> _handleLogout(BuildContext context) async {
     if (_isLoggingOut) return;
@@ -1578,7 +1639,10 @@ class _LogoutButtonState extends State<_LogoutButton> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return BrutalistCard(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        BrutalistCard(
       variant: BrutalistCardVariant.outlined,
       customBorderColor: PinpointColors.rose.withValues(alpha: 0.3),
       padding: EdgeInsets.zero,
@@ -1609,6 +1673,60 @@ class _LogoutButtonState extends State<_LogoutButton> {
           ),
         ),
         trailing: _isLoggingOut
+            ? null
+            : Icon(
+                Icons.chevron_right_rounded,
+                color: PinpointColors.rose.withValues(alpha: 0.6),
+              ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: PinpointSpacing.md,
+          vertical: 4,
+        ),
+      ),
+        ),
+        const SizedBox(height: PinpointSpacing.sm),
+        _buildDeleteAccountCard(context, theme, cs),
+      ],
+    );
+  }
+
+  Widget _buildDeleteAccountCard(
+      BuildContext context, ThemeData theme, ColorScheme cs) {
+    return BrutalistCard(
+      variant: BrutalistCardVariant.outlined,
+      customBorderColor: PinpointColors.rose.withValues(alpha: 0.3),
+      padding: EdgeInsets.zero,
+      onTap: (_isDeleting || _isLoggingOut)
+          ? null
+          : () => _handleDeleteAccount(context),
+      child: ListTile(
+        leading: _isDeleting
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Icon(
+                Icons.delete_forever_rounded,
+                color: PinpointColors.rose,
+                size: 22,
+              ),
+        title: Text(
+          _isDeleting ? 'Deleting Account...' : 'Delete Account',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: PinpointColors.rose,
+          ),
+        ),
+        subtitle: Text(
+          _isDeleting
+              ? 'Please wait...'
+              : 'Permanently delete your account and data',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: cs.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        trailing: _isDeleting
             ? null
             : Icon(
                 Icons.chevron_right_rounded,

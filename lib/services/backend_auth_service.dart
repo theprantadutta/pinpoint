@@ -278,6 +278,26 @@ class BackendAuthService extends ChangeNotifier {
     }
   }
 
+  /// Permanently delete the account (backend deletion + local auth-state reset).
+  ///
+  /// Throws if the backend deletion fails (caller keeps the user signed in and
+  /// surfaces the error). On success, mirrors [logout]'s local state teardown.
+  Future<void> deleteAccount() async {
+    await _apiService.deleteAccount(); // throws on failure — do not reset state
+
+    _isAuthenticated = false;
+    _isPremium = false;
+    _userEmail = null;
+    _userId = null;
+    _setCrashlyticsUser(null);
+    _subscriptionTier = 'free';
+    _subscriptionExpiresAt = null;
+    _isInitialized = false;
+
+    await _clearCachedAuthState();
+    notifyListeners();
+  }
+
   /// Authenticate with Firebase token (Google Sign-In)
   Future<void> authenticateWithGoogle(String firebaseToken) async {
     try {
