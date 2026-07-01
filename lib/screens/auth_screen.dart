@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:pinpoint/services/google_sign_in_service.dart';
 import 'package:pinpoint/services/apple_sign_in_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
@@ -1036,12 +1035,14 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  /// HIG-compliant "Sign in with Apple" button (iOS only).
+  /// "Continue with Apple" button (iOS only).
   ///
-  /// Uses the official [SignInWithAppleButton] so the appearance/text satisfy
-  /// App Review. The button adapts to the current theme brightness.
+  /// Custom-styled to match [_buildGoogleSignInButton] for a consistent look.
+  /// App Store HIG permits a custom Sign in with Apple button as long as it uses
+  /// the Apple logo, an approved title, and adequate size/contrast — this is the
+  /// "white with outline" treatment (surface background + outline in light mode,
+  /// adapting to the theme).
   Widget _buildAppleSignInButton(ThemeData theme, ColorScheme cs) {
-    final isDark = theme.brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -1053,34 +1054,35 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ],
       ),
-      child: _isAppleLoading
-          ? Container(
-              height: 52,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white : Colors.black,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: SizedBox(
+      child: FilledButton.tonalIcon(
+        onPressed: _isBusy ? null : _handleAppleSignIn,
+        icon: _isAppleLoading
+            ? const SizedBox(
                 height: 20,
                 width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    isDark ? Colors.black : Colors.white,
-                  ),
-                ),
-              ),
-            )
-          : SignInWithAppleButton(
-              onPressed: _isBusy ? () {} : _handleAppleSignIn,
-              text: 'Continue with Apple',
-              height: 52,
-              borderRadius: BorderRadius.circular(12),
-              style: isDark
-                  ? SignInWithAppleButtonStyle.white
-                  : SignInWithAppleButtonStyle.black,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Icon(Icons.apple, size: 26, color: cs.onSurface),
+        label: Text(
+          'Continue with Apple',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          backgroundColor: cs.surface,
+          foregroundColor: cs.onSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: cs.outline,
+              width: 1,
             ),
+          ),
+        ),
+      ),
     );
   }
 }
