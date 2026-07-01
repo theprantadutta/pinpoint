@@ -236,7 +236,11 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
           ),
         ),
       ),
-      child: Column(
+      // Transparent Material gives the CheckboxListTile a Material ancestor to
+      // paint its ink/selection on (the surrounding DecoratedBox would hide it).
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Acceptance checkbox
@@ -284,6 +288,7 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
             ),
           ),
         ],
+        ),
       ),
     );
   }
