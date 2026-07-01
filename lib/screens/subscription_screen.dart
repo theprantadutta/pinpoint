@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:pinpoint/design_system/design_system.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
+import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 import 'package:pinpoint/services/subscription_service.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
@@ -320,16 +321,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Footer text
-                    Text(
-                      'Cancel anytime. Your privacy is always protected with end-to-end encryption.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: isDark
-                            ? PinpointColors.darkTextTertiary
-                            : PinpointColors.lightTextTertiary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                    // Legal / auto-renewable subscription disclosure (App Store
+                    // Guideline 3.1.2 requires this + Terms & Privacy links).
+                    _buildLegalFooter(theme, isDark),
 
                     const SizedBox(height: 32),
                   ],
@@ -339,6 +333,68 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  /// Opens the bundled Terms of Service & Privacy Policy in read-only mode.
+  void _openLegal() {
+    context.push(TermsAcceptanceScreen.kRouteName, extra: true);
+  }
+
+  /// Auto-renewable subscription disclosure + Terms/Privacy links.
+  ///
+  /// Required by App Store Review Guideline 3.1.2: the paywall must state the
+  /// subscription length/price context, that it auto-renews, how to cancel, and
+  /// provide functional links to the Terms of Use (EULA) and Privacy Policy.
+  Widget _buildLegalFooter(ThemeData theme, bool isDark) {
+    final tertiary = isDark
+        ? PinpointColors.darkTextTertiary
+        : PinpointColors.lightTextTertiary;
+    final linkColor = theme.colorScheme.primary;
+
+    return Column(
+      children: [
+        Text(
+          'Subscriptions automatically renew unless auto-renew is turned off at '
+          'least 24 hours before the end of the current period. Payment is '
+          'charged to your App Store or Google Play account at confirmation of '
+          'purchase. Manage or cancel anytime in your store account settings. '
+          'The lifetime plan is a one-time purchase and does not renew.',
+          style: theme.textTheme.bodySmall?.copyWith(color: tertiary, fontSize: 11),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            GestureDetector(
+              onTap: _openLegal,
+              child: Text(
+                'Terms of Use',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: linkColor,
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            Text('   •   ',
+                style: theme.textTheme.bodySmall?.copyWith(color: tertiary)),
+            GestureDetector(
+              onTap: _openLegal,
+              child: Text(
+                'Privacy Policy',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: linkColor,
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

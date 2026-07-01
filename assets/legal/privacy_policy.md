@@ -1,10 +1,10 @@
 # Privacy Policy
 
-**Last Updated:** November 9, 2025
+**Last Updated:** July 1, 2026
 
 ## Introduction
 
-Welcome to Pinpoint ("we," "our," or "us"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application.
+Pinpoint ("we," "our," or "us") is a mobile application developed and operated by **Pranta Dutta**. We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application ("Pinpoint" or the "App").
 
 ## Information We Collect
 
@@ -18,7 +18,8 @@ Welcome to Pinpoint ("we," "our," or "us"). We are committed to protecting your 
 
 - **Device Information:** Device type, operating system version, and unique device identifiers
 - **Usage Data:** App features used, crash reports, and performance data
-- **Authentication Data:** Google account information if you sign in with Google
+- **Authentication Data:** Account information from your chosen sign-in provider — your email address and name when you sign in with Google (Google account) or with Apple (Sign in with Apple). If you use Apple's "Hide My Email" feature, we receive only a private relay email address on Apple's domain
+- **Purchase Information:** A transaction/subscription identifier and status (product purchased, renewal, expiry, cancellation) from the app store when you buy Premium — never your card number or full payment details
 
 ## How We Use Your Information
 
@@ -60,19 +61,24 @@ We do not sell your personal information. We may share your information only in 
 You have the right to:
 
 - **Access Your Data:** Request a copy of your personal information
-- **Delete Your Data:** Request deletion of your account and associated data
+- **Delete Your Data:** Permanently delete your account and all associated data at any time from **Settings → Delete Account** in the App
 - **Export Your Data:** Export your notes in various formats
 - **Opt-Out:** Disable cloud sync and use the app entirely offline
 - **Modify Preferences:** Change your privacy settings at any time
 
+## Purchases and Subscriptions
+
+When you purchase a Premium subscription or a one-time (lifetime) purchase, the transaction is processed by the **Apple App Store** (on iOS) or **Google Play** (on Android). We receive a purchase/transaction identifier and your subscription status so we can grant and manage your Premium access. We do **not** receive or store your credit card number or full payment details — those are handled entirely by Apple or Google.
+
 ## Third-Party Services
 
-Our app integrates with the following third-party services:
+Our app integrates with the following third-party services, each governed by its own privacy policy:
 
-- **Google Sign-In:** For authentication (subject to Google's Privacy Policy)
-- **Firebase:** For cloud storage and authentication
-- **RevenueCat:** For in-app purchases and subscription management
-- **Google ML Kit:** For OCR text recognition (processed on-device)
+- **Google Sign-In:** Authentication using your Google account
+- **Sign in with Apple:** Authentication on iOS, including Apple's optional private email relay
+- **Firebase (Google):** Authentication, optional cloud storage/sync, push notifications (Firebase Cloud Messaging), analytics (Firebase Analytics), and crash reporting (Firebase Crashlytics)
+- **Apple App Store & Google Play Billing:** Processing and managing in-app purchases and subscriptions
+- **Google ML Kit:** On-device OCR text recognition (processing stays on your device and is not sent to us)
 
 ## Children's Privacy
 
@@ -98,8 +104,9 @@ We may update this Privacy Policy from time to time. We will notify you of any s
 
 ## Contact Us
 
-If you have questions or concerns about this Privacy Policy, please contact us at:
+If you have questions or concerns about this Privacy Policy, please contact:
 
+**Pranta Dutta**
 **Email:** [prantadutta1997@gmail.com](mailto:prantadutta1997@gmail.com)
 
 ## Your Consent

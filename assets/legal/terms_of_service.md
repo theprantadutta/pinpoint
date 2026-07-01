@@ -1,10 +1,10 @@
 # Terms of Service
 
-**Last Updated:** January 9, 2025
+**Last Updated:** July 1, 2026
 
 ## Agreement to Terms
 
-By accessing or using the Pinpoint mobile application ("App"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these Terms, you may not use our App.
+Pinpoint (the "App") is developed and operated by **Pranta Dutta** ("we," "our," or "us"). By accessing or using the Pinpoint mobile application, you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these Terms, you may not use our App.
 
 ## Description of Service
 
@@ -70,17 +70,24 @@ Pinpoint is a note-taking and organization application that allows you to:
 
 ### Premium Features
 
-- Some features require a paid subscription
-- Subscription fees are non-refundable except as required by law
-- Prices may change with 30 days notice to active subscribers
-- Subscriptions auto-renew unless canceled
-- You can cancel your subscription at any time from your account settings
+- Some features require a paid subscription ("Premium"). We offer **auto-renewing subscriptions** (monthly and yearly) and a **one-time lifetime purchase**.
+- Basic features are available for free. The free tier may have usage limitations, which we may modify.
 
-### Free Tier
+### Billing, Auto-Renewal, and Cancellation
 
-- Basic features are available for free
-- Free tier may have usage limitations
-- We reserve the right to modify free tier limitations
+- Purchases are processed by the **Apple App Store** (on iOS) or **Google Play** (on Android). Payment is charged to your Apple ID or Google Play account at confirmation of purchase.
+- Auto-renewing subscriptions **automatically renew** for the same period and price unless auto-renew is turned off **at least 24 hours before** the end of the current period. Your account is charged for renewal within 24 hours before the end of the current period.
+- You can **manage or cancel** your subscription at any time in your Apple App Store or Google Play account settings. Cancelling stops future renewals; you keep Premium access until the end of the current paid period.
+- The lifetime purchase is a one-time, non-subscription purchase that does not auto-renew.
+- Prices may change. Where required, we will notify active subscribers in advance, and any price change takes effect on your next renewal.
+
+### Refunds
+
+- Except where required by law, subscription and purchase fees are non-refundable. Because we do not process payments directly, refund requests are handled by **Apple** or **Google** under their respective policies.
+
+### Apple End User License Agreement (EULA)
+
+- If you download the App from the Apple App Store, your use is also subject to Apple's standard **Licensed Application End User License Agreement**, available at <https://www.apple.com/legal/internet-services/itunes/dev/stdeula/>. Apple is not a party to these Terms and is not responsible for the App or its content; however, Apple and its subsidiaries are third-party beneficiaries of these Terms and may enforce them against you.
 
 ## Data and Privacy
 
@@ -116,8 +123,8 @@ The App integrates with third-party services (Google Sign-In, Firebase, etc.) th
 
 ### By You
 
-- You may close your account at any time from the settings
-- Upon termination, your data will be deleted as described in our Privacy Policy
+- You may **permanently delete your account and all associated data** at any time from **Settings → Delete Account** within the App. This action is irreversible.
+- Upon deletion, your data is removed as described in our Privacy Policy.
 
 ### By Us
 
@@ -149,7 +156,7 @@ You agree to indemnify and hold us harmless from any claims, damages, losses, or
 
 ## Governing Law
 
-These Terms shall be governed by and construed in accordance with the laws of [Your Jurisdiction], without regard to its conflict of law provisions.
+These Terms shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law provisions.
 
 ## Dispute Resolution
 
@@ -163,8 +170,9 @@ Any disputes not resolved informally shall be resolved through binding arbitrati
 
 ## Contact Information
 
-For questions about these Terms, please contact us at:
+For questions about these Terms, please contact:
 
+**Pranta Dutta**
 **Email:** [prantadutta1997@gmail.com](mailto:prantadutta1997@gmail.com)
 
 ## Severability
