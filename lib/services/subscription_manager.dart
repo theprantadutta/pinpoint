@@ -277,6 +277,7 @@ class SubscriptionManager extends ChangeNotifier {
     required String purchaseToken,
     required String productId,
     String? userId,
+    String platform = 'android',
   }) async {
     debugPrint('🔄 verifyPurchase called: productId=$productId, userId=$userId');
 
@@ -294,6 +295,7 @@ class SubscriptionManager extends ChangeNotifier {
         purchaseToken: purchaseToken,
         productId: productId,
         userId: userId, // Pass user ID to sync with user record
+        platform: platform,
       );
 
       debugPrint('📥 API Response: $response');

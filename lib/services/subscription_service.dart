@@ -205,12 +205,25 @@ class SubscriptionService {
 
       // Verify purchase with backend
       String? purchaseToken;
+      String platform = 'android';
 
       if (Platform.isAndroid && purchase is GooglePlayPurchaseDetails) {
         purchaseToken = purchase.billingClientPurchase.purchaseToken;
-        log.i('📦 Got purchase token: ${purchaseToken.substring(0, 20)}...');
+        platform = 'android';
+        log.i('📦 Got Google Play purchase token: ${purchaseToken.substring(0, 20)}...');
+      } else if (Platform.isIOS) {
+        // StoreKit 2: serverVerificationData is the JWS signed transaction the
+        // backend verifies against Apple's certificate chain.
+        purchaseToken = purchase.verificationData.serverVerificationData;
+        platform = 'ios';
+        if (purchaseToken.isEmpty) {
+          log.w('⚠️ Empty iOS serverVerificationData');
+          purchaseToken = null;
+        } else {
+          log.i('📦 Got StoreKit JWS transaction (${purchaseToken.length} chars)');
+        }
       } else {
-        log.w('⚠️ Not Android or not GooglePlayPurchaseDetails');
+        log.w('⚠️ Unsupported platform / purchase type for verification');
       }
 
       if (purchaseToken != null) {
@@ -234,6 +247,7 @@ class SubscriptionService {
           purchaseToken: purchaseToken,
           productId: purchase.productID,
           userId: userId, // Sync with user record if authenticated
+          platform: platform,
         );
 
         if (verified) {

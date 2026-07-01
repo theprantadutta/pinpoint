@@ -570,12 +570,14 @@ class ApiService {
     required String purchaseToken,
     required String productId,
     String? userId,
+    String platform = 'android',
   }) async {
     try {
       final data = {
         'device_id': deviceId,
         'purchase_token': purchaseToken,
         'product_id': productId,
+        'platform': platform,
       };
 
       // Include user_id if available to sync with user record
