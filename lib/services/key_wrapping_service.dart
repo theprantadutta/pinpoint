@@ -185,6 +185,14 @@ class KeyWrapParams {
   final int memoryKiB;
   final int lanes;
 
+  // Defense-in-depth floor. The KDF params are stored server-side and read back
+  // at unlock; enforcing a client-side minimum prevents a compromised/malicious
+  // server from ever feeding weakened Argon2 params (e.g. t=1, m=1 KiB) into key
+  // derivation. Matches the values in [KeyWrappingService.defaultParams].
+  static const int _minIterations = 3;
+  static const int _minMemoryKiB = 65536; // 64 MiB
+  static const int _minLanes = 1;
+
   const KeyWrapParams({
     required this.iterations,
     required this.memoryKiB,
@@ -199,11 +207,29 @@ class KeyWrapParams {
         'p': lanes,
       };
 
-  factory KeyWrapParams.fromJson(Map<String, dynamic> json) => KeyWrapParams(
-        iterations: json['t'] as int,
-        memoryKiB: json['m'] as int,
-        lanes: json['p'] as int,
-      );
+  /// Parses params, rejecting anything below the security floor. Throws
+  /// [FormatException] on missing fields or sub-floor cost, so a downgraded set
+  /// of params can never be used to derive a key.
+  factory KeyWrapParams.fromJson(Map<String, dynamic> json) {
+    final iterations = json['t'] as int?;
+    final memoryKiB = json['m'] as int?;
+    final lanes = json['p'] as int?;
+    if (iterations == null || memoryKiB == null || lanes == null) {
+      throw const FormatException('Missing Argon2 KDF params (t/m/p).');
+    }
+    if (iterations < _minIterations ||
+        memoryKiB < _minMemoryKiB ||
+        lanes < _minLanes) {
+      throw FormatException(
+          'Argon2 KDF params below security floor '
+          '(t=$iterations, m=$memoryKiB, p=$lanes).');
+    }
+    return KeyWrapParams(
+      iterations: iterations,
+      memoryKiB: memoryKiB,
+      lanes: lanes,
+    );
+  }
 }
 
 /// A freshly generated recovery code and the key derived from it.

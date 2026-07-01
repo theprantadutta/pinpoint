@@ -104,4 +104,26 @@ void main() {
     expect(restored.memoryKiB, p.memoryKiB);
     expect(restored.lanes, p.lanes);
   });
+
+  group('KeyWrapParams.fromJson enforces a security floor', () {
+    test('accepts default (floor) params', () {
+      expect(() => KeyWrapParams.fromJson(KeyWrappingService.defaultParams().toJson()),
+          returnsNormally);
+    });
+
+    test('rejects weakened params (a malicious server cannot downgrade the KDF)', () {
+      expect(
+        () => KeyWrapParams.fromJson(
+            {'alg': 'argon2id', 'v': 0x13, 't': 1, 'm': 1024, 'p': 1}),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('rejects missing params', () {
+      expect(
+        () => KeyWrapParams.fromJson({'alg': 'argon2id', 'v': 0x13, 't': 3}),
+        throwsA(isA<FormatException>()),
+      );
+    });
+  });
 }
