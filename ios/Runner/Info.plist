@@ -28,6 +28,27 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -47,13 +68,36 @@
 	<true/>
 	<!-- Local Auth -->
 	<key>NSFaceIDUsageDescription</key>
-	<string>Authenticate to access Pinpoint.</string>
+	<string>Pinpoint uses Face ID to unlock the app and protect your notes.</string>
 	<key>NSTouchIDUsageDescription</key>
-	<string>Authenticate to access Pinpoint.</string>
+	<string>Pinpoint uses Touch ID to unlock the app and protect your notes.</string>
+
+	<!-- Microphone & Speech (audio notes / voice-to-text) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Pinpoint uses the microphone to record audio notes and to transcribe speech into text.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Pinpoint uses speech recognition to convert your voice into text notes.</string>
+
+	<!-- Camera & Photo Library (attach images to notes / OCR) -->
+	<key>NSCameraUsageDescription</key>
+	<string>Pinpoint uses the camera to capture photos to attach to your notes and to scan text.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pinpoint accesses your photo library so you can attach images to your notes.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Pinpoint saves exported notes and images to your photo library.</string>
+
+	<!-- Push notifications (reminders) -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- Encryption export compliance: app uses only standard/exempt encryption -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 
 	<!-- Google Sign-In URL Schemes -->
-	<!-- IMPORTANT: Replace YOUR_REVERSED_CLIENT_ID with the REVERSED_CLIENT_ID from GoogleService-Info.plist -->
-	<!-- Example: com.googleusercontent.apps.123456789-abcdefg -->
+	<!-- Value is the REVERSED_CLIENT_ID from ios/Runner/GoogleService-Info.plist -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -61,8 +105,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<!-- Get this from GoogleService-Info.plist after downloading from Firebase Console -->
-				<string>com.googleusercontent.apps.YOUR-REVERSED-CLIENT-ID-HERE</string>
+				<string>com.googleusercontent.apps.627112690345-57s4pqp5tnmvls7qlrotj37ou0i3dabr</string>
 			</array>
 		</dict>
 	</array>
