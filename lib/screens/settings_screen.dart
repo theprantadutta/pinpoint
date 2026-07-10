@@ -477,21 +477,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 allowedExtensions: ['pinpoint-note'],
               );
               if (result != null && result.files.isNotEmpty) {
-                final path = result.files.first.path;
+                final picked = result.files.first;
+                final path = picked.path;
                 if (path == null) {
                   return;
                 }
-                final file = File(path);
-                final jsonString = await file.readAsString();
-                await DriftNoteService.importNoteFromJson(jsonString);
-                final ctx = context;
-                if (ctx.mounted) {
-                  PinpointHaptics.success();
-                  showSuccessToast(
-                    context: ctx,
-                    title: 'Note Imported',
-                    description: 'The note has been successfully imported.',
-                  );
+                // Android's system picker does not reliably honor
+                // allowedExtensions, so users can select any file. Guard
+                // against non-.pinpoint-note files (e.g. an audio recording)
+                // whose binary contents can't be decoded as UTF-8 text.
+                final isValidExtension =
+                    picked.extension?.toLowerCase() == 'pinpoint-note' ||
+                    path.toLowerCase().endsWith('.pinpoint-note');
+                if (!isValidExtension) {
+                  final ctx = context;
+                  if (ctx.mounted) {
+                    PinpointHaptics.error();
+                    showErrorToast(
+                      context: ctx,
+                      title: 'Unsupported File',
+                      description:
+                          'Please choose a .pinpoint-note file to import.',
+                    );
+                  }
+                  return;
+                }
+                try {
+                  final file = File(path);
+                  final jsonString = await file.readAsString();
+                  await DriftNoteService.importNoteFromJson(jsonString);
+                  final ctx = context;
+                  if (ctx.mounted) {
+                    PinpointHaptics.success();
+                    showSuccessToast(
+                      context: ctx,
+                      title: 'Note Imported',
+                      description: 'The note has been successfully imported.',
+                    );
+                  }
+                } catch (e) {
+                  final ctx = context;
+                  if (ctx.mounted) {
+                    PinpointHaptics.error();
+                    showErrorToast(
+                      context: ctx,
+                      title: 'Import Failed',
+                      description:
+                          "This file couldn't be imported. Make sure it's a valid .pinpoint-note file.",
+                    );
+                  }
                 }
               }
             },

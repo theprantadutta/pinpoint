@@ -68,6 +68,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isRecording = false;
   bool _isPlaying = false;
+  // True once a source has been loaded into _audioPlayer. Seeking before a
+  // source is set throws "Bad state: No element" inside audioplayers.
+  bool _hasAudioSource = false;
   Timer? _recordingTimer;
   Duration _recordedDuration = Duration.zero;
   Duration _playbackPosition = Duration.zero;
@@ -1326,7 +1329,18 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                                 : 100.0),
                         onChanged: (value) async {
                           final position = Duration(milliseconds: value.toInt());
-                          await _audioPlayer.seek(position);
+                          // Reflect the drag immediately in the UI.
+                          setState(() {
+                            _playbackPosition = position;
+                          });
+                          // Only seek once a source is loaded; seeking before
+                          // playback has started throws inside audioplayers.
+                          if (!_hasAudioSource) return;
+                          try {
+                            await _audioPlayer.seek(position);
+                          } catch (e) {
+                            debugPrint('❌ [VoiceNote] Failed to seek: $e');
+                          }
                         },
                       ),
                     ),
@@ -1753,6 +1767,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       await _audioPlayer.play(DeviceFileSource(_audioFilePath!));
       setState(() {
         _isPlaying = true;
+        _hasAudioSource = true;
       });
 
       // Listen for playback completion
@@ -1824,6 +1839,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         _playbackPosition = Duration.zero;
         _playbackDuration = Duration.zero;
         _isPlaying = false;
+        _hasAudioSource = false;
       });
 
       // Trigger auto-save to update the note (remove audio)
