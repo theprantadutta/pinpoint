@@ -87,8 +87,14 @@ class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
 
-  // Refresh token state
-  bool _isRefreshing = false;
+  // Refresh token state. A single in-flight refresh is shared across all
+  // concurrent callers so that a burst of simultaneous 401s (e.g. the
+  // premium/encryption/FCM calls fired at app startup) triggers exactly one
+  // refresh and every request waits for its result instead of bailing out.
+  Future<bool>? _refreshFuture;
+  // Guards against firing onSessionExpired repeatedly when several concurrent
+  // requests all observe the same failed refresh.
+  bool _sessionExpiredNotified = false;
 
   /// Callback for when session expires and user needs to re-login
   VoidCallback? onSessionExpired;
@@ -128,10 +134,11 @@ class ApiService {
 
           // Handle 401 Unauthorized - attempt token refresh
           if (error.response?.statusCode == 401) {
-            // Don't try to refresh if we're already refreshing or if this is a refresh request
+            // Never try to refresh in response to a failed refresh call itself.
             final isRefreshRequest = error.requestOptions.path.contains('/auth/refresh');
-            if (!_isRefreshing && !isRefreshRequest) {
+            if (!isRefreshRequest) {
               _logger.i('🔄 Access token expired, attempting refresh...');
+              // Concurrent 401s all await the same in-flight refresh.
               final refreshed = await _tryRefreshToken();
 
               if (refreshed) {
@@ -166,10 +173,20 @@ class ApiService {
   /// failure (e.g. offline or no refresh token) without clearing the session.
   Future<bool> proactivelyRefreshToken() => _tryRefreshToken();
 
-  Future<bool> _tryRefreshToken() async {
-    if (_isRefreshing) return false;
-    _isRefreshing = true;
+  Future<bool> _tryRefreshToken() {
+    // Reuse an in-flight refresh so concurrent callers share a single request
+    // instead of each starting (or skipping) their own.
+    final existing = _refreshFuture;
+    if (existing != null) return existing;
 
+    final future = _performTokenRefresh();
+    _refreshFuture = future;
+    // Free the slot once done so a later expiry can refresh again.
+    future.whenComplete(() => _refreshFuture = null);
+    return future;
+  }
+
+  Future<bool> _performTokenRefresh() async {
     try {
       final refreshToken = await getRefreshToken();
       if (refreshToken == null) {
@@ -197,6 +214,9 @@ class ApiService {
           await saveRefreshToken(newRefreshToken);
         }
 
+        // Session is healthy again; allow future expiry notifications.
+        _sessionExpiredNotified = false;
+
         _logger.i('🔐 Tokens refreshed successfully');
         return true;
       }
@@ -205,13 +225,15 @@ class ApiService {
     } catch (e) {
       _logger.e('Token refresh failed: $e');
       return false;
-    } finally {
-      _isRefreshing = false;
     }
   }
 
   /// Handle session expiration - clear tokens and notify
   Future<void> _handleSessionExpired() async {
+    // Several concurrent requests can all observe the same failed refresh;
+    // only clear tokens and notify once.
+    if (_sessionExpiredNotified) return;
+    _sessionExpiredNotified = true;
     await deleteToken();
     await deleteRefreshToken();
     onSessionExpired?.call();
