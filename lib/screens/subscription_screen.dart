@@ -865,6 +865,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }) {
     final isSelected = _selectedProductId == productId;
     final isCurrentlyLoading = _isLoading && isSelected;
+    // The lifetime plan is a one-time non-consumable, not a subscription, so its
+    // CTA must not say "Subscribe" (accurate purchase labeling — App Store 3.1.2).
+    final isOneTime = productId == SubscriptionService.premiumLifetime;
+    final ctaLabel = isOneTime ? 'Buy Lifetime' : 'Subscribe';
 
     return GlassContainer(
       padding: EdgeInsets.zero,
@@ -971,7 +975,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             ),
                           )
                         : Text(
-                            'Subscribe',
+                            ctaLabel,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
