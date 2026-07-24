@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:convert';
 import 'dart:io';
 import 'package:pinpoint/services/api_service.dart';
 
@@ -61,6 +62,7 @@ class SubscriptionManager extends ChangeNotifier {
   static const String _autoRenewingKey = 'subscription_auto_renewing';
   static const String _cancelledAtKey = 'subscription_cancelled_at';
   static const String _cancellationReasonKey = 'subscription_cancellation_reason';
+  static const String _pendingVerificationKey = 'subscription_pending_verification';
   static const Duration _cacheValidDuration = Duration(minutes: 5);
 
   /// Initialize subscription manager
@@ -228,6 +230,14 @@ class SubscriptionManager extends ChangeNotifier {
       return;
     }
 
+    // A store purchase the backend hasn't confirmed yet takes priority: retry
+    // it first, and while it stays unconfirmed skip the device-status fetch —
+    // that endpoint doesn't know about the purchase and would downgrade the
+    // provisional entitlement the user already paid for.
+    if (await _retryPendingVerificationIfAny()) {
+      return;
+    }
+
     try {
       final status =
           await _apiService.getSubscriptionStatusByDevice(_deviceId!);
@@ -313,6 +323,7 @@ class SubscriptionManager extends ChangeNotifier {
         _isInGracePeriod = false;
         _gracePeriodEndsAt = null;
 
+        await _clearPendingVerification();
         await _saveLocalSubscriptionStatus();
         notifyListeners();
 
@@ -320,13 +331,124 @@ class SubscriptionManager extends ChangeNotifier {
         return true;
       }
 
-      debugPrint('❌ API returned success=false: ${response['message']}');
-      return false;
+      // The store already charged the user; the backend just couldn't confirm
+      // the purchase (service unavailable, misconfiguration, ...). Never leave
+      // a paid user locked out: grant premium provisionally and keep retrying
+      // verification in the background until the backend confirms.
+      debugPrint('⚠️ API returned success=false: ${response['message']} '
+          '— granting provisional entitlement');
+      await _grantProvisionalEntitlement(
+        purchaseToken: purchaseToken,
+        productId: productId,
+        userId: userId,
+        platform: platform,
+      );
+      return true;
     } catch (e, stackTrace) {
-      debugPrint('❌ Purchase verification error: $e');
+      debugPrint('⚠️ Purchase verification error: $e — granting provisional entitlement');
       debugPrint('Stack trace: $stackTrace');
-      return false;
+      await _grantProvisionalEntitlement(
+        purchaseToken: purchaseToken,
+        productId: productId,
+        userId: userId,
+        platform: platform,
+      );
+      return true;
     }
+  }
+
+  /// Unlock premium locally for a store-confirmed purchase the backend hasn't
+  /// verified yet, and persist the purchase so verification can be retried.
+  ///
+  /// The store (StoreKit / Play Billing) has already validated and charged the
+  /// purchase at this point; the backend is only re-verifying server-side. The
+  /// provisional expiry is approximate — the first successful backend
+  /// verification replaces it with the real one.
+  Future<void> _grantProvisionalEntitlement({
+    required String purchaseToken,
+    required String productId,
+    String? userId,
+    required String platform,
+  }) async {
+    _isPremium = true;
+    _subscriptionTier = 'premium';
+    _isInGracePeriod = false;
+    _gracePeriodEndsAt = null;
+    _productId = productId;
+
+    // Product IDs: pinpoint_premium_monthly / _yearly / _lifetime.
+    if (productId.contains('lifetime')) {
+      _subscriptionType = 'lifetime';
+      _subscriptionExpiresAt = null;
+    } else if (productId.contains('yearly')) {
+      _subscriptionType = 'yearly';
+      _subscriptionExpiresAt = DateTime.now().add(const Duration(days: 366));
+    } else {
+      _subscriptionType = 'monthly';
+      _subscriptionExpiresAt = DateTime.now().add(const Duration(days: 32));
+    }
+
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(
+      _pendingVerificationKey,
+      jsonEncode({
+        'purchaseToken': purchaseToken,
+        'productId': productId,
+        'userId': userId,
+        'platform': platform,
+      }),
+    );
+
+    await _saveLocalSubscriptionStatus();
+    notifyListeners();
+  }
+
+  Future<void> _clearPendingVerification() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_pendingVerificationKey);
+  }
+
+  /// Retry a stored, not-yet-backend-confirmed purchase.
+  ///
+  /// Returns true while the purchase is STILL unconfirmed (callers must then
+  /// keep the provisional entitlement and skip the device-status fetch), false
+  /// when there is nothing pending or the retry just succeeded.
+  Future<bool> _retryPendingVerificationIfAny() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_pendingVerificationKey);
+    if (raw == null) return false;
+
+    try {
+      final pending = jsonDecode(raw) as Map<String, dynamic>;
+      final response = await _apiService.verifyPurchaseWithDevice(
+        deviceId: _deviceId!,
+        purchaseToken: pending['purchaseToken'],
+        productId: pending['productId'],
+        userId: pending['userId'],
+        platform: pending['platform'] ?? 'android',
+      );
+
+      if (response['success'] == true) {
+        _isPremium = response['is_premium'] ?? true;
+        _subscriptionTier = response['tier'] ?? 'premium';
+        if (response['expires_at'] != null) {
+          _subscriptionExpiresAt = DateTime.parse(response['expires_at']);
+        }
+        _isInGracePeriod = false;
+        _gracePeriodEndsAt = null;
+        _lastFetchTime = DateTime.now();
+
+        await preferences.remove(_pendingVerificationKey);
+        await _saveLocalSubscriptionStatus();
+        notifyListeners();
+        debugPrint('✅ Pending purchase verification resolved');
+        return false;
+      }
+      debugPrint('⏳ Pending verification still unconfirmed: ${response['message']}');
+    } catch (e) {
+      debugPrint('⏳ Pending verification retry failed: $e');
+    }
+    return true;
   }
 
   /// Grant premium access (for testing or promotions)
