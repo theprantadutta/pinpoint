@@ -54,15 +54,19 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
           // Keep-style search bar: [hamburger] [ Search your notes ] [filter]
           Row(
             children: [
-              Builder(
-                builder: (context) => IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Symbols.menu),
-                  tooltip: 'Menu',
-                  onPressed: () => Scaffold.of(context).openDrawer(),
+              // On tablets the drawer is pinned open beside the content, so the
+              // hamburger is redundant (and there's no modal drawer to open).
+              if (!context.isTablet) ...[
+                Builder(
+                  builder: (context) => IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Symbols.menu),
+                    tooltip: 'Menu',
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 2),
+                const SizedBox(width: 2),
+              ],
               Expanded(
                 child: _isSearchActive
                     ? SearchBarSticky(

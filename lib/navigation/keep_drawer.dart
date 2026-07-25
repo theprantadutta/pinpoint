@@ -14,85 +14,114 @@ import '../screens/trash_screen.dart';
 /// Labels maps to the app's folders. Images/drawing/audio premium gating lives
 /// on the FAB, not here.
 class KeepDrawer extends StatelessWidget {
-  const KeepDrawer({super.key});
+  /// Width of the drawer when pinned open beside content on tablets.
+  static const double permanentWidth = 300;
+
+  /// When true, the drawer is pinned open as a side panel (tablet/iPad) rather
+  /// than shown modally behind a hamburger. In this mode, tapping a destination
+  /// must NOT pop the navigator (there is no drawer route to dismiss).
+  final bool permanent;
+
+  const KeepDrawer({super.key, this.permanent = false});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final content = SafeArea(child: _buildItems(context, theme));
+
+    // Pinned side panel: fixed width with a hairline separating it from content.
+    if (permanent) {
+      return Container(
+        width: permanentWidth,
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          border: Border(
+            right: BorderSide(color: theme.dividerColor, width: 0.5),
+          ),
+        ),
+        child: content,
+      );
+    }
 
     return Drawer(
       backgroundColor: theme.scaffoldBackgroundColor,
-      child: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(
-                      'assets/images/pinpoint-logo.png',
-                      width: 32,
-                      height: 32,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Pinpoint',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
+      child: content,
+    );
+  }
+
+  Widget _buildItems(BuildContext context, ThemeData theme) {
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/images/pinpoint-logo.png',
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-            _DrawerItem(
-              icon: Icons.lightbulb_outline_rounded,
-              label: 'Notes',
-              selected: true,
-              onTap: () => Navigator.of(context).pop(),
-            ),
-            _DrawerItem(
-              icon: Icons.label_outline_rounded,
-              label: 'Labels',
-              onTap: () => _go(context, MyFoldersScreen.kRouteName),
-            ),
-            const Divider(height: 16, indent: 16, endIndent: 16),
-            _DrawerItem(
-              icon: Icons.archive_outlined,
-              label: 'Archive',
-              onTap: () => _go(context, ArchiveScreen.kRouteName),
-            ),
-            _DrawerItem(
-              icon: Icons.delete_outline_rounded,
-              label: 'Trash',
-              onTap: () => _go(context, TrashScreen.kRouteName),
-            ),
-            const Divider(height: 16, indent: 16, endIndent: 16),
-            _DrawerItem(
-              icon: Icons.workspace_premium_outlined,
-              label: 'Upgrade to Premium',
-              iconColor: const Color(0xFFFFC107),
-              onTap: () => _go(context, SubscriptionScreen.kRouteName),
-            ),
-            _DrawerItem(
-              icon: Icons.settings_outlined,
-              label: 'Settings',
-              onTap: () => _go(context, SettingsScreen.kRouteName),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Text(
+                'Pinpoint',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+        _DrawerItem(
+          icon: Icons.lightbulb_outline_rounded,
+          label: 'Notes',
+          selected: true,
+          // Already on the Notes (home) destination. Only dismiss the modal
+          // drawer; in permanent mode there's nothing to close.
+          onTap: () {
+            if (!permanent) Navigator.of(context).pop();
+          },
+        ),
+        _DrawerItem(
+          icon: Icons.label_outline_rounded,
+          label: 'Labels',
+          onTap: () => _go(context, MyFoldersScreen.kRouteName),
+        ),
+        const Divider(height: 16, indent: 16, endIndent: 16),
+        _DrawerItem(
+          icon: Icons.archive_outlined,
+          label: 'Archive',
+          onTap: () => _go(context, ArchiveScreen.kRouteName),
+        ),
+        _DrawerItem(
+          icon: Icons.delete_outline_rounded,
+          label: 'Trash',
+          onTap: () => _go(context, TrashScreen.kRouteName),
+        ),
+        const Divider(height: 16, indent: 16, endIndent: 16),
+        _DrawerItem(
+          icon: Icons.workspace_premium_outlined,
+          label: 'Upgrade to Premium',
+          iconColor: const Color(0xFFFFC107),
+          onTap: () => _go(context, SubscriptionScreen.kRouteName),
+        ),
+        _DrawerItem(
+          icon: Icons.settings_outlined,
+          label: 'Settings',
+          onTap: () => _go(context, SettingsScreen.kRouteName),
+        ),
+      ],
     );
   }
 
   void _go(BuildContext context, String route) {
     PinpointHaptics.light();
-    Navigator.of(context).pop(); // close drawer
+    if (!permanent) Navigator.of(context).pop(); // close modal drawer
     context.push(route);
   }
 }
@@ -120,9 +149,8 @@ class _DrawerItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: Material(
-        color: selected
-            ? cs.primary.withValues(alpha: 0.14)
-            : Colors.transparent,
+        color:
+            selected ? cs.primary.withValues(alpha: 0.14) : Colors.transparent,
         borderRadius: const BorderRadius.horizontal(
           left: Radius.circular(0),
           right: Radius.circular(999),

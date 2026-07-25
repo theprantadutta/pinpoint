@@ -157,7 +157,8 @@ class _HomeScreenState extends State<HomeScreen>
         final result = await syncManager.sync();
 
         if (result.success) {
-          debugPrint('✅ [HomeScreen] Background sync complete: ${result.message}');
+          debugPrint(
+              '✅ [HomeScreen] Background sync complete: ${result.message}');
           if (result.notesSynced > 0) {
             debugPrint('   📝 Notes synced: ${result.notesSynced}');
           }
@@ -165,7 +166,8 @@ class _HomeScreenState extends State<HomeScreen>
             debugPrint('   📁 Folders synced: ${result.foldersSynced}');
           }
         } else {
-          debugPrint('⚠️ [HomeScreen] Background sync had issues: ${result.message}');
+          debugPrint(
+              '⚠️ [HomeScreen] Background sync had issues: ${result.message}');
         }
       } catch (e) {
         debugPrint('⚠️ [HomeScreen] Background sync failed: $e');
@@ -270,9 +272,11 @@ class _HomeScreenState extends State<HomeScreen>
         // Request permission if user agreed
         if (shouldRequest == true) {
           await NotificationService.requestBasicNotificationPermission();
-          getIt<AnalyticsFacade>().trackNotificationPermissionResult(granted: true);
+          getIt<AnalyticsFacade>()
+              .trackNotificationPermissionResult(granted: true);
         } else {
-          getIt<AnalyticsFacade>().trackNotificationPermissionResult(granted: false);
+          getIt<AnalyticsFacade>()
+              .trackNotificationPermissionResult(granted: false);
         }
       }
     } catch (e) {
@@ -287,56 +291,69 @@ class _HomeScreenState extends State<HomeScreen>
     // Match the app-bar surface to the home canvas so it blends in.
     final barColor = theme.scaffoldBackgroundColor;
 
+    // On tablets/iPads, pin the navigation drawer open beside the content
+    // (Apple Notes-style) instead of hiding it behind a hamburger.
+    final isTablet = context.isTablet;
+
     // Flat, Keep-style home: a solid app-bar surface (with breathing room
     // beneath the search field) over a flat canvas — no gradient/glass.
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      drawer: const KeepDrawer(),
+      drawer: isTablet ? null : const KeepDrawer(),
       floatingActionButton: const KeepFab(),
-      body: Column(
-        children: [
-          // Top bar surface — a subtle hairline appears once the list scrolls.
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: barColor,
-              border: Border(
-                bottom: BorderSide(
-                  color: _scrolledUnder
-                      ? theme.dividerColor
-                      : Colors.transparent,
-                  width: 0.5,
-                ),
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: PinpointSpacing.sm),
-                child: HomeScreenTopBar(
-                  onSearchChanged: (query) {
-                    setState(() {
-                      _searchQuery = query;
-                    });
-                  },
-                ),
+      body: isTablet
+          ? Row(
+              children: [
+                const KeepDrawer(permanent: true),
+                Expanded(child: _buildHomeBody(theme, barColor)),
+              ],
+            )
+          : _buildHomeBody(theme, barColor),
+    );
+  }
+
+  Widget _buildHomeBody(ThemeData theme, Color barColor) {
+    return Column(
+      children: [
+        // Top bar surface — a subtle hairline appears once the list scrolls.
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: barColor,
+            border: Border(
+              bottom: BorderSide(
+                color: _scrolledUnder ? theme.dividerColor : Colors.transparent,
+                width: 0.5,
               ),
             ),
           ),
-
-          // Folders Section (Compact)
-          const HomeScreenMyFolders(),
-
-          SizedBox(height: PinpointSpacing.lg),
-
-          // Recent Notes Section
-          Expanded(
-            child: HomeScreenRecentNotes(
-              searchQuery: _searchQuery,
-              scrollController: _scrollController,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: PinpointSpacing.sm),
+              child: HomeScreenTopBar(
+                onSearchChanged: (query) {
+                  setState(() {
+                    _searchQuery = query;
+                  });
+                },
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+
+        // Folders Section (Compact)
+        const HomeScreenMyFolders(),
+
+        SizedBox(height: PinpointSpacing.lg),
+
+        // Recent Notes Section
+        Expanded(
+          child: HomeScreenRecentNotes(
+            searchQuery: _searchQuery,
+            scrollController: _scrollController,
+          ),
+        ),
+      ],
     );
   }
 }
