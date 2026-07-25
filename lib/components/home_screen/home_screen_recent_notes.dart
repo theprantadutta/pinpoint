@@ -70,10 +70,14 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes>
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
 
+    // The master–detail list is a narrow pane, so keep its gutters tight; the
+    // full-width grid gets the larger tablet edge padding.
+    final horizontalPad = (widget.onNoteSelected == null && context.isTablet)
+        ? PinpointSpacing.screenEdgeLarge
+        : 16.0;
+
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: context.isTablet ? PinpointSpacing.screenEdgeLarge : 16.0,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPad),
       child: Consumer<FilterService>(
         builder: (context, filterService, _) {
           return StreamBuilder<List<NoteWithDetails>>(

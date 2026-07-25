@@ -299,27 +299,39 @@ class _HomeScreenState extends State<HomeScreen>
 
     final sizeClass = context.windowSizeClass;
 
-    // Expanded (landscape tablets/iPads): two-pane master–detail —
-    // note list | editor pane. The navigation drawer is reached via the
-    // hamburger (Apple Notes-style collapsed sidebar), not pinned open, so the
-    // two working panes get the full width.
+    // Expanded (landscape tablets/iPads): the search bar + folders span the
+    // FULL width across the top; only the note list is a narrow pane, with the
+    // editor filling the rest (note list | editor). The navigation drawer is
+    // reached via the hamburger (Apple Notes-style collapsed sidebar).
     if (sizeClass == WindowSizeClass.expanded) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         drawer: const KeepDrawer(),
         floatingActionButton: const KeepFab(),
-        body: Row(
+        body: Column(
           children: [
-            SizedBox(
-              width: 380,
-              child: _buildHomeBody(theme, barColor, masterDetail: true),
+            // Full-width header: search + folders.
+            _buildTopBar(theme, barColor),
+            const HomeScreenMyFolders(),
+            SizedBox(height: PinpointSpacing.lg),
+
+            // Below the header: narrow note list | editor pane.
+            Expanded(
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 380,
+                    child: _buildNotesList(masterDetail: true),
+                  ),
+                  VerticalDivider(
+                    width: 0.5,
+                    thickness: 0.5,
+                    color: theme.dividerColor,
+                  ),
+                  Expanded(child: _buildDetailPane(theme)),
+                ],
+              ),
             ),
-            VerticalDivider(
-              width: 0.5,
-              thickness: 0.5,
-              color: theme.dividerColor,
-            ),
-            Expanded(child: _buildDetailPane(theme)),
           ],
         ),
       );
@@ -401,31 +413,7 @@ class _HomeScreenState extends State<HomeScreen>
       {bool masterDetail = false}) {
     return Column(
       children: [
-        // Top bar surface — a subtle hairline appears once the list scrolls.
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: barColor,
-            border: Border(
-              bottom: BorderSide(
-                color: _scrolledUnder ? theme.dividerColor : Colors.transparent,
-                width: 0.5,
-              ),
-            ),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: PinpointSpacing.sm),
-              child: HomeScreenTopBar(
-                onSearchChanged: (query) {
-                  setState(() {
-                    _searchQuery = query;
-                  });
-                },
-              ),
-            ),
-          ),
-        ),
+        _buildTopBar(theme, barColor),
 
         // Folders Section (Compact)
         const HomeScreenMyFolders(),
@@ -433,17 +421,48 @@ class _HomeScreenState extends State<HomeScreen>
         SizedBox(height: PinpointSpacing.lg),
 
         // Recent Notes Section
-        Expanded(
-          child: HomeScreenRecentNotes(
-            searchQuery: _searchQuery,
-            scrollController: _scrollController,
-            onNoteSelected: masterDetail
-                ? (note) => setState(() => _selectedNote = note)
-                : null,
-            selectedNoteId: masterDetail ? _selectedNote?.note.id : null,
+        Expanded(child: _buildNotesList(masterDetail: masterDetail)),
+      ],
+    );
+  }
+
+  /// Top bar surface (search + hamburger/filter) with a hairline once scrolled.
+  Widget _buildTopBar(ThemeData theme, Color barColor) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: barColor,
+        border: Border(
+          bottom: BorderSide(
+            color: _scrolledUnder ? theme.dividerColor : Colors.transparent,
+            width: 0.5,
           ),
         ),
-      ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: PinpointSpacing.sm),
+          child: HomeScreenTopBar(
+            onSearchChanged: (query) {
+              setState(() {
+                _searchQuery = query;
+              });
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The scrollable notes list. In [masterDetail] mode, taps select into the
+  /// detail pane instead of pushing the full-screen editor.
+  Widget _buildNotesList({bool masterDetail = false}) {
+    return HomeScreenRecentNotes(
+      searchQuery: _searchQuery,
+      scrollController: _scrollController,
+      onNoteSelected:
+          masterDetail ? (note) => setState(() => _selectedNote = note) : null,
+      selectedNoteId: masterDetail ? _selectedNote?.note.id : null,
     );
   }
 }
