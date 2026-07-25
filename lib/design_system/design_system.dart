@@ -11,6 +11,7 @@ export 'typography.dart';
 export 'elevations.dart';
 export 'animations.dart';
 export 'spacing.dart';
+export 'responsive.dart';
 
 // Theme
 export 'theme.dart';
