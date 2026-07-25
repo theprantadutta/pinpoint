@@ -54,9 +54,11 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
           // Keep-style search bar: [hamburger] [ Search your notes ] [filter]
           Row(
             children: [
-              // On tablets the drawer is pinned open beside the content, so the
-              // hamburger is redundant (and there's no modal drawer to open).
-              if (!context.isTablet) ...[
+              // Hide the hamburger only in portrait-tablet mode, where the
+              // drawer is pinned open beside the content. On phones and on
+              // landscape tablets (two-pane) the drawer is modal, so the
+              // hamburger is needed to open it.
+              if (!context.isMedium) ...[
                 Builder(
                   builder: (context) => IconButton(
                     visualDensity: VisualDensity.compact,

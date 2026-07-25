@@ -299,17 +299,19 @@ class _HomeScreenState extends State<HomeScreen>
 
     final sizeClass = context.windowSizeClass;
 
-    // Expanded (landscape tablets/iPads): three-pane master–detail —
-    // pinned drawer | note list | editor pane.
+    // Expanded (landscape tablets/iPads): two-pane master–detail —
+    // note list | editor pane. The navigation drawer is reached via the
+    // hamburger (Apple Notes-style collapsed sidebar), not pinned open, so the
+    // two working panes get the full width.
     if (sizeClass == WindowSizeClass.expanded) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
+        drawer: const KeepDrawer(),
         floatingActionButton: const KeepFab(),
         body: Row(
           children: [
-            const KeepDrawer(permanent: true),
             SizedBox(
-              width: 400,
+              width: 380,
               child: _buildHomeBody(theme, barColor, masterDetail: true),
             ),
             VerticalDivider(
@@ -324,17 +326,17 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     // Medium (portrait tablets/iPads): pin the navigation drawer open beside
-    // the content (Apple Notes-style) instead of hiding it behind a hamburger.
+    // the content (there's no editor pane here, so it's just drawer + list).
     // Compact (phones): the classic modal drawer + hamburger.
-    final isTablet = sizeClass != WindowSizeClass.compact;
+    final isMedium = sizeClass == WindowSizeClass.medium;
 
     // Flat, Keep-style home: a solid app-bar surface (with breathing room
     // beneath the search field) over a flat canvas — no gradient/glass.
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      drawer: isTablet ? null : const KeepDrawer(),
+      drawer: isMedium ? null : const KeepDrawer(),
       floatingActionButton: const KeepFab(),
-      body: isTablet
+      body: isMedium
           ? Row(
               children: [
                 const KeepDrawer(permanent: true),
