@@ -41,7 +41,21 @@ class CreateNoteScreenV2 extends StatefulWidget {
   static const String kRouteName = '/create-note-v2';
   final CreateNoteScreenArguments? arguments;
 
-  const CreateNoteScreenV2({super.key, this.arguments});
+  /// When true, the editor is hosted inside a master–detail pane (tablet/iPad)
+  /// instead of pushed as a full-screen route. In this mode the exit actions
+  /// (back, save & close, delete) invoke [onClose] to clear the pane selection
+  /// rather than popping the enclosing page.
+  final bool embedded;
+
+  /// Called in place of `Navigator.pop` when [embedded] is true.
+  final VoidCallback? onClose;
+
+  const CreateNoteScreenV2({
+    super.key,
+    this.arguments,
+    this.embedded = false,
+    this.onClose,
+  });
 
   @override
   State<CreateNoteScreenV2> createState() => _CreateNoteScreenV2State();
@@ -163,6 +177,16 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     // Load existing note if editing
     if (widget.arguments?.existingNote != null) {
       _loadExistingNote();
+    }
+  }
+
+  /// Leave the editor: when embedded in a detail pane, clear the selection via
+  /// [CreateNoteScreenV2.onClose]; otherwise pop the full-screen route.
+  void _exitEditor(BuildContext context) {
+    if (widget.embedded) {
+      widget.onClose?.call();
+    } else {
+      Navigator.of(context).pop();
     }
   }
 
@@ -822,7 +846,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               }
 
               if (context.mounted) {
-                Navigator.of(context).pop();
+                _exitEditor(context);
               }
             },
           ),
@@ -920,7 +944,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   try {
                     await _saveNote(isExplicit: true);
                     if (context.mounted) {
-                      Navigator.of(context).pop();
+                      _exitEditor(context);
                     }
                   } catch (e) {
                     if (context.mounted) {
@@ -1930,9 +1954,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               getIt<AnalyticsFacade>()
                   .trackNoteDeleted(noteType: _noteTypeToKey(selectedNoteType));
 
-              // Navigate back to previous screen using screen context, not dialog context
+              // Return to previous screen (or clear the detail pane when embedded)
               if (context.mounted) {
-                Navigator.of(context).pop();
+                _exitEditor(context);
               }
             },
             child: Text('Delete', style: TextStyle(color: cs.error)),

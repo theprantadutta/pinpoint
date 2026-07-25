@@ -17,10 +17,19 @@ class HomeScreenRecentNotes extends StatefulWidget {
   final String searchQuery;
   final ScrollController? scrollController;
 
+  /// When provided (tablet master–detail), tapping a note reports it here
+  /// instead of pushing the full-screen editor route.
+  final void Function(NoteWithDetails note)? onNoteSelected;
+
+  /// The currently open note in the detail pane, for highlighting the list.
+  final int? selectedNoteId;
+
   const HomeScreenRecentNotes({
     super.key,
     required this.searchQuery,
     this.scrollController,
+    this.onNoteSelected,
+    this.selectedNoteId,
   });
 
   @override
@@ -157,21 +166,33 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes>
   }
 
   Widget _notesSliver(List<NoteWithDetails> items) {
-    if (_viewType == 'grid') {
+    // In master–detail mode the list is the narrow middle pane, so it reads
+    // best as a single column (Apple Notes/Mail style).
+    final columns = widget.onNoteSelected != null ? 1 : context.noteGridColumns;
+
+    if (_viewType == 'grid' && columns > 1) {
       return SliverMasonryGrid.count(
-        crossAxisCount: context.noteGridColumns,
+        crossAxisCount: columns,
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
         childCount: items.length,
-        itemBuilder: (context, i) =>
-            NoteListItem(note: items[i], showActions: true),
+        itemBuilder: (context, i) => _buildItem(items[i]),
       );
     }
     return SliverList.separated(
       itemCount: items.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (context, i) =>
-          NoteListItem(note: items[i], showActions: true),
+      itemBuilder: (context, i) => _buildItem(items[i]),
+    );
+  }
+
+  Widget _buildItem(NoteWithDetails note) {
+    return NoteListItem(
+      note: note,
+      showActions: true,
+      onOpen: widget.onNoteSelected,
+      isSelected: widget.selectedNoteId != null &&
+          widget.selectedNoteId == note.note.id,
     );
   }
 }
@@ -182,12 +203,21 @@ class NoteListItem extends StatelessWidget {
   final bool isTrashView;
   final bool showActions;
 
+  /// When provided, tapping the note calls this instead of pushing the
+  /// full-screen editor route (used to drive a master–detail detail pane).
+  final void Function(NoteWithDetails note)? onOpen;
+
+  /// Whether this note is the one currently open in the detail pane.
+  final bool isSelected;
+
   const NoteListItem({
     super.key,
     required this.note,
     this.isArchivedView = false,
     this.isTrashView = false,
     this.showActions = true,
+    this.onOpen,
+    this.isSelected = false,
   });
 
   @override
@@ -198,7 +228,7 @@ class NoteListItem extends StatelessWidget {
     final hasTitle = n.noteTitle != null && n.noteTitle!.trim().isNotEmpty;
     final bgColor = PinpointColors.noteColor(note.color, theme.brightness);
 
-    return TweenAnimationBuilder<double>(
+    final card = TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.98, end: 1),
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
@@ -235,19 +265,34 @@ class NoteListItem extends StatelessWidget {
         ],
         onTap: () {
           PinpointHaptics.medium();
-          context.push(
-            CreateNoteScreenV2.kRouteName,
-            extra: CreateNoteScreenArguments(
-              noticeType: n.noteType,
-              existingNote: note,
-            ),
-          );
+          if (onOpen != null) {
+            onOpen!(note);
+          } else {
+            context.push(
+              CreateNoteScreenV2.kRouteName,
+              extra: CreateNoteScreenArguments(
+                noticeType: n.noteType,
+                existingNote: note,
+              ),
+            );
+          }
         },
         onPinToggle: () {
           PinpointHaptics.light();
           DriftNoteService.togglePinStatus(n.id, !n.isPinned);
         },
       ),
+    );
+
+    if (!isSelected) return card;
+
+    // Ring the note that's currently open in the detail pane.
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: cs.primary, width: 2),
+      ),
+      child: card,
     );
   }
 }

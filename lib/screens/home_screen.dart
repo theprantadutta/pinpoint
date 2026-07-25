@@ -4,6 +4,9 @@ import '../database/database.dart';
 import '../design_system/design_system.dart';
 import '../components/home_screen/home_screen_my_folders.dart';
 import '../components/home_screen/home_screen_recent_notes.dart';
+import '../models/note_with_details.dart';
+import '../screen_arguments/create_note_screen_arguments.dart';
+import '../screens/create_note_screen_v2.dart';
 import '../components/home_screen/home_screen_top_bar.dart';
 import '../design_system/components/keep_fab.dart';
 import '../navigation/keep_drawer.dart';
@@ -32,6 +35,9 @@ class _HomeScreenState extends State<HomeScreen>
     with AutomaticKeepAliveClientMixin {
   String _searchQuery = '';
   final ScrollController _scrollController = ScrollController();
+
+  // Master–detail (expanded/tablet only): the note open in the detail pane.
+  NoteWithDetails? _selectedNote;
 
   // Whether the notes list has scrolled under the top bar (drives the hairline).
   bool _scrolledUnder = false;
@@ -291,9 +297,36 @@ class _HomeScreenState extends State<HomeScreen>
     // Match the app-bar surface to the home canvas so it blends in.
     final barColor = theme.scaffoldBackgroundColor;
 
-    // On tablets/iPads, pin the navigation drawer open beside the content
-    // (Apple Notes-style) instead of hiding it behind a hamburger.
-    final isTablet = context.isTablet;
+    final sizeClass = context.windowSizeClass;
+
+    // Expanded (landscape tablets/iPads): three-pane master–detail —
+    // pinned drawer | note list | editor pane.
+    if (sizeClass == WindowSizeClass.expanded) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        floatingActionButton: const KeepFab(),
+        body: Row(
+          children: [
+            const KeepDrawer(permanent: true),
+            SizedBox(
+              width: 400,
+              child: _buildHomeBody(theme, barColor, masterDetail: true),
+            ),
+            VerticalDivider(
+              width: 0.5,
+              thickness: 0.5,
+              color: theme.dividerColor,
+            ),
+            Expanded(child: _buildDetailPane(theme)),
+          ],
+        ),
+      );
+    }
+
+    // Medium (portrait tablets/iPads): pin the navigation drawer open beside
+    // the content (Apple Notes-style) instead of hiding it behind a hamburger.
+    // Compact (phones): the classic modal drawer + hamburger.
+    final isTablet = sizeClass != WindowSizeClass.compact;
 
     // Flat, Keep-style home: a solid app-bar surface (with breathing room
     // beneath the search field) over a flat canvas — no gradient/glass.
@@ -312,7 +345,58 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildHomeBody(ThemeData theme, Color barColor) {
+  /// The editor pane for master–detail. Shows a placeholder until a note is
+  /// selected, then the note editor embedded (no route push/pop).
+  Widget _buildDetailPane(ThemeData theme) {
+    final note = _selectedNote;
+    if (note == null) {
+      return SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.sticky_note_2_outlined,
+                size: 64,
+                color:
+                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              ),
+              const SizedBox(height: PinpointSpacing.md),
+              Text(
+                'Select a note to view or edit',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: PinpointSpacing.xs),
+              Text(
+                'or tap + to create a new one',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color:
+                      theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return CreateNoteScreenV2(
+      // A new key per note forces a fresh editor State so initState re-reads
+      // the newly selected note (args are only read once, in initState).
+      key: ValueKey(note.note.id),
+      embedded: true,
+      onClose: () => setState(() => _selectedNote = null),
+      arguments: CreateNoteScreenArguments(
+        noticeType: note.note.noteType,
+        existingNote: note,
+      ),
+    );
+  }
+
+  Widget _buildHomeBody(ThemeData theme, Color barColor,
+      {bool masterDetail = false}) {
     return Column(
       children: [
         // Top bar surface — a subtle hairline appears once the list scrolls.
@@ -351,6 +435,10 @@ class _HomeScreenState extends State<HomeScreen>
           child: HomeScreenRecentNotes(
             searchQuery: _searchQuery,
             scrollController: _scrollController,
+            onNoteSelected: masterDetail
+                ? (note) => setState(() => _selectedNote = note)
+                : null,
+            selectedNoteId: masterDetail ? _selectedNote?.note.id : null,
           ),
         ),
       ],
