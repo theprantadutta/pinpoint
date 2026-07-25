@@ -88,7 +88,10 @@ class _NotesScreenState extends State<NotesScreen>
                     searchQuery: _searchQuery,
                     sortType: _sortBy,
                     sortDirection: _sortDirection,
-                    excludeNoteTypes: ['todo', 'reminder'], // Notes screen only shows text and voice notes
+                    excludeNoteTypes: [
+                      'todo',
+                      'reminder'
+                    ], // Notes screen only shows text and voice notes
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -141,7 +144,8 @@ class _NotesScreenState extends State<NotesScreen>
               setState(() {
                 _isGridView = !_isGridView;
               });
-              getIt<AnalyticsFacade>().trackViewModeChanged(viewMode: _isGridView ? 'grid' : 'list');
+              getIt<AnalyticsFacade>().trackViewModeChanged(
+                  viewMode: _isGridView ? 'grid' : 'list');
             },
             tooltip: _isGridView ? 'List view' : 'Grid view',
           ),
@@ -160,7 +164,8 @@ class _NotesScreenState extends State<NotesScreen>
                   _sortDirection = result.substring(4);
                 }
               });
-              getIt<AnalyticsFacade>().trackSortChanged(sortBy: _sortBy, direction: _sortDirection);
+              getIt<AnalyticsFacade>()
+                  .trackSortChanged(sortBy: _sortBy, direction: _sortDirection);
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(
@@ -212,7 +217,10 @@ class _NotesScreenState extends State<NotesScreen>
                     searchQuery: _searchQuery,
                     sortType: _sortBy,
                     sortDirection: _sortDirection,
-                    excludeNoteTypes: ['todo', 'reminder'], // Notes screen only shows text and voice notes
+                    excludeNoteTypes: [
+                      'todo',
+                      'reminder'
+                    ], // Notes screen only shows text and voice notes
                   ),
                   builder: (context, snapshot) {
                     // Use cached data while waiting to avoid loading flash
@@ -277,7 +285,8 @@ class _NotesScreenState extends State<NotesScreen>
             lastModified: note.note.updatedAt,
             isPinned: note.note.isPinned,
             noteType: note.note.noteType,
-            totalTasks: note.note.noteType == 'todo' ? note.todoItems.length : null,
+            totalTasks:
+                note.note.noteType == 'todo' ? note.todoItems.length : null,
             completedTasks: note.note.noteType == 'todo'
                 ? note.todoItems.where((item) => item.isDone).length
                 : null,
@@ -315,10 +324,15 @@ class _NotesScreenState extends State<NotesScreen>
   Widget _buildGridView(List<NoteWithDetails> notes) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
+      padding: EdgeInsets.only(
+        left: context.isTablet ? PinpointSpacing.screenEdgeLarge : 16,
+        right: context.isTablet ? PinpointSpacing.screenEdgeLarge : 16,
+        top: 16,
+        bottom: 100,
+      ),
       child: AnimatedGridStagger(
         itemCount: notes.length,
-        crossAxisCount: 2,
+        crossAxisCount: context.noteGridColumns,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
         itemBuilder: (context, index) {
@@ -328,7 +342,8 @@ class _NotesScreenState extends State<NotesScreen>
           return NoteCard(
             title: getNoteTitleOrPreview(note.note.noteTitle, note.textContent),
             noteType: note.note.noteType,
-            totalTasks: note.note.noteType == 'todo' ? note.todoItems.length : null,
+            totalTasks:
+                note.note.noteType == 'todo' ? note.todoItems.length : null,
             completedTasks: note.note.noteType == 'todo'
                 ? note.todoItems.where((item) => item.isDone).length
                 : null,

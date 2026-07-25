@@ -191,7 +191,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final uri = Uri.parse('https://pranta.dev');
                       try {
                         if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          await launchUrl(uri,
+                              mode: LaunchMode.externalApplication);
                         }
                       } catch (e) {
                         if (context.mounted) {
@@ -279,388 +280,390 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
-      body: ListView(
-        padding: EdgeInsets.only(
-          left: PinpointSpacing.md,
-          right: PinpointSpacing.md,
-          top: PinpointSpacing.screenEdge,
-          bottom: 100, // Extra space for floating navigation bar
-        ),
-        children: [
-          // Premium/Subscription Section
-          Consumer<SubscriptionManager>(
-            builder: (context, subscriptionManager, child) {
-              return _PremiumSection(
-                subscriptionManager: subscriptionManager,
-                onManageSubscription: _openManageSubscriptions,
-              );
-            },
+      body: ResponsiveCenter(
+        child: ListView(
+          padding: EdgeInsets.only(
+            left: PinpointSpacing.md,
+            right: PinpointSpacing.md,
+            top: PinpointSpacing.screenEdge,
+            bottom: 100, // Extra space for floating navigation bar
           ),
+          children: [
+            // Premium/Subscription Section
+            Consumer<SubscriptionManager>(
+              builder: (context, subscriptionManager, child) {
+                return _PremiumSection(
+                  subscriptionManager: subscriptionManager,
+                  onManageSubscription: _openManageSubscriptions,
+                );
+              },
+            ),
 
-          const SizedBox(height: PinpointSpacing.xl),
+            const SizedBox(height: PinpointSpacing.xl),
 
-          // Account & Sync Section
-          Consumer<BackendAuthService>(
-            builder: (context, backendAuth, _) {
-              if (!backendAuth.isAuthenticated) {
+            // Account & Sync Section
+            Consumer<BackendAuthService>(
+              builder: (context, backendAuth, _) {
+                if (!backendAuth.isAuthenticated) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SectionHeader(title: 'ACCOUNT'),
+                      const SizedBox(height: PinpointSpacing.md),
+                      _SettingsTile(
+                        title: 'Sign In',
+                        subtitle: 'Sign in to sync your notes',
+                        icon: Icons.login_rounded,
+                        onTap: () {
+                          PinpointHaptics.medium();
+                          AppNavigation.router.push('/auth');
+                        },
+                      ),
+                    ],
+                  );
+                }
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SectionHeader(title: 'ACCOUNT'),
+                    _SectionHeader(title: 'ACCOUNT & SYNC'),
                     const SizedBox(height: PinpointSpacing.md),
-                    _SettingsTile(
-                      title: 'Sign In',
-                      subtitle: 'Sign in to sync your notes',
-                      icon: Icons.login_rounded,
-                      onTap: () {
-                        PinpointHaptics.medium();
-                        AppNavigation.router.push('/auth');
-                      },
-                    ),
+                    _ProfileCard(backendAuth: backendAuth),
+                    const SizedBox(height: PinpointSpacing.md),
+                    _ManualSyncButton(),
+                    const SizedBox(height: PinpointSpacing.md),
+
+                    // Sync Debug Info - only in debug mode
+                    if (kDebugMode) ...[
+                      _SettingsTile(
+                        title: 'Sync Debug Info',
+                        subtitle: 'View sync status and troubleshoot issues',
+                        icon: Icons.bug_report_outlined,
+                        onTap: () {
+                          PinpointHaptics.medium();
+                          AppNavigation.router.push('/sync-debug');
+                        },
+                      ),
+                      const SizedBox(height: PinpointSpacing.md),
+                    ],
+
+                    _LinkedAccountsSection(backendAuth: backendAuth),
+                    const SizedBox(height: PinpointSpacing.md),
+                    _LogoutButton(backendAuth: backendAuth),
                   ],
                 );
-              }
+              },
+            ),
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionHeader(title: 'ACCOUNT & SYNC'),
-                  const SizedBox(height: PinpointSpacing.md),
-                  _ProfileCard(backendAuth: backendAuth),
-                  const SizedBox(height: PinpointSpacing.md),
-                  _ManualSyncButton(),
-                  const SizedBox(height: PinpointSpacing.md),
+            const SizedBox(height: PinpointSpacing.xl),
 
-                  // Sync Debug Info - only in debug mode
-                  if (kDebugMode) ...[
-                    _SettingsTile(
-                      title: 'Sync Debug Info',
-                      subtitle: 'View sync status and troubleshoot issues',
-                      icon: Icons.bug_report_outlined,
-                      onTap: () {
-                        PinpointHaptics.medium();
-                        AppNavigation.router.push('/sync-debug');
-                      },
-                    ),
+            // Usage Limits Section (Free Users Only)
+            Consumer<SubscriptionManager>(
+              builder: (context, subscriptionManager, child) {
+                if (subscriptionManager.isPremium) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SectionHeader(title: 'USAGE'),
                     const SizedBox(height: PinpointSpacing.md),
+                    const _UsageLimitsCard(),
+                    const SizedBox(height: PinpointSpacing.xl),
                   ],
-
-                  _LinkedAccountsSection(backendAuth: backendAuth),
-                  const SizedBox(height: PinpointSpacing.md),
-                  _LogoutButton(backendAuth: backendAuth),
-                ],
-              );
-            },
-          ),
-
-          const SizedBox(height: PinpointSpacing.xl),
-
-          // Usage Limits Section (Free Users Only)
-          Consumer<SubscriptionManager>(
-            builder: (context, subscriptionManager, child) {
-              if (subscriptionManager.isPremium) {
-                return const SizedBox.shrink();
-              }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionHeader(title: 'USAGE'),
-                  const SizedBox(height: PinpointSpacing.md),
-                  const _UsageLimitsCard(),
-                  const SizedBox(height: PinpointSpacing.xl),
-                ],
-              );
-            },
-          ),
-
-          // Appearance Section
-          _SectionHeader(title: 'APPEARANCE'),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'Theme',
-            subtitle: 'Customize your theme',
-            icon: Icons.color_lens_rounded,
-            onTap: () {
-              PinpointHaptics.medium();
-              AppNavigation.router.push(ThemeScreen.kRouteName);
-            },
-          ),
-
-          const SizedBox(height: PinpointSpacing.xl),
-
-          // Content Section
-          _SectionHeader(title: 'CONTENT'),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'My Folders',
-            icon: Icons.folder_rounded,
-            onTap: () {
-              PinpointHaptics.medium();
-              AppNavigation.router.push('/my-folders');
-            },
-          ),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'Archive',
-            icon: Icons.archive_rounded,
-            onTap: () {
-              PinpointHaptics.medium();
-              AppNavigation.router.push(ArchiveScreen.kRouteName);
-            },
-          ),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'Trash',
-            icon: Icons.delete_rounded,
-            onTap: () {
-              PinpointHaptics.medium();
-              AppNavigation.router.push(TrashScreen.kRouteName);
-            },
-          ),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'Sync Settings',
-            icon: Icons.sync_rounded,
-            onTap: () {
-              PinpointHaptics.medium();
-              AppNavigation.router.push(SyncScreen.kRouteName);
-            },
-          ),
-
-          const SizedBox(height: PinpointSpacing.xl),
-
-          // Security Section
-          _SectionHeader(title: 'SECURITY'),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'Biometric Lock',
-            subtitle:
-                MyApp.of(context).isBiometricEnabled ? 'Enabled' : 'Disabled',
-            icon: Icons.fingerprint_rounded,
-            trailing: Switch(
-              value: MyApp.of(context).isBiometricEnabled,
-              onChanged: (value) {
-                PinpointHaptics.light();
-                MyApp.of(context).changeBiometricEnabledEnabled(value);
+                );
               },
             ),
-            onTap: () {
-              PinpointHaptics.light();
-              final current = MyApp.of(context).isBiometricEnabled;
-              MyApp.of(context).changeBiometricEnabledEnabled(!current);
-            },
-          ),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'Encryption',
-            subtitle: 'Standard or Maximum Privacy (zero-knowledge)',
-            icon: Icons.enhanced_encryption_rounded,
-            onTap: () {
-              PinpointHaptics.light();
-              AppNavigation.router.push(EncryptionSettingsScreen.kRouteName);
-            },
-          ),
 
-          const SizedBox(height: PinpointSpacing.xl),
-
-          // Advanced Section
-          _SectionHeader(title: 'ADVANCED'),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'Import Note',
-            subtitle: 'Import from .pinpoint-note file',
-            icon: Icons.file_upload_rounded,
-            onTap: () async {
-              PinpointHaptics.medium();
-              final result = await FilePicker.pickFiles(
-                type: FileType.custom,
-                allowedExtensions: ['pinpoint-note'],
-              );
-              if (result != null && result.files.isNotEmpty) {
-                final picked = result.files.first;
-                final path = picked.path;
-                if (path == null) {
-                  return;
-                }
-                // Android's system picker does not reliably honor
-                // allowedExtensions, so users can select any file. Guard
-                // against non-.pinpoint-note files (e.g. an audio recording)
-                // whose binary contents can't be decoded as UTF-8 text.
-                final isValidExtension =
-                    picked.extension?.toLowerCase() == 'pinpoint-note' ||
-                    path.toLowerCase().endsWith('.pinpoint-note');
-                if (!isValidExtension) {
-                  final ctx = context;
-                  if (ctx.mounted) {
-                    PinpointHaptics.error();
-                    showErrorToast(
-                      context: ctx,
-                      title: 'Unsupported File',
-                      description:
-                          'Please choose a .pinpoint-note file to import.',
-                    );
-                  }
-                  return;
-                }
-                try {
-                  final file = File(path);
-                  final jsonString = await file.readAsString();
-                  await DriftNoteService.importNoteFromJson(jsonString);
-                  final ctx = context;
-                  if (ctx.mounted) {
-                    PinpointHaptics.success();
-                    showSuccessToast(
-                      context: ctx,
-                      title: 'Note Imported',
-                      description: 'The note has been successfully imported.',
-                    );
-                  }
-                } catch (e) {
-                  final ctx = context;
-                  if (ctx.mounted) {
-                    PinpointHaptics.error();
-                    showErrorToast(
-                      context: ctx,
-                      title: 'Import Failed',
-                      description:
-                          "This file couldn't be imported. Make sure it's a valid .pinpoint-note file.",
-                    );
-                  }
-                }
-              }
-            },
-          ),
-
-          // Test notification - only in debug mode
-          if (kDebugMode) ...[
+            // Appearance Section
+            _SectionHeader(title: 'APPEARANCE'),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Test Notification',
-              subtitle: 'Send a test push notification',
-              icon: Icons.notifications_active_rounded,
-              onTap: () async {
-                PinpointHaptics.medium();
-                try {
-                  final notificationService = FirebaseNotificationService();
-                  await notificationService.sendTestNotification();
-                  final ctx = context;
-                  if (ctx.mounted) {
-                    showSuccessToast(
-                      context: ctx,
-                      title: '🔔 Test Notification Sent!',
-                      description: 'Check your notification tray',
-                    );
-                  }
-                } catch (e) {
-                  final ctx = context;
-                  if (ctx.mounted) {
-                    showErrorToast(
-                      context: ctx,
-                      title: 'Failed',
-                      description: 'Error: ${e.toString()}',
-                    );
-                  }
-                }
-              },
-            ),
-          ],
-
-          // Test Crash - only in debug mode
-          if (kDebugMode) ...[
-            const SizedBox(height: PinpointSpacing.md),
-            _SettingsTile(
-              title: 'Test Crash',
-              subtitle: 'Force a crash to test Crashlytics',
-              icon: Icons.bug_report_rounded,
+              title: 'Theme',
+              subtitle: 'Customize your theme',
+              icon: Icons.color_lens_rounded,
               onTap: () {
                 PinpointHaptics.medium();
-                FirebaseCrashlytics.instance.crash();
+                AppNavigation.router.push(ThemeScreen.kRouteName);
               },
             ),
-          ],
 
-          // Admin Panel - only visible to admin email
-          if (context.read<BackendAuthService>().userEmail ==
-              'prantadutta1997@gmail.com') ...[
+            const SizedBox(height: PinpointSpacing.xl),
+
+            // Content Section
+            _SectionHeader(title: 'CONTENT'),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Admin Panel',
-              subtitle: 'Debug sync issues',
-              icon: Icons.admin_panel_settings,
+              title: 'My Folders',
+              icon: Icons.folder_rounded,
+              onTap: () {
+                PinpointHaptics.medium();
+                AppNavigation.router.push('/my-folders');
+              },
+            ),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: 'Archive',
+              icon: Icons.archive_rounded,
+              onTap: () {
+                PinpointHaptics.medium();
+                AppNavigation.router.push(ArchiveScreen.kRouteName);
+              },
+            ),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: 'Trash',
+              icon: Icons.delete_rounded,
+              onTap: () {
+                PinpointHaptics.medium();
+                AppNavigation.router.push(TrashScreen.kRouteName);
+              },
+            ),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: 'Sync Settings',
+              icon: Icons.sync_rounded,
+              onTap: () {
+                PinpointHaptics.medium();
+                AppNavigation.router.push(SyncScreen.kRouteName);
+              },
+            ),
+
+            const SizedBox(height: PinpointSpacing.xl),
+
+            // Security Section
+            _SectionHeader(title: 'SECURITY'),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: 'Biometric Lock',
+              subtitle:
+                  MyApp.of(context).isBiometricEnabled ? 'Enabled' : 'Disabled',
+              icon: Icons.fingerprint_rounded,
+              trailing: Switch(
+                value: MyApp.of(context).isBiometricEnabled,
+                onChanged: (value) {
+                  PinpointHaptics.light();
+                  MyApp.of(context).changeBiometricEnabledEnabled(value);
+                },
+              ),
+              onTap: () {
+                PinpointHaptics.light();
+                final current = MyApp.of(context).isBiometricEnabled;
+                MyApp.of(context).changeBiometricEnabledEnabled(!current);
+              },
+            ),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: 'Encryption',
+              subtitle: 'Standard or Maximum Privacy (zero-knowledge)',
+              icon: Icons.enhanced_encryption_rounded,
+              onTap: () {
+                PinpointHaptics.light();
+                AppNavigation.router.push(EncryptionSettingsScreen.kRouteName);
+              },
+            ),
+
+            const SizedBox(height: PinpointSpacing.xl),
+
+            // Advanced Section
+            _SectionHeader(title: 'ADVANCED'),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: 'Import Note',
+              subtitle: 'Import from .pinpoint-note file',
+              icon: Icons.file_upload_rounded,
               onTap: () async {
                 PinpointHaptics.medium();
-                final authenticated = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => const AdminPasswordDialog(),
+                final result = await FilePicker.pickFiles(
+                  type: FileType.custom,
+                  allowedExtensions: ['pinpoint-note'],
                 );
-                if (authenticated == true && mounted) {
-                  AppNavigation.router.push(AdminPanelScreen.kRouteName);
+                if (result != null && result.files.isNotEmpty) {
+                  final picked = result.files.first;
+                  final path = picked.path;
+                  if (path == null) {
+                    return;
+                  }
+                  // Android's system picker does not reliably honor
+                  // allowedExtensions, so users can select any file. Guard
+                  // against non-.pinpoint-note files (e.g. an audio recording)
+                  // whose binary contents can't be decoded as UTF-8 text.
+                  final isValidExtension =
+                      picked.extension?.toLowerCase() == 'pinpoint-note' ||
+                          path.toLowerCase().endsWith('.pinpoint-note');
+                  if (!isValidExtension) {
+                    final ctx = context;
+                    if (ctx.mounted) {
+                      PinpointHaptics.error();
+                      showErrorToast(
+                        context: ctx,
+                        title: 'Unsupported File',
+                        description:
+                            'Please choose a .pinpoint-note file to import.',
+                      );
+                    }
+                    return;
+                  }
+                  try {
+                    final file = File(path);
+                    final jsonString = await file.readAsString();
+                    await DriftNoteService.importNoteFromJson(jsonString);
+                    final ctx = context;
+                    if (ctx.mounted) {
+                      PinpointHaptics.success();
+                      showSuccessToast(
+                        context: ctx,
+                        title: 'Note Imported',
+                        description: 'The note has been successfully imported.',
+                      );
+                    }
+                  } catch (e) {
+                    final ctx = context;
+                    if (ctx.mounted) {
+                      PinpointHaptics.error();
+                      showErrorToast(
+                        context: ctx,
+                        title: 'Import Failed',
+                        description:
+                            "This file couldn't be imported. Make sure it's a valid .pinpoint-note file.",
+                      );
+                    }
+                  }
                 }
               },
             ),
+
+            // Test notification - only in debug mode
+            if (kDebugMode) ...[
+              const SizedBox(height: PinpointSpacing.md),
+              _SettingsTile(
+                title: 'Test Notification',
+                subtitle: 'Send a test push notification',
+                icon: Icons.notifications_active_rounded,
+                onTap: () async {
+                  PinpointHaptics.medium();
+                  try {
+                    final notificationService = FirebaseNotificationService();
+                    await notificationService.sendTestNotification();
+                    final ctx = context;
+                    if (ctx.mounted) {
+                      showSuccessToast(
+                        context: ctx,
+                        title: '🔔 Test Notification Sent!',
+                        description: 'Check your notification tray',
+                      );
+                    }
+                  } catch (e) {
+                    final ctx = context;
+                    if (ctx.mounted) {
+                      showErrorToast(
+                        context: ctx,
+                        title: 'Failed',
+                        description: 'Error: ${e.toString()}',
+                      );
+                    }
+                  }
+                },
+              ),
+            ],
+
+            // Test Crash - only in debug mode
+            if (kDebugMode) ...[
+              const SizedBox(height: PinpointSpacing.md),
+              _SettingsTile(
+                title: 'Test Crash',
+                subtitle: 'Force a crash to test Crashlytics',
+                icon: Icons.bug_report_rounded,
+                onTap: () {
+                  PinpointHaptics.medium();
+                  FirebaseCrashlytics.instance.crash();
+                },
+              ),
+            ],
+
+            // Admin Panel - only visible to admin email
+            if (context.read<BackendAuthService>().userEmail ==
+                'prantadutta1997@gmail.com') ...[
+              const SizedBox(height: PinpointSpacing.md),
+              _SettingsTile(
+                title: 'Admin Panel',
+                subtitle: 'Debug sync issues',
+                icon: Icons.admin_panel_settings,
+                onTap: () async {
+                  PinpointHaptics.medium();
+                  final authenticated = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => const AdminPasswordDialog(),
+                  );
+                  if (authenticated == true && mounted) {
+                    AppNavigation.router.push(AdminPanelScreen.kRouteName);
+                  }
+                },
+              ),
+            ],
+
+            const SizedBox(height: PinpointSpacing.xl),
+
+            // About Section
+            _SectionHeader(title: 'ABOUT'),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: 'About Pinpoint',
+              subtitle: 'App info, version & developer',
+              icon: Icons.info_rounded,
+              onTap: () {
+                PinpointHaptics.medium();
+                _showAboutDialog(context);
+              },
+            ),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: 'Rate Pinpoint',
+              subtitle: 'Enjoying the app? Leave a review',
+              icon: Icons.star_rounded,
+              onTap: () {
+                PinpointHaptics.medium();
+                AppReviewService().openStoreListing();
+              },
+            ),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: 'Replay Tutorial',
+              subtitle: 'See the app walkthrough again',
+              icon: Icons.help_outline_rounded,
+              onTap: () async {
+                PinpointHaptics.medium();
+
+                // Reset walkthrough so it will show again
+                await WalkthroughService().resetWalkthrough();
+
+                if (!context.mounted) return;
+
+                // Return to the home screen first (settings is a pushed route)
+                Navigator.of(context).pop();
+
+                // Delay then show walkthrough
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  if (context.mounted) {
+                    WalkthroughService().showWalkthrough(context);
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: 'Terms & Privacy',
+              icon: Icons.policy_rounded,
+              onTap: () {
+                PinpointHaptics.medium();
+                AppNavigation.router.push(
+                  TermsAcceptanceScreen.kRouteName,
+                  extra: true, // isViewOnly = true
+                );
+              },
+            ),
           ],
-
-          const SizedBox(height: PinpointSpacing.xl),
-
-          // About Section
-          _SectionHeader(title: 'ABOUT'),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'About Pinpoint',
-            subtitle: 'App info, version & developer',
-            icon: Icons.info_rounded,
-            onTap: () {
-              PinpointHaptics.medium();
-              _showAboutDialog(context);
-            },
-          ),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'Rate Pinpoint',
-            subtitle: 'Enjoying the app? Leave a review',
-            icon: Icons.star_rounded,
-            onTap: () {
-              PinpointHaptics.medium();
-              AppReviewService().openStoreListing();
-            },
-          ),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'Replay Tutorial',
-            subtitle: 'See the app walkthrough again',
-            icon: Icons.help_outline_rounded,
-            onTap: () async {
-              PinpointHaptics.medium();
-
-              // Reset walkthrough so it will show again
-              await WalkthroughService().resetWalkthrough();
-
-              if (!context.mounted) return;
-
-              // Return to the home screen first (settings is a pushed route)
-              Navigator.of(context).pop();
-
-              // Delay then show walkthrough
-              Future.delayed(const Duration(milliseconds: 500), () {
-                if (context.mounted) {
-                  WalkthroughService().showWalkthrough(context);
-                }
-              });
-            },
-          ),
-          const SizedBox(height: PinpointSpacing.md),
-          _SettingsTile(
-            title: 'Terms & Privacy',
-            icon: Icons.policy_rounded,
-            onTap: () {
-              PinpointHaptics.medium();
-              AppNavigation.router.push(
-                TermsAcceptanceScreen.kRouteName,
-                extra: true, // isViewOnly = true
-              );
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -721,8 +724,22 @@ class _PremiumSection extends StatelessWidget {
     final difference = expiryDate.difference(now);
 
     // Format the date
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final formattedDate = '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    final formattedDate =
+        '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
 
     if (difference.isNegative) {
       return 'Expired on $formattedDate';
@@ -739,7 +756,8 @@ class _PremiumSection extends StatelessWidget {
     final cs = theme.colorScheme;
     final isPremium = subscriptionManager.isPremium;
     final isInGracePeriod = subscriptionManager.isInGracePeriod;
-    final gracePeriodMessage = isInGracePeriod ? PremiumService().getGracePeriodMessage() : null;
+    final gracePeriodMessage =
+        isInGracePeriod ? PremiumService().getGracePeriodMessage() : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -747,36 +765,36 @@ class _PremiumSection extends StatelessWidget {
         // Grace Period Warning Banner
         if (isInGracePeriod && gracePeriodMessage != null) ...[
           Container(
-              padding: const EdgeInsets.all(PinpointSpacing.md),
-              margin: const EdgeInsets.only(bottom: PinpointSpacing.md),
-              decoration: BoxDecoration(
-                color: PinpointColors.warning.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: PinpointColors.warning.withValues(alpha: 0.3),
-                  width: 1.5,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.warning_amber_rounded,
-                    color: PinpointColors.warning,
-                    size: 24,
-                  ),
-                  const SizedBox(width: PinpointSpacing.ms),
-                  Expanded(
-                    child: Text(
-                      gracePeriodMessage,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: PinpointColors.warningDark,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
+            padding: const EdgeInsets.all(PinpointSpacing.md),
+            margin: const EdgeInsets.only(bottom: PinpointSpacing.md),
+            decoration: BoxDecoration(
+              color: PinpointColors.warning.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: PinpointColors.warning.withValues(alpha: 0.3),
+                width: 1.5,
               ),
             ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: PinpointColors.warning,
+                  size: 24,
+                ),
+                const SizedBox(width: PinpointSpacing.ms),
+                Expanded(
+                  child: Text(
+                    gracePeriodMessage,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: PinpointColors.warningDark,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
 
         // Premium Card
@@ -821,7 +839,8 @@ class _PremiumSection extends StatelessWidget {
                       isPremium
                           ? isInGracePeriod
                               ? 'Premium (Grace Period)'
-                              : _getPlanDisplayName(subscriptionManager.subscriptionType)
+                              : _getPlanDisplayName(
+                                  subscriptionManager.subscriptionType)
                           : 'Upgrade to Premium',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -878,7 +897,9 @@ class _PremiumSection extends StatelessWidget {
           const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
             title: 'Manage Subscription',
-            subtitle: Platform.isIOS ? 'View in the App Store' : 'View in Google Play Store',
+            subtitle: Platform.isIOS
+                ? 'View in the App Store'
+                : 'View in Google Play Store',
             icon: Icons.manage_accounts_rounded,
             onTap: () {
               PinpointHaptics.medium();
@@ -1265,7 +1286,8 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Sync service not ready. Please wait a moment and try again.'),
+            content: Text(
+                'Sync service not ready. Please wait a moment and try again.'),
             backgroundColor: PinpointColors.warning,
           ),
         );
@@ -1279,7 +1301,8 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
       // Determine the message to show
       String contentMessage;
       if (result.success) {
-        final totalSynced = result.notesSynced + result.foldersSynced + result.remindersSynced;
+        final totalSynced =
+            result.notesSynced + result.foldersSynced + result.remindersSynced;
         if (totalSynced == 0) {
           // Use the actual message from sync result (e.g., "No changes", "Sync already in progress")
           contentMessage = result.message.isNotEmpty
@@ -1300,7 +1323,9 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
             children: [
               Icon(
                 result.success ? Icons.check_circle : Icons.error,
-                color: result.success ? PinpointColors.success : PinpointColors.error,
+                color: result.success
+                    ? PinpointColors.success
+                    : PinpointColors.error,
               ),
               const SizedBox(width: PinpointSpacing.sm),
               Expanded(
@@ -1321,10 +1346,10 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
                 ],
                 if (result.remindersSynced > 0) ...[
                   const SizedBox(height: PinpointSpacing.sm),
-                  _buildSyncStat('Reminders', result.remindersSynced, Icons.alarm),
+                  _buildSyncStat(
+                      'Reminders', result.remindersSynced, Icons.alarm),
                 ],
-                if (contentMessage.isNotEmpty)
-                  Text(contentMessage),
+                if (contentMessage.isNotEmpty) Text(contentMessage),
               ] else
                 Text(result.message),
             ],
@@ -1447,7 +1472,8 @@ class _LogoutButtonState extends State<_LogoutButton> {
           showSuccessToast(
             context: context,
             title: 'Account Deleted',
-            description: 'Your account and all data have been permanently deleted.',
+            description:
+                'Your account and all data have been permanently deleted.',
           );
         }
       });
@@ -1684,46 +1710,46 @@ class _LogoutButtonState extends State<_LogoutButton> {
       mainAxisSize: MainAxisSize.min,
       children: [
         BrutalistCard(
-      variant: BrutalistCardVariant.outlined,
-      customBorderColor: PinpointColors.rose.withValues(alpha: 0.3),
-      padding: EdgeInsets.zero,
-      onTap: _isLoggingOut ? null : () => _handleLogout(context),
-      child: ListTile(
-        leading: _isLoggingOut
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Icon(
-                Icons.logout_rounded,
+          variant: BrutalistCardVariant.outlined,
+          customBorderColor: PinpointColors.rose.withValues(alpha: 0.3),
+          padding: EdgeInsets.zero,
+          onTap: _isLoggingOut ? null : () => _handleLogout(context),
+          child: ListTile(
+            leading: _isLoggingOut
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    Icons.logout_rounded,
+                    color: PinpointColors.rose,
+                    size: 22,
+                  ),
+            title: Text(
+              _isLoggingOut ? 'Signing Out...' : 'Sign Out',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
                 color: PinpointColors.rose,
-                size: 22,
               ),
-        title: Text(
-          _isLoggingOut ? 'Signing Out...' : 'Sign Out',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: PinpointColors.rose,
-          ),
-        ),
-        subtitle: Text(
-          _isLoggingOut ? _logoutStatus : 'Sign out of your account',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: cs.onSurface.withValues(alpha: 0.6),
-          ),
-        ),
-        trailing: _isLoggingOut
-            ? null
-            : Icon(
-                Icons.chevron_right_rounded,
-                color: PinpointColors.rose.withValues(alpha: 0.6),
+            ),
+            subtitle: Text(
+              _isLoggingOut ? _logoutStatus : 'Sign out of your account',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurface.withValues(alpha: 0.6),
               ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: PinpointSpacing.md,
-          vertical: 4,
-        ),
-      ),
+            ),
+            trailing: _isLoggingOut
+                ? null
+                : Icon(
+                    Icons.chevron_right_rounded,
+                    color: PinpointColors.rose.withValues(alpha: 0.6),
+                  ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: PinpointSpacing.md,
+              vertical: 4,
+            ),
+          ),
         ),
         const SizedBox(height: PinpointSpacing.sm),
         _buildDeleteAccountCard(context, theme, cs),
@@ -2000,7 +2026,8 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
         _AuthProviderTile(
           icon: Icons.g_mobiledata_rounded,
           title: 'Google',
-          subtitle: hasGoogle ? 'Linked to your account' : 'Link for easy sign-in',
+          subtitle:
+              hasGoogle ? 'Linked to your account' : 'Link for easy sign-in',
           isLinked: hasGoogle,
           isLoading: _isLoading,
           onTap: _isLoading ? null : (hasGoogle ? null : _linkGoogleAccount),

@@ -137,7 +137,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           description: 'Processing your purchase...',
         );
       } else {
-        analytics.trackPurchaseFailed(productId: productId, error: 'Unable to complete purchase');
+        analytics.trackPurchaseFailed(
+            productId: productId, error: 'Unable to complete purchase');
         showErrorToast(
           context: context,
           title: 'Purchase Failed',
@@ -204,131 +205,139 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
 
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  children: [
-                    // Logo and title
-                    Column(
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(40),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    colorScheme.primary.withValues(alpha: 0.3),
-                                blurRadius: 20,
-                                spreadRadius: 5,
+                child: ResponsiveCenter(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    children: [
+                      // Logo and title
+                      Column(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(40),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colorScheme.primary
+                                      .withValues(alpha: 0.3),
+                                  blurRadius: 20,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(40),
+                              child: Image.asset(
+                                'assets/images/pinpoint-logo.png',
+                                fit: BoxFit.cover,
                               ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(40),
-                            child: Image.asset(
-                              'assets/images/pinpoint-logo.png',
-                              fit: BoxFit.cover,
                             ),
-                          ),
-                        )
-                            .animate()
-                            .scale(duration: 600.ms, curve: Curves.elasticOut)
-                            .fadeIn(duration: 400.ms),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Pinpoint Premium',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ).animate(delay: 200.ms).fadeIn(),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Unlock all features and sync across devices',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: isDark
-                                ? PinpointColors.darkTextSecondary
-                                : PinpointColors.lightTextSecondary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ).animate(delay: 300.ms).fadeIn(),
-                      ],
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // Features list
-                    _buildFeaturesList(isDark),
-
-                    const SizedBox(height: 32),
-
-                    // Current Plan Card (for premium users)
-                    Consumer<SubscriptionManager>(
-                      builder: (context, subscriptionManager, child) {
-                        if (!subscriptionManager.isPremium) {
-                          return const SizedBox.shrink();
-                        }
-                        return Column(
-                          children: [
-                            _buildCurrentPlanCard(
-                              subscriptionManager,
-                              colorScheme,
-                              isDark,
+                          )
+                              .animate()
+                              .scale(duration: 600.ms, curve: Curves.elasticOut)
+                              .fadeIn(duration: 400.ms),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Pinpoint Premium',
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(height: 24),
-                            // Divider with "Upgrade Options" text
-                            if (_hasUpgradeOptions(subscriptionManager))
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Divider(
-                                        color: isDark
-                                            ? PinpointColors.darkTextTertiary
-                                            : PinpointColors.lightTextTertiary,
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                                      child: Text(
-                                        'Upgrade Options',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
+                          ).animate(delay: 200.ms).fadeIn(),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Unlock all features and sync across devices',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: isDark
+                                  ? PinpointColors.darkTextSecondary
+                                  : PinpointColors.lightTextSecondary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ).animate(delay: 300.ms).fadeIn(),
+                        ],
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Features list
+                      _buildFeaturesList(isDark),
+
+                      const SizedBox(height: 32),
+
+                      // Current Plan Card (for premium users)
+                      Consumer<SubscriptionManager>(
+                        builder: (context, subscriptionManager, child) {
+                          if (!subscriptionManager.isPremium) {
+                            return const SizedBox.shrink();
+                          }
+                          return Column(
+                            children: [
+                              _buildCurrentPlanCard(
+                                subscriptionManager,
+                                colorScheme,
+                                isDark,
+                              ),
+                              const SizedBox(height: 24),
+                              // Divider with "Upgrade Options" text
+                              if (_hasUpgradeOptions(subscriptionManager))
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Divider(
                                           color: isDark
-                                              ? PinpointColors.darkTextSecondary
-                                              : PinpointColors.lightTextSecondary,
+                                              ? PinpointColors.darkTextTertiary
+                                              : PinpointColors
+                                                  .lightTextTertiary,
                                         ),
                                       ),
-                                    ),
-                                    Expanded(
-                                      child: Divider(
-                                        color: isDark
-                                            ? PinpointColors.darkTextTertiary
-                                            : PinpointColors.lightTextTertiary,
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16),
+                                        child: Text(
+                                          'Upgrade Options',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDark
+                                                ? PinpointColors
+                                                    .darkTextSecondary
+                                                : PinpointColors
+                                                    .lightTextSecondary,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                      Expanded(
+                                        child: Divider(
+                                          color: isDark
+                                              ? PinpointColors.darkTextTertiary
+                                              : PinpointColors
+                                                  .lightTextTertiary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            const SizedBox(height: 16),
-                          ],
-                        );
-                      },
-                    ),
+                              const SizedBox(height: 16),
+                            ],
+                          );
+                        },
+                      ),
 
-                    // Subscription plans
-                    _buildSubscriptionPlans(colorScheme, isDark),
+                      // Subscription plans
+                      _buildSubscriptionPlans(colorScheme, isDark),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Legal / auto-renewable subscription disclosure (App Store
-                    // Guideline 3.1.2 requires this + Terms & Privacy links).
-                    _buildLegalFooter(theme, isDark),
+                      // Legal / auto-renewable subscription disclosure (App Store
+                      // Guideline 3.1.2 requires this + Terms & Privacy links).
+                      _buildLegalFooter(theme, isDark),
 
-                    const SizedBox(height: 32),
-                  ],
+                      const SizedBox(height: 32),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -362,7 +371,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           'charged to your $_storeName account at confirmation of purchase. '
           'Manage or cancel anytime in your $_storeName account settings. '
           'The lifetime plan is a one-time purchase and does not renew.',
-          style: theme.textTheme.bodySmall?.copyWith(color: tertiary, fontSize: 11),
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: tertiary, fontSize: 11),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
@@ -486,8 +496,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final now = DateTime.now();
     final difference = expiryDate.difference(now);
 
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final formattedDate = '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    final formattedDate =
+        '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
 
     if (difference.isNegative) {
       return 'Expired on $formattedDate';
@@ -646,13 +670,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _openManageSubscriptions,
                     icon: const Icon(Icons.settings_outlined, size: 18),
-                    label: Text(isCancelledButActive ? 'Resubscribe in $_storeName' : 'Manage in $_storeName'),
+                    label: Text(isCancelledButActive
+                        ? 'Resubscribe in $_storeName'
+                        : 'Manage in $_storeName'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: (isGracePeriod || isCancelledButActive)
                           ? accent
                           : colorScheme.primary,
                       side: BorderSide(
-                        color: ((isGracePeriod || isCancelledButActive) ? accent : colorScheme.primary)
+                        color: ((isGracePeriod || isCancelledButActive)
+                                ? accent
+                                : colorScheme.primary)
                             .withValues(alpha: 0.5),
                       ),
                       shape: RoundedRectangleBorder(
@@ -739,7 +767,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         final widgets = <Widget>[];
 
         // Monthly - show if not already monthly/yearly/lifetime
-        if (currentType != 'monthly' && currentType != 'yearly' && currentType != 'lifetime') {
+        if (currentType != 'monthly' &&
+            currentType != 'yearly' &&
+            currentType != 'lifetime') {
           widgets.add(_buildDynamicPlanCard(
             productId: SubscriptionService.premiumMonthly,
             title: 'Monthly',
@@ -756,7 +786,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             productId: SubscriptionService.premiumYearly,
             title: 'Yearly',
             period: 'per year',
-            badge: currentType == 'monthly' ? 'UPGRADE - Save 33%' : 'BEST VALUE - Save 33%',
+            badge: currentType == 'monthly'
+                ? 'UPGRADE - Save 33%'
+                : 'BEST VALUE - Save 33%',
             isPopular: true,
             colorScheme: colorScheme,
             isDark: isDark,

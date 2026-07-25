@@ -132,9 +132,10 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
           }
 
           return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+            padding: EdgeInsets.all(
+                context.isTablet ? PinpointSpacing.screenEdgeLarge : 16),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: context.noteGridColumns,
               childAspectRatio: 1.3,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,

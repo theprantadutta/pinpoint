@@ -21,6 +21,7 @@ import 'package:pinpoint/services/encryption_service.dart';
 import 'package:pinpoint/services/zero_knowledge_service.dart';
 import 'package:pinpoint/screens/unlock_screen.dart';
 import 'package:pinpoint/design_system/colors.dart';
+import 'package:pinpoint/design_system/responsive.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:go_router/go_router.dart';
 
@@ -99,7 +100,8 @@ class _AuthScreenState extends State<AuthScreen> {
       // connectivity is restored, so no data is lost and the user is never
       // trapped on a spinner.
       if (ConnectivityService().isOffline) {
-        debugPrint('📴 [Auth] Offline — skipping initial sync; will sync on reconnect');
+        debugPrint(
+            '📴 [Auth] Offline — skipping initial sync; will sync on reconnect');
         return true;
       }
 
@@ -128,13 +130,13 @@ class _AuthScreenState extends State<AuthScreen> {
                 // dialog — time out and proceed; the background sync (and
                 // reconnect auto-sync) will finish the job.
                 final syncResult = await syncManager.sync().timeout(
-                  const Duration(seconds: 25),
-                  onTimeout: () => SyncResult(
-                    success: false,
-                    message:
-                        'Sync is taking a while — it will finish in the background.',
-                  ),
-                );
+                      const Duration(seconds: 25),
+                      onTimeout: () => SyncResult(
+                        success: false,
+                        message:
+                            'Sync is taking a while — it will finish in the background.',
+                      ),
+                    );
                 if (dialogContext.mounted) {
                   Navigator.of(dialogContext).pop(syncResult);
                 }
@@ -176,7 +178,8 @@ class _AuthScreenState extends State<AuthScreen> {
           final hasData = result.notesSynced > 0 ||
               result.foldersSynced > 0 ||
               result.remindersSynced > 0;
-          final hasErrors = result.notesFailed > 0 || result.decryptionErrors > 0;
+          final hasErrors =
+              result.notesFailed > 0 || result.decryptionErrors > 0;
 
           if (hasData || hasErrors) {
             await _showSyncResultDialog(result);
@@ -294,53 +297,56 @@ class _AuthScreenState extends State<AuthScreen> {
               ],
               if (result.remindersSynced > 0) ...[
                 const SizedBox(height: 12),
-                _buildSyncStat('Reminders', result.remindersSynced, Icons.alarm),
+                _buildSyncStat(
+                    'Reminders', result.remindersSynced, Icons.alarm),
               ],
-            if (result.notesFailed > 0) ...[
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
-              _buildSyncStat(
-                'Failed to restore',
-                result.notesFailed,
-                Icons.error_outline,
-                isError: true,
-              ),
-            ],
-            if (result.decryptionErrors > 0) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
+              if (result.notesFailed > 0) ...[
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+                _buildSyncStat(
+                  'Failed to restore',
+                  result.notesFailed,
+                  Icons.error_outline,
+                  isError: true,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.lock_outline, color: Colors.red.shade700, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Decryption Errors',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red.shade700,
+              ],
+              if (result.decryptionErrors > 0) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.lock_outline,
+                              color: Colors.red.shade700, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Decryption Errors',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red.shade700,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${result.decryptionErrors} notes could not be decrypted. This usually means the encryption key is incorrect or corrupted.',
-                      style: TextStyle(fontSize: 12, color: Colors.red.shade900),
-                    ),
-                  ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${result.decryptionErrors} notes could not be decrypted. This usually means the encryption key is incorrect or corrupted.',
+                        style:
+                            TextStyle(fontSize: 12, color: Colors.red.shade900),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
             ],
           ),
         ),
@@ -547,7 +553,8 @@ class _AuthScreenState extends State<AuthScreen> {
       } catch (e) {
         debugPrint('❌ [$tag] Encryption key sync failed with exception: $e');
         if (!SecureEncryptionService.isInitialized) {
-          debugPrint('🔑 [$tag] Initializing encryption locally after failure...');
+          debugPrint(
+              '🔑 [$tag] Initializing encryption locally after failure...');
           await SecureEncryptionService.initialize(apiService: ApiService());
           debugPrint('✅ [$tag] Encryption initialized locally');
         }
@@ -566,7 +573,8 @@ class _AuthScreenState extends State<AuthScreen> {
       }
 
       // Success! Navigate to home.
-      debugPrint('🎉 [$tag] Authentication flow complete! Navigating to home...');
+      debugPrint(
+          '🎉 [$tag] Authentication flow complete! Navigating to home...');
       if (mounted) {
         context.go(HomeScreen.kRouteName);
       }
@@ -595,7 +603,8 @@ class _AuthScreenState extends State<AuthScreen> {
       if (userCredential == null) {
         throw Exception('Sign in with Apple was cancelled or failed');
       }
-      debugPrint('✅ [Apple Sign-In] Firebase user: ${userCredential.user?.uid}');
+      debugPrint(
+          '✅ [Apple Sign-In] Firebase user: ${userCredential.user?.uid}');
 
       // 2. Get Firebase ID token.
       final firebaseToken = await _appleSignInService.getFirebaseIdToken();
@@ -742,241 +751,244 @@ class _AuthScreenState extends State<AuthScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 40),
+        child: ResponsiveCenter(
+          maxWidth: Breakpoints.formMaxWidth,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 40),
 
-              // App Logo/Icon
-              Icon(
-                Icons.push_pin,
-                size: 80,
-                color: cs.primary,
-              ),
-
-              const SizedBox(height: 16),
-
-              // App Title
-              Text(
-                'PinPoint',
-                style: theme.textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: cs.onSurface,
+                // App Logo/Icon
+                Icon(
+                  Icons.push_pin,
+                  size: 80,
+                  color: cs.primary,
                 ),
-                textAlign: TextAlign.center,
-              ),
 
-              const SizedBox(height: 8),
+                const SizedBox(height: 16),
 
-              // Subtitle
-              Text(
-                _isLogin ? 'Welcome back!' : 'Create your account',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
+                // App Title
+                Text(
+                  'PinPoint',
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: cs.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
 
-              const SizedBox(height: 40),
+                const SizedBox(height: 8),
 
-              // Google Sign-In Button (Primary)
-              _buildGoogleSignInButton(theme, cs),
-
-              // Sign in with Apple (iOS only — App Store Guideline 4.8)
-              if (Platform.isIOS) ...[
-                const SizedBox(height: 12),
-                _buildAppleSignInButton(theme, cs),
-              ],
-
-              const SizedBox(height: 24),
-
-              // Divider
-              Row(
-                children: [
-                  Expanded(
-                    child: Divider(
-                      color: cs.outlineVariant,
-                    ),
+                // Subtitle
+                Text(
+                  _isLogin ? 'Welcome back!' : 'Create your account',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'or continue with email',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Divider(
-                      color: cs.outlineVariant,
-                    ),
-                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 40),
+
+                // Google Sign-In Button (Primary)
+                _buildGoogleSignInButton(theme, cs),
+
+                // Sign in with Apple (iOS only — App Store Guideline 4.8)
+                if (Platform.isIOS) ...[
+                  const SizedBox(height: 12),
+                  _buildAppleSignInButton(theme, cs),
                 ],
-              ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Email/Password Form
-              Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                // Divider
+                Row(
                   children: [
-                    // Email Field
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                    Expanded(
+                      child: Divider(
+                        color: cs.outlineVariant,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        if (!value.contains('@')) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // Password Field
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outlined),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'or continue with email',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        }
-                        if (!_isLogin && value.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
-                        return null;
-                      },
                     ),
-
-                    const SizedBox(height: 24),
-
-                    // Error Message
-                    if (_errorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: cs.errorContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              color: cs.onErrorContainer,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: cs.onErrorContainer,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                    Expanded(
+                      child: Divider(
+                        color: cs.outlineVariant,
                       ),
-
-                    // Login/Register Button
-                    FilledButton(
-                      onPressed: _isBusy ? null : _handleEmailPasswordAuth,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: _isEmailLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text(
-                              _isLogin ? 'Log In' : 'Sign Up',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
                     ),
                   ],
                 ),
-              ),
 
-              const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
-              // Toggle Login/Register
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    _isLogin
-                        ? "Don't have an account? "
-                        : 'Already have an account? ',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
+                // Email/Password Form
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Email Field
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Password Field
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          if (!_isLogin && value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Error Message
+                      if (_errorMessage != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: cs.errorContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: cs.onErrorContainer,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: cs.onErrorContainer,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // Login/Register Button
+                      FilledButton(
+                        onPressed: _isBusy ? null : _handleEmailPasswordAuth,
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isEmailLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                _isLogin ? 'Log In' : 'Sign Up',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ],
                   ),
-                  TextButton(
-                    onPressed: (_isGoogleLoading || _isEmailLoading)
-                        ? null
-                        : () {
-                            setState(() {
-                              _isLogin = !_isLogin;
-                              _errorMessage = null;
-                            });
-                          },
-                    child: Text(
-                      _isLogin ? 'Sign Up' : 'Log In',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: cs.primary,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Toggle Login/Register
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _isLogin
+                          ? "Don't have an account? "
+                          : 'Already have an account? ',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: cs.onSurfaceVariant,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    TextButton(
+                      onPressed: (_isGoogleLoading || _isEmailLoading)
+                          ? null
+                          : () {
+                              setState(() {
+                                _isLogin = !_isLogin;
+                                _errorMessage = null;
+                              });
+                            },
+                      child: Text(
+                        _isLogin ? 'Sign Up' : 'Log In',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: cs.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

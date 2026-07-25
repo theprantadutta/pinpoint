@@ -91,10 +91,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   DateTime? _reminderTime;
   late TextEditingController _reminderNotificationTitleController;
   late TextEditingController _reminderNotificationContentController;
-  late TextEditingController _reminderDescriptionController; // Deprecated, but kept for backward compatibility
+  late TextEditingController
+      _reminderDescriptionController; // Deprecated, but kept for backward compatibility
 
   // Recurrence fields
-  String _recurrenceType = 'once'; // once, hourly, daily, weekly, monthly, yearly
+  String _recurrenceType =
+      'once'; // once, hourly, daily, weekly, monthly, yearly
   int _recurrenceInterval = 1;
   String _recurrenceEndType = 'never'; // never, after_occurrences, on_date
   String? _recurrenceEndValue;
@@ -229,8 +231,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         // Load raw content from database (not the plain text version)
         final textNote = await TextNoteService.getTextNote(note.id);
         if (textNote != null && textNote.content.isNotEmpty) {
-          _fleatherController = MarkdownEditor.createControllerFromMarkdown(
-              textNote.content);
+          _fleatherController =
+              MarkdownEditor.createControllerFromMarkdown(textNote.content);
         }
       } else if (note.noteType == 'voice') {
         // Voice note
@@ -257,9 +259,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         final reminderNote = await ReminderNoteService.getReminderNote(note.id);
         if (reminderNote != null) {
           _reminderTime = reminderNote.reminderTime;
-          _reminderNotificationTitleController.text = reminderNote.notificationTitle ?? reminderNote.title ?? '';
-          _reminderNotificationContentController.text = reminderNote.notificationContent ?? '';
-          _reminderDescriptionController.text = reminderNote.description ?? ''; // Deprecated, but kept for backward compatibility
+          _reminderNotificationTitleController.text =
+              reminderNote.notificationTitle ?? reminderNote.title ?? '';
+          _reminderNotificationContentController.text =
+              reminderNote.notificationContent ?? '';
+          _reminderDescriptionController.text = reminderNote.description ??
+              ''; // Deprecated, but kept for backward compatibility
           _recurrenceType = reminderNote.recurrenceType;
           _recurrenceInterval = reminderNote.recurrenceInterval;
           _recurrenceEndType = reminderNote.recurrenceEndType;
@@ -390,11 +395,16 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
   String _noteTypeToKey(String noteType) {
     switch (noteType) {
-      case 'Title Content': return 'text';
-      case 'Record Audio': return 'voice';
-      case 'Todo List': return 'todo';
-      case 'Reminder': return 'reminder';
-      default: return noteType.toLowerCase();
+      case 'Title Content':
+        return 'text';
+      case 'Record Audio':
+        return 'voice';
+      case 'Todo List':
+        return 'todo';
+      case 'Reminder':
+        return 'reminder';
+      default:
+        return noteType.toLowerCase();
     }
   }
 
@@ -483,9 +493,10 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     }
 
     // Use notification title if provided, otherwise fall back to note title
-    final notificationTitle = _reminderNotificationTitleController.text.isNotEmpty
-        ? _reminderNotificationTitleController.text
-        : title;
+    final notificationTitle =
+        _reminderNotificationTitleController.text.isNotEmpty
+            ? _reminderNotificationTitleController.text
+            : title;
 
     if (_currentNoteId != null) {
       // Update existing note
@@ -493,9 +504,10 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         noteId: _currentNoteId!,
         title: title,
         notificationTitle: notificationTitle,
-        notificationContent: _reminderNotificationContentController.text.isNotEmpty
-            ? _reminderNotificationContentController.text
-            : null,
+        notificationContent:
+            _reminderNotificationContentController.text.isNotEmpty
+                ? _reminderNotificationContentController.text
+                : null,
         reminderTime: _reminderTime,
         folders: selectedFolders,
         recurrenceType: _recurrenceType,
@@ -509,9 +521,10 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       final noteIds = await ReminderNoteService.createReminderNote(
         title: title,
         notificationTitle: notificationTitle,
-        notificationContent: _reminderNotificationContentController.text.isNotEmpty
-            ? _reminderNotificationContentController.text
-            : null,
+        notificationContent:
+            _reminderNotificationContentController.text.isNotEmpty
+                ? _reminderNotificationContentController.text
+                : null,
         reminderTime: _reminderTime!,
         folders: selectedFolders,
         recurrenceType: _recurrenceType,
@@ -542,7 +555,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     // Skip auto-save for reminders - they require explicit save due to backend API calls
     // and must have a valid future time
     if (selectedNoteType == 'Reminder') {
-      debugPrint('⏭️ [CreateNoteV2] Auto-save skipped: Reminders require explicit save');
+      debugPrint(
+          '⏭️ [CreateNoteV2] Auto-save skipped: Reminders require explicit save');
       return;
     }
 
@@ -590,8 +604,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    final noteBg =
-        PinpointColors.noteColor(_selectedColor, theme.brightness) ?? cs.surface;
+    final noteBg = PinpointColors.noteColor(_selectedColor, theme.brightness) ??
+        cs.surface;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -605,156 +619,161 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
             // Content
             Expanded(
-              child: CustomScrollView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                slivers: [
-                  // (Keep-style: no note-type selector — the type is chosen from
-                  // the FAB speed-dial, and notes convert between text/checklist.)
+              child: ResponsiveCenter(
+                child: CustomScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  slivers: [
+                    // (Keep-style: no note-type selector — the type is chosen from
+                    // the FAB speed-dial, and notes convert between text/checklist.)
 
-                  // Title (in the body, Keep-style) — clean borderless field
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-                      child: TextField(
-                        controller: _titleController,
-                        focusNode: _titleFocusNode,
-                        decoration: InputDecoration(
-                          hintText: 'Title',
-                          // Borderless + unfilled: override the global input
-                          // theme so there's no pill background or focus ring.
-                          filled: false,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          isDense: true,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 6),
-                          hintStyle: TextStyle(
-                            color: cs.onSurface.withValues(alpha: 0.4),
+                    // Title (in the body, Keep-style) — clean borderless field
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+                        child: TextField(
+                          controller: _titleController,
+                          focusNode: _titleFocusNode,
+                          decoration: InputDecoration(
+                            hintText: 'Title',
+                            // Borderless + unfilled: override the global input
+                            // theme so there's no pill background or focus ring.
+                            filled: false,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            isDense: true,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 6),
+                            hintStyle: TextStyle(
+                              color: cs.onSurface.withValues(alpha: 0.4),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                            ),
+                          ),
+                          style: TextStyle(
+                            color: cs.onSurface,
                             fontWeight: FontWeight.w600,
                             fontSize: 18,
                           ),
+                          maxLines: null,
+                          textInputAction: TextInputAction.next,
                         ),
-                        style: TextStyle(
-                          color: cs.onSurface,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
-                        ),
-                        maxLines: null,
-                        textInputAction: TextInputAction.next,
                       ),
                     ),
-                  ),
 
-                  // Folder Selection
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () => _showFolderBottomSheet(),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? cs.surfaceContainerHighest
-                                    .withValues(alpha: 0.3)
-                                : cs.surfaceContainerHighest
-                                    .withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: cs.outline.withValues(alpha: 0.15),
-                              width: 1,
+                    // Folder Selection
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => _showFolderBottomSheet(),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? cs.surfaceContainerHighest
+                                      .withValues(alpha: 0.3)
+                                  : cs.surfaceContainerHighest
+                                      .withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: cs.outline.withValues(alpha: 0.15),
+                                width: 1,
+                              ),
                             ),
-                          ),
-                          child: selectedFolders.isEmpty
-                              ? Row(
-                                  children: [
-                                    Icon(
-                                      Symbols.add,
-                                      size: 18,
-                                      color: cs.primary,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      'Add to folder',
-                                      style:
-                                          theme.textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w500,
+                            child: selectedFolders.isEmpty
+                                ? Row(
+                                    children: [
+                                      Icon(
+                                        Symbols.add,
+                                        size: 18,
+                                        color: cs.primary,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        'Add to folder',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.w500,
+                                          color: cs.onSurface
+                                              .withValues(alpha: 0.7),
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Icon(
+                                        Icons.chevron_right_rounded,
+                                        size: 18,
                                         color:
-                                            cs.onSurface.withValues(alpha: 0.7),
+                                            cs.onSurface.withValues(alpha: 0.4),
                                       ),
-                                    ),
-                                    const Spacer(),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      size: 18,
-                                      color:
-                                          cs.onSurface.withValues(alpha: 0.4),
-                                    ),
-                                  ],
-                                )
-                              : Row(
-                                  children: [
-                                    Icon(
-                                      Symbols.folder,
-                                      size: 18,
-                                      color: cs.primary,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Wrap(
-                                        spacing: 6,
-                                        runSpacing: 4,
-                                        children: selectedFolders.map((folder) {
-                                          return Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: cs.primary
-                                                  .withValues(alpha: 0.08),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                              border: Border.all(
-                                                color: cs.primary
-                                                    .withValues(alpha: 0.15),
-                                                width: 0.5,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              folder.title,
-                                              style: theme.textTheme.labelSmall
-                                                  ?.copyWith(
-                                                color: cs.primary
-                                                    .withValues(alpha: 0.9),
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
+                                    ],
+                                  )
+                                : Row(
+                                    children: [
+                                      Icon(
+                                        Symbols.folder,
+                                        size: 18,
+                                        color: cs.primary,
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(
-                                      Icons.edit_rounded,
-                                      size: 16,
-                                      color:
-                                          cs.onSurface.withValues(alpha: 0.4),
-                                    ),
-                                  ],
-                                ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Wrap(
+                                          spacing: 6,
+                                          runSpacing: 4,
+                                          children:
+                                              selectedFolders.map((folder) {
+                                            return Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: cs.primary
+                                                    .withValues(alpha: 0.08),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                                border: Border.all(
+                                                  color: cs.primary
+                                                      .withValues(alpha: 0.15),
+                                                  width: 0.5,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                folder.title,
+                                                style: theme
+                                                    .textTheme.labelSmall
+                                                    ?.copyWith(
+                                                  color: cs.primary
+                                                      .withValues(alpha: 0.9),
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        Icons.edit_rounded,
+                                        size: 16,
+                                        color:
+                                            cs.onSurface.withValues(alpha: 0.4),
+                                      ),
+                                    ],
+                                  ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // Dynamic Content Area
-                  _buildContentArea(),
-                ],
+                    // Dynamic Content Area
+                    _buildContentArea(),
+                  ],
+                ),
               ),
             ),
           ],
@@ -871,8 +890,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 selected: _selectedColor,
               );
               if (picked != null && mounted) {
-                setState(() =>
-                    _selectedColor = picked == 'default' ? null : picked);
+                setState(
+                    () => _selectedColor = picked == 'default' ? null : picked);
                 // Persist immediately for already-saved notes.
                 if (_currentNoteId != null) {
                   await DriftNoteService.setNoteColor(
@@ -907,7 +926,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(e.toString().replaceAll('Exception: ', '')),
+                          content:
+                              Text(e.toString().replaceAll('Exception: ', '')),
                           backgroundColor: cs.error,
                           behavior: SnackBarBehavior.floating,
                           duration: const Duration(seconds: 3),
@@ -1315,8 +1335,10 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                         trackHeight: 4,
                         activeTrackColor: cs.primary,
                         inactiveTrackColor: cs.primary.withValues(alpha: 0.2),
-                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                        thumbShape:
+                            const RoundSliderThumbShape(enabledThumbRadius: 8),
+                        overlayShape:
+                            const RoundSliderOverlayShape(overlayRadius: 16),
                         thumbColor: cs.primary,
                         overlayColor: cs.primary.withValues(alpha: 0.2),
                       ),
@@ -1328,7 +1350,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                                 ? (_audioDurationSeconds! * 1000).toDouble()
                                 : 100.0),
                         onChanged: (value) async {
-                          final position = Duration(milliseconds: value.toInt());
+                          final position =
+                              Duration(milliseconds: value.toInt());
                           // Reflect the drag immediately in the UI.
                           setState(() {
                             _playbackPosition = position;
@@ -1357,18 +1380,23 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: cs.onSurface.withValues(alpha: 0.7),
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ],
                             ),
                           ),
                           Text(
                             _formatDuration(_playbackDuration.inMilliseconds > 0
                                 ? _playbackDuration
-                                : Duration(seconds: _audioDurationSeconds ?? 0)),
+                                : Duration(
+                                    seconds: _audioDurationSeconds ?? 0)),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: cs.onSurface.withValues(alpha: 0.7),
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ],
                             ),
                           ),
                         ],
@@ -1383,8 +1411,10 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                       children: [
                         // Play/Pause button
                         IconButton.filled(
-                          onPressed: _isPlaying ? _pausePlayback : _startPlayback,
-                          icon: Icon(_isPlaying ? Symbols.pause : Symbols.play_arrow),
+                          onPressed:
+                              _isPlaying ? _pausePlayback : _startPlayback,
+                          icon: Icon(
+                              _isPlaying ? Symbols.pause : Symbols.play_arrow),
                           iconSize: 32,
                           style: IconButton.styleFrom(
                             backgroundColor: cs.primary,
@@ -1400,7 +1430,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                           iconSize: 28,
                           style: IconButton.styleFrom(
                             padding: const EdgeInsets.all(18),
-                            side: BorderSide(color: cs.outline.withValues(alpha: 0.3)),
+                            side: BorderSide(
+                                color: cs.outline.withValues(alpha: 0.3)),
                           ),
                         ),
                       ],
@@ -1417,7 +1448,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 icon: const Icon(Symbols.refresh),
                 label: const Text('Record Again'),
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   side: BorderSide(color: cs.primary.withValues(alpha: 0.5)),
                   foregroundColor: cs.primary,
                 ),
@@ -1747,7 +1779,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           _isRecording = false;
         });
         _scheduleAutoSave();
-        getIt<AnalyticsFacade>().trackAudioRecorded(durationSeconds: _recordedDuration.inSeconds);
+        getIt<AnalyticsFacade>()
+            .trackAudioRecorded(durationSeconds: _recordedDuration.inSeconds);
         debugPrint(
             '✅ [VoiceNote] Stopped recording. Duration: $_audioDurationSeconds seconds');
         debugPrint('📁 [VoiceNote] Audio saved to: $path');
@@ -1823,7 +1856,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           final file = File(_audioFilePath!);
           if (await file.exists()) {
             await file.delete();
-            debugPrint('🗑️ [VoiceNote] Deleted old audio file: $_audioFilePath');
+            debugPrint(
+                '🗑️ [VoiceNote] Deleted old audio file: $_audioFilePath');
           }
         } catch (e) {
           debugPrint('⚠️ [VoiceNote] Failed to delete old audio file: $e');
@@ -1893,7 +1927,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   break;
               }
 
-              getIt<AnalyticsFacade>().trackNoteDeleted(noteType: _noteTypeToKey(selectedNoteType));
+              getIt<AnalyticsFacade>()
+                  .trackNoteDeleted(noteType: _noteTypeToKey(selectedNoteType));
 
               // Navigate back to previous screen using screen context, not dialog context
               if (context.mounted) {

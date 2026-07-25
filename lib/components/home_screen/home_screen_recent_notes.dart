@@ -62,7 +62,9 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes>
     super.build(context); // Required for AutomaticKeepAliveClientMixin
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: context.isTablet ? PinpointSpacing.screenEdgeLarge : 16.0,
+      ),
       child: Consumer<FilterService>(
         builder: (context, filterService, _) {
           return StreamBuilder<List<NoteWithDetails>>(
@@ -157,7 +159,7 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes>
   Widget _notesSliver(List<NoteWithDetails> items) {
     if (_viewType == 'grid') {
       return SliverMasonryGrid.count(
-        crossAxisCount: 2,
+        crossAxisCount: context.noteGridColumns,
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
         childCount: items.length,
