@@ -33,6 +33,13 @@ class PremiumService extends ChangeNotifier {
     }
 
     _prefs = await SharedPreferences.getInstance();
+
+    // SubscriptionManager is the single source of truth for entitlement (it is
+    // what purchase verification updates). Mirror it reactively so feature gates
+    // — which read PremiumService — unlock the instant a purchase is verified or
+    // provisionally granted, instead of staying locked until the next app launch.
+    SubscriptionManager().addListener(_syncFromSubscriptionManager);
+
     await _loadPremiumStatus();
     await _checkMonthlyReset();
 
@@ -121,6 +128,29 @@ class PremiumService extends ChangeNotifier {
   Future<void> refreshPremiumStatus() async {
     debugPrint('🔄 [PremiumService] Manually refreshing premium status...');
     await _loadPremiumStatus();
+  }
+
+  /// Copy entitlement fields from SubscriptionManager whenever it changes.
+  ///
+  /// Fired by SubscriptionManager's listeners after purchase verification,
+  /// provisional grant, restore, or a backend status refresh — keeping the two
+  /// services in lockstep so feature gates never read a stale locked state.
+  void _syncFromSubscriptionManager() {
+    final subscriptionManager = SubscriptionManager();
+    final wasPremium = _isPremium || _isInGracePeriod;
+
+    _isPremium = subscriptionManager.isPremium;
+    _isInGracePeriod = subscriptionManager.isInGracePeriod;
+    _subscriptionType = subscriptionManager.subscriptionType ?? 'free';
+    _expiresAt = subscriptionManager.expirationDate;
+    _gracePeriodEndsAt = subscriptionManager.gracePeriodEndsAt;
+
+    final isPremiumNow = _isPremium || _isInGracePeriod;
+    if (isPremiumNow != wasPremium) {
+      debugPrint('💎 [PremiumService] Entitlement synced from '
+          'SubscriptionManager: premium=$isPremiumNow');
+    }
+    notifyListeners();
   }
 
   /// Fetch and cache usage stats from backend

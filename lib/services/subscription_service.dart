@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
+import 'package:pinpoint/services/premium_service.dart';
 import 'package:pinpoint/services/logger_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 
@@ -264,6 +265,11 @@ class SubscriptionService {
 
           // Force refresh subscription status to update UI immediately
           await subscriptionManager.checkSubscriptionStatus(forceRefresh: true);
+
+          // Feature gates read PremiumService, not SubscriptionManager directly,
+          // so push the fresh entitlement into it right away — otherwise premium
+          // features stay locked until the next app launch.
+          await PremiumService().refreshPremiumStatus();
           log.i('✅ Subscription status refreshed');
         } else {
           log.e('❌ Purchase verification failed for ${purchase.productID}');
