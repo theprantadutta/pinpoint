@@ -34,7 +34,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Capture Your Ideas',
       description:
           'Create rich notes with text, audio recordings, drawings, and more. Everything you need in one place.',
-      gradient: PinpointGradients.neonMint,
+      gradient: PinpointGradients.azureBloom,
     ),
     const OnboardingPage(
       icon: Symbols.folder_rounded,

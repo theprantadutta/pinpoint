@@ -57,6 +57,20 @@ class PinpointGradients {
     stops: [0.0, 0.5, 1.0],
   );
 
+  /// Azure Bloom - the brand blue gradient, built around the app's dominant
+  /// on-screen accent (#6C8FF5). Used where a "primary" branded gradient is
+  /// wanted (e.g. onboarding hero icon).
+  static const LinearGradient azureBloom = LinearGradient(
+    begin: Alignment.topRight,
+    end: Alignment.bottomLeft,
+    colors: [
+      Color(0xFF8FB0FF), // Light periwinkle
+      Color(0xFF6C8FF5), // Brand accent (accentRefined)
+      Color(0xFF5566E0), // Deeper indigo-blue
+    ],
+    stops: [0.0, 0.5, 1.0],
+  );
+
   /// Solar Rose - Orange to pink gradient
   static const LinearGradient solarRose = LinearGradient(
     begin: Alignment.topCenter,
