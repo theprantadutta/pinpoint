@@ -1,0 +1,9 @@
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppL10n
+output-dir: lib/generated/l10n
+nullable-getter: false
+# Surface any key present in app_en.arb but missing from a translation, so a
+# half-translated locale is caught at build time instead of at runtime.
+untranslated-messages-file: l10n_untranslated.json

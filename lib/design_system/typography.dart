@@ -24,6 +24,70 @@ class PinpointTypography {
   static String get writingFontFamily => 'Source Sans 3';
 
   // ============================================
+  // Script fallbacks
+  // ============================================
+
+  /// Faces consulted, per glyph, when the chosen UI font has nothing to draw.
+  ///
+  /// Every bundled google_fonts family is a **Latin subset** — Inter-Regular is
+  /// 66 KB where the full face is ~300 KB — and `allowRuntimeFetching` is off
+  /// (see main.dart), so nothing is downloaded to cover the gap at runtime.
+  /// Without this chain, Thai, Bengali, Arabic and Persian render as tofu or
+  /// silently fall through to whatever the OS provides, which throws away the
+  /// user's font choice on exactly the locales that need it most.
+  ///
+  /// Ordering is irrelevant to correctness — the scripts do not overlap, so at
+  /// most one family can supply any given glyph. Declared statically in
+  /// pubspec.yaml so these names resolve in the font registry.
+  static const List<String> scriptFallbacks = <String>[
+    'Noto Sans Thai',
+    'Noto Sans Bengali',
+    // Covers Persian as well as Arabic.
+    'Noto Sans Arabic',
+  ];
+
+  /// [GoogleFonts.getFont] with the script fallback chain attached.
+  ///
+  /// Every style in this file goes through here (or [_mono]) rather than
+  /// calling google_fonts directly, so a new text style cannot accidentally
+  /// ship without non-Latin coverage.
+  static TextStyle _font(
+    String family, {
+    double? fontSize,
+    FontWeight? fontWeight,
+    double? letterSpacing,
+    double? height,
+    Color? color,
+  }) {
+    return GoogleFonts.getFont(
+      family,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      letterSpacing: letterSpacing,
+      height: height,
+      color: color,
+    ).copyWith(fontFamilyFallback: scriptFallbacks);
+  }
+
+  /// Monospace equivalent of [_font]. JetBrains Mono is Latin-only too, and
+  /// code blocks can legitimately contain non-Latin text in comments.
+  static TextStyle _mono({
+    double? fontSize,
+    FontWeight? fontWeight,
+    double? letterSpacing,
+    double? height,
+    Color? color,
+  }) {
+    return GoogleFonts.jetBrainsMono(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      letterSpacing: letterSpacing,
+      height: height,
+      color: color,
+    ).copyWith(fontFamilyFallback: scriptFallbacks);
+  }
+
+  // ============================================
   // Text Themes
   // ============================================
 
@@ -44,7 +108,7 @@ class PinpointTypography {
 
     return TextTheme(
       // Display styles - for hero headers and onboarding (BOLD)
-      displayLarge: GoogleFonts.getFont(
+      displayLarge: _font(
         heading,
         fontSize: 60, // Slightly larger
         fontWeight: FontWeight.w900, // BOLD: Increased from w700
@@ -52,7 +116,7 @@ class PinpointTypography {
         height: 1.1, // Tighter line height
         color: baseTextColor,
       ),
-      displayMedium: GoogleFonts.getFont(
+      displayMedium: _font(
         heading,
         fontSize: 48, // Slightly larger
         fontWeight: FontWeight.w800, // BOLD: Increased from w600
@@ -60,7 +124,7 @@ class PinpointTypography {
         height: 1.15,
         color: baseTextColor,
       ),
-      displaySmall: GoogleFonts.getFont(
+      displaySmall: _font(
         heading,
         fontSize: 38, // Slightly larger
         fontWeight: FontWeight.w800, // BOLD: Increased from w600
@@ -70,7 +134,7 @@ class PinpointTypography {
       ),
 
       // Headline styles - for section headers (BOLD)
-      headlineLarge: GoogleFonts.getFont(
+      headlineLarge: _font(
         heading,
         fontSize: 34, // Slightly larger
         fontWeight: FontWeight.w800, // BOLD: Increased from w600
@@ -78,7 +142,7 @@ class PinpointTypography {
         height: 1.25,
         color: baseTextColor,
       ),
-      headlineMedium: GoogleFonts.getFont(
+      headlineMedium: _font(
         heading,
         fontSize: 30, // Slightly larger
         fontWeight: FontWeight.w700, // BOLD: Increased from w500
@@ -86,7 +150,7 @@ class PinpointTypography {
         height: 1.3,
         color: baseTextColor,
       ),
-      headlineSmall: GoogleFonts.getFont(
+      headlineSmall: _font(
         primary,
         fontSize: 26, // Slightly larger
         fontWeight: FontWeight.w700, // BOLD: Increased from w500
@@ -96,7 +160,7 @@ class PinpointTypography {
       ),
 
       // Title styles - for cards and list items (BOLD)
-      titleLarge: GoogleFonts.getFont(
+      titleLarge: _font(
         primary,
         fontSize: 22,
         fontWeight: FontWeight.w700, // BOLD: Increased from w600
@@ -104,7 +168,7 @@ class PinpointTypography {
         height: 1.4,
         color: baseTextColor,
       ),
-      titleMedium: GoogleFonts.getFont(
+      titleMedium: _font(
         primary,
         fontSize: 18,
         fontWeight: FontWeight.w600, // BOLD: Increased from w500
@@ -112,7 +176,7 @@ class PinpointTypography {
         height: 1.45,
         color: baseTextColor,
       ),
-      titleSmall: GoogleFonts.getFont(
+      titleSmall: _font(
         primary,
         fontSize: 14,
         fontWeight: FontWeight.w600, // BOLD: Increased from w500
@@ -122,7 +186,7 @@ class PinpointTypography {
       ),
 
       // Body styles - for content
-      bodyLarge: GoogleFonts.getFont(
+      bodyLarge: _font(
         primary,
         fontSize: 16,
         fontWeight: FontWeight.w400,
@@ -130,7 +194,7 @@ class PinpointTypography {
         height: 1.6,
         color: baseTextColor,
       ),
-      bodyMedium: GoogleFonts.getFont(
+      bodyMedium: _font(
         primary,
         fontSize: 14,
         fontWeight: FontWeight.w400,
@@ -138,7 +202,7 @@ class PinpointTypography {
         height: 1.5,
         color: baseTextColor,
       ),
-      bodySmall: GoogleFonts.getFont(
+      bodySmall: _font(
         primary,
         fontSize: 12,
         fontWeight: FontWeight.w400,
@@ -148,7 +212,7 @@ class PinpointTypography {
       ),
 
       // Label styles - for buttons and chips (BOLD)
-      labelLarge: GoogleFonts.getFont(
+      labelLarge: _font(
         primary,
         fontSize: 14,
         fontWeight: FontWeight.w700, // BOLD: Increased from w600
@@ -156,7 +220,7 @@ class PinpointTypography {
         height: 1.4,
         color: baseTextColor,
       ),
-      labelMedium: GoogleFonts.getFont(
+      labelMedium: _font(
         primary,
         fontSize: 12,
         fontWeight: FontWeight.w600, // BOLD: Increased from w500
@@ -164,7 +228,7 @@ class PinpointTypography {
         height: 1.4,
         color: baseTextColor,
       ),
-      labelSmall: GoogleFonts.getFont(
+      labelSmall: _font(
         primary,
         fontSize: 11,
         fontWeight: FontWeight.w600, // BOLD: Increased from w500
@@ -185,7 +249,7 @@ class PinpointTypography {
         ? const Color(0xFFF9FAFB)
         : const Color(0xFF111827);
 
-    return GoogleFonts.getFont(
+    return _font(
       headingFontFamily,
       fontSize: 32, // Larger
       fontWeight: FontWeight.w800, // BOLD: Increased from w700
@@ -204,7 +268,7 @@ class PinpointTypography {
         ? const Color(0xFFF9FAFB)
         : const Color(0xFF111827);
 
-    return GoogleFonts.getFont(
+    return _font(
       writingFontFamily,
       fontSize: focusMode ? 18 : 16,
       fontWeight: FontWeight.w400,
@@ -220,7 +284,7 @@ class PinpointTypography {
         ? const Color(0xFF10B981) // Mint for dark mode
         : const Color(0xFF059669); // Darker mint for light mode
 
-    return GoogleFonts.jetBrainsMono(
+    return _mono(
       fontSize: 14,
       fontWeight: FontWeight.w400,
       letterSpacing: 0,
@@ -235,7 +299,7 @@ class PinpointTypography {
         ? const Color(0xFFF9FAFB)
         : const Color(0xFF111827);
 
-    return GoogleFonts.getFont(
+    return _font(
       primaryFontFamily,
       fontSize: 17, // Slightly larger
       fontWeight: FontWeight.w700, // BOLD: Increased from w600
@@ -251,7 +315,7 @@ class PinpointTypography {
         ? const Color(0xFF9CA3AF)
         : const Color(0xFF6B7280);
 
-    return GoogleFonts.getFont(
+    return _font(
       primaryFontFamily,
       fontSize: 14,
       fontWeight: FontWeight.w400,
@@ -267,7 +331,7 @@ class PinpointTypography {
         ? const Color(0xFF6B7280)
         : const Color(0xFF9CA3AF);
 
-    return GoogleFonts.getFont(
+    return _font(
       primaryFontFamily,
       fontSize: 12,
       fontWeight: FontWeight.w400,
@@ -287,7 +351,7 @@ class PinpointTypography {
             ? const Color(0xFFF9FAFB)
             : const Color(0xFF111827));
 
-    return GoogleFonts.getFont(
+    return _font(
       primaryFontFamily,
       fontSize: 12,
       fontWeight: FontWeight.w500,
@@ -326,7 +390,7 @@ class PinpointTypography {
         break;
     }
 
-    return GoogleFonts.getFont(
+    return _font(
       primaryFontFamily,
       fontSize: fontSize,
       fontWeight: fontWeight,
@@ -346,7 +410,7 @@ class PinpointTypography {
         : const Color(0xFF6B7280);
 
     if (isTitle) {
-      return GoogleFonts.getFont(
+      return _font(
         headingFontFamily,
         fontSize: 20,
         fontWeight: FontWeight.w600,
@@ -356,7 +420,7 @@ class PinpointTypography {
       );
     }
 
-    return GoogleFonts.getFont(
+    return _font(
       primaryFontFamily,
       fontSize: 14,
       fontWeight: FontWeight.w400,
@@ -372,7 +436,7 @@ class PinpointTypography {
         ? const Color(0xFF6B7280)
         : const Color(0xFF9CA3AF);
 
-    return GoogleFonts.jetBrainsMono(
+    return _mono(
       fontSize: 11,
       fontWeight: FontWeight.w500,
       letterSpacing: 0.5,

@@ -2,6 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleLocalizations</key>
+	<!-- Languages this bundle ships. Without this the App Store lists the app
+	     as English-only and iOS will not pick up the *.lproj/InfoPlist.strings
+	     permission prompts. Keep in sync with LocaleController.supportedLocales. -->
+	<array>
+		<string>en</string>
+		<string>es</string>
+		<string>pt</string>
+		<string>it</string>
+		<string>fr</string>
+		<string>th</string>
+		<string>bn</string>
+		<string>ar</string>
+		<string>fa</string>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

@@ -36,11 +36,22 @@ class RateLimitExceededException implements Exception {
 
 /// Structured API error with user-friendly messaging
 class ApiError implements Exception {
+  /// English fallback text. Prefer [errorCode] when showing this to a user —
+  /// see `lib/util/api_error_messages.dart`. This field exists for logging and
+  /// for failures that never had a code (network, timeout, parse errors).
   final String userMessage;
   final String? suggestion;
   final int? statusCode;
   final String? technicalDetails;
   final ApiErrorType type;
+
+  /// Stable server error code (e.g. `EMAIL_ALREADY_REGISTERED`), when the
+  /// response carried one.
+  ///
+  /// The server deliberately does not translate error prose — it sends a code
+  /// and the client renders it in the user's language. Null for transport-level
+  /// failures and for any endpoint still returning a bare string detail.
+  final String? errorCode;
 
   ApiError({
     required this.userMessage,
@@ -48,6 +59,7 @@ class ApiError implements Exception {
     this.statusCode,
     this.technicalDetails,
     required this.type,
+    this.errorCode,
   });
 
   @override
@@ -646,11 +658,18 @@ class ApiService {
   // Notification Endpoints
   // ============================================================================
 
-  /// Register FCM token for push notifications
+  /// Register FCM token for push notifications.
+  ///
+  /// Also reports the app's current language. The server needs it for the two
+  /// things it renders itself — transactional emails and push bodies — since
+  /// those cannot use the client's own translations. This call already happens
+  /// on every login and FCM token refresh, so it keeps the stored locale fresh
+  /// without a dedicated endpoint.
   Future<void> registerFCMToken({
     required String fcmToken,
     required String deviceId,
     required String platform,
+    String? locale,
   }) async {
     try {
       await _dio.post(
@@ -659,6 +678,7 @@ class ApiService {
           'fcm_token': fcmToken,
           'device_id': deviceId,
           'platform': platform,
+          if (locale != null) 'locale': locale,
         },
       );
     } on DioException catch (e) {
@@ -1146,6 +1166,7 @@ class ApiService {
       final statusCode = error.response!.statusCode ?? 0;
       final data = error.response!.data;
       final serverMessage = _extractServerMessage(data);
+      final errorCode = _extractErrorCode(data);
 
       switch (statusCode) {
         case 400:
@@ -1154,6 +1175,7 @@ class ApiService {
             suggestion: 'Please check your input and try again.',
             statusCode: statusCode,
             type: ApiErrorType.unknown,
+            errorCode: errorCode,
             technicalDetails: data?.toString(),
           );
 
@@ -1163,6 +1185,7 @@ class ApiService {
             suggestion: 'Please sign in again to continue.',
             statusCode: statusCode,
             type: ApiErrorType.unauthorized,
+            errorCode: errorCode,
             technicalDetails: serverMessage,
           );
 
@@ -1172,6 +1195,7 @@ class ApiService {
             suggestion: 'You may need to upgrade your subscription.',
             statusCode: statusCode,
             type: ApiErrorType.forbidden,
+            errorCode: errorCode,
             technicalDetails: data?.toString(),
           );
 
@@ -1181,6 +1205,7 @@ class ApiService {
             suggestion: 'It may have been deleted or moved.',
             statusCode: statusCode,
             type: ApiErrorType.notFound,
+            errorCode: errorCode,
             technicalDetails: data?.toString(),
           );
 
@@ -1190,6 +1215,7 @@ class ApiService {
             suggestion: 'Please refresh and try again.',
             statusCode: statusCode,
             type: ApiErrorType.conflict,
+            errorCode: errorCode,
             technicalDetails: data?.toString(),
           );
 
@@ -1206,6 +1232,7 @@ class ApiService {
             suggestion: 'Please try again later. If the problem persists, contact support.',
             statusCode: statusCode,
             type: ApiErrorType.serverError,
+            errorCode: errorCode,
             technicalDetails: serverMessage ?? data?.toString(),
           );
 
@@ -1217,6 +1244,7 @@ class ApiService {
             suggestion: 'Please try again in a few minutes.',
             statusCode: statusCode,
             type: ApiErrorType.maintenance,
+            errorCode: errorCode,
             technicalDetails: serverMessage ?? 'Status: $statusCode',
           );
 
@@ -1226,6 +1254,7 @@ class ApiService {
             suggestion: 'Please try again.',
             statusCode: statusCode,
             type: ApiErrorType.unknown,
+            errorCode: errorCode,
             technicalDetails: data?.toString(),
           );
       }
@@ -1240,6 +1269,23 @@ class ApiService {
     );
   }
 
+  /// Extract the stable error code from a server response, if it sent one.
+  ///
+  /// The backend wraps failures as
+  /// `{"detail": {"code": "...", "message": "..."}}` so the client can render
+  /// the error in the user's language. Older endpoints (and FastAPI's own
+  /// validation errors) send a bare string or a list instead — those simply
+  /// yield null and fall back to [_extractServerMessage].
+  String? _extractErrorCode(dynamic data) {
+    if (data is! Map) return null;
+    final detail = data['detail'];
+    if (detail is Map) {
+      final code = detail['code'];
+      if (code is String && code.isNotEmpty) return code;
+    }
+    return null;
+  }
+
   /// Extract user-friendly message from server response
   String? _extractServerMessage(dynamic data) {
     if (data == null) return null;
@@ -1249,6 +1295,11 @@ class ApiService {
       if (data.containsKey('detail')) {
         final detail = data['detail'];
         if (detail is String) return detail;
+        // Coded error: the English `message` is the fallback for a code this
+        // build does not know how to translate yet.
+        if (detail is Map && detail['message'] is String) {
+          return detail['message'] as String;
+        }
         if (detail is List && detail.isNotEmpty) {
           // FastAPI validation errors
           final firstError = detail.first;

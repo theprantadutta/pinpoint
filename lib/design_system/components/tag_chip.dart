@@ -137,7 +137,7 @@ class _TagChipState extends State<TagChip> with SingleTickerProviderStateMixin {
                     // Emoji or color dot
                     if (widget.emoji != null)
                       Padding(
-                        padding: const EdgeInsets.only(right: 6),
+                        padding: const EdgeInsetsDirectional.only(end: 6),
                         child: Text(
                           widget.emoji!,
                           style: TextStyle(fontSize: fontSize),
@@ -145,7 +145,7 @@ class _TagChipState extends State<TagChip> with SingleTickerProviderStateMixin {
                       )
                     else
                       Padding(
-                        padding: const EdgeInsets.only(right: 6),
+                        padding: const EdgeInsetsDirectional.only(end: 6),
                         child: Container(
                           width: fontSize * 0.7,
                           height: fontSize * 0.7,

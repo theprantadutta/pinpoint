@@ -11,6 +11,8 @@ import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 import 'package:pinpoint/services/subscription_service.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
+import 'package:pinpoint/util/localized_dates.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
@@ -485,9 +487,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   /// Get expiry text for current plan
-  String _getExpiryText(SubscriptionManager manager) {
+  String _getExpiryText(BuildContext context, SubscriptionManager manager) {
+    final l10n = AppL10n.of(context);
     if (manager.subscriptionType == 'lifetime') {
-      return 'Never expires';
+      return l10n.subscriptionNeverExpires;
     }
 
     final expiryDate = manager.expirationDate;
@@ -496,31 +499,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final now = DateTime.now();
     final difference = expiryDate.difference(now);
 
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    final formattedDate =
-        '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
+    final formattedDate = LocalizedDates.mediumDate(context, expiryDate);
 
     if (difference.isNegative) {
-      return 'Expired on $formattedDate';
+      return l10n.subscriptionExpiredOn(formattedDate);
     } else if (manager.isInGracePeriod) {
-      return 'Payment pending — expires $formattedDate';
+      return l10n.subscriptionPaymentPending(formattedDate);
     } else if (manager.isCancelledButActive) {
-      return 'Cancelled — access until $formattedDate';
+      return l10n.subscriptionCancelledAccessUntil(formattedDate);
     } else {
-      return 'Renews $formattedDate';
+      return l10n.subscriptionRenews(formattedDate);
     }
   }
 
@@ -551,7 +539,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     bool isDark,
   ) {
     final planName = _getPlanDisplayName(manager.subscriptionType);
-    final expiryText = _getExpiryText(manager);
+    final expiryText = _getExpiryText(context, manager);
     final isGracePeriod = manager.isInGracePeriod;
     final isCancelledButActive = manager.isCancelledButActive;
 
@@ -581,16 +569,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       child: Stack(
         children: [
           // Status badge
-          Positioned(
+          PositionedDirectional(
             top: 0,
-            right: 0,
+            end: 0,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: accent,
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(20),
-                  bottomLeft: Radius.circular(12),
+                borderRadius: const BorderRadiusDirectional.only(
+                  topEnd: Radius.circular(20),
+                  bottomStart: Radius.circular(12),
                 ),
               ),
               child: Row(
@@ -910,17 +898,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       child: Stack(
         children: [
           if (badge != null)
-            Positioned(
+            PositionedDirectional(
               top: 0,
-              right: 0,
+              end: 0,
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: isPopular ? colorScheme.primary : PinpointColors.amber,
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(20),
-                    bottomLeft: Radius.circular(12),
+                  borderRadius: const BorderRadiusDirectional.only(
+                    topEnd: Radius.circular(20),
+                    bottomStart: Radius.circular(12),
                   ),
                 ),
                 child: Text(
@@ -951,7 +939,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 const SizedBox(height: 8),
                 FittedBox(
                   fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,

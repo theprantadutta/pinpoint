@@ -153,7 +153,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                   itemBuilder: (context, idx) {
                     final f = displayFolders[idx];
                     return Padding(
-                      padding: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsetsDirectional.only(end: 8),
                       child: _CompactFolderChip(
                         folderId: f.noteFolderId,
                         title: f.noteFolderTitle,

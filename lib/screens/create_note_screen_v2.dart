@@ -28,6 +28,7 @@ import '../services/text_note_service.dart';
 import '../services/voice_note_service.dart';
 import '../services/todo_list_note_service.dart';
 import '../services/reminder_note_service.dart';
+import '../services/pdf_font_service.dart';
 import '../services/premium_service.dart';
 import '../services/ocr_service.dart';
 import '../util/show_a_toast.dart';
@@ -2217,11 +2218,20 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     }
 
     try {
-      final pdf = pw.Document();
+      // Read the direction before the await below, so the BuildContext is not
+      // used across an async gap. The pdf package has its own TextDirection.
+      final pageDirection = Directionality.of(context) == TextDirection.rtl
+          ? pw.TextDirection.rtl
+          : pw.TextDirection.ltr;
+
+      // Embed real fonts: the PDF base-14 defaults are Latin-only, so a Thai,
+      // Bengali, Arabic or Persian note would otherwise export as blank pages.
+      final pdf = pw.Document(theme: await PdfFontService.theme());
 
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
+          textDirection: pageDirection,
           build: (pw.Context context) {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,

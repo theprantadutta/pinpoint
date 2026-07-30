@@ -4,6 +4,7 @@ import '../models/filter_options.dart';
 import '../services/filter_service.dart';
 import '../database/database.dart';
 import '../service_locators/init_service_locators.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Comprehensive filter bottom sheet for notes
 class FilterBottomSheet extends StatefulWidget {
@@ -358,7 +359,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   ),
                   child: Text(
                     _tempFilters.hasActiveFilters
-                        ? 'Apply ${_tempFilters.activeFilterCount} Filter${_tempFilters.activeFilterCount > 1 ? 's' : ''}'
+                        ? AppL10n.of(context)
+                            .filterApplyCount(_tempFilters.activeFilterCount)
                         : 'Apply Filters',
                   ),
                 ),

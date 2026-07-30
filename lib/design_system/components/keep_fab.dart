@@ -134,14 +134,22 @@ class _KeepFabState extends State<KeepFab>
     // Anchor the stack to the FAB's actual on-screen rect.
     final fabBox =
         WalkthroughKeys.fabKey.currentContext?.findRenderObject() as RenderBox?;
-    double rightInset = 16;
+    // Distance from the *trailing* edge, since the overlay is positioned with
+    // PositionedDirectional. The FAB sits on the right in LTR and on the left
+    // in RTL, so which physical edge that is flips with the text direction —
+    // measuring from the right unconditionally would fling the overlay off
+    // screen in Arabic and Persian.
+    final isRtl = Directionality.of(overlayContext) == TextDirection.rtl;
+    double endInset = 16;
     double itemsBottom = media.padding.bottom + 16 + 56 + 12;
     double fabBottom = media.padding.bottom + 16;
     double fabW = 56;
     double fabH = 56;
     if (fabBox != null && fabBox.hasSize) {
       final topLeft = fabBox.localToGlobal(Offset.zero);
-      rightInset = media.size.width - (topLeft.dx + fabBox.size.width);
+      endInset = isRtl
+          ? topLeft.dx
+          : media.size.width - (topLeft.dx + fabBox.size.width);
       itemsBottom = media.size.height - topLeft.dy + 12;
       fabBottom = media.size.height - (topLeft.dy + fabBox.size.height);
       fabW = fabBox.size.width;
@@ -174,8 +182,8 @@ class _KeepFabState extends State<KeepFab>
               ),
             ),
             // Action stack, anchored just above the FAB
-            Positioned(
-              right: rightInset,
+            PositionedDirectional(
+              end: endInset,
               bottom: itemsBottom,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -188,8 +196,8 @@ class _KeepFabState extends State<KeepFab>
             ),
             // Close (×) button drawn on top of the scrim, over the real FAB
             // (which is hidden behind the scrim).
-            Positioned(
-              right: rightInset,
+            PositionedDirectional(
+              end: endInset,
               bottom: fabBottom,
               child: SizedBox(
                 width: fabW,
@@ -231,7 +239,12 @@ class _KeepFabState extends State<KeepFab>
         opacity: anim,
         child: ScaleTransition(
           scale: anim,
-          alignment: Alignment.bottomRight,
+          // Items grow out of the FAB, so the scale origin is the FAB's own
+          // corner. ScaleTransition takes a plain Alignment (no directional
+          // variant), so mirror it by hand.
+          alignment: Directionality.of(context) == TextDirection.rtl
+              ? Alignment.bottomLeft
+              : Alignment.bottomRight,
           child: _SpeedDialRow(action: action),
         ),
       ),

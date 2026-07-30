@@ -7,6 +7,10 @@ const kFlexSchemeKey = 'is_flex_scheme_key';
 const kBiometricKey = 'biometric_key';
 const String kSelectedFontKey = 'selected-font-key';
 
+// language / locale key. Stores a BCP-47 tag ('es', 'pt_BR', ...) or is absent
+// to mean "follow the system locale".
+const kLocaleKey = 'locale_key';
+
 // Home screen customization keys
 const kHomeScreenViewTypeKey = 'home_screen_view_type_key'; // 'list' or 'grid'
 const kHomeScreenSortTypeKey =

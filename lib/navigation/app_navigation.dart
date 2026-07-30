@@ -8,6 +8,7 @@ import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/folder_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
+import 'package:pinpoint/screens/language_screen.dart';
 import 'package:pinpoint/screens/trash_screen.dart';
 import 'package:pinpoint/screens/splash_screen.dart';
 import 'package:pinpoint/screens/onboarding_screen.dart';
@@ -293,6 +294,17 @@ class AppNavigation {
         pageBuilder: (context, state) => NoTransitionPage(
           key: state.pageKey,
           child: ThemeScreen(
+            key: state.pageKey,
+          ),
+        ),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: LanguageScreen.kRouteName,
+        name: "Language Screen",
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: LanguageScreen(
             key: state.pageKey,
           ),
         ),

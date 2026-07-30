@@ -45,7 +45,7 @@ class _DrawingScreenState extends State<DrawingScreen> {
               _controller.undo();
             },
             child: Container(
-              margin: const EdgeInsets.only(right: 8),
+              margin: const EdgeInsetsDirectional.only(end: 8),
               child: GlassContainer(
                 padding: const EdgeInsets.all(10),
                 borderRadius: 12,
@@ -67,7 +67,7 @@ class _DrawingScreenState extends State<DrawingScreen> {
               }
             },
             child: Container(
-              margin: const EdgeInsets.only(right: 8),
+              margin: const EdgeInsetsDirectional.only(end: 8),
               child: GlassContainer(
                 padding: const EdgeInsets.all(10),
                 borderRadius: 12,

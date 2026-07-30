@@ -1,0 +1,13 @@
+/* Permission prompts rendered by iOS itself, not by the app.
+   Keep the key set in sync with the NS*UsageDescription entries in
+   Info.plist — App Review rejects a build that uses a capability with
+   no description. These sit outside the ARB pipeline because the OS
+   reads them from the bundle before any Dart runs. */
+
+"NSFaceIDUsageDescription" = "O Pinpoint usa o Face ID para desbloquear o app e proteger suas notas.";
+"NSTouchIDUsageDescription" = "O Pinpoint usa o Touch ID para desbloquear o app e proteger suas notas.";
+"NSMicrophoneUsageDescription" = "O Pinpoint usa o microfone para gravar notas de áudio e transcrever fala em texto.";
+"NSSpeechRecognitionUsageDescription" = "O Pinpoint usa o reconhecimento de fala para converter sua voz em notas de texto.";
+"NSCameraUsageDescription" = "O Pinpoint usa a câmera para tirar fotos e anexá-las às suas notas e para digitalizar texto.";
+"NSPhotoLibraryUsageDescription" = "O Pinpoint acessa suas fotos para que você possa anexar imagens às suas notas.";
+"NSPhotoLibraryAddUsageDescription" = "O Pinpoint salva notas e imagens exportadas na sua biblioteca de fotos.";

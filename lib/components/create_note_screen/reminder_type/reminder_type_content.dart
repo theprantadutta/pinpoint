@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/notification_service.dart';
+import 'package:pinpoint/util/localized_dates.dart';
 
 class ReminderTypeContent extends StatefulWidget {
   final TextEditingController notificationTitleController;
@@ -427,7 +427,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                             Text(
                               widget.selectedDateTime == null
                                   ? "Select Date & Time"
-                                  : DateFormat("EEEE, d MMMM yyyy").format(widget.selectedDateTime!),
+                                  : LocalizedDates.fullDate(context, widget.selectedDateTime!),
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
@@ -437,7 +437,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                             if (widget.selectedDateTime != null) ...[
                               const SizedBox(height: 4),
                               Text(
-                                DateFormat("h:mm a").format(widget.selectedDateTime!),
+                                LocalizedDates.time(context, widget.selectedDateTime!),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: cs.onSurface.withValues(alpha: 0.6),
@@ -651,7 +651,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                           Text(
                             _endDate == null
                                 ? 'Select End Date'
-                                : DateFormat("EEEE, d MMMM yyyy").format(_endDate!),
+                                : LocalizedDates.fullDate(context, _endDate!),
                             style: TextStyle(fontSize: 15, color: cs.onSurface),
                           ),
                         ],
@@ -719,7 +719,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  DateFormat("EEE, MMM d, yyyy 'at' h:mm a").format(occurrence),
+                                  LocalizedDates.dateTime(context, occurrence),
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: cs.onSurface.withValues(alpha: 0.8),

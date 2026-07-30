@@ -107,7 +107,7 @@ class _ChecklistItemState extends State<ChecklistItem>
             // Drag handle
             if (widget.showDragHandle)
               Padding(
-                padding: const EdgeInsets.only(top: 12, right: 8),
+                padding: const EdgeInsetsDirectional.only(top: 12, end: 8),
                 child: Icon(
                   Icons.drag_indicator_rounded,
                   size: 20,

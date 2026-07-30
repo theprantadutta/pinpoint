@@ -3,6 +3,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:flutter/foundation.dart';
+import 'package:pinpoint/services/notification_channels.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin
@@ -214,11 +215,11 @@ class NotificationService {
     String? payload,
     String? categoryId,
   }) async {
-    const AndroidNotificationDetails androidDetails =
+    final AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
-      'pinpoint_general',
-      'General Notifications',
-      channelDescription: 'General notifications for Pinpoint app',
+      NotificationChannels.generalId,
+      NotificationChannels.text.defaultName,
+      channelDescription: NotificationChannels.text.defaultDescription,
       importance: Importance.high,
       priority: Priority.high,
       ticker: 'New notification',
@@ -235,7 +236,7 @@ class NotificationService {
 
     const LinuxNotificationDetails linuxDetails = LinuxNotificationDetails();
 
-    const NotificationDetails notificationDetails = NotificationDetails(
+    final NotificationDetails notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: darwinDetails,
       macOS: darwinDetails,
@@ -263,11 +264,11 @@ class NotificationService {
     final tz.TZDateTime scheduledTZDate =
         tz.TZDateTime.from(scheduledDate, tz.local);
 
-    const AndroidNotificationDetails androidDetails =
+    final AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
-      'pinpoint_reminders',
-      'Pinpoint Reminders',
-      channelDescription: 'Scheduled notifications for Pinpoint reminders',
+      NotificationChannels.remindersId,
+      NotificationChannels.text.remindersName,
+      channelDescription: NotificationChannels.text.remindersDescription,
       importance: Importance.high,
       priority: Priority.high,
       ticker: 'Scheduled reminder',
@@ -283,7 +284,7 @@ class NotificationService {
 
     const LinuxNotificationDetails linuxDetails = LinuxNotificationDetails();
 
-    const NotificationDetails notificationDetails = NotificationDetails(
+    final NotificationDetails notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: darwinDetails,
       macOS: darwinDetails,
@@ -314,11 +315,11 @@ class NotificationService {
       title: title,
       body: body,
       scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
-      notificationDetails: const NotificationDetails(
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          'pinpoint_recurring',
-          'Recurring Reminders',
-          channelDescription: 'Daily recurring notifications',
+          NotificationChannels.recurringId,
+          NotificationChannels.text.recurringName,
+          channelDescription: NotificationChannels.text.recurringDescription,
           importance: Importance.high,
           priority: Priority.high,
         ),
@@ -341,16 +342,16 @@ class NotificationService {
     required RepeatInterval repeatInterval,
     String? payload,
   }) async {
-    const AndroidNotificationDetails androidDetails =
+    final AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
-      'pinpoint_periodic',
-      'Periodic Reminders',
-      channelDescription: 'Periodic notifications',
+      NotificationChannels.periodicId,
+      NotificationChannels.text.periodicName,
+      channelDescription: NotificationChannels.text.periodicDescription,
       importance: Importance.high,
       priority: Priority.high,
     );
 
-    const NotificationDetails notificationDetails = NotificationDetails(
+    final NotificationDetails notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: DarwinNotificationDetails(),
       macOS: DarwinNotificationDetails(),

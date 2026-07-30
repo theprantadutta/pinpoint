@@ -8,6 +8,8 @@ import 'package:pinpoint/services/api_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pinpoint/firebase_options.dart';
 import 'dart:io';
+import 'package:pinpoint/services/locale_controller.dart';
+import 'package:pinpoint/services/notification_channels.dart';
 
 /// Navigation intent from notification tap
 class NotificationNavigationIntent {
@@ -49,6 +51,11 @@ class FirebaseNotificationService {
   FirebaseNotificationService._internal();
 
   late FirebaseMessaging _firebaseMessaging;
+  /// Exposed so NotificationChannels can create/recreate channels against the
+  /// same plugin instance this service shows notifications through.
+  FlutterLocalNotificationsPlugin get localNotificationsPlugin =>
+      _localNotifications;
+
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
@@ -149,25 +156,10 @@ class FirebaseNotificationService {
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
-    // Create notification channel for Android 8.0+
-    if (Platform.isAndroid) {
-      const androidChannel = AndroidNotificationChannel(
-        'pinpoint_default_channel',
-        'Pinpoint Notifications',
-        description: 'Default notification channel for Pinpoint',
-        importance: Importance.high,
-        playSound: true,
-        enableVibration: true,
-        showBadge: true,
-      );
-
-      await _localNotifications
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(androidChannel);
-
-      debugPrint('✅ Android notification channel created');
-    }
+    // Channels are created by NotificationChannels.syncWithLocale, which owns
+    // the localized names and the delete-and-recreate needed when the language
+    // changes. It needs a BuildContext, so it runs from the widget tree after
+    // the first frame rather than here.
 
     debugPrint('✅ Local notifications initialized');
   }
@@ -231,6 +223,8 @@ class FirebaseNotificationService {
         fcmToken: _fcmToken!,
         deviceId: _deviceId!,
         platform: Platform.isAndroid ? 'android' : 'ios',
+        // Tells the server which language to render emails and push bodies in.
+        locale: LocaleController.currentTag,
       );
 
       _tokenRegisteredThisSession = true;
@@ -299,10 +293,10 @@ class FirebaseNotificationService {
     final notification = message.notification;
     if (notification == null) return;
 
-    const androidDetails = AndroidNotificationDetails(
-      'pinpoint_default_channel',
-      'Pinpoint Notifications',
-      channelDescription: 'Default notification channel for Pinpoint',
+    final androidDetails = AndroidNotificationDetails(
+      NotificationChannels.defaultId,
+      NotificationChannels.text.defaultName,
+      channelDescription: NotificationChannels.text.defaultDescription,
       importance: Importance.high,
       priority: Priority.high,
       showWhen: true,
@@ -315,7 +309,7 @@ class FirebaseNotificationService {
       presentSound: true,
     );
 
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );

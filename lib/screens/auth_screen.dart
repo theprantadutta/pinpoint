@@ -23,9 +23,15 @@ import 'package:pinpoint/screens/unlock_screen.dart';
 import 'package:pinpoint/design_system/colors.dart';
 import 'package:pinpoint/design_system/responsive.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import 'package:pinpoint/util/api_error_messages.dart';
 import 'package:go_router/go_router.dart';
 
 /// Authentication screen with Google Sign-In and email/password options
+/// Minimum password length enforced at registration. Named rather than inline
+/// so the validator and the message the user reads can never drift apart.
+const int kMinPasswordLength = 6;
+
 class AuthScreen extends StatefulWidget {
   static const String kRouteName = '/auth';
 
@@ -49,6 +55,20 @@ class _AuthScreenState extends State<AuthScreen> {
 
   /// Whether any auth flow is currently in progress (used to disable buttons).
   bool get _isBusy => _isGoogleLoading || _isAppleLoading || _isEmailLoading;
+
+  /// Turn a thrown error into text for the inline error banner.
+  ///
+  /// A coded [ApiError] is rendered from the user's own locale via its error
+  /// code; everything else falls back to the exception text, minus Dart's
+  /// "Exception: " prefix.
+  String _describeError(Object e) {
+    if (e is ApiError) return localizedApiError(context, e);
+    return e.toString().replaceAll('Exception: ', '');
+  }
+
+  /// Shorthand for the localized strings. Safe in the async sync/auth helpers
+  /// below as well as in build, since they all run against the State's context.
+  AppL10n get _l10n => AppL10n.of(context);
 
   final GoogleSignInService _googleSignInService = GoogleSignInService();
   final AppleSignInService _appleSignInService = AppleSignInService();
@@ -110,9 +130,9 @@ class _AuthScreenState extends State<AuthScreen> {
       // Show a loading dialog driven by REAL, live sync progress.
       if (mounted) {
         final progressNotifier = ValueNotifier<SyncProgress>(
-          const SyncProgress(
+          SyncProgress(
             phase: SyncPhase.preparingFolders,
-            message: 'Connecting to the cloud…',
+            message: _l10n.authConnectingToCloud,
             overallProgress: 0.02,
           ),
         );
@@ -133,8 +153,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       const Duration(seconds: 25),
                       onTimeout: () => SyncResult(
                         success: false,
-                        message:
-                            'Sync is taking a while — it will finish in the background.',
+                        message: _l10n.authSyncTakingAWhile,
                       ),
                     );
                 if (dialogContext.mounted) {
@@ -159,7 +178,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
 
       // Use the result from the dialog
-      result ??= SyncResult(success: false, message: 'Sync cancelled');
+      result ??= SyncResult(success: false, message: _l10n.authSyncCancelled);
 
       if (result.success) {
         debugPrint('✅ [Auth] Initial sync successful: ${result.message}');
@@ -195,19 +214,20 @@ class _AuthScreenState extends State<AuthScreen> {
           final retry = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Sync Failed'),
+              title: Text(_l10n.authSyncFailedTitle),
               content: Text(
-                'Unable to restore your notes from cloud:\n${result?.message ?? 'Unknown error'}\n\n'
-                'You can continue without syncing, or try again.',
+                _l10n.authSyncFailedBody(
+                  result?.message ?? _l10n.authUnknownError,
+                ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Continue Anyway'),
+                  child: Text(_l10n.authContinueAnyway),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Retry'),
+                  child: Text(_l10n.commonRetry),
                 ),
               ],
             ),
@@ -233,19 +253,16 @@ class _AuthScreenState extends State<AuthScreen> {
         final continueAnyway = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Sync Error'),
-            content: Text(
-              'Failed to restore your notes:\n${e.toString()}\n\n'
-              'You can continue without syncing, or try again.',
-            ),
+            title: Text(_l10n.authSyncErrorTitle),
+            content: Text(_l10n.authSyncErrorBody(e.toString())),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Continue Anyway'),
+                child: Text(_l10n.authContinueAnyway),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Retry'),
+                child: Text(_l10n.commonRetry),
               ),
             ],
           ),
@@ -277,7 +294,9 @@ class _AuthScreenState extends State<AuthScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                hasErrors ? 'Sync Completed with Errors' : 'Sync Successful',
+                hasErrors
+                    ? _l10n.authSyncCompletedWithErrors
+                    : _l10n.authSyncSuccessful,
                 style: const TextStyle(fontSize: 18),
               ),
             ),
@@ -289,23 +308,24 @@ class _AuthScreenState extends State<AuthScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (result.notesSynced > 0) ...[
-                _buildSyncStat('Notes', result.notesSynced, Icons.note),
+                _buildSyncStat(_l10n.authStatNotes, result.notesSynced, Icons.note),
               ],
               if (result.foldersSynced > 0) ...[
                 const SizedBox(height: 12),
-                _buildSyncStat('Folders', result.foldersSynced, Icons.folder),
+                _buildSyncStat(
+                    _l10n.authStatFolders, result.foldersSynced, Icons.folder),
               ],
               if (result.remindersSynced > 0) ...[
                 const SizedBox(height: 12),
                 _buildSyncStat(
-                    'Reminders', result.remindersSynced, Icons.alarm),
+                    _l10n.authStatReminders, result.remindersSynced, Icons.alarm),
               ],
               if (result.notesFailed > 0) ...[
                 const SizedBox(height: 16),
                 const Divider(),
                 const SizedBox(height: 8),
                 _buildSyncStat(
-                  'Failed to restore',
+                  _l10n.authStatFailedToRestore,
                   result.notesFailed,
                   Icons.error_outline,
                   isError: true,
@@ -329,7 +349,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               color: Colors.red.shade700, size: 20),
                           const SizedBox(width: 8),
                           Text(
-                            'Decryption Errors',
+                            _l10n.authDecryptionErrors,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.red.shade700,
@@ -442,7 +462,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       if (userCredential == null) {
         debugPrint('❌ [Google Sign-In] User credential is null');
-        throw Exception('Google Sign-In was cancelled or failed');
+        throw Exception(_l10n.authGoogleSignInCancelled);
       }
 
       debugPrint('✅ [Google Sign-In] Step 1 Complete: User signed in');
@@ -455,7 +475,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       if (firebaseToken == null) {
         debugPrint('❌ [Google Sign-In] Firebase token is null');
-        throw Exception('Failed to get Firebase token');
+        throw Exception(_l10n.authFirebaseTokenFailed);
       }
 
       debugPrint('✅ [Google Sign-In] Step 2 Complete: Got Firebase token');
@@ -475,7 +495,7 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint('❌ [Google Sign-In] Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _errorMessage = _describeError(e);
         });
       }
     } finally {
@@ -601,7 +621,7 @@ class _AuthScreenState extends State<AuthScreen> {
       // 1. Sign in with Apple and get a Firebase credential.
       final userCredential = await _appleSignInService.signInWithApple();
       if (userCredential == null) {
-        throw Exception('Sign in with Apple was cancelled or failed');
+        throw Exception(_l10n.authAppleSignInCancelled);
       }
       debugPrint(
           '✅ [Apple Sign-In] Firebase user: ${userCredential.user?.uid}');
@@ -609,7 +629,7 @@ class _AuthScreenState extends State<AuthScreen> {
       // 2. Get Firebase ID token.
       final firebaseToken = await _appleSignInService.getFirebaseIdToken();
       if (firebaseToken == null) {
-        throw Exception('Failed to get Firebase token');
+        throw Exception(_l10n.authFirebaseTokenFailed);
       }
 
       // 3-6. Shared completion (backend, FCM, encryption, sync, navigation).
@@ -624,7 +644,7 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint('❌ [Apple Sign-In] Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _errorMessage = _describeError(e);
         });
       }
     } finally {
@@ -733,7 +753,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _errorMessage = _describeError(e);
       });
     } finally {
       if (mounted) {
@@ -783,7 +803,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 // Subtitle
                 Text(
-                  _isLogin ? 'Welcome back!' : 'Create your account',
+                  _isLogin ? _l10n.authWelcomeBack : _l10n.authCreateAccount,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: cs.onSurfaceVariant,
                   ),
@@ -841,7 +861,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          labelText: 'Email',
+                          labelText: _l10n.authEmailLabel,
                           prefixIcon: const Icon(Icons.email_outlined),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -849,10 +869,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
+                            return _l10n.authEmailRequired;
                           }
                           if (!value.contains('@')) {
-                            return 'Please enter a valid email';
+                            return _l10n.authEmailInvalid;
                           }
                           return null;
                         },
@@ -865,7 +885,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
-                          labelText: 'Password',
+                          labelText: _l10n.authPasswordLabel,
                           prefixIcon: const Icon(Icons.lock_outlined),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -885,10 +905,11 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
+                            return _l10n.authPasswordRequired;
                           }
-                          if (!_isLogin && value.length < 6) {
-                            return 'Password must be at least 6 characters';
+                          if (!_isLogin && value.length < kMinPasswordLength) {
+                            return _l10n
+                                .authPasswordTooShort(kMinPasswordLength);
                           }
                           return null;
                         },
@@ -943,7 +964,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 ),
                               )
                             : Text(
-                                _isLogin ? 'Log In' : 'Sign Up',
+                                _isLogin ? _l10n.authLogIn : _l10n.authSignUp,
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -962,8 +983,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   children: [
                     Text(
                       _isLogin
-                          ? "Don't have an account? "
-                          : 'Already have an account? ',
+                          ? _l10n.authNoAccountPrompt
+                          : _l10n.authHaveAccountPrompt,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: cs.onSurfaceVariant,
                       ),
@@ -978,7 +999,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               });
                             },
                       child: Text(
-                        _isLogin ? 'Sign Up' : 'Log In',
+                        _isLogin ? _l10n.authSignUp : _l10n.authLogIn,
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           color: cs.primary,
@@ -1025,7 +1046,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 },
               ),
         label: Text(
-          'Continue with Google',
+          _l10n.authContinueWithGoogle,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -1076,7 +1097,7 @@ class _AuthScreenState extends State<AuthScreen> {
               )
             : Icon(Icons.apple, size: 26, color: cs.onSurface),
         label: Text(
-          'Continue with Apple',
+          _l10n.authContinueWithApple,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -1145,6 +1166,7 @@ class _SyncProgressDialog extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final brightness = theme.brightness;
+    final l10n = AppL10n.of(context);
 
     return Dialog(
       backgroundColor: brightness == Brightness.dark
@@ -1182,7 +1204,7 @@ class _SyncProgressDialog extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Restoring your notes',
+                  l10n.authRestoringNotes,
                   style: theme.textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
@@ -1192,7 +1214,8 @@ class _SyncProgressDialog extends StatelessWidget {
                   duration: const Duration(milliseconds: 250),
                   child: Text(
                     (p.totalItems > 1 && p.currentItem > 0)
-                        ? '${p.message}  (${p.currentItem} of ${p.totalItems})'
+                        ? l10n.authProgressWithCounter(
+                            p.message, p.currentItem, p.totalItems)
                         : p.message,
                     key: ValueKey(
                         '${p.message}-${p.currentItem}-${p.totalItems}'),
@@ -1228,19 +1251,19 @@ class _SyncProgressDialog extends StatelessWidget {
                 const SizedBox(height: 20),
                 // Step checklist
                 _StepRow(
-                    label: 'Folders',
+                    label: l10n.authStatFolders,
                     icon: Icons.folder_rounded,
                     index: 0,
                     step: step),
                 const SizedBox(height: 8),
                 _StepRow(
-                    label: 'Notes',
+                    label: l10n.authStatNotes,
                     icon: Icons.notes_rounded,
                     index: 1,
                     step: step),
                 const SizedBox(height: 8),
                 _StepRow(
-                    label: 'Reminders',
+                    label: l10n.authStatReminders,
                     icon: Icons.alarm_rounded,
                     index: 2,
                     step: step),

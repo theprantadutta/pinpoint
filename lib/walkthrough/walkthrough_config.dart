@@ -12,6 +12,19 @@ class WalkthroughConfig {
   /// Mint color used in the app's primary accent
   static const Color _mintColor = Color(0xFF4ECCA3);
 
+  // tutorial_coach_mark's `alignSkip` is typed as a plain [Alignment], which
+  // has no directional variant and therefore never mirrors on its own. Without
+  // these helpers the Skip button lands on top of the highlighted target in
+  // Arabic and Persian instead of tucking into the opposite corner.
+  static bool _isRtl(BuildContext context) =>
+      Directionality.of(context) == TextDirection.rtl;
+
+  static Alignment _skipTop(BuildContext context) =>
+      _isRtl(context) ? Alignment.topLeft : Alignment.topRight;
+
+  static Alignment _skipBottom(BuildContext context) =>
+      _isRtl(context) ? Alignment.bottomLeft : Alignment.bottomRight;
+
   /// Creates the list of walkthrough targets in order.
   static List<TargetFocus> createTargets(BuildContext context) {
     return [
@@ -19,7 +32,7 @@ class WalkthroughConfig {
       TargetFocus(
         identify: 'fab_create_note',
         keyTarget: WalkthroughKeys.fabKey,
-        alignSkip: Alignment.topRight,
+        alignSkip: _skipTop(context),
         enableOverlayTab: true,
         shape: ShapeLightFocus.Circle,
         paddingFocus: 10,
@@ -43,7 +56,7 @@ class WalkthroughConfig {
       TargetFocus(
         identify: 'search_button',
         keyTarget: WalkthroughKeys.searchKey,
-        alignSkip: Alignment.bottomRight,
+        alignSkip: _skipBottom(context),
         enableOverlayTab: true,
         shape: ShapeLightFocus.RRect,
         radius: 12,
@@ -67,7 +80,7 @@ class WalkthroughConfig {
       TargetFocus(
         identify: 'add_folder',
         keyTarget: WalkthroughKeys.addFolderKey,
-        alignSkip: Alignment.bottomRight,
+        alignSkip: _skipBottom(context),
         enableOverlayTab: true,
         shape: ShapeLightFocus.RRect,
         radius: 10,
@@ -91,7 +104,7 @@ class WalkthroughConfig {
       TargetFocus(
         identify: 'nav_settings',
         keyTarget: WalkthroughKeys.navSettingsKey,
-        alignSkip: Alignment.topRight,
+        alignSkip: _skipTop(context),
         enableOverlayTab: true,
         shape: ShapeLightFocus.RRect,
         radius: 12,

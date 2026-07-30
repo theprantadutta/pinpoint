@@ -1,0 +1,511 @@
+{
+  "@@locale": "en",
+  "appName": "Pinpoint",
+  "@appName": {
+    "description": "The application name. Brand name — should NOT be translated."
+  },
+  "commonOk": "OK",
+  "@commonOk": {
+    "description": "Confirm button on a simple informational dialog."
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Dismiss button that abandons the current action."
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Button that commits the user's edits."
+  },
+  "commonDelete": "Delete",
+  "@commonDelete": {
+    "description": "Button that permanently removes an item."
+  },
+  "commonClose": "Close",
+  "@commonClose": {
+    "description": "Button that dismisses a sheet or dialog."
+  },
+  "commonRetry": "Retry",
+  "@commonRetry": {
+    "description": "Button that re-attempts a failed operation."
+  },
+  "commonDone": "Done",
+  "@commonDone": {
+    "description": "Button that finishes the current flow."
+  },
+  "commonNext": "Next",
+  "@commonNext": {
+    "description": "Button advancing to the next step of a multi-step flow."
+  },
+  "commonBack": "Back",
+  "@commonBack": {
+    "description": "Button returning to the previous step."
+  },
+  "commonYes": "Yes",
+  "@commonYes": {
+    "description": "Affirmative answer to a yes/no question."
+  },
+  "commonNo": "No",
+  "@commonNo": {
+    "description": "Negative answer to a yes/no question."
+  },
+  "commonEnabled": "Enabled",
+  "@commonEnabled": {
+    "description": "Status label meaning a feature is currently turned on."
+  },
+  "commonDisabled": "Disabled",
+  "@commonDisabled": {
+    "description": "Status label meaning a feature is currently turned off."
+  },
+  "authWelcomeBack": "Welcome back!",
+  "@authWelcomeBack": {
+    "description": "Greeting above the sign-in form when the user is logging into an existing account."
+  },
+  "authCreateAccount": "Create your account",
+  "@authCreateAccount": {
+    "description": "Heading above the form when the user is registering for the first time."
+  },
+  "authEmailLabel": "Email",
+  "@authEmailLabel": {
+    "description": "Field label for the email address input."
+  },
+  "authEmailRequired": "Please enter your email",
+  "@authEmailRequired": {
+    "description": "Validation error shown when the email field is left blank."
+  },
+  "authEmailInvalid": "Please enter a valid email",
+  "@authEmailInvalid": {
+    "description": "Validation error shown when the entered text is not a well-formed email address."
+  },
+  "authPasswordLabel": "Password",
+  "@authPasswordLabel": {
+    "description": "Field label for the password input."
+  },
+  "authPasswordRequired": "Please enter your password",
+  "@authPasswordRequired": {
+    "description": "Validation error shown when the password field is left blank."
+  },
+  "authPasswordTooShort": "Password must be at least {minLength} characters",
+  "@authPasswordTooShort": {
+    "description": "Validation error shown when the chosen password is below the minimum length.",
+    "placeholders": {
+      "minLength": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "authLogIn": "Log In",
+  "@authLogIn": {
+    "description": "Button that submits the sign-in form. Also used as the link to switch from the sign-up form back to sign-in."
+  },
+  "authSignUp": "Sign Up",
+  "@authSignUp": {
+    "description": "Button that submits the registration form. Also used as the link to switch from sign-in to registration."
+  },
+  "authNoAccountPrompt": "Don't have an account? ",
+  "@authNoAccountPrompt": {
+    "description": "Text before the 'Sign Up' link, shown while the sign-in form is displayed. Keep the trailing space — the link follows immediately."
+  },
+  "authHaveAccountPrompt": "Already have an account? ",
+  "@authHaveAccountPrompt": {
+    "description": "Text before the 'Log In' link, shown while the registration form is displayed. Keep the trailing space — the link follows immediately."
+  },
+  "authContinueWithGoogle": "Continue with Google",
+  "@authContinueWithGoogle": {
+    "description": "Third-party sign-in button. 'Google' is a brand name and must not be translated."
+  },
+  "authContinueWithApple": "Continue with Apple",
+  "@authContinueWithApple": {
+    "description": "Third-party sign-in button. 'Apple' is a brand name and must not be translated."
+  },
+  "authGoogleSignInCancelled": "Google Sign-In was cancelled or failed",
+  "@authGoogleSignInCancelled": {
+    "description": "Error shown when the Google sign-in sheet closes without producing an account."
+  },
+  "authAppleSignInCancelled": "Sign in with Apple was cancelled or failed",
+  "@authAppleSignInCancelled": {
+    "description": "Error shown when the Apple sign-in sheet closes without producing an account."
+  },
+  "authFirebaseTokenFailed": "Failed to get Firebase token",
+  "@authFirebaseTokenFailed": {
+    "description": "Error shown when sign-in succeeded with the provider but the app could not obtain an auth token."
+  },
+  "authRestoringNotes": "Restoring your notes",
+  "@authRestoringNotes": {
+    "description": "Progress heading shown while notes are being downloaded and decrypted after signing in on a new device."
+  },
+  "authConnectingToCloud": "Connecting to the cloud…",
+  "@authConnectingToCloud": {
+    "description": "Progress message shown while the first sync connection is being established."
+  },
+  "authSyncTakingAWhile": "Sync is taking a while — it will finish in the background.",
+  "@authSyncTakingAWhile": {
+    "description": "Reassurance shown when the initial sync is slow, telling the user they do not have to wait."
+  },
+  "authSyncCancelled": "Sync cancelled",
+  "@authSyncCancelled": {
+    "description": "Result message when the user aborts the initial sync."
+  },
+  "authSyncFailedTitle": "Sync Failed",
+  "@authSyncFailedTitle": {
+    "description": "Dialog title when notes could not be restored from the cloud."
+  },
+  "authSyncFailedBody": "Unable to restore your notes from cloud:\n{error}\n\nYou can continue without syncing, or try again.",
+  "@authSyncFailedBody": {
+    "description": "Dialog body when the restore failed, including the underlying error text.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Network unreachable"
+      }
+    }
+  },
+  "authSyncErrorTitle": "Sync Error",
+  "@authSyncErrorTitle": {
+    "description": "Dialog title when an unexpected exception interrupted the restore."
+  },
+  "authSyncErrorBody": "Failed to restore your notes:\n{error}\n\nYou can continue without syncing, or try again.",
+  "@authSyncErrorBody": {
+    "description": "Dialog body when an unexpected exception interrupted the restore.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Connection closed"
+      }
+    }
+  },
+  "authUnknownError": "Unknown error",
+  "@authUnknownError": {
+    "description": "Stand-in used when a failure produced no message of its own."
+  },
+  "authContinueAnyway": "Continue Anyway",
+  "@authContinueAnyway": {
+    "description": "Button that dismisses a failed-sync dialog and enters the app without restoring notes."
+  },
+  "authSyncSuccessful": "Sync Successful",
+  "@authSyncSuccessful": {
+    "description": "Dialog title when every item restored from the cloud without error."
+  },
+  "authSyncCompletedWithErrors": "Sync Completed with Errors",
+  "@authSyncCompletedWithErrors": {
+    "description": "Dialog title when the restore finished but some items could not be recovered."
+  },
+  "authStatNotes": "Notes",
+  "@authStatNotes": {
+    "description": "Label on the sync summary counter for restored notes."
+  },
+  "authStatFolders": "Folders",
+  "@authStatFolders": {
+    "description": "Label on the sync summary counter for restored folders."
+  },
+  "authStatReminders": "Reminders",
+  "@authStatReminders": {
+    "description": "Label on the sync summary counter for restored reminders."
+  },
+  "authStatFailedToRestore": "Failed to restore",
+  "@authStatFailedToRestore": {
+    "description": "Label on the sync summary counter for notes that could not be recovered."
+  },
+  "authDecryptionErrors": "Decryption Errors",
+  "@authDecryptionErrors": {
+    "description": "Heading on the warning panel shown when some notes downloaded but could not be decrypted."
+  },
+  "authProgressWithCounter": "{message}  ({current} of {total})",
+  "@authProgressWithCounter": {
+    "description": "Restore progress line combining the current status message with an item counter, e.g. 'Decrypting notes  (12 of 40)'.",
+    "placeholders": {
+      "message": {
+        "type": "String",
+        "example": "Decrypting notes"
+      },
+      "current": {
+        "type": "int",
+        "example": "12"
+      },
+      "total": {
+        "type": "int",
+        "example": "40"
+      }
+    }
+  },
+  "subscriptionNeverExpires": "Never expires",
+  "@subscriptionNeverExpires": {
+    "description": "Expiry text for a lifetime purchase, which has no end date."
+  },
+  "subscriptionExpiredOn": "Expired on {date}",
+  "@subscriptionExpiredOn": {
+    "description": "Status line when the subscription's paid period has already ended.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Mar 14, 2026"
+      }
+    }
+  },
+  "subscriptionPaymentPending": "Payment pending — expires {date}",
+  "@subscriptionPaymentPending": {
+    "description": "Status line during the billing grace period, when renewal has not gone through yet.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Mar 14, 2026"
+      }
+    }
+  },
+  "subscriptionCancelledAccessUntil": "Cancelled — access until {date}",
+  "@subscriptionCancelledAccessUntil": {
+    "description": "Status line when the user has cancelled but the paid period has not run out yet.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Mar 14, 2026"
+      }
+    }
+  },
+  "subscriptionRenews": "Renews {date}",
+  "@subscriptionRenews": {
+    "description": "Status line for an active auto-renewing subscription.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Mar 14, 2026"
+      }
+    }
+  },
+  "relativeTimeJustNow": "just now",
+  "@relativeTimeJustNow": {
+    "description": "Relative time for something that happened under a minute ago."
+  },
+  "relativeTimeMinutesAgo": "{count, plural, one{{count}m ago} other{{count}m ago}}",
+  "@relativeTimeMinutesAgo": {
+    "description": "Compact 'how long ago' label in minutes, shown on trashed notes. English uses the same abbreviated form for all counts, but the plural block exists so languages with real plural categories (Arabic, Persian, Bengali) can differ.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "relativeTimeHoursAgo": "{count, plural, one{{count}h ago} other{{count}h ago}}",
+  "@relativeTimeHoursAgo": {
+    "description": "Compact 'how long ago' label in hours.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "relativeTimeDaysAgo": "{count, plural, one{{count}d ago} other{{count}d ago}}",
+  "@relativeTimeDaysAgo": {
+    "description": "Compact 'how long ago' label in days.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "relativeTimeWeeksAgo": "{count, plural, one{{count}w ago} other{{count}w ago}}",
+  "@relativeTimeWeeksAgo": {
+    "description": "Compact 'how long ago' label in weeks.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "syncingNotes": "{count, plural, one{Syncing {count} note…} other{Syncing {count} notes…}}",
+  "@syncingNotes": {
+    "description": "Progress text while unsynced notes are uploading.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "7"
+      }
+    }
+  },
+  "logoutAudioWarning": "{count, plural, one{You have {count} audio recording that will be lost} other{You have {count} audio recordings that will be lost}}",
+  "@logoutAudioWarning": {
+    "description": "Warning shown before signing out, when local-only audio notes would be destroyed.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "logoutAudioWarningDetailed": "{count, plural, one{You have {count} audio recording that is stored locally only and will be lost forever.} other{You have {count} audio recordings that are stored locally only and will be lost forever.}}\n\nPlease backup or delete your audio recordings before signing out.",
+  "@logoutAudioWarningDetailed": {
+    "description": "Full sign-out warning explaining that local-only audio notes are unrecoverable. The second paragraph is constant across counts.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "filterApplyCount": "{count, plural, one{Apply {count} Filter} other{Apply {count} Filters}}",
+  "@filterApplyCount": {
+    "description": "Confirm button on the filter sheet, showing how many filters are selected.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "errInvalidCredentials": "Incorrect email or password",
+  "@errInvalidCredentials": {
+    "description": "Sign-in failure: the email/password combination was rejected. Deliberately vague about which one was wrong."
+  },
+  "errEmailAlreadyRegistered": "That email is already registered",
+  "@errEmailAlreadyRegistered": {
+    "description": "Registration failure: an account already exists for this email address."
+  },
+  "errSessionExpired": "Your session has expired. Please sign in again.",
+  "@errSessionExpired": {
+    "description": "Shown when the stored credentials are no longer valid and the user must re-authenticate."
+  },
+  "errUserNotFound": "Account not found",
+  "@errUserNotFound": {
+    "description": "The account referenced by the request no longer exists on the server."
+  },
+  "errUserInactive": "This account has been deactivated",
+  "@errUserInactive": {
+    "description": "The account exists but has been disabled and cannot be used."
+  },
+  "errAccountDeleteFailed": "Couldn't delete your account. Please try again.",
+  "@errAccountDeleteFailed": {
+    "description": "Account deletion did not complete on the server."
+  },
+  "errAuthenticationFailed": "Couldn't sign you in. Please try again.",
+  "@errAuthenticationFailed": {
+    "description": "Generic sign-in failure covering rejected provider tokens and auth service errors."
+  },
+  "errAccountRequiresLinking": "An account with this email already exists. Sign in with your password to link it.",
+  "@errAccountRequiresLinking": {
+    "description": "Shown when signing in with Google/Apple hits an existing password account; the user must link the two."
+  },
+  "errAccountHasNoPassword": "This account has no password set",
+  "@errAccountHasNoPassword": {
+    "description": "Blocks password-based linking on an account created purely through a social provider."
+  },
+  "errIncorrectPassword": "Incorrect password",
+  "@errIncorrectPassword": {
+    "description": "The password entered to confirm a sensitive action was wrong."
+  },
+  "errGoogleAccountAlreadyLinked": "This Google account is already linked to another user",
+  "@errGoogleAccountAlreadyLinked": {
+    "description": "Blocks linking a Google account that belongs to someone else's Pinpoint account. 'Google' is a brand name."
+  },
+  "errAccountLinkingFailed": "Couldn't link your account. Please try again.",
+  "@errAccountLinkingFailed": {
+    "description": "Account linking did not complete on the server."
+  },
+  "errCannotUnlinkWithoutPassword": "Set a password before unlinking your Google account",
+  "@errCannotUnlinkWithoutPassword": {
+    "description": "Prevents locking the user out: unlinking the only sign-in method would leave no way back in."
+  },
+  "errNoGoogleAccountLinked": "No Google account is linked",
+  "@errNoGoogleAccountLinked": {
+    "description": "Unlink was requested but there is nothing linked to remove."
+  },
+  "errAccessDenied": "You don't have access to this",
+  "@errAccessDenied": {
+    "description": "Authorization failure on a resource belonging to someone else."
+  },
+  "errPremiumRequired": "This feature requires Premium",
+  "@errPremiumRequired": {
+    "description": "The requested action is gated behind a paid subscription."
+  },
+  "errEncryptionKeyNotFound": "Your encryption key could not be found",
+  "@errEncryptionKeyNotFound": {
+    "description": "The server has no key material for this account, so encrypted notes cannot be recovered on this device."
+  },
+  "errNotAnAudioFile": "That file is not an audio recording",
+  "@errNotAnAudioFile": {
+    "description": "Upload rejected because the file type is wrong."
+  },
+  "errAudioNotFound": "Audio recording not found",
+  "@errAudioNotFound": {
+    "description": "The requested audio attachment does not exist on the server."
+  },
+  "errAudioUploadFailed": "Couldn't upload the recording. Please try again.",
+  "@errAudioUploadFailed": {
+    "description": "Audio upload failed server-side."
+  },
+  "errAudioDownloadFailed": "Couldn't download the recording. Please try again.",
+  "@errAudioDownloadFailed": {
+    "description": "Audio download failed server-side."
+  },
+  "errAudioDeleteFailed": "Couldn't delete the recording. Please try again.",
+  "@errAudioDeleteFailed": {
+    "description": "Audio deletion failed server-side."
+  },
+  "errReminderNotFound": "Reminder not found",
+  "@errReminderNotFound": {
+    "description": "The reminder was already deleted or never existed."
+  },
+  "errReminderOperationFailed": "Couldn't update your reminders. Please try again.",
+  "@errReminderOperationFailed": {
+    "description": "Covers create/update/delete/fetch/sync reminder failures — the user action is the same for all of them."
+  },
+  "errFolderSyncFailed": "Couldn't sync your folders. Please try again.",
+  "@errFolderSyncFailed": {
+    "description": "Folder synchronization failed server-side."
+  },
+  "errUsageOperationFailed": "Couldn't update your usage limits. Please try again.",
+  "@errUsageOperationFailed": {
+    "description": "Covers usage-quota read and increment failures."
+  },
+  "notifChannelDefaultName": "Pinpoint Notifications",
+  "@notifChannelDefaultName": {
+    "description": "Android notification-channel name for general app notifications. Appears in the phone's system settings, not in the app. 'Pinpoint' is the brand name."
+  },
+  "notifChannelDefaultDescription": "General notifications from Pinpoint",
+  "@notifChannelDefaultDescription": {
+    "description": "Android notification-channel description shown under the channel name in system settings."
+  },
+  "notifChannelRemindersName": "Reminders",
+  "@notifChannelRemindersName": {
+    "description": "Android notification-channel name for scheduled note reminders, shown in system settings."
+  },
+  "notifChannelRemindersDescription": "Scheduled reminders for your notes",
+  "@notifChannelRemindersDescription": {
+    "description": "Android notification-channel description for the reminders channel."
+  },
+  "notifChannelRecurringName": "Recurring reminders",
+  "@notifChannelRecurringName": {
+    "description": "Android notification-channel name for reminders that repeat on a schedule."
+  },
+  "notifChannelRecurringDescription": "Reminders that repeat on a schedule",
+  "@notifChannelRecurringDescription": {
+    "description": "Android notification-channel description for the recurring reminders channel."
+  },
+  "notifChannelPeriodicName": "Periodic updates",
+  "@notifChannelPeriodicName": {
+    "description": "Android notification-channel name for low-priority periodic notifications."
+  },
+  "notifChannelPeriodicDescription": "Occasional updates from Pinpoint",
+  "@notifChannelPeriodicDescription": {
+    "description": "Android notification-channel description for the periodic updates channel."
+  },
+  "settingsLanguageTitle": "Language",
+  "@settingsLanguageTitle": {
+    "description": "Settings row that opens the app language picker."
+  },
+  "settingsLanguageSubtitle": "Choose the app language",
+  "@settingsLanguageSubtitle": {
+    "description": "Secondary text under the Language settings row."
+  },
+  "languageSystemDefault": "System default",
+  "@languageSystemDefault": {
+    "description": "Language picker option meaning: follow the phone's own language setting rather than a fixed choice."
+  },
+  "languageSystemDefaultSubtitle": "Follow your device language",
+  "@languageSystemDefaultSubtitle": {
+    "description": "Secondary text for the 'System default' language option."
+  }
+}

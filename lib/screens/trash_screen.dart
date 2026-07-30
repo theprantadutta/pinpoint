@@ -6,11 +6,12 @@ import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen_v2.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/filter_service.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import 'package:pinpoint/util/localized_dates.dart';
 
 class TrashScreen extends StatefulWidget {
   static const String kRouteName = '/trash';
@@ -256,18 +257,19 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
+    final l10n = AppL10n.of(context);
     if (difference.inSeconds < 60) {
-      return 'just now';
+      return l10n.relativeTimeJustNow;
     } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
+      return l10n.relativeTimeMinutesAgo(difference.inMinutes);
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
+      return l10n.relativeTimeHoursAgo(difference.inHours);
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
+      return l10n.relativeTimeDaysAgo(difference.inDays);
     } else if (difference.inDays < 30) {
-      return '${(difference.inDays / 7).floor()}w ago';
+      return l10n.relativeTimeWeeksAgo((difference.inDays / 7).floor());
     } else {
-      return DateFormat('MMM d').format(dateTime);
+      return LocalizedDates.monthDay(context, dateTime);
     }
   }
 

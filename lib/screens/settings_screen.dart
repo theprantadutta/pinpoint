@@ -17,13 +17,17 @@ import 'package:pinpoint/services/google_sign_in_service.dart';
 import 'package:pinpoint/services/logout_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
+import 'package:pinpoint/screens/language_screen.dart';
 import 'package:pinpoint/screens/encryption_settings_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 import 'package:pinpoint/screens/admin_panel_screen.dart';
 import 'package:pinpoint/widgets/admin_password_dialog.dart';
 import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
+import '../generated/l10n/app_localizations.dart';
 import '../services/analytics/analytics_facade.dart';
+import '../services/locale_controller.dart';
+import '../util/localized_dates.dart';
 import '../services/premium_service.dart';
 import '../constants/premium_limits.dart';
 import '../navigation/app_navigation.dart';
@@ -265,6 +269,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// Subtitle for the Language row: the chosen language's own name, or the
+  /// "system default" wording when the user hasn't pinned one.
+  String _currentLanguageLabel(BuildContext context) {
+    final locale = context.watch<LocaleController>().locale;
+    return locale == null
+        ? AppL10n.of(context).languageSystemDefault
+        : LocaleController.displayName(locale);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -385,6 +398,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () {
                 PinpointHaptics.medium();
                 AppNavigation.router.push(ThemeScreen.kRouteName);
+              },
+            ),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: AppL10n.of(context).settingsLanguageTitle,
+              subtitle: _currentLanguageLabel(context),
+              icon: Icons.translate_rounded,
+              onTap: () {
+                PinpointHaptics.medium();
+                AppNavigation.router.push(LanguageScreen.kRouteName);
               },
             ),
 
@@ -712,9 +735,10 @@ class _PremiumSection extends StatelessWidget {
     }
   }
 
-  String _getExpiryText(SubscriptionManager manager) {
+  String _getExpiryText(BuildContext context, SubscriptionManager manager) {
+    final l10n = AppL10n.of(context);
     if (manager.subscriptionType == 'lifetime') {
-      return 'Never expires';
+      return l10n.subscriptionNeverExpires;
     }
 
     final expiryDate = manager.expirationDate;
@@ -723,30 +747,14 @@ class _PremiumSection extends StatelessWidget {
     final now = DateTime.now();
     final difference = expiryDate.difference(now);
 
-    // Format the date
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    final formattedDate =
-        '${months[expiryDate.month - 1]} ${expiryDate.day}, ${expiryDate.year}';
+    final formattedDate = LocalizedDates.mediumDate(context, expiryDate);
 
     if (difference.isNegative) {
-      return 'Expired on $formattedDate';
+      return l10n.subscriptionExpiredOn(formattedDate);
     } else if (manager.isInGracePeriod) {
-      return 'Payment pending - Expires $formattedDate';
+      return l10n.subscriptionPaymentPending(formattedDate);
     } else {
-      return 'Renews $formattedDate';
+      return l10n.subscriptionRenews(formattedDate);
     }
   }
 
@@ -851,7 +859,7 @@ class _PremiumSection extends StatelessWidget {
                       isPremium
                           ? isInGracePeriod
                               ? 'Update payment method'
-                              : _getExpiryText(subscriptionManager)
+                              : _getExpiryText(context, subscriptionManager)
                           : 'Unlock unlimited features',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: cs.onSurface.withValues(alpha: 0.7),
@@ -950,7 +958,7 @@ class _UsageLimitsCard extends StatelessWidget {
           const SizedBox(height: PinpointSpacing.xs),
           // Note about Cloud Sync not resetting
           Padding(
-            padding: const EdgeInsets.only(left: 26),
+            padding: const EdgeInsetsDirectional.only(start: 26),
             child: Text(
               'Total limit (doesn\'t reset)',
               style: theme.textTheme.labelSmall?.copyWith(
@@ -1552,10 +1560,11 @@ class _LogoutButtonState extends State<_LogoutButton> {
       }
 
       final unsyncedCount = await _logoutService!.getUnsyncedNotesCount();
-      if (unsyncedCount > 0) {
+      // Guarded like the branches above: this runs after an await, and the
+      // status string now reads Localizations off the context.
+      if (unsyncedCount > 0 && mounted) {
         setState(() {
-          _logoutStatus =
-              'Syncing $unsyncedCount note${unsyncedCount > 1 ? 's' : ''}...';
+          _logoutStatus = AppL10n.of(context).syncingNotes(unsyncedCount);
         });
       }
 
@@ -1657,7 +1666,8 @@ class _LogoutButtonState extends State<_LogoutButton> {
         title: const Text('Cannot Sign Out'),
         content: Text(
           validation.blockReason == LogoutBlockReason.audioNotesExist
-              ? 'You have ${validation.audioNotesCount} audio recording${validation.audioNotesCount! > 1 ? 's' : ''} that are stored locally only and will be lost forever.\n\nPlease backup or delete your audio recordings before signing out.'
+              ? AppL10n.of(context)
+                  .logoutAudioWarningDetailed(validation.audioNotesCount!)
               : validation.errorMessage ?? 'Unable to sign out at this time.',
         ),
         actions: [

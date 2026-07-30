@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
+import 'generated/l10n/app_localizations.dart';
 
 import 'constants/shared_preference_keys.dart';
 import 'design_system/design_system.dart';
@@ -30,6 +32,8 @@ import 'services/connectivity_service.dart';
 import 'services/app_update_service.dart';
 import 'services/api_service.dart';
 import 'services/theme_controller.dart';
+import 'services/locale_controller.dart';
+import 'services/notification_channels.dart';
 import 'screens/auth_screen.dart';
 
 // void main() async {
@@ -565,6 +569,10 @@ class _MyAppState extends State<MyApp> {
   /// non-theme biometric toggle remains here.
   final ThemeController _themeController = ThemeController();
 
+  /// Language selection, owned the same way as appearance so switching it
+  /// re-renders the app without a restart.
+  final LocaleController _localeController = LocaleController();
+
   bool get isBiometricEnabled => _isBiometricEnabled;
 
   void changeBiometricEnabledEnabled(bool isisBiometricEnabled) {
@@ -580,6 +588,10 @@ class _MyAppState extends State<MyApp> {
 
     // Load appearance preferences into the reactive controller.
     await _themeController.load();
+
+    // Load the language choice before the first frame so the app never
+    // renders English and then visibly switches.
+    await _localeController.load();
 
     // Load biometric setting
     final isFingerPrintEnabled = _sharedPreferences?.getBool(kBiometricKey);
@@ -691,6 +703,7 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: _themeController),
+        ChangeNotifierProvider.value(value: _localeController),
         ChangeNotifierProvider.value(
           value: SubscriptionManager()..initialize(),
         ),
@@ -707,14 +720,19 @@ class _MyAppState extends State<MyApp> {
           value: ConnectivityService(),
         ),
       ],
-      child: Consumer<ThemeController>(
-        builder: (context, themeController, _) {
+      child: Consumer2<ThemeController, LocaleController>(
+        builder: (context, themeController, localeController, _) {
           return MaterialApp.router(
             localizationsDelegates: const [
+              AppL10n.delegate,
               GlobalMaterialLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
             ],
+            supportedLocales: LocaleController.supportedLocales,
+            // Null means "follow the device", which is Flutter's own default
+            // resolution behaviour; a non-null value pins the app.
+            locale: localeController.locale,
             title: 'Pinpoint',
             // NOTE: the explicit router pieces (instead of `routerConfig`) are
             // used so we can supply a guarded back-button dispatcher that
@@ -724,6 +742,11 @@ class _MyAppState extends State<MyApp> {
             routeInformationProvider:
                 AppNavigation.router.routeInformationProvider,
             backButtonDispatcher: AppNavigation.backButtonDispatcher,
+            // Keeps the Android notification channels in the app's language.
+            // Sits inside MaterialApp because it needs Localizations, which is
+            // only available below this point in the tree.
+            builder: (context, child) =>
+                _LocalizedNotificationChannels(child: child ?? const SizedBox.shrink()),
             themeMode: themeController.mode,
             theme: PinpointTheme.light(
               accentColor: themeController.accent,
@@ -741,4 +764,52 @@ class _MyAppState extends State<MyApp> {
       ),
     );
   }
+}
+
+/// Keeps the Android notification channels named in the app's current language.
+///
+/// Channel names live in the OS settings UI, not the app, and Android freezes
+/// them at creation time — so switching language has no effect unless the
+/// channels are deleted and recreated. This runs that sync whenever the
+/// resolved locale changes.
+///
+/// It is a widget rather than a startup call because it needs [Localizations],
+/// which only exists below [MaterialApp]. Depending on the locale here also
+/// means [didChangeDependencies] re-fires on a language change for free.
+class _LocalizedNotificationChannels extends StatefulWidget {
+  const _LocalizedNotificationChannels({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_LocalizedNotificationChannels> createState() =>
+      _LocalizedNotificationChannelsState();
+}
+
+class _LocalizedNotificationChannelsState
+    extends State<_LocalizedNotificationChannels> {
+  Locale? _syncedFor;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final locale = Localizations.localeOf(context);
+    if (_syncedFor == locale) return;
+    _syncedFor = locale;
+
+    // Non-blocking and self-guarding: NotificationChannels no-ops unless the
+    // stored locale actually differs, so this is cheap on a normal start.
+    unawaited(
+      NotificationChannels.syncWithLocale(
+        context,
+        FirebaseNotificationService().localNotificationsPlugin,
+      ).catchError((Object e) {
+        debugPrint('⚠️ Notification channel localization failed: $e');
+      }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

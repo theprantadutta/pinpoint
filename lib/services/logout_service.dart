@@ -172,8 +172,13 @@ class LogoutService {
       if (audioNotesCount > 0) {
         return LogoutValidationResult(
           canProceed: false,
+          // Diagnostic only — never shown. [blockReason] and [audioNotesCount]
+          // carry everything the UI needs, and settings_screen renders the
+          // localized, correctly-pluralized sentence from those instead. A
+          // service has no BuildContext and so cannot localize; composing a
+          // user-facing sentence here would hardcode English.
           errorMessage:
-              'You have $audioNotesCount audio recording${audioNotesCount > 1 ? 's' : ''} that will be lost',
+              'Blocked: $audioNotesCount local-only audio note(s) would be lost',
           blockReason: LogoutBlockReason.audioNotesExist,
           audioNotesCount: audioNotesCount,
         );

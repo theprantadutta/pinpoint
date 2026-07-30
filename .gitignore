@@ -66,5 +66,8 @@ firebase.json
 # Ignore Generated Files
 lib/generated/
 lib/**/*.g.dart
+# gen-l10n diagnostic output: lists .arb keys missing a translation. Rewritten
+# on every `flutter gen-l10n`, so it is a build artifact, not source.
+l10n_untranslated.json
 notes.txt
 firebase_admin_key.json

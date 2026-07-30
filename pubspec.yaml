@@ -116,6 +116,9 @@ flutter_plugins:
 flutter:
   uses-material-design: true
 
+  # Generate AppL10n from the .arb files in lib/l10n (see l10n.yaml).
+  generate: true
+
   assets:
     - .env
     - assets/images/
@@ -125,3 +128,54 @@ flutter:
     # automatically by google_fonts via the asset manifest; do NOT also list
     # them under `fonts:`. See lib/main.dart (allowRuntimeFetching = false).
     - assets/fonts/google_fonts/
+
+  # Script fallback faces (Thai / Bengali / Arabic).
+  #
+  # These are declared under `fonts:` rather than dropped into
+  # assets/fonts/google_fonts/ on purpose. The google_fonts assets above are
+  # discovered dynamically by that package, which never gives them a family
+  # name Flutter's font registry knows ahead of time — and a fontFamilyFallback
+  # chain can only reference statically-registered names. Declaring them here
+  # is what makes `fontFamilyFallback: ['Noto Sans Thai', ...]` in
+  # design_system/typography.dart resolve.
+  #
+  # Every bundled google_fonts face is a Latin subset (Inter-Regular is 66 KB,
+  # not the ~300 KB full face), so without these three families Thai, Bengali,
+  # Arabic and Persian have no glyphs at all and fall through to whatever the
+  # OS happens to provide.
+  #
+  # Instanced from the upstream variable fonts at four weights; Flutter snaps
+  # the app's w400–w900 styles to the nearest. 1.5 MB total.
+  fonts:
+    - family: Noto Sans Thai
+      fonts:
+        - asset: assets/fonts/scripts/NotoSansThai-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/scripts/NotoSansThai-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/scripts/NotoSansThai-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/scripts/NotoSansThai-Black.ttf
+          weight: 900
+    - family: Noto Sans Bengali
+      fonts:
+        - asset: assets/fonts/scripts/NotoSansBengali-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/scripts/NotoSansBengali-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/scripts/NotoSansBengali-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/scripts/NotoSansBengali-Black.ttf
+          weight: 900
+    # Serves both Arabic (ar) and Persian (fa) — verified to cover the
+    # Persian-only letters پ چ ژ گ ک ی and both digit sets.
+    - family: Noto Sans Arabic
+      fonts:
+        - asset: assets/fonts/scripts/NotoSansArabic-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/scripts/NotoSansArabic-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/scripts/NotoSansArabic-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/scripts/NotoSansArabic-Black.ttf
+          weight: 900

@@ -85,7 +85,7 @@ class WalkthroughTooltip extends StatelessWidget {
           if (showNextButton) ...[
             const SizedBox(height: 16),
             Align(
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerEnd,
               child: TextButton(
                 onPressed: onNext,
                 style: TextButton.styleFrom(
