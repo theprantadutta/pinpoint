@@ -507,5 +507,555 @@
   "languageSystemDefaultSubtitle": "Follow your device language",
   "@languageSystemDefaultSubtitle": {
     "description": "Secondary text for the 'System default' language option."
+  },
+  "setSectionAccount": "ACCOUNT",
+  "@setSectionAccount": {
+    "description": "Settings section header above sign-in options. Displayed in caps."
+  },
+  "setSectionAccountSync": "ACCOUNT & SYNC",
+  "@setSectionAccountSync": {
+    "description": "Settings section header above account and cloud-sync rows. Displayed in caps."
+  },
+  "setSectionUsage": "USAGE",
+  "@setSectionUsage": {
+    "description": "Settings section header above the plan usage/limits card. Displayed in caps."
+  },
+  "setSectionAppearance": "APPEARANCE",
+  "@setSectionAppearance": {
+    "description": "Settings section header above theme and language. Displayed in caps."
+  },
+  "setSectionContent": "CONTENT",
+  "@setSectionContent": {
+    "description": "Settings section header above folders, archive and trash. Displayed in caps."
+  },
+  "setSectionSecurity": "SECURITY",
+  "@setSectionSecurity": {
+    "description": "Settings section header above biometric lock and encryption. Displayed in caps."
+  },
+  "setSectionAdvanced": "ADVANCED",
+  "@setSectionAdvanced": {
+    "description": "Settings section header above import and developer tools. Displayed in caps."
+  },
+  "setSectionAbout": "ABOUT",
+  "@setSectionAbout": {
+    "description": "Settings section header above app info and legal links. Displayed in caps."
+  },
+  "setTitle": "Settings",
+  "@setTitle": {
+    "description": "Title of the settings screen."
+  },
+  "setSignIn": "Sign In",
+  "@setSignIn": {
+    "description": "Row that opens the sign-in screen, shown when signed out."
+  },
+  "setSignInSubtitle": "Sign in to sync your notes",
+  "@setSignInSubtitle": {
+    "description": "Secondary text under the Sign In row."
+  },
+  "setSyncDebug": "Sync Debug Info",
+  "@setSyncDebug": {
+    "description": "Developer row opening sync diagnostics."
+  },
+  "setSyncDebugSubtitle": "View sync status and troubleshoot issues",
+  "@setSyncDebugSubtitle": {
+    "description": "Secondary text under the Sync Debug Info row."
+  },
+  "setTheme": "Theme",
+  "@setTheme": {
+    "description": "Row opening the theme picker."
+  },
+  "setThemeSubtitle": "Customize your theme",
+  "@setThemeSubtitle": {
+    "description": "Secondary text under the Theme row."
+  },
+  "setMyFolders": "My Folders",
+  "@setMyFolders": {
+    "description": "Row opening the folder list."
+  },
+  "setArchive": "Archive",
+  "@setArchive": {
+    "description": "Row opening archived notes."
+  },
+  "setTrash": "Trash",
+  "@setTrash": {
+    "description": "Row opening deleted notes."
+  },
+  "setSyncSettings": "Sync Settings",
+  "@setSyncSettings": {
+    "description": "Row opening cloud-sync configuration."
+  },
+  "setBiometricLock": "Biometric Lock",
+  "@setBiometricLock": {
+    "description": "Row toggling fingerprint/face unlock for the app."
+  },
+  "setEncryption": "Encryption",
+  "@setEncryption": {
+    "description": "Row opening encryption mode settings."
+  },
+  "setEncryptionSubtitle": "Standard or Maximum Privacy (zero-knowledge)",
+  "@setEncryptionSubtitle": {
+    "description": "Secondary text under Encryption, naming the two modes. \"zero-knowledge\" means the server cannot read your notes."
+  },
+  "setImportNote": "Import Note",
+  "@setImportNote": {
+    "description": "Row that opens a file picker to import a note."
+  },
+  "setImportNoteSubtitle": "Import from .pinpoint-note file",
+  "@setImportNoteSubtitle": {
+    "description": "Secondary text under Import Note. \".pinpoint-note\" is a file extension and must not be translated."
+  },
+  "setTestNotification": "Test Notification",
+  "@setTestNotification": {
+    "description": "Debug-only row that sends a test push."
+  },
+  "setTestNotificationSubtitle": "Send a test push notification",
+  "@setTestNotificationSubtitle": {
+    "description": "Secondary text under the debug Test Notification row."
+  },
+  "setTestCrash": "Test Crash",
+  "@setTestCrash": {
+    "description": "Debug-only row that deliberately crashes the app to verify crash reporting."
+  },
+  "setTestCrashSubtitle": "Force a crash to test Crashlytics",
+  "@setTestCrashSubtitle": {
+    "description": "Secondary text under Test Crash. \"Crashlytics\" is a product name."
+  },
+  "setAdminPanel": "Admin Panel",
+  "@setAdminPanel": {
+    "description": "Debug-only row opening the admin tools."
+  },
+  "setAdminPanelSubtitle": "Debug sync issues",
+  "@setAdminPanelSubtitle": {
+    "description": "Secondary text under the Admin Panel row."
+  },
+  "setAboutApp": "About Pinpoint",
+  "@setAboutApp": {
+    "description": "Row opening the about dialog. \"Pinpoint\" is the app name."
+  },
+  "setAboutAppSubtitle": "App info, version & developer",
+  "@setAboutAppSubtitle": {
+    "description": "Secondary text under About Pinpoint."
+  },
+  "setRateApp": "Rate Pinpoint",
+  "@setRateApp": {
+    "description": "Row that opens the store review prompt."
+  },
+  "setRateAppSubtitle": "Enjoying the app? Leave a review",
+  "@setRateAppSubtitle": {
+    "description": "Secondary text under Rate Pinpoint."
+  },
+  "setReplayTutorial": "Replay Tutorial",
+  "@setReplayTutorial": {
+    "description": "Row that restarts the onboarding walkthrough."
+  },
+  "setReplayTutorialSubtitle": "See the app walkthrough again",
+  "@setReplayTutorialSubtitle": {
+    "description": "Secondary text under Replay Tutorial."
+  },
+  "setTermsPrivacy": "Terms & Privacy",
+  "@setTermsPrivacy": {
+    "description": "Row opening the terms of service and privacy policy."
+  },
+  "setSyncNow": "Sync Now",
+  "@setSyncNow": {
+    "description": "Row that triggers an immediate cloud sync."
+  },
+  "setSyncNowSubtitle": "Pull latest data from server",
+  "@setSyncNowSubtitle": {
+    "description": "Secondary text under Sync Now."
+  },
+  "setManageSubscription": "Manage Subscription",
+  "@setManageSubscription": {
+    "description": "Row linking to the platform store to change or cancel the subscription."
+  },
+  "setViewInAppStore": "View in the App Store",
+  "@setViewInAppStore": {
+    "description": "Secondary text under Manage Subscription on iOS. \"App Store\" is a brand name."
+  },
+  "setViewInPlayStore": "View in Google Play Store",
+  "@setViewInPlayStore": {
+    "description": "Secondary text under Manage Subscription on Android. \"Google Play Store\" is a brand name."
+  },
+  "setAboutTagline": "Your thoughts, perfectly organized. Capture notes, record audio, manage todos, and set reminders - all in one beautiful, secure app.",
+  "@setAboutTagline": {
+    "description": "Marketing blurb in the About dialog describing what the app does."
+  },
+  "setAboutDevelopedBy": "Developed & Maintained By",
+  "@setAboutDevelopedBy": {
+    "description": "Label above the developer credit in the About dialog."
+  },
+  "setAboutVersion": "Version {version} ({build})",
+  "@setAboutVersion": {
+    "description": "App version line in the About dialog.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "2.4.0"
+      },
+      "build": {
+        "type": "String",
+        "example": "28"
+      }
+    }
+  },
+  "setUnableToOpenPortfolio": "Unable to open portfolio",
+  "@setUnableToOpenPortfolio": {
+    "description": "Error toast when the developer portfolio link fails to open."
+  },
+  "setPlanMonthly": "Monthly Plan",
+  "@setPlanMonthly": {
+    "description": "Name of the monthly subscription tier."
+  },
+  "setPlanYearly": "Yearly Plan",
+  "@setPlanYearly": {
+    "description": "Name of the yearly subscription tier."
+  },
+  "setPlanLifetime": "Lifetime",
+  "@setPlanLifetime": {
+    "description": "Name of the one-time lifetime purchase tier."
+  },
+  "setPlanPremium": "Premium",
+  "@setPlanPremium": {
+    "description": "Generic paid tier name, used when the specific plan is unknown."
+  },
+  "setPremiumGracePeriod": "Premium (Grace Period)",
+  "@setPremiumGracePeriod": {
+    "description": "Plan label while a renewal payment is still pending; the user keeps access for now."
+  },
+  "setUpgradeToPremium": "Upgrade to Premium",
+  "@setUpgradeToPremium": {
+    "description": "Call to action on the subscription card for free users."
+  },
+  "setUpdatePaymentMethod": "Update payment method",
+  "@setUpdatePaymentMethod": {
+    "description": "Prompt shown during the billing grace period."
+  },
+  "setUnlockUnlimited": "Unlock unlimited features",
+  "@setUnlockUnlimited": {
+    "description": "Secondary text on the upgrade prompt for free users."
+  },
+  "setPremiumMember": "Premium Member",
+  "@setPremiumMember": {
+    "description": "Badge under the account name for paying users."
+  },
+  "setFreeAccount": "Free Account",
+  "@setFreeAccount": {
+    "description": "Badge under the account name for users on the free tier."
+  },
+  "setUsageLimits": "Usage Limits",
+  "@setUsageLimits": {
+    "description": "Heading of the card showing how much of each free-tier quota is used."
+  },
+  "setUsageCloudSync": "Cloud Sync",
+  "@setUsageCloudSync": {
+    "description": "Usage meter label for the number of notes synced to the cloud."
+  },
+  "setUsageTotalLimit": "Total limit (doesn't reset)",
+  "@setUsageTotalLimit": {
+    "description": "Note under the cloud-sync meter clarifying the cap is lifetime, not monthly."
+  },
+  "setUsageMonthlyLimits": "Monthly Limits",
+  "@setUsageMonthlyLimits": {
+    "description": "Sub-heading above the quotas that reset each month."
+  },
+  "setUsageOcrScans": "OCR Scans",
+  "@setUsageOcrScans": {
+    "description": "Usage meter label for text-recognition scans. OCR = optical character recognition."
+  },
+  "setUsageExports": "Exports",
+  "@setUsageExports": {
+    "description": "Usage meter label for PDF/Markdown exports."
+  },
+  "setResetsInDays": "Resets in {days}d",
+  "@setResetsInDays": {
+    "description": "Countdown until monthly quotas reset, in whole days. \"d\" abbreviates days.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "setResetsInHours": "Resets in {hours}h",
+  "@setResetsInHours": {
+    "description": "Countdown until monthly quotas reset, in whole hours. \"h\" abbreviates hours.",
+    "placeholders": {
+      "hours": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "setResetsSoon": "Resets soon",
+  "@setResetsSoon": {
+    "description": "Shown when the monthly quota reset is less than an hour away."
+  },
+  "setAccountFallbackName": "User",
+  "@setAccountFallbackName": {
+    "description": "Placeholder shown in the account header when no email address is known."
+  },
+  "setErrorTitle": "Error",
+  "@setErrorTitle": {
+    "description": "Generic error toast title."
+  },
+  "setCannotOpenAppStoreSubs": "Unable to open App Store subscriptions",
+  "@setCannotOpenAppStoreSubs": {
+    "description": "Error when the iOS subscription-management page will not launch."
+  },
+  "setCannotOpenPlaySubs": "Unable to open Google Play subscriptions",
+  "@setCannotOpenPlaySubs": {
+    "description": "Error when the Android subscription-management page will not launch."
+  },
+  "setUnsupportedFile": "Unsupported File",
+  "@setUnsupportedFile": {
+    "description": "Toast title when the chosen import file is the wrong type."
+  },
+  "setUnsupportedFileBody": "Please choose a .pinpoint-note file to import.",
+  "@setUnsupportedFileBody": {
+    "description": "Toast body when the chosen import file is the wrong type. \".pinpoint-note\" is a file extension."
+  },
+  "setNoteImported": "Note Imported",
+  "@setNoteImported": {
+    "description": "Toast title after a successful note import."
+  },
+  "setNoteImportedBody": "The note has been successfully imported.",
+  "@setNoteImportedBody": {
+    "description": "Toast body after a successful note import."
+  },
+  "setImportFailed": "Import Failed",
+  "@setImportFailed": {
+    "description": "Toast title when importing a note fails."
+  },
+  "setCheckNotificationTray": "Check your notification tray",
+  "@setCheckNotificationTray": {
+    "description": "Toast body after sending the debug test notification."
+  },
+  "setFailedTitle": "Failed",
+  "@setFailedTitle": {
+    "description": "Short generic failure toast title."
+  },
+  "setSyncServiceNotReady": "Sync service not ready. Please wait a moment and try again.",
+  "@setSyncServiceNotReady": {
+    "description": "Shown when the user taps Sync Now before the sync engine has finished starting."
+  },
+  "setAlreadyUpToDate": "Everything is already up to date.",
+  "@setAlreadyUpToDate": {
+    "description": "Result message when a sync found nothing to transfer."
+  },
+  "setSyncComplete": "Sync Complete",
+  "@setSyncComplete": {
+    "description": "Dialog/button label after a successful manual sync."
+  },
+  "setSyncFailed": "Sync Failed",
+  "@setSyncFailed": {
+    "description": "Title shown when a sync did not finish successfully."
+  },
+  "setSyncFailedWithError": "Sync failed: {error}",
+  "@setSyncFailedWithError": {
+    "description": "Sync failure message including the underlying error text.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Connection refused"
+      }
+    }
+  },
+  "setDeleteAccount": "Delete Account",
+  "@setDeleteAccount": {
+    "description": "Title and confirm button for permanently deleting the account."
+  },
+  "setAccountDeleted": "Account Deleted",
+  "@setAccountDeleted": {
+    "description": "Toast title after the account was deleted."
+  },
+  "setAccountDeletedBody": "Your account and all data have been permanently deleted.",
+  "@setAccountDeletedBody": {
+    "description": "Toast body after the account was deleted."
+  },
+  "setDeletionFailed": "Deletion Failed",
+  "@setDeletionFailed": {
+    "description": "Toast title when account deletion did not complete."
+  },
+  "setDeletionFailedBody": "Could not delete your account. Please try again.",
+  "@setDeletionFailedBody": {
+    "description": "Toast body when account deletion did not complete."
+  },
+  "setDeletingAccount": "Deleting Account...",
+  "@setDeletingAccount": {
+    "description": "Button label while account deletion is in progress."
+  },
+  "setPleaseWait": "Please wait...",
+  "@setPleaseWait": {
+    "description": "Placeholder subtitle while a destructive action is running."
+  },
+  "setDeleteAccountSubtitle": "Permanently delete your account and data",
+  "@setDeleteAccountSubtitle": {
+    "description": "Secondary text under the Delete Account row."
+  },
+  "setSignOut": "Sign Out",
+  "@setSignOut": {
+    "description": "Title and confirm button for signing out."
+  },
+  "setSignOutConfirm": "Are you sure you want to sign out? Your notes will remain synced in the cloud.",
+  "@setSignOutConfirm": {
+    "description": "Body of the sign-out confirmation dialog, reassuring the user their data is safe."
+  },
+  "setSignedOut": "Signed Out",
+  "@setSignedOut": {
+    "description": "Toast title after signing out."
+  },
+  "setSignedOutBody": "You have been signed out successfully.",
+  "@setSignedOutBody": {
+    "description": "Toast body after a clean sign-out."
+  },
+  "setSignedOutUnsynced": "Signed out with unsynced changes.",
+  "@setSignedOutUnsynced": {
+    "description": "Toast body when the user forced sign-out while some notes had not uploaded."
+  },
+  "setSignOutFailed": "Sign Out Failed",
+  "@setSignOutFailed": {
+    "description": "Toast title when signing out did not complete."
+  },
+  "setSignOutFailedBody": "Unable to complete sign out. Please try again.",
+  "@setSignOutFailedBody": {
+    "description": "Toast body when signing out did not complete."
+  },
+  "setSigningOut": "Signing Out...",
+  "@setSigningOut": {
+    "description": "Button label while sign-out is in progress."
+  },
+  "setSignOutSubtitle": "Sign out of your account",
+  "@setSignOutSubtitle": {
+    "description": "Secondary text under the Sign Out row."
+  },
+  "setCannotSignOut": "Cannot Sign Out",
+  "@setCannotSignOut": {
+    "description": "Dialog title when sign-out is blocked to prevent data loss."
+  },
+  "setCannotSignOutGeneric": "Unable to sign out at this time.",
+  "@setCannotSignOutGeneric": {
+    "description": "Fallback body when sign-out is blocked for an unspecified reason."
+  },
+  "setForceSignOut": "Force Sign Out",
+  "@setForceSignOut": {
+    "description": "Button that signs out anyway, discarding unsynced changes."
+  },
+  "setSyncFailedBeforeSignOut": "Failed to sync your notes:\n\n{error}\n\nYour unsynced changes will be lost if you sign out now.",
+  "@setSyncFailedBeforeSignOut": {
+    "description": "Dialog body warning that signing out now discards notes that failed to upload.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Connection refused"
+      }
+    }
+  },
+  "setLogoutValidating": "Validating...",
+  "@setLogoutValidating": {
+    "description": "Progress step: checking whether it is safe to sign out."
+  },
+  "setLogoutPreparing": "Preparing...",
+  "@setLogoutPreparing": {
+    "description": "Progress step shown before sign-out begins."
+  },
+  "setLogoutSyncing": "Syncing notes...",
+  "@setLogoutSyncing": {
+    "description": "Progress step: uploading notes before signing out."
+  },
+  "setLogoutServer": "Signing out from server...",
+  "@setLogoutServer": {
+    "description": "Progress step: revoking the session on the backend."
+  },
+  "setLogoutClearing": "Clearing local data...",
+  "@setLogoutClearing": {
+    "description": "Progress step: wiping the on-device database."
+  },
+  "setLogoutCompleted": "Completed",
+  "@setLogoutCompleted": {
+    "description": "Progress step: sign-out finished."
+  },
+  "setGoogleSignInCancelled": "Google Sign-In was cancelled",
+  "@setGoogleSignInCancelled": {
+    "description": "Error when the user dismissed the Google sign-in sheet."
+  },
+  "setAccountLinked": "Account Linked",
+  "@setAccountLinked": {
+    "description": "Toast title after linking a Google account."
+  },
+  "setAccountLinkedBody": "Your Google account has been linked successfully.",
+  "@setAccountLinkedBody": {
+    "description": "Toast body after linking a Google account."
+  },
+  "setLinkingFailed": "Linking Failed",
+  "@setLinkingFailed": {
+    "description": "Toast title when linking a Google account fails."
+  },
+  "setUnlinkGoogleTitle": "Unlink Google Account",
+  "@setUnlinkGoogleTitle": {
+    "description": "Confirmation dialog title for removing the linked Google account."
+  },
+  "setUnlinkGoogleConfirm": "Are you sure you want to unlink your Google account? You can always link it again later.",
+  "@setUnlinkGoogleConfirm": {
+    "description": "Body of the unlink confirmation dialog."
+  },
+  "setUnlink": "Unlink",
+  "@setUnlink": {
+    "description": "Button confirming removal of the linked Google account."
+  },
+  "setAccountUnlinked": "Account Unlinked",
+  "@setAccountUnlinked": {
+    "description": "Toast title after unlinking the Google account."
+  },
+  "setAccountUnlinkedBody": "Your Google account has been unlinked.",
+  "@setAccountUnlinkedBody": {
+    "description": "Toast body after unlinking."
+  },
+  "setUnlinkingFailed": "Unlinking Failed",
+  "@setUnlinkingFailed": {
+    "description": "Toast title when unlinking fails."
+  },
+  "setProviderEmail": "Email",
+  "@setProviderEmail": {
+    "description": "Sign-in provider row for email/password."
+  },
+  "setProviderEmailSubtitle": "Email authentication",
+  "@setProviderEmailSubtitle": {
+    "description": "Fallback subtitle for the email provider row when no address is known."
+  },
+  "setProviderGoogle": "Google",
+  "@setProviderGoogle": {
+    "description": "Sign-in provider row for Google. Brand name, do not translate."
+  },
+  "setProviderLinked": "Linked to your account",
+  "@setProviderLinked": {
+    "description": "Subtitle when the Google provider is already connected."
+  },
+  "setProviderLinkPrompt": "Link for easy sign-in",
+  "@setProviderLinkPrompt": {
+    "description": "Subtitle inviting the user to connect their Google account."
+  },
+  "setLinkedBadge": "Linked",
+  "@setLinkedBadge": {
+    "description": "Small badge on a provider row that is already connected."
+  },
+  "setUnlinkTooltip": "Unlink account",
+  "@setUnlinkTooltip": {
+    "description": "Tooltip on the button that removes a linked provider."
+  },
+  "setVerifyPasswordTitle": "Verify Your Password",
+  "@setVerifyPasswordTitle": {
+    "description": "Title of the dialog asking for the password before linking Google."
+  },
+  "setVerifyPasswordPrompt": "Enter your password to link your Google account:",
+  "@setVerifyPasswordPrompt": {
+    "description": "Instruction inside the password verification dialog."
+  },
+  "setVerify": "Verify",
+  "@setVerify": {
+    "description": "Button submitting the password verification dialog."
+  },
+  "setDeleteAccountConfirm": "This permanently deletes your account and all of your data — notes, folders, reminders, audio, and settings — from our servers and this device.\n\nThis action cannot be undone.",
+  "@setDeleteAccountConfirm": {
+    "description": "Body of the account-deletion confirmation dialog. Spells out exactly what is destroyed and that it is irreversible, so keep the warning forceful."
   }
 }

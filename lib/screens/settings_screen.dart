@@ -70,10 +70,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         showErrorToast(
           context: context,
-          title: 'Error',
+          title: AppL10n.of(context).setErrorTitle,
           description: Platform.isIOS
-              ? 'Unable to open App Store subscriptions'
-              : 'Unable to open Google Play subscriptions',
+              ? AppL10n.of(context).setCannotOpenAppStoreSubs
+              : AppL10n.of(context).setCannotOpenPlaySubs,
         );
       }
     }
@@ -149,7 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Version $version ($buildNumber)',
+                  AppL10n.of(context).setAboutVersion(version, buildNumber),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.primary,
                     fontWeight: FontWeight.w600,
@@ -161,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // Description
               Text(
-                'Your thoughts, perfectly organized. Capture notes, record audio, manage todos, and set reminders - all in one beautiful, secure app.',
+                AppL10n.of(context).setAboutTagline,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: cs.onSurface.withValues(alpha: 0.7),
@@ -183,7 +183,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Column(
                 children: [
                   Text(
-                    'Developed & Maintained By',
+                    AppL10n.of(context).setAboutDevelopedBy,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: cs.onSurface.withValues(alpha: 0.6),
                     ),
@@ -202,8 +202,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (context.mounted) {
                           showErrorToast(
                             context: context,
-                            title: 'Error',
-                            description: 'Unable to open portfolio',
+                            title: AppL10n.of(context).setErrorTitle,
+                            description: AppL10n.of(context).setUnableToOpenPortfolio,
                           );
                         }
                       }
@@ -259,7 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       vertical: PinpointSpacing.ms,
                     ),
                   ),
-                  child: const Text('Close'),
+                  child: Text(AppL10n.of(context).commonClose),
                 ),
               ),
             ],
@@ -289,7 +289,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Icon(Icons.settings_rounded, color: cs.primary, size: 20),
             const SizedBox(width: PinpointSpacing.sm),
-            const Text('Settings'),
+            Text(AppL10n.of(context).setTitle),
           ],
         ),
       ),
@@ -321,11 +321,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _SectionHeader(title: 'ACCOUNT'),
+                      _SectionHeader(title: AppL10n.of(context).setSectionAccount),
                       const SizedBox(height: PinpointSpacing.md),
                       _SettingsTile(
-                        title: 'Sign In',
-                        subtitle: 'Sign in to sync your notes',
+                        title: AppL10n.of(context).setSignIn,
+                        subtitle: AppL10n.of(context).setSignInSubtitle,
                         icon: Icons.login_rounded,
                         onTap: () {
                           PinpointHaptics.medium();
@@ -339,7 +339,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SectionHeader(title: 'ACCOUNT & SYNC'),
+                    _SectionHeader(title: AppL10n.of(context).setSectionAccountSync),
                     const SizedBox(height: PinpointSpacing.md),
                     _ProfileCard(backendAuth: backendAuth),
                     const SizedBox(height: PinpointSpacing.md),
@@ -349,8 +349,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     // Sync Debug Info - only in debug mode
                     if (kDebugMode) ...[
                       _SettingsTile(
-                        title: 'Sync Debug Info',
-                        subtitle: 'View sync status and troubleshoot issues',
+                        title: AppL10n.of(context).setSyncDebug,
+                        subtitle: AppL10n.of(context).setSyncDebugSubtitle,
                         icon: Icons.bug_report_outlined,
                         onTap: () {
                           PinpointHaptics.medium();
@@ -379,7 +379,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SectionHeader(title: 'USAGE'),
+                    _SectionHeader(title: AppL10n.of(context).setSectionUsage),
                     const SizedBox(height: PinpointSpacing.md),
                     const _UsageLimitsCard(),
                     const SizedBox(height: PinpointSpacing.xl),
@@ -389,11 +389,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
 
             // Appearance Section
-            _SectionHeader(title: 'APPEARANCE'),
+            _SectionHeader(title: AppL10n.of(context).setSectionAppearance),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Theme',
-              subtitle: 'Customize your theme',
+              title: AppL10n.of(context).setTheme,
+              subtitle: AppL10n.of(context).setThemeSubtitle,
               icon: Icons.color_lens_rounded,
               onTap: () {
                 PinpointHaptics.medium();
@@ -414,10 +414,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: PinpointSpacing.xl),
 
             // Content Section
-            _SectionHeader(title: 'CONTENT'),
+            _SectionHeader(title: AppL10n.of(context).setSectionContent),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'My Folders',
+              title: AppL10n.of(context).setMyFolders,
               icon: Icons.folder_rounded,
               onTap: () {
                 PinpointHaptics.medium();
@@ -426,7 +426,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Archive',
+              title: AppL10n.of(context).setArchive,
               icon: Icons.archive_rounded,
               onTap: () {
                 PinpointHaptics.medium();
@@ -435,7 +435,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Trash',
+              title: AppL10n.of(context).setTrash,
               icon: Icons.delete_rounded,
               onTap: () {
                 PinpointHaptics.medium();
@@ -444,7 +444,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Sync Settings',
+              title: AppL10n.of(context).setSyncSettings,
               icon: Icons.sync_rounded,
               onTap: () {
                 PinpointHaptics.medium();
@@ -455,12 +455,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: PinpointSpacing.xl),
 
             // Security Section
-            _SectionHeader(title: 'SECURITY'),
+            _SectionHeader(title: AppL10n.of(context).setSectionSecurity),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Biometric Lock',
+              title: AppL10n.of(context).setBiometricLock,
               subtitle:
-                  MyApp.of(context).isBiometricEnabled ? 'Enabled' : 'Disabled',
+                  MyApp.of(context).isBiometricEnabled ? AppL10n.of(context).commonEnabled : AppL10n.of(context).commonDisabled,
               icon: Icons.fingerprint_rounded,
               trailing: Switch(
                 value: MyApp.of(context).isBiometricEnabled,
@@ -477,8 +477,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Encryption',
-              subtitle: 'Standard or Maximum Privacy (zero-knowledge)',
+              title: AppL10n.of(context).setEncryption,
+              subtitle: AppL10n.of(context).setEncryptionSubtitle,
               icon: Icons.enhanced_encryption_rounded,
               onTap: () {
                 PinpointHaptics.light();
@@ -489,11 +489,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: PinpointSpacing.xl),
 
             // Advanced Section
-            _SectionHeader(title: 'ADVANCED'),
+            _SectionHeader(title: AppL10n.of(context).setSectionAdvanced),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Import Note',
-              subtitle: 'Import from .pinpoint-note file',
+              title: AppL10n.of(context).setImportNote,
+              subtitle: AppL10n.of(context).setImportNoteSubtitle,
               icon: Icons.file_upload_rounded,
               onTap: () async {
                 PinpointHaptics.medium();
@@ -520,9 +520,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       PinpointHaptics.error();
                       showErrorToast(
                         context: ctx,
-                        title: 'Unsupported File',
+                        title: AppL10n.of(context).setUnsupportedFile,
                         description:
-                            'Please choose a .pinpoint-note file to import.',
+                            AppL10n.of(context).setUnsupportedFileBody,
                       );
                     }
                     return;
@@ -536,8 +536,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       PinpointHaptics.success();
                       showSuccessToast(
                         context: ctx,
-                        title: 'Note Imported',
-                        description: 'The note has been successfully imported.',
+                        title: AppL10n.of(context).setNoteImported,
+                        description: AppL10n.of(context).setNoteImportedBody,
                       );
                     }
                   } catch (e) {
@@ -546,7 +546,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       PinpointHaptics.error();
                       showErrorToast(
                         context: ctx,
-                        title: 'Import Failed',
+                        title: AppL10n.of(context).setImportFailed,
                         description:
                             "This file couldn't be imported. Make sure it's a valid .pinpoint-note file.",
                       );
@@ -560,8 +560,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (kDebugMode) ...[
               const SizedBox(height: PinpointSpacing.md),
               _SettingsTile(
-                title: 'Test Notification',
-                subtitle: 'Send a test push notification',
+                title: AppL10n.of(context).setTestNotification,
+                subtitle: AppL10n.of(context).setTestNotificationSubtitle,
                 icon: Icons.notifications_active_rounded,
                 onTap: () async {
                   PinpointHaptics.medium();
@@ -573,7 +573,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       showSuccessToast(
                         context: ctx,
                         title: '🔔 Test Notification Sent!',
-                        description: 'Check your notification tray',
+                        description: AppL10n.of(context).setCheckNotificationTray,
                       );
                     }
                   } catch (e) {
@@ -581,8 +581,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (ctx.mounted) {
                       showErrorToast(
                         context: ctx,
-                        title: 'Failed',
-                        description: 'Error: ${e.toString()}',
+                        title: AppL10n.of(context).setFailedTitle,
+                        description: e.toString(),
                       );
                     }
                   }
@@ -594,8 +594,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (kDebugMode) ...[
               const SizedBox(height: PinpointSpacing.md),
               _SettingsTile(
-                title: 'Test Crash',
-                subtitle: 'Force a crash to test Crashlytics',
+                title: AppL10n.of(context).setTestCrash,
+                subtitle: AppL10n.of(context).setTestCrashSubtitle,
                 icon: Icons.bug_report_rounded,
                 onTap: () {
                   PinpointHaptics.medium();
@@ -609,8 +609,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'prantadutta1997@gmail.com') ...[
               const SizedBox(height: PinpointSpacing.md),
               _SettingsTile(
-                title: 'Admin Panel',
-                subtitle: 'Debug sync issues',
+                title: AppL10n.of(context).setAdminPanel,
+                subtitle: AppL10n.of(context).setAdminPanelSubtitle,
                 icon: Icons.admin_panel_settings,
                 onTap: () async {
                   PinpointHaptics.medium();
@@ -628,11 +628,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: PinpointSpacing.xl),
 
             // About Section
-            _SectionHeader(title: 'ABOUT'),
+            _SectionHeader(title: AppL10n.of(context).setSectionAbout),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'About Pinpoint',
-              subtitle: 'App info, version & developer',
+              title: AppL10n.of(context).setAboutApp,
+              subtitle: AppL10n.of(context).setAboutAppSubtitle,
               icon: Icons.info_rounded,
               onTap: () {
                 PinpointHaptics.medium();
@@ -641,8 +641,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Rate Pinpoint',
-              subtitle: 'Enjoying the app? Leave a review',
+              title: AppL10n.of(context).setRateApp,
+              subtitle: AppL10n.of(context).setRateAppSubtitle,
               icon: Icons.star_rounded,
               onTap: () {
                 PinpointHaptics.medium();
@@ -651,8 +651,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Replay Tutorial',
-              subtitle: 'See the app walkthrough again',
+              title: AppL10n.of(context).setReplayTutorial,
+              subtitle: AppL10n.of(context).setReplayTutorialSubtitle,
               icon: Icons.help_outline_rounded,
               onTap: () async {
                 PinpointHaptics.medium();
@@ -675,7 +675,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: PinpointSpacing.md),
             _SettingsTile(
-              title: 'Terms & Privacy',
+              title: AppL10n.of(context).setTermsPrivacy,
               icon: Icons.policy_rounded,
               onTap: () {
                 PinpointHaptics.medium();
@@ -722,16 +722,16 @@ class _PremiumSection extends StatelessWidget {
     required this.onManageSubscription,
   });
 
-  String _getPlanDisplayName(String? subscriptionType) {
+  String _getPlanDisplayName(BuildContext context, String? subscriptionType) {
     switch (subscriptionType) {
       case 'monthly':
-        return 'Monthly Plan';
+        return AppL10n.of(context).setPlanMonthly;
       case 'yearly':
-        return 'Yearly Plan';
+        return AppL10n.of(context).setPlanYearly;
       case 'lifetime':
-        return 'Lifetime';
+        return AppL10n.of(context).setPlanLifetime;
       default:
-        return 'Premium';
+        return AppL10n.of(context).setPlanPremium;
     }
   }
 
@@ -846,10 +846,10 @@ class _PremiumSection extends StatelessWidget {
                     Text(
                       isPremium
                           ? isInGracePeriod
-                              ? 'Premium (Grace Period)'
+                              ? AppL10n.of(context).setPremiumGracePeriod
                               : _getPlanDisplayName(
-                                  subscriptionManager.subscriptionType)
-                          : 'Upgrade to Premium',
+                                  context, subscriptionManager.subscriptionType)
+                          : AppL10n.of(context).setUpgradeToPremium,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -858,9 +858,9 @@ class _PremiumSection extends StatelessWidget {
                     Text(
                       isPremium
                           ? isInGracePeriod
-                              ? 'Update payment method'
+                              ? AppL10n.of(context).setUpdatePaymentMethod
                               : _getExpiryText(context, subscriptionManager)
-                          : 'Unlock unlimited features',
+                          : AppL10n.of(context).setUnlockUnlimited,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: cs.onSurface.withValues(alpha: 0.7),
                       ),
@@ -904,10 +904,10 @@ class _PremiumSection extends StatelessWidget {
         if (isPremium) ...[
           const SizedBox(height: PinpointSpacing.md),
           _SettingsTile(
-            title: 'Manage Subscription',
+            title: AppL10n.of(context).setManageSubscription,
             subtitle: Platform.isIOS
-                ? 'View in the App Store'
-                : 'View in Google Play Store',
+                ? AppL10n.of(context).setViewInAppStore
+                : AppL10n.of(context).setViewInPlayStore,
             icon: Icons.manage_accounts_rounded,
             onTap: () {
               PinpointHaptics.medium();
@@ -940,7 +940,7 @@ class _UsageLimitsCard extends StatelessWidget {
         children: [
           // Header
           Text(
-            'Usage Limits',
+            AppL10n.of(context).setUsageLimits,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -950,7 +950,7 @@ class _UsageLimitsCard extends StatelessWidget {
           // Cloud Sync (Total limit - doesn't reset)
           _UsageLimitRow(
             icon: Icons.cloud_sync_rounded,
-            label: 'Cloud Sync',
+            label: AppL10n.of(context).setUsageCloudSync,
             used: syncedNotes,
             limit: PremiumLimits.maxSyncedNotesForFree,
             isMonthly: false,
@@ -960,7 +960,7 @@ class _UsageLimitsCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsetsDirectional.only(start: 26),
             child: Text(
-              'Total limit (doesn\'t reset)',
+              AppL10n.of(context).setUsageTotalLimit,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 fontSize: 11,
@@ -974,7 +974,7 @@ class _UsageLimitsCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Monthly Limits',
+                AppL10n.of(context).setUsageMonthlyLimits,
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: theme.colorScheme.primary.withValues(alpha: 0.8),
@@ -988,7 +988,7 @@ class _UsageLimitsCard extends StatelessWidget {
           // OCR Scans
           _UsageLimitRow(
             icon: Icons.document_scanner_rounded,
-            label: 'OCR Scans',
+            label: AppL10n.of(context).setUsageOcrScans,
             used: ocrScans,
             limit: PremiumLimits.maxOcrScansPerMonthForFree,
             isMonthly: true,
@@ -998,7 +998,7 @@ class _UsageLimitsCard extends StatelessWidget {
           // Exports
           _UsageLimitRow(
             icon: Icons.file_download_rounded,
-            label: 'Exports',
+            label: AppL10n.of(context).setUsageExports,
             used: exports,
             limit: PremiumLimits.maxExportsPerMonthForFree,
             isMonthly: true,
@@ -1081,17 +1081,17 @@ class _UsageLimitRow extends StatelessWidget {
 class _MonthlyResetIndicator extends StatelessWidget {
   const _MonthlyResetIndicator();
 
-  String _getResetCountdown() {
+  String _getResetCountdown(BuildContext context) {
     final now = DateTime.now();
     final nextMonth = DateTime(now.year, now.month + 1, 1);
     final difference = nextMonth.difference(now);
 
     if (difference.inDays > 0) {
-      return 'Resets in ${difference.inDays}d';
+      return AppL10n.of(context).setResetsInDays(difference.inDays);
     } else if (difference.inHours > 0) {
-      return 'Resets in ${difference.inHours}h';
+      return AppL10n.of(context).setResetsInHours(difference.inHours);
     } else {
-      return 'Resets soon';
+      return AppL10n.of(context).setResetsSoon;
     }
   }
 
@@ -1119,7 +1119,7 @@ class _MonthlyResetIndicator extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            _getResetCountdown(),
+            _getResetCountdown(context),
             style: theme.textTheme.labelSmall?.copyWith(
               color: cs.primary,
               fontWeight: FontWeight.w600,
@@ -1227,7 +1227,7 @@ class _ProfileCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      backendAuth.userEmail ?? 'User',
+                      backendAuth.userEmail ?? AppL10n.of(context).setAccountFallbackName,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -1249,8 +1249,8 @@ class _ProfileCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Text(
                           subscriptionManager.isPremium
-                              ? 'Premium Member'
-                              : 'Free Account',
+                              ? AppL10n.of(context).setPremiumMember
+                              : AppL10n.of(context).setFreeAccount,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: subscriptionManager.isPremium
                                 ? PinpointColors.mint
@@ -1293,9 +1293,9 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
       if (!isConfigured) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-                'Sync service not ready. Please wait a moment and try again.'),
+                AppL10n.of(context).setSyncServiceNotReady),
             backgroundColor: PinpointColors.warning,
           ),
         );
@@ -1315,7 +1315,7 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
           // Use the actual message from sync result (e.g., "No changes", "Sync already in progress")
           contentMessage = result.message.isNotEmpty
               ? result.message
-              : 'Everything is already up to date.';
+              : AppL10n.of(context).setAlreadyUpToDate;
         } else {
           contentMessage = ''; // Will show stats instead
         }
@@ -1337,7 +1337,7 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
               ),
               const SizedBox(width: PinpointSpacing.sm),
               Expanded(
-                child: Text(result.success ? 'Sync Complete' : 'Sync Failed'),
+                child: Text(result.success ? AppL10n.of(context).setSyncComplete : AppL10n.of(context).setSyncFailed),
               ),
             ],
           ),
@@ -1365,7 +1365,7 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: Text(AppL10n.of(context).commonOk),
             ),
           ],
         ),
@@ -1375,7 +1375,7 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Sync failed: $e'),
+          content: Text(AppL10n.of(context).setSyncFailedWithError(e.toString())),
           backgroundColor: PinpointColors.error,
         ),
       );
@@ -1406,8 +1406,8 @@ class _ManualSyncButtonState extends State<_ManualSyncButton> {
   @override
   Widget build(BuildContext context) {
     return _SettingsTile(
-      title: 'Sync Now',
-      subtitle: 'Pull latest data from server',
+      title: AppL10n.of(context).setSyncNow,
+      subtitle: AppL10n.of(context).setSyncNowSubtitle,
       icon: _isSyncing ? Icons.sync : Icons.cloud_download_rounded,
       trailing: _isSyncing
           ? const SizedBox(
@@ -1434,7 +1434,7 @@ class _LogoutButton extends StatefulWidget {
 class _LogoutButtonState extends State<_LogoutButton> {
   bool _isLoggingOut = false;
   bool _isDeleting = false;
-  String _logoutStatus = 'Preparing...';
+  String _logoutStatus = '';
   LogoutService? _logoutService;
 
   Future<void> _handleDeleteAccount(BuildContext context) async {
@@ -1443,7 +1443,7 @@ class _LogoutButtonState extends State<_LogoutButton> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Account'),
+        title: Text(AppL10n.of(context).setDeleteAccount),
         content: const Text(
           'This permanently deletes your account and all of your data — notes, '
           'folders, reminders, audio, and settings — from our servers and this '
@@ -1452,12 +1452,12 @@ class _LogoutButtonState extends State<_LogoutButton> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppL10n.of(context).commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: TextButton.styleFrom(foregroundColor: PinpointColors.rose),
-            child: const Text('Delete Account'),
+            child: Text(AppL10n.of(context).setDeleteAccount),
           ),
         ],
       ),
@@ -1479,9 +1479,9 @@ class _LogoutButtonState extends State<_LogoutButton> {
         if (context.mounted) {
           showSuccessToast(
             context: context,
-            title: 'Account Deleted',
+            title: AppL10n.of(context).setAccountDeleted,
             description:
-                'Your account and all data have been permanently deleted.',
+                AppL10n.of(context).setAccountDeletedBody,
           );
         }
       });
@@ -1491,8 +1491,8 @@ class _LogoutButtonState extends State<_LogoutButton> {
         PinpointHaptics.error();
         showErrorToast(
           context: context,
-          title: 'Deletion Failed',
-          description: 'Could not delete your account. Please try again.',
+          title: AppL10n.of(context).setDeletionFailed,
+          description: AppL10n.of(context).setDeletionFailedBody,
         );
       }
     }
@@ -1504,21 +1504,21 @@ class _LogoutButtonState extends State<_LogoutButton> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text(
-          'Are you sure you want to sign out? Your notes will remain synced in the cloud.',
+        title: Text(AppL10n.of(context).setSignOut),
+        content: Text(
+          AppL10n.of(context).setSignOutConfirm,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppL10n.of(context).commonCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: PinpointColors.rose,
             ),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Sign Out'),
+            child: Text(AppL10n.of(context).setSignOut),
           ),
         ],
       ),
@@ -1541,7 +1541,7 @@ class _LogoutButtonState extends State<_LogoutButton> {
 
     setState(() {
       _isLoggingOut = true;
-      _logoutStatus = 'Validating...';
+      _logoutStatus = AppL10n.of(context).setLogoutValidating;
     });
 
     try {
@@ -1581,8 +1581,8 @@ class _LogoutButtonState extends State<_LogoutButton> {
           if (context.mounted) {
             showSuccessToast(
               context: context,
-              title: 'Signed Out',
-              description: 'You have been signed out successfully.',
+              title: AppL10n.of(context).setSignedOut,
+              description: AppL10n.of(context).setSignedOutBody,
             );
           }
         });
@@ -1592,8 +1592,8 @@ class _LogoutButtonState extends State<_LogoutButton> {
         PinpointHaptics.error();
         showErrorToast(
           context: context,
-          title: 'Sign Out Failed',
-          description: 'Unable to complete sign out. Please try again.',
+          title: AppL10n.of(context).setSignOutFailed,
+          description: AppL10n.of(context).setSignOutFailedBody,
         );
       }
     } catch (e) {
@@ -1611,8 +1611,8 @@ class _LogoutButtonState extends State<_LogoutButton> {
               if (context.mounted) {
                 showWarningToast(
                   context: context,
-                  title: 'Signed Out',
-                  description: 'Signed out with unsynced changes.',
+                  title: AppL10n.of(context).setSignedOut,
+                  description: AppL10n.of(context).setSignedOutUnsynced,
                 );
               }
             });
@@ -1621,7 +1621,7 @@ class _LogoutButtonState extends State<_LogoutButton> {
           PinpointHaptics.error();
           showErrorToast(
             context: context,
-            title: 'Sign Out Failed',
+            title: AppL10n.of(context).setSignOutFailed,
             description: e.toString().replaceAll('Exception: ', ''),
           );
         }
@@ -1630,7 +1630,7 @@ class _LogoutButtonState extends State<_LogoutButton> {
       if (mounted) {
         setState(() {
           _isLoggingOut = false;
-          _logoutStatus = 'Preparing...';
+          _logoutStatus = AppL10n.of(context).setLogoutPreparing;
         });
       }
     }
@@ -1639,15 +1639,15 @@ class _LogoutButtonState extends State<_LogoutButton> {
   String _getPhaseMessage(LogoutPhase phase) {
     switch (phase) {
       case LogoutPhase.validating:
-        return 'Validating...';
+        return AppL10n.of(context).setLogoutValidating;
       case LogoutPhase.syncing:
-        return 'Syncing notes...';
+        return AppL10n.of(context).setLogoutSyncing;
       case LogoutPhase.signingOut:
-        return 'Signing out from server...';
+        return AppL10n.of(context).setLogoutServer;
       case LogoutPhase.cleaningData:
-        return 'Clearing local data...';
+        return AppL10n.of(context).setLogoutClearing;
       case LogoutPhase.completed:
-        return 'Completed';
+        return AppL10n.of(context).setLogoutCompleted;
     }
   }
 
@@ -1663,17 +1663,17 @@ class _LogoutButtonState extends State<_LogoutButton> {
           color: PinpointColors.amber,
           size: 48,
         ),
-        title: const Text('Cannot Sign Out'),
+        title: Text(AppL10n.of(context).setCannotSignOut),
         content: Text(
           validation.blockReason == LogoutBlockReason.audioNotesExist
               ? AppL10n.of(context)
                   .logoutAudioWarningDetailed(validation.audioNotesCount!)
-              : validation.errorMessage ?? 'Unable to sign out at this time.',
+              : validation.errorMessage ?? AppL10n.of(context).setCannotSignOutGeneric,
         ),
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text(AppL10n.of(context).commonOk),
           ),
         ],
       ),
@@ -1690,21 +1690,21 @@ class _LogoutButtonState extends State<_LogoutButton> {
           color: PinpointColors.rose,
           size: 48,
         ),
-        title: const Text('Sync Failed'),
+        title: Text(AppL10n.of(context).setSyncFailed),
         content: Text(
-          'Failed to sync your notes:\n\n${error.replaceAll('Exception: ', '')}\n\nYour unsynced changes will be lost if you sign out now.',
+          AppL10n.of(context).setSyncFailedBeforeSignOut(error.replaceAll('Exception: ', '')),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(null),
-            child: const Text('Cancel'),
+            child: Text(AppL10n.of(context).commonCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: PinpointColors.rose,
             ),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Force Sign Out'),
+            child: Text(AppL10n.of(context).setForceSignOut),
           ),
         ],
       ),
@@ -1737,14 +1737,14 @@ class _LogoutButtonState extends State<_LogoutButton> {
                     size: 22,
                   ),
             title: Text(
-              _isLoggingOut ? 'Signing Out...' : 'Sign Out',
+              _isLoggingOut ? AppL10n.of(context).setSigningOut : AppL10n.of(context).setSignOut,
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: PinpointColors.rose,
               ),
             ),
             subtitle: Text(
-              _isLoggingOut ? _logoutStatus : 'Sign out of your account',
+              _isLoggingOut ? _logoutStatus : AppL10n.of(context).setSignOutSubtitle,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurface.withValues(alpha: 0.6),
               ),
@@ -1789,7 +1789,7 @@ class _LogoutButtonState extends State<_LogoutButton> {
                 size: 22,
               ),
         title: Text(
-          _isDeleting ? 'Deleting Account...' : 'Delete Account',
+          _isDeleting ? AppL10n.of(context).setDeletingAccount : AppL10n.of(context).setDeleteAccount,
           style: theme.textTheme.bodyLarge?.copyWith(
             fontWeight: FontWeight.w600,
             color: PinpointColors.rose,
@@ -1797,8 +1797,8 @@ class _LogoutButtonState extends State<_LogoutButton> {
         ),
         subtitle: Text(
           _isDeleting
-              ? 'Please wait...'
-              : 'Permanently delete your account and data',
+              ? AppL10n.of(context).setPleaseWait
+              : AppL10n.of(context).setDeleteAccountSubtitle,
           style: theme.textTheme.bodySmall?.copyWith(
             color: cs.onSurface.withValues(alpha: 0.6),
           ),
@@ -1895,18 +1895,24 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
       _isLoading = true;
     });
 
+    // Resolved before the awaits below: these strings are read off the
+    // BuildContext, which may be defunct by the time a failure surfaces.
+    final l10n = AppL10n.of(context);
+    final cancelledMessage = l10n.setGoogleSignInCancelled;
+    final tokenFailedMessage = l10n.authFirebaseTokenFailed;
+
     try {
       final googleSignInService = GoogleSignInService();
       final userCredential = await googleSignInService.signInWithGoogle();
 
       if (userCredential == null) {
-        throw Exception('Google Sign-In was cancelled');
+        throw Exception(cancelledMessage);
       }
 
       final firebaseToken = await googleSignInService.getFirebaseIdToken();
 
       if (firebaseToken == null) {
-        throw Exception('Failed to get Firebase token');
+        throw Exception(tokenFailedMessage);
       }
 
       if (!mounted) return;
@@ -1931,8 +1937,8 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
         PinpointHaptics.success();
         showSuccessToast(
           context: context,
-          title: 'Account Linked',
-          description: 'Your Google account has been linked successfully.',
+          title: AppL10n.of(context).setAccountLinked,
+          description: AppL10n.of(context).setAccountLinkedBody,
         );
       }
     } catch (e) {
@@ -1940,7 +1946,7 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
         PinpointHaptics.error();
         showErrorToast(
           context: context,
-          title: 'Linking Failed',
+          title: AppL10n.of(context).setLinkingFailed,
           description: e.toString().replaceAll('Exception: ', ''),
         );
       }
@@ -1957,19 +1963,18 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Unlink Google Account'),
-        content: const Text(
-          'Are you sure you want to unlink your Google account? '
-          'You can always link it again later.',
+        title: Text(AppL10n.of(context).setUnlinkGoogleTitle),
+        content: Text(
+          AppL10n.of(context).setUnlinkGoogleConfirm,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppL10n.of(context).commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Unlink'),
+            child: Text(AppL10n.of(context).setUnlink),
           ),
         ],
       ),
@@ -1989,8 +1994,8 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
         PinpointHaptics.success();
         showSuccessToast(
           context: context,
-          title: 'Account Unlinked',
-          description: 'Your Google account has been unlinked.',
+          title: AppL10n.of(context).setAccountUnlinked,
+          description: AppL10n.of(context).setAccountUnlinkedBody,
         );
       }
     } catch (e) {
@@ -1998,7 +2003,7 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
         PinpointHaptics.error();
         showErrorToast(
           context: context,
-          title: 'Unlinking Failed',
+          title: AppL10n.of(context).setUnlinkingFailed,
           description: e.toString().replaceAll('Exception: ', ''),
         );
       }
@@ -2025,8 +2030,8 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
         // Email Provider
         _AuthProviderTile(
           icon: Icons.email_rounded,
-          title: 'Email',
-          subtitle: widget.backendAuth.userEmail ?? 'Email authentication',
+          title: AppL10n.of(context).setProviderEmail,
+          subtitle: widget.backendAuth.userEmail ?? AppL10n.of(context).setProviderEmailSubtitle,
           isLinked: true,
           isLoading: false,
         ),
@@ -2035,9 +2040,9 @@ class _LinkedAccountsSectionState extends State<_LinkedAccountsSection> {
         // Google Provider
         _AuthProviderTile(
           icon: Icons.g_mobiledata_rounded,
-          title: 'Google',
+          title: AppL10n.of(context).setProviderGoogle,
           subtitle:
-              hasGoogle ? 'Linked to your account' : 'Link for easy sign-in',
+              hasGoogle ? AppL10n.of(context).setProviderLinked : AppL10n.of(context).setProviderLinkPrompt,
           isLinked: hasGoogle,
           isLoading: _isLoading,
           onTap: _isLoading ? null : (hasGoogle ? null : _linkGoogleAccount),
@@ -2125,7 +2130,7 @@ class _AuthProviderTile extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          'Linked',
+                          AppL10n.of(context).setLinkedBadge,
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: PinpointColors.mint,
                             fontWeight: FontWeight.bold,
@@ -2164,7 +2169,7 @@ class _AuthProviderTile extends StatelessWidget {
                 size: 20,
               ),
               onPressed: onUnlink,
-              tooltip: 'Unlink account',
+              tooltip: AppL10n.of(context).setUnlinkTooltip,
             )
           else if (onTap != null && !isLinked)
             Icon(
@@ -2196,13 +2201,13 @@ class _PasswordDialogState extends State<_PasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Verify Your Password'),
+      title: Text(AppL10n.of(context).setVerifyPasswordTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Enter your password to link your Google account:',
+          Text(
+            AppL10n.of(context).setVerifyPasswordPrompt,
           ),
           const SizedBox(height: PinpointSpacing.md),
           TextFormField(
@@ -2210,7 +2215,7 @@ class _PasswordDialogState extends State<_PasswordDialog> {
             obscureText: _obscurePassword,
             autofocus: true,
             decoration: InputDecoration(
-              labelText: 'Password',
+              labelText: AppL10n.of(context).authPasswordLabel,
               prefixIcon: const Icon(Icons.lock_outlined),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -2234,7 +2239,7 @@ class _PasswordDialogState extends State<_PasswordDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(AppL10n.of(context).commonCancel),
         ),
         FilledButton(
           onPressed: () {
@@ -2243,7 +2248,7 @@ class _PasswordDialogState extends State<_PasswordDialog> {
               Navigator.of(context).pop(password);
             }
           },
-          child: const Text('Verify'),
+          child: Text(AppL10n.of(context).setVerify),
         ),
       ],
     );
