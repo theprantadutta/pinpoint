@@ -22,6 +22,7 @@ import '../services/reminder_sync_service.dart';
 import '../services/app_review_service.dart';
 import '../sync/sync_manager.dart';
 import '../sync/api_sync_service.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String kRouteName = '/home';
@@ -254,19 +255,18 @@ class _HomeScreenState extends State<HomeScreen>
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Text('Enable Notifications'),
-            content: const Text(
-              'Stay updated with your notes and reminders. '
-              'We\'ll notify you when your reminders are due.',
+            title: Text(AppL10n.of(context).homeEnableNotifTitle),
+            content: Text(
+              AppL10n.of(context).homeEnableNotifBody,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Not Now'),
+                child: Text(AppL10n.of(context).homeNotNow),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Enable'),
+                child: Text(AppL10n.of(context).homeEnable),
               ),
             ],
           ),
@@ -377,7 +377,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               const SizedBox(height: PinpointSpacing.md),
               Text(
-                'Select a note to view or edit',
+                AppL10n.of(context).homeSelectNote,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

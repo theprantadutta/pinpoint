@@ -8,6 +8,7 @@ import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import 'create_note_screen_v2.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class TodoScreen extends StatefulWidget {
   static const String kRouteName = '/todo';
@@ -46,13 +47,13 @@ class _TodoScreenState extends State<TodoScreen>
           children: [
             Icon(Icons.check_circle_rounded, color: cs.primary, size: 20),
             const SizedBox(width: 8),
-            const Text('Todos'),
+            Text(AppL10n.of(context).todosTitle),
           ],
         ),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list_rounded),
-            tooltip: 'Filter',
+            tooltip: AppL10n.of(context).todosFilter,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
@@ -64,17 +65,17 @@ class _TodoScreenState extends State<TodoScreen>
               });
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'all',
-                child: Text('All Todos'),
+                child: Text(AppL10n.of(context).todosAll),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'pending',
-                child: Text('Pending'),
+                child: Text(AppL10n.of(context).todosPending),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'completed',
-                child: Text('Completed'),
+                child: Text(AppL10n.of(context).todosCompleted),
               ),
             ],
           ),
@@ -90,10 +91,10 @@ class _TodoScreenState extends State<TodoScreen>
               children: [
                 Text(
                   _filter == 'all'
-                      ? 'All Todos'
+                      ? AppL10n.of(context).todosAll
                       : _filter == 'pending'
-                          ? 'Pending'
-                          : 'Completed',
+                          ? AppL10n.of(context).todosPending
+                          : AppL10n.of(context).todosCompleted,
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.2,
@@ -142,8 +143,8 @@ class _TodoScreenState extends State<TodoScreen>
                   debugPrint('❌ [TodoScreen] Stack trace: ${snapshot.stackTrace}');
                   return EmptyState(
                     icon: Icons.error_outline_rounded,
-                    title: 'Error loading todos',
-                    message: 'Please try again later',
+                    title: AppL10n.of(context).todosLoadError,
+                    message: AppL10n.of(context).commonTryAgainLater,
                   );
                 }
 
@@ -156,12 +157,12 @@ class _TodoScreenState extends State<TodoScreen>
                   return EmptyState(
                     icon: Icons.check_circle_outline_rounded,
                     title: _filter == 'all'
-                        ? 'No todos yet'
+                        ? AppL10n.of(context).todosNoneYet
                         : _filter == 'pending'
-                            ? 'No pending todos'
-                            : 'No completed todos',
+                            ? AppL10n.of(context).todosNonePending
+                            : AppL10n.of(context).todosNoneCompleted,
                     message: _filter == 'all'
-                        ? 'Create notes with todo lists to see them here'
+                        ? AppL10n.of(context).todosEmptyHint
                         : '',
                   );
                 }

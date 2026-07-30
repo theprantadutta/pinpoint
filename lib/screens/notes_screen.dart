@@ -14,6 +14,7 @@ import '../services/analytics/analytics_facade.dart';
 import '../services/filter_service.dart';
 import '../util/note_utils.dart';
 import '../widgets/filter_bottom_sheet.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class NotesScreen extends StatefulWidget {
   static const String kRouteName = '/notes';
@@ -79,7 +80,7 @@ class _NotesScreenState extends State<NotesScreen>
         scrollController: _scrollController,
         title: Row(
           children: [
-            const Text('Notes'),
+            Text(AppL10n.of(context).notesTitle),
             const SizedBox(width: 8),
             Consumer<FilterService>(
               builder: (context, filterService, _) {
@@ -124,7 +125,7 @@ class _NotesScreenState extends State<NotesScreen>
                     hasFilters ? Symbols.filter_alt : Symbols.filter_alt,
                     fill: hasFilters ? 1 : 0,
                   ),
-                  tooltip: 'Filters',
+                  tooltip: AppL10n.of(context).notesFilters,
                   onPressed: () {
                     showModalBottomSheet(
                       context: context,
@@ -147,11 +148,11 @@ class _NotesScreenState extends State<NotesScreen>
               getIt<AnalyticsFacade>().trackViewModeChanged(
                   viewMode: _isGridView ? 'grid' : 'list');
             },
-            tooltip: _isGridView ? 'List view' : 'Grid view',
+            tooltip: _isGridView ? AppL10n.of(context).notesListView : AppL10n.of(context).notesGridView,
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.sort),
-            tooltip: 'Sort',
+            tooltip: AppL10n.of(context).notesSort,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
@@ -168,26 +169,26 @@ class _NotesScreenState extends State<NotesScreen>
                   .trackSortChanged(sortBy: _sortBy, direction: _sortDirection);
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'sort:updatedAt',
-                child: Text('Sort by Last Modified'),
+                child: Text(AppL10n.of(context).notesSortModified),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'sort:createdAt',
-                child: Text('Sort by Date Created'),
+                child: Text(AppL10n.of(context).notesSortCreated),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'sort:title',
-                child: Text('Sort by Title'),
+                child: Text(AppL10n.of(context).notesSortTitle),
               ),
               const PopupMenuDivider(),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'dir:desc',
-                child: Text('Descending'),
+                child: Text(AppL10n.of(context).notesSortDescending),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'dir:asc',
-                child: Text('Ascending'),
+                child: Text(AppL10n.of(context).notesSortAscending),
               ),
             ],
           ),
@@ -201,7 +202,7 @@ class _NotesScreenState extends State<NotesScreen>
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: SearchBarSticky(
               controller: _searchController,
-              hint: 'Search notes...',
+              hint: AppL10n.of(context).notesSearchHint,
               onSearch: (value) {
                 // Debouncing is handled by _onSearchInputChanged
               },
@@ -236,8 +237,8 @@ class _NotesScreenState extends State<NotesScreen>
                     if (snapshot.hasError) {
                       return EmptyState(
                         icon: Icons.error_outline_rounded,
-                        title: 'Error loading notes',
-                        message: 'Please try again later',
+                        title: AppL10n.of(context).notesLoadError,
+                        message: AppL10n.of(context).commonTryAgainLater,
                       );
                     }
 
@@ -248,10 +249,10 @@ class _NotesScreenState extends State<NotesScreen>
                     if (notes.isEmpty) {
                       return EmptyState(
                         icon: Icons.note_alt_outlined,
-                        title: 'No notes found',
+                        title: AppL10n.of(context).notesNoneFound,
                         message: _searchQuery.isEmpty
-                            ? 'Create your first note to get started'
-                            : 'Try a different search',
+                            ? AppL10n.of(context).notesCreateFirst
+                            : AppL10n.of(context).notesTryDifferentSearch,
                       );
                     }
 

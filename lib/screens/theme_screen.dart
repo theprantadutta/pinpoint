@@ -9,6 +9,7 @@ import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/theme_controller.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class ThemeScreen extends StatefulWidget {
   static const String kRouteName = '/theme';
@@ -62,7 +63,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
           children: [
             Icon(Icons.palette_rounded, color: cs.primary, size: 20),
             const SizedBox(width: 8),
-            const Text('Theme'),
+            Text(AppL10n.of(context).themeTitle),
           ],
         ),
       ),
@@ -71,7 +72,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
         children: [
           // Theme Mode Section
           Text(
-            'Theme Mode',
+            AppL10n.of(context).themeModeHeading,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
               letterSpacing: -0.1,
@@ -80,21 +81,21 @@ class _ThemeScreenState extends State<ThemeScreen> {
           const SizedBox(height: 12),
           _buildThemeModeOption(
             context,
-            'Light',
+            AppL10n.of(context).themeLight,
             Icons.light_mode_rounded,
             ThemeMode.light,
           ),
           const SizedBox(height: 8),
           _buildThemeModeOption(
             context,
-            'Dark',
+            AppL10n.of(context).themeDark,
             Icons.dark_mode_rounded,
             ThemeMode.dark,
           ),
           const SizedBox(height: 8),
           _buildThemeModeOption(
             context,
-            'System default',
+            AppL10n.of(context).themeSystemDefault,
             Icons.brightness_auto_rounded,
             ThemeMode.system,
           ),
@@ -103,7 +104,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
 
           // Accent Colors Section
           Text(
-            'Accent Colors',
+            AppL10n.of(context).themeAccentColors,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
               letterSpacing: -0.1,
@@ -189,7 +190,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    colorName,
+                                    _accentDisplayName(context, colorName),
                                     style: theme.textTheme.bodyLarge?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -215,7 +216,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'Premium',
+                                          AppL10n.of(context).themePremiumBadge,
                                           style: TextStyle(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
@@ -244,7 +245,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
 
           // Fonts Section
           Text(
-            'Fonts',
+            AppL10n.of(context).themeFonts,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
               letterSpacing: -0.1,
@@ -263,6 +264,30 @@ class _ThemeScreenState extends State<ThemeScreen> {
         ],
       ),
     );
+  }
+
+  /// Localized label for an accent colour.
+  ///
+  /// The colour's English name stays the stable identifier — PremiumService and
+  /// the analytics event both key off it — so only what the user reads is
+  /// translated. An unknown name falls through to the identifier rather than
+  /// rendering blank.
+  String _accentDisplayName(BuildContext context, String name) {
+    final l10n = AppL10n.of(context);
+    switch (name) {
+      case 'Neon Mint':
+        return l10n.themeAccentNeonMint;
+      case 'Purple Dream':
+        return l10n.themeAccentPurpleDream;
+      case 'Pink Bliss':
+        return l10n.themeAccentPinkBliss;
+      case 'Orange Sunset':
+        return l10n.themeAccentOrangeSunset;
+      case 'Blue Ocean':
+        return l10n.themeAccentBlueOcean;
+      default:
+        return name;
+    }
   }
 
   Widget _buildThemeModeOption(

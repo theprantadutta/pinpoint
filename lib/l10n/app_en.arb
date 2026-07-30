@@ -1057,5 +1057,339 @@
   "setDeleteAccountConfirm": "This permanently deletes your account and all of your data — notes, folders, reminders, audio, and settings — from our servers and this device.\n\nThis action cannot be undone.",
   "@setDeleteAccountConfirm": {
     "description": "Body of the account-deletion confirmation dialog. Spells out exactly what is destroyed and that it is irreversible, so keep the warning forceful."
+  },
+  "homeEnableNotifTitle": "Enable Notifications",
+  "@homeEnableNotifTitle": {
+    "description": "Title of the dialog asking permission to send notifications."
+  },
+  "homeEnableNotifBody": "Stay updated with your notes and reminders. We'll notify you when your reminders are due.",
+  "@homeEnableNotifBody": {
+    "description": "Body of the notification permission dialog, explaining why the app wants the permission."
+  },
+  "homeNotNow": "Not Now",
+  "@homeNotNow": {
+    "description": "Button declining the notification permission for now."
+  },
+  "homeEnable": "Enable",
+  "@homeEnable": {
+    "description": "Button granting the notification permission."
+  },
+  "homeSelectNote": "Select a note to view or edit",
+  "@homeSelectNote": {
+    "description": "Placeholder on the wide/tablet layout when no note is open yet."
+  },
+  "fabAudio": "Audio",
+  "@fabAudio": {
+    "description": "Speed-dial label for creating a voice note."
+  },
+  "fabImage": "Image",
+  "@fabImage": {
+    "description": "Speed-dial label for creating a note from a photo."
+  },
+  "fabList": "List",
+  "@fabList": {
+    "description": "Speed-dial label for creating a checklist note."
+  },
+  "fabText": "Text",
+  "@fabText": {
+    "description": "Speed-dial label for creating a plain text note."
+  },
+  "fabDrawing": "Drawing",
+  "@fabDrawing": {
+    "description": "Speed-dial label for creating a drawing note. Premium-only."
+  },
+  "notesTitle": "Notes",
+  "@notesTitle": {
+    "description": "Title of the all-notes screen."
+  },
+  "notesFilters": "Filters",
+  "@notesFilters": {
+    "description": "Tooltip on the button opening the filter sheet."
+  },
+  "notesListView": "List view",
+  "@notesListView": {
+    "description": "Tooltip on the button that switches the grid to a single-column list."
+  },
+  "notesGridView": "Grid view",
+  "@notesGridView": {
+    "description": "Tooltip on the button that switches the list back to a masonry grid."
+  },
+  "notesSort": "Sort",
+  "@notesSort": {
+    "description": "Tooltip on the sort menu button."
+  },
+  "notesSortModified": "Sort by Last Modified",
+  "@notesSortModified": {
+    "description": "Sort option: most recently edited notes first."
+  },
+  "notesSortCreated": "Sort by Date Created",
+  "@notesSortCreated": {
+    "description": "Sort option: newest notes first."
+  },
+  "notesSortTitle": "Sort by Title",
+  "@notesSortTitle": {
+    "description": "Sort option: alphabetical by note title."
+  },
+  "notesSortDescending": "Descending",
+  "@notesSortDescending": {
+    "description": "Sort direction: highest/newest first."
+  },
+  "notesSortAscending": "Ascending",
+  "@notesSortAscending": {
+    "description": "Sort direction: lowest/oldest first."
+  },
+  "notesSearchHint": "Search notes...",
+  "@notesSearchHint": {
+    "description": "Placeholder in the notes search field."
+  },
+  "notesLoadError": "Error loading notes",
+  "@notesLoadError": {
+    "description": "Shown when the notes list fails to load."
+  },
+  "commonTryAgainLater": "Please try again later",
+  "@commonTryAgainLater": {
+    "description": "Generic recovery hint under an error state."
+  },
+  "notesNoneFound": "No notes found",
+  "@notesNoneFound": {
+    "description": "Empty state heading on the notes screen."
+  },
+  "notesCreateFirst": "Create your first note to get started",
+  "@notesCreateFirst": {
+    "description": "Empty state hint when the user has no notes at all."
+  },
+  "notesTryDifferentSearch": "Try a different search",
+  "@notesTryDifferentSearch": {
+    "description": "Empty state hint when a search returned nothing."
+  },
+  "todosTitle": "Todos",
+  "@todosTitle": {
+    "description": "Title of the todo list screen."
+  },
+  "todosFilter": "Filter",
+  "@todosFilter": {
+    "description": "Tooltip on the todo filter button."
+  },
+  "todosAll": "All Todos",
+  "@todosAll": {
+    "description": "Filter option and heading: show every todo."
+  },
+  "todosPending": "Pending",
+  "@todosPending": {
+    "description": "Filter option and heading: only unfinished todos."
+  },
+  "todosCompleted": "Completed",
+  "@todosCompleted": {
+    "description": "Filter option and heading: only finished todos."
+  },
+  "todosLoadError": "Error loading todos",
+  "@todosLoadError": {
+    "description": "Shown when the todo list fails to load."
+  },
+  "todosNoneYet": "No todos yet",
+  "@todosNoneYet": {
+    "description": "Empty state when the user has no todos at all."
+  },
+  "todosNonePending": "No pending todos",
+  "@todosNonePending": {
+    "description": "Empty state when every todo is finished."
+  },
+  "todosNoneCompleted": "No completed todos",
+  "@todosNoneCompleted": {
+    "description": "Empty state when nothing has been ticked off yet."
+  },
+  "todosEmptyHint": "Create notes with todo lists to see them here",
+  "@todosEmptyHint": {
+    "description": "Hint explaining where todos come from."
+  },
+  "foldersAdd": "Add Folder",
+  "@foldersAdd": {
+    "description": "Title of the dialog that creates a new folder."
+  },
+  "foldersNameHint": "Enter folder name",
+  "@foldersNameHint": {
+    "description": "Placeholder in the folder name field."
+  },
+  "foldersAlreadyExists": "Folder already exists",
+  "@foldersAlreadyExists": {
+    "description": "Error when creating a folder whose name is taken."
+  },
+  "foldersChooseUniqueName": "Please choose a unique name.",
+  "@foldersChooseUniqueName": {
+    "description": "Hint shown when a folder name collides with an existing one."
+  },
+  "foldersMyFolders": "My folders",
+  "@foldersMyFolders": {
+    "description": "Heading of the folder shelf on the home screen."
+  },
+  "foldersViewAll": "View All",
+  "@foldersViewAll": {
+    "description": "Button opening the full folder list."
+  },
+  "foldersCreate": "Create folder",
+  "@foldersCreate": {
+    "description": "Tooltip on the add-folder button."
+  },
+  "foldersLoadFailed": "Failed to load folders",
+  "@foldersLoadFailed": {
+    "description": "Shown when the folder shelf cannot load."
+  },
+  "foldersNoneYet": "No folders yet. Tap + to create one.",
+  "@foldersNoneYet": {
+    "description": "Empty state on the folder shelf."
+  },
+  "foldersNameUsed": "Name already used",
+  "@foldersNameUsed": {
+    "description": "Error when renaming a folder to a name that is taken."
+  },
+  "foldersRenamed": "Folder renamed",
+  "@foldersRenamed": {
+    "description": "Confirmation after renaming a folder."
+  },
+  "foldersDeleteTitle": "Delete folder?",
+  "@foldersDeleteTitle": {
+    "description": "Confirmation dialog title for deleting a folder."
+  },
+  "foldersDeleteBody": "Notes will remain, but their link to this folder will be removed.",
+  "@foldersDeleteBody": {
+    "description": "Reassurance that deleting a folder does not delete the notes inside it."
+  },
+  "foldersDeleteConfirm": "Delete folder",
+  "@foldersDeleteConfirm": {
+    "description": "Confirm button on the delete-folder dialog."
+  },
+  "foldersDeleted": "Folder deleted",
+  "@foldersDeleted": {
+    "description": "Confirmation after deleting a folder."
+  },
+  "archiveTitle": "Archive",
+  "@archiveTitle": {
+    "description": "Title of the archived-notes screen."
+  },
+  "archiveSearchHint": "Search archived notes...",
+  "@archiveSearchHint": {
+    "description": "Placeholder in the archive search field."
+  },
+  "commonSearch": "Search",
+  "@commonSearch": {
+    "description": "Tooltip on a search button."
+  },
+  "archiveLoadError": "Error loading archived notes",
+  "@archiveLoadError": {
+    "description": "Shown when the archive fails to load."
+  },
+  "archiveEmpty": "No archived notes",
+  "@archiveEmpty": {
+    "description": "Empty state heading on the archive screen."
+  },
+  "archiveEmptyHint": "Notes you archive will appear here for safekeeping",
+  "@archiveEmptyHint": {
+    "description": "Explains what the archive is for."
+  },
+  "trashTitle": "Trash",
+  "@trashTitle": {
+    "description": "Title of the deleted-notes screen."
+  },
+  "trashSearchHint": "Search trash...",
+  "@trashSearchHint": {
+    "description": "Placeholder in the trash search field."
+  },
+  "trashLoadError": "Error loading trash",
+  "@trashLoadError": {
+    "description": "Shown when the trash list fails to load."
+  },
+  "trashEmpty": "Trash is empty",
+  "@trashEmpty": {
+    "description": "Empty state heading on the trash screen."
+  },
+  "trashEmptyHint": "Deleted notes will appear here temporarily",
+  "@trashEmptyHint": {
+    "description": "Explains that trashed notes are kept for a while before being purged."
+  },
+  "trashRestoreTitle": "Restore note?",
+  "@trashRestoreTitle": {
+    "description": "Confirmation dialog title for restoring a trashed note."
+  },
+  "trashRestoreBody": "This note will be restored and moved back to your notes.",
+  "@trashRestoreBody": {
+    "description": "Body of the restore confirmation dialog."
+  },
+  "trashRestore": "Restore",
+  "@trashRestore": {
+    "description": "Confirm button on the restore dialog."
+  },
+  "trashDeleteForeverTitle": "Delete Forever?",
+  "@trashDeleteForeverTitle": {
+    "description": "Confirmation dialog title for permanently destroying a note."
+  },
+  "trashDeleteForeverBody": "This action cannot be undone. The note and all its content will be permanently removed.",
+  "@trashDeleteForeverBody": {
+    "description": "Body of the permanent-delete dialog. Keep the warning forceful; this is irreversible."
+  },
+  "trashDeleteForever": "Delete Forever",
+  "@trashDeleteForever": {
+    "description": "Confirm button on the permanent-delete dialog."
+  },
+  "trashDeletedAgo": "Deleted {when}",
+  "@trashDeletedAgo": {
+    "description": "Caption on a trashed note card showing how long ago it was deleted.",
+    "placeholders": {
+      "when": {
+        "type": "String",
+        "example": "5m ago"
+      }
+    }
+  },
+  "themeTitle": "Theme",
+  "@themeTitle": {
+    "description": "Title of the theme screen."
+  },
+  "themeModeHeading": "Theme Mode",
+  "@themeModeHeading": {
+    "description": "Section heading above light/dark/system."
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Theme mode option: always light."
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Theme mode option: always dark."
+  },
+  "themeSystemDefault": "System default",
+  "@themeSystemDefault": {
+    "description": "Theme mode option: follow the device setting."
+  },
+  "themeAccentColors": "Accent Colors",
+  "@themeAccentColors": {
+    "description": "Section heading above the accent colour choices."
+  },
+  "themeFonts": "Fonts",
+  "@themeFonts": {
+    "description": "Section heading above the font choices."
+  },
+  "themePremiumBadge": "Premium",
+  "@themePremiumBadge": {
+    "description": "Badge marking an accent colour that requires a paid plan."
+  },
+  "themeAccentNeonMint": "Neon Mint",
+  "@themeAccentNeonMint": {
+    "description": "Display name of the mint accent colour."
+  },
+  "themeAccentPurpleDream": "Purple Dream",
+  "@themeAccentPurpleDream": {
+    "description": "Display name of the purple accent colour."
+  },
+  "themeAccentPinkBliss": "Pink Bliss",
+  "@themeAccentPinkBliss": {
+    "description": "Display name of the pink accent colour."
+  },
+  "themeAccentOrangeSunset": "Orange Sunset",
+  "@themeAccentOrangeSunset": {
+    "description": "Display name of the orange accent colour."
+  },
+  "themeAccentBlueOcean": "Blue Ocean",
+  "@themeAccentBlueOcean": {
+    "description": "Display name of the blue accent colour."
   }
 }

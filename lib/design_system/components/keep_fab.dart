@@ -8,6 +8,7 @@ import '../../screens/create_note_screen_v2.dart';
 import '../../services/premium_gate.dart';
 import '../../walkthrough/walkthrough_keys.dart';
 import '../animations.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// A speed-dial create button (Keep-style). Tapping the FAB expands a vertical
 /// stack of labelled mini-buttons above it, over a dismiss scrim. The expanded
@@ -57,28 +58,28 @@ class _KeepFabState extends State<KeepFab>
         // 3 attachments/note). Drawing is premium-only.
         _SpeedDialAction(
           icon: Icons.mic_none_rounded,
-          label: 'Audio',
+          label: AppL10n.of(context).fabAudio,
           onTap: () => _select(() => _openEditor('Record Audio')),
         ),
         _SpeedDialAction(
           icon: Icons.image_outlined,
-          label: 'Image',
+          label: AppL10n.of(context).fabImage,
           onTap: () => _select(() => _openEditor('Title Content')),
         ),
         _SpeedDialAction(
           icon: Icons.brush_outlined,
-          label: 'Drawing',
+          label: AppL10n.of(context).fabDrawing,
           locked: true,
           onTap: () => _select(() => PremiumGate.require(context, 'Drawing')),
         ),
         _SpeedDialAction(
           icon: Icons.check_box_outlined,
-          label: 'List',
+          label: AppL10n.of(context).fabList,
           onTap: () => _select(() => _openEditor('Todo List')),
         ),
         _SpeedDialAction(
           icon: Icons.text_fields_rounded,
-          label: 'Text',
+          label: AppL10n.of(context).fabText,
           onTap: () => _select(() => _openEditor('Title Content')),
         ),
       ];

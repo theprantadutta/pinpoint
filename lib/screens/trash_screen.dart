@@ -61,7 +61,7 @@ class _TrashScreenState extends State<TrashScreen> {
         title: _isSearchActive
             ? SearchBarSticky(
                 controller: _searchController,
-                hint: 'Search trash...',
+                hint: AppL10n.of(context).trashSearchHint,
                 onSearch: (query) {
                   setState(() => _searchQuery = query);
                 },
@@ -71,11 +71,11 @@ class _TrashScreenState extends State<TrashScreen> {
                 children: [
                   Icon(Icons.delete_rounded, color: cs.error, size: 20),
                   const SizedBox(width: 8),
-                  const Text('Trash'),
+                  Text(AppL10n.of(context).trashTitle),
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.search),
-                    tooltip: 'Search',
+                    tooltip: AppL10n.of(context).commonSearch,
                     onPressed: () {
                       setState(() => _isSearchActive = !_isSearchActive);
                     },
@@ -98,8 +98,8 @@ class _TrashScreenState extends State<TrashScreen> {
               if (snapshot.hasError) {
                 return EmptyState(
                   icon: Icons.error_outline_rounded,
-                  title: 'Error loading trash',
-                  message: 'Please try again later',
+                  title: AppL10n.of(context).trashLoadError,
+                  message: AppL10n.of(context).commonTryAgainLater,
                 );
               }
 
@@ -114,7 +114,7 @@ class _TrashScreenState extends State<TrashScreen> {
                     child: Row(
                       children: [
                         Text(
-                          'Trash',
+                          AppL10n.of(context).trashTitle,
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.2,
@@ -135,9 +135,9 @@ class _TrashScreenState extends State<TrashScreen> {
                     child: notes.isEmpty
                         ? EmptyState(
                             icon: Icons.delete_outline_rounded,
-                            title: 'Trash is empty',
+                            title: AppL10n.of(context).trashEmpty,
                             message:
-                                'Deleted notes will appear here temporarily',
+                                AppL10n.of(context).trashEmptyHint,
                           )
                         : AnimatedListStagger(
                             itemCount: notes.length,
@@ -163,10 +163,10 @@ class _TrashScreenState extends State<TrashScreen> {
                                   onRestore: () async {
                                     final confirmed = await ConfirmSheet.show(
                                       context: context,
-                                      title: 'Restore note?',
+                                      title: AppL10n.of(context).trashRestoreTitle,
                                       message:
-                                          'This note will be restored and moved back to your notes.',
-                                      primaryLabel: 'Restore',
+                                          AppL10n.of(context).trashRestoreBody,
+                                      primaryLabel: AppL10n.of(context).trashRestore,
                                       secondaryLabel: 'Cancel',
                                       isDestructive: false,
                                       icon: Icons.restore_from_trash_rounded,
@@ -181,10 +181,10 @@ class _TrashScreenState extends State<TrashScreen> {
                                   onDelete: () async {
                                     final confirmed = await ConfirmSheet.show(
                                       context: context,
-                                      title: 'Delete Forever?',
+                                      title: AppL10n.of(context).trashDeleteForeverTitle,
                                       message:
-                                          'This action cannot be undone. The note and all its content will be permanently removed.',
-                                      primaryLabel: 'Delete Forever',
+                                          AppL10n.of(context).trashDeleteForeverBody,
+                                      primaryLabel: AppL10n.of(context).trashDeleteForever,
                                       secondaryLabel: 'Cancel',
                                       isDestructive: true,
                                       icon: Icons.delete_forever_rounded,
@@ -390,7 +390,7 @@ class _TrashedNoteCardState extends State<_TrashedNoteCard> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Deleted ${_getRelativeTime(n.updatedAt)}',
+                                  AppL10n.of(context).trashDeletedAgo(_getRelativeTime(n.updatedAt)),
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: cs.error.withAlpha(180),
                                     fontSize: 12,

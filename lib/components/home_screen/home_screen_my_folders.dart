@@ -12,6 +12,7 @@ import '../../database/database.dart';
 import '../../design_system/design_system.dart';
 import '../../navigation/app_navigation.dart';
 import '../../walkthrough/walkthrough_keys.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class HomeScreenMyFolders extends StatelessWidget {
   const HomeScreenMyFolders({super.key});
@@ -34,8 +35,8 @@ class HomeScreenMyFolders extends StatelessWidget {
     DialogService.addSomethingDialog(
       context: context,
       controller: controller,
-      title: 'Add Folder',
-      hintText: 'Enter folder name',
+      title: AppL10n.of(context).foldersAdd,
+      hintText: AppL10n.of(context).foldersNameHint,
       onAddPressed: () async {
         final text = controller.text.trim();
         if (text.isEmpty) return;
@@ -46,8 +47,8 @@ class HomeScreenMyFolders extends StatelessWidget {
           if (!context.mounted) return;
           showErrorToast(
             context: context,
-            title: 'Folder already exists',
-            description: 'Please choose a unique name.',
+            title: AppL10n.of(context).foldersAlreadyExists,
+            description: AppL10n.of(context).foldersChooseUniqueName,
           );
           return;
         }
@@ -72,7 +73,7 @@ class HomeScreenMyFolders extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'My folders',
+                AppL10n.of(context).foldersMyFolders,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.1,
@@ -86,7 +87,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                       AppNavigation.router.push('/my-folders');
                     },
                     icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-                    label: const Text('View All'),
+                    label: Text(AppL10n.of(context).foldersViewAll),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
@@ -94,7 +95,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Tooltip(
-                    message: 'Create folder',
+                    message: AppL10n.of(context).foldersCreate,
                     child: InkWell(
                       key: WalkthroughKeys.addFolderKey,
                       borderRadius: BorderRadius.circular(10),
@@ -128,7 +129,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                   log.e('[folders] stream error', snapshot.error);
                   return Center(
                     child: Text(
-                      'Failed to load folders',
+                      AppL10n.of(context).foldersLoadFailed,
                       style: theme.textTheme.bodySmall,
                     ),
                   );
@@ -137,7 +138,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                 if (folders.isEmpty) {
                   return Center(
                     child: Text(
-                      'No folders yet. Tap + to create one.',
+                      AppL10n.of(context).foldersNoneYet,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color:
                             theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -170,8 +171,8 @@ class HomeScreenMyFolders extends StatelessWidget {
                             if (!context.mounted) return;
                             showErrorToast(
                               context: context,
-                              title: 'Name already used',
-                              description: 'Please choose a unique name.',
+                              title: AppL10n.of(context).foldersNameUsed,
+                              description: AppL10n.of(context).foldersChooseUniqueName,
                             );
                             return;
                           }
@@ -181,7 +182,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                           PinpointHaptics.success();
                           showSuccessToast(
                             context: context,
-                            title: 'Folder renamed',
+                            title: AppL10n.of(context).foldersRenamed,
                             description: '"${f.noteFolderTitle}" → "$text"',
                           );
                         },
@@ -189,10 +190,10 @@ class HomeScreenMyFolders extends StatelessWidget {
                           if (!context.mounted) return;
                           final confirmed = await ConfirmSheet.show(
                             context: context,
-                            title: 'Delete folder?',
+                            title: AppL10n.of(context).foldersDeleteTitle,
                             message:
-                                'Notes will remain, but their link to this folder will be removed.',
-                            primaryLabel: 'Delete folder',
+                                AppL10n.of(context).foldersDeleteBody,
+                            primaryLabel: AppL10n.of(context).foldersDeleteConfirm,
                             secondaryLabel: 'Cancel',
                             isDestructive: true,
                             icon: Icons.folder_delete_rounded,
@@ -204,7 +205,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                             PinpointHaptics.success();
                             showSuccessToast(
                               context: context,
-                              title: 'Folder deleted',
+                              title: AppL10n.of(context).foldersDeleted,
                               description: '"${f.noteFolderTitle}" removed',
                             );
                           }

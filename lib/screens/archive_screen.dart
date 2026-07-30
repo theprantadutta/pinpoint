@@ -10,6 +10,7 @@ import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/filter_service.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class ArchiveScreen extends StatefulWidget {
   static const String kRouteName = '/archive';
@@ -59,7 +60,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
         title: _isSearchActive
             ? SearchBarSticky(
                 controller: _searchController,
-                hint: 'Search archived notes...',
+                hint: AppL10n.of(context).archiveSearchHint,
                 onSearch: (query) {
                   setState(() => _searchQuery = query);
                 },
@@ -69,11 +70,11 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                 children: [
                   Icon(Icons.archive_rounded, color: cs.primary, size: 20),
                   const SizedBox(width: 8),
-                  const Text('Archive'),
+                  Text(AppL10n.of(context).archiveTitle),
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.search),
-                    tooltip: 'Search',
+                    tooltip: AppL10n.of(context).commonSearch,
                     onPressed: () {
                       setState(() => _isSearchActive = !_isSearchActive);
                     },
@@ -96,8 +97,8 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
               if (snapshot.hasError) {
                 return EmptyState(
                   icon: Icons.error_outline_rounded,
-                  title: 'Error loading archived notes',
-                  message: 'Please try again later',
+                  title: AppL10n.of(context).archiveLoadError,
+                  message: AppL10n.of(context).commonTryAgainLater,
                 );
               }
 
@@ -112,7 +113,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                     child: Row(
                       children: [
                         Text(
-                          'Archive',
+                          AppL10n.of(context).archiveTitle,
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.2,
@@ -133,9 +134,9 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                     child: notes.isEmpty
                         ? EmptyState(
                             icon: Icons.archive_outlined,
-                            title: 'No archived notes',
+                            title: AppL10n.of(context).archiveEmpty,
                             message:
-                                'Notes you archive will appear here for safekeeping',
+                                AppL10n.of(context).archiveEmptyHint,
                           )
                         : AnimatedListStagger(
                             itemCount: notes.length,
@@ -167,10 +168,10 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                                   onDelete: () async {
                                     final confirmed = await ConfirmSheet.show(
                                       context: context,
-                                      title: 'Delete Forever?',
+                                      title: AppL10n.of(context).trashDeleteForeverTitle,
                                       message:
-                                          'This action cannot be undone. The note and all its content will be permanently removed.',
-                                      primaryLabel: 'Delete Forever',
+                                          AppL10n.of(context).trashDeleteForeverBody,
+                                      primaryLabel: AppL10n.of(context).trashDeleteForever,
                                       secondaryLabel: 'Cancel',
                                       isDestructive: true,
                                       icon: Icons.delete_forever_rounded,
