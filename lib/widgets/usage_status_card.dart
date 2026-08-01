@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../constants/premium_limits.dart';
 import '../screens/subscription_screen.dart';
 import '../services/premium_service.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Card showing current usage limits and premium status
 class UsageStatusCard extends StatelessWidget {
@@ -54,7 +55,7 @@ class UsageStatusCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Usage This Month',
+                AppL10n.of(context).usageThisMonth,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -63,7 +64,7 @@ class UsageStatusCard extends StatelessWidget {
               TextButton.icon(
                 onPressed: onUpgrade ?? () => context.push(SubscriptionScreen.kRouteName),
                 icon: const Icon(Symbols.workspace_premium, size: 18),
-                label: const Text('Upgrade'),
+                label: Text(AppL10n.of(context).usageUpgrade),
                 style: TextButton.styleFrom(
                   foregroundColor: cs.primary,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -77,7 +78,7 @@ class UsageStatusCard extends StatelessWidget {
           // Usage bars
           _UsageBar(
             icon: Symbols.cloud_sync,
-            label: 'Synced Notes',
+            label: AppL10n.of(context).usageSyncedNotes,
             current: syncedNotes,
             max: PremiumLimits.maxSyncedNotesForFree,
             color: cs.primary,
@@ -87,7 +88,7 @@ class UsageStatusCard extends StatelessWidget {
 
           _UsageBar(
             icon: Symbols.document_scanner,
-            label: 'OCR Scans',
+            label: AppL10n.of(context).usageOcrScans,
             current: ocrScansUsed,
             max: PremiumLimits.maxOcrScansPerMonthForFree,
             color: cs.secondary,
@@ -97,7 +98,7 @@ class UsageStatusCard extends StatelessWidget {
 
           _UsageBar(
             icon: Symbols.download,
-            label: 'Exports',
+            label: AppL10n.of(context).usageExports,
             current: exportsUsed,
             max: PremiumLimits.maxExportsPerMonthForFree,
             color: cs.tertiary,
@@ -146,7 +147,7 @@ class UsageStatusCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Premium Active',
+                  AppL10n.of(context).usagePremiumActive,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: cs.primary,
@@ -154,7 +155,7 @@ class UsageStatusCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Unlimited notes, OCR, and exports',
+                  AppL10n.of(context).usagePremiumBody,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.onSurfaceVariant,
                   ),

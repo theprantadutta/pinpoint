@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:fleather/fleather.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Enhanced toolbar for rich text formatting with Fleather
 /// Provides extensive WYSIWYG formatting options including text styles, colors, lists, and more
@@ -69,25 +70,25 @@ class _MarkdownToolbarState extends State<MarkdownToolbar> {
                 _buildSection([
                   _ToolbarButton(
                     icon: Symbols.format_bold,
-                    tooltip: 'Bold',
+                    tooltip: AppL10n.of(context).mdBold,
                     onPressed: () => _toggleAttribute(ParchmentAttribute.bold),
                     isActive: _isAttributeActive(ParchmentAttribute.bold),
                   ),
                   _ToolbarButton(
                     icon: Symbols.format_italic,
-                    tooltip: 'Italic',
+                    tooltip: AppL10n.of(context).mdItalic,
                     onPressed: () => _toggleAttribute(ParchmentAttribute.italic),
                     isActive: _isAttributeActive(ParchmentAttribute.italic),
                   ),
                   _ToolbarButton(
                     icon: Symbols.format_underlined,
-                    tooltip: 'Underline',
+                    tooltip: AppL10n.of(context).mdUnderline,
                     onPressed: () => _toggleAttribute(ParchmentAttribute.underline),
                     isActive: _isAttributeActive(ParchmentAttribute.underline),
                   ),
                   _ToolbarButton(
                     icon: Symbols.format_strikethrough,
-                    tooltip: 'Strikethrough',
+                    tooltip: AppL10n.of(context).mdStrikethrough,
                     onPressed: () => _toggleAttribute(ParchmentAttribute.strikethrough),
                     isActive: _isAttributeActive(ParchmentAttribute.strikethrough),
                   ),
@@ -99,19 +100,19 @@ class _MarkdownToolbarState extends State<MarkdownToolbar> {
                 _buildSection([
                   _ToolbarButton(
                     icon: Symbols.format_h1,
-                    tooltip: 'Heading 1',
+                    tooltip: AppL10n.of(context).mdHeading1,
                     onPressed: () => _toggleHeading(ParchmentAttribute.h1),
                     isActive: _isAttributeActive(ParchmentAttribute.h1),
                   ),
                   _ToolbarButton(
                     icon: Symbols.format_h2,
-                    tooltip: 'Heading 2',
+                    tooltip: AppL10n.of(context).mdHeading2,
                     onPressed: () => _toggleHeading(ParchmentAttribute.h2),
                     isActive: _isAttributeActive(ParchmentAttribute.h2),
                   ),
                   _ToolbarButton(
                     icon: Symbols.format_h3,
-                    tooltip: 'Heading 3',
+                    tooltip: AppL10n.of(context).mdHeading3,
                     onPressed: () => _toggleHeading(ParchmentAttribute.h3),
                     isActive: _isAttributeActive(ParchmentAttribute.h3),
                   ),
@@ -123,19 +124,19 @@ class _MarkdownToolbarState extends State<MarkdownToolbar> {
                 _buildSection([
                   _ToolbarButton(
                     icon: Symbols.format_list_bulleted,
-                    tooltip: 'Bullet List',
+                    tooltip: AppL10n.of(context).mdBulletList,
                     onPressed: () => _toggleBlock(ParchmentAttribute.ul),
                     isActive: _isAttributeActive(ParchmentAttribute.ul),
                   ),
                   _ToolbarButton(
                     icon: Symbols.format_list_numbered,
-                    tooltip: 'Numbered List',
+                    tooltip: AppL10n.of(context).mdNumberedList,
                     onPressed: () => _toggleBlock(ParchmentAttribute.ol),
                     isActive: _isAttributeActive(ParchmentAttribute.ol),
                   ),
                   _ToolbarButton(
                     icon: Symbols.checklist,
-                    tooltip: 'Checklist',
+                    tooltip: AppL10n.of(context).mdChecklist,
                     onPressed: () => _toggleBlock(ParchmentAttribute.cl),
                     isActive: _isAttributeActive(ParchmentAttribute.cl),
                   ),
@@ -147,13 +148,13 @@ class _MarkdownToolbarState extends State<MarkdownToolbar> {
                 _buildSection([
                   _ToolbarButton(
                     icon: Symbols.format_quote,
-                    tooltip: 'Quote',
+                    tooltip: AppL10n.of(context).mdQuote,
                     onPressed: () => _toggleBlock(ParchmentAttribute.bq),
                     isActive: _isAttributeActive(ParchmentAttribute.bq),
                   ),
                   _ToolbarButton(
                     icon: Symbols.code,
-                    tooltip: 'Code Block',
+                    tooltip: AppL10n.of(context).mdCodeBlock,
                     onPressed: () => _toggleBlock(ParchmentAttribute.code),
                     isActive: _isAttributeActive(ParchmentAttribute.code),
                   ),
@@ -165,19 +166,19 @@ class _MarkdownToolbarState extends State<MarkdownToolbar> {
                 _buildSection([
                   _ToolbarButton(
                     icon: Symbols.format_align_left,
-                    tooltip: 'Align Left',
+                    tooltip: AppL10n.of(context).mdAlignLeft,
                     onPressed: () => _toggleAlignment(ParchmentAttribute.left),
                     isActive: _isAttributeActive(ParchmentAttribute.left),
                   ),
                   _ToolbarButton(
                     icon: Symbols.format_align_center,
-                    tooltip: 'Align Center',
+                    tooltip: AppL10n.of(context).mdAlignCenter,
                     onPressed: () => _toggleAlignment(ParchmentAttribute.center),
                     isActive: _isAttributeActive(ParchmentAttribute.center),
                   ),
                   _ToolbarButton(
                     icon: Symbols.format_align_right,
-                    tooltip: 'Align Right',
+                    tooltip: AppL10n.of(context).mdAlignRight,
                     onPressed: () => _toggleAlignment(ParchmentAttribute.right),
                     isActive: _isAttributeActive(ParchmentAttribute.right),
                   ),
@@ -189,13 +190,13 @@ class _MarkdownToolbarState extends State<MarkdownToolbar> {
                 _buildSection([
                   _ToolbarButton(
                     icon: Symbols.link,
-                    tooltip: 'Insert Link',
+                    tooltip: AppL10n.of(context).mdInsertLink,
                     onPressed: _insertLink,
                     isActive: false,
                   ),
                   _ToolbarButton(
                     icon: Symbols.format_clear,
-                    tooltip: 'Clear Formatting',
+                    tooltip: AppL10n.of(context).mdClearFormatting,
                     onPressed: _clearFormatting,
                     isActive: false,
                   ),
@@ -441,14 +442,14 @@ class _LinkDialogState extends State<_LinkDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Insert Link'),
+      title: Text(AppL10n.of(context).mdInsertLink),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _urlController,
-            decoration: const InputDecoration(
-              labelText: 'URL',
+            decoration: InputDecoration(
+              labelText: AppL10n.of(context).mdUrl,
               hintText: 'https://example.com',
             ),
             autofocus: true,
@@ -456,9 +457,9 @@ class _LinkDialogState extends State<_LinkDialog> {
           const SizedBox(height: 16),
           TextField(
             controller: _textController,
-            decoration: const InputDecoration(
-              labelText: 'Link Text',
-              hintText: 'Click here',
+            decoration: InputDecoration(
+              labelText: AppL10n.of(context).mdLinkText,
+              hintText: AppL10n.of(context).mdLinkTextHint,
             ),
           ),
         ],
@@ -478,7 +479,7 @@ class _LinkDialogState extends State<_LinkDialog> {
               Navigator.pop(context);
             }
           },
-          child: const Text('Insert'),
+          child: Text(AppL10n.of(context).mdInsert),
         ),
       ],
     );

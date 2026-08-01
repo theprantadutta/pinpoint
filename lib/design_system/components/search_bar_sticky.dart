@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'tag_chip.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// SearchBarSticky - Expandable search bar with command palette
 ///
@@ -83,7 +84,7 @@ class _SearchBarStickyState extends State<SearchBarSticky> {
           controller: _controller,
           focusNode: _focusNode,
           decoration: InputDecoration(
-            hintText: widget.hint ?? 'Search notes...',
+            hintText: widget.hint ?? AppL10n.of(context).notesSearchHint,
             prefixIcon: Icon(
               Icons.search_rounded,
               color: cs.onSurfaceVariant.withValues(alpha: 0.5),
@@ -144,7 +145,7 @@ class _SearchBarStickyState extends State<SearchBarSticky> {
             widget.recentSearches!.isNotEmpty) ...[
           const SizedBox(height: 12),
           Text(
-            'Recent searches',
+            AppL10n.of(context).dsRecentSearches,
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -230,7 +231,7 @@ class _CommandSheetState extends State<CommandSheet> {
           // Search input
           SearchBarSticky(
             controller: _searchController,
-            hint: 'Type a command or search...',
+            hint: AppL10n.of(context).dsCommandHint,
             autoFocus: true,
           ),
 

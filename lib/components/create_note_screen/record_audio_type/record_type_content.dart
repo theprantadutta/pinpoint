@@ -6,6 +6,7 @@ import 'package:avatar_glow/avatar_glow.dart';
 import 'package:pinpoint/services/premium_service.dart';
 import 'package:pinpoint/widgets/premium_gate_dialog.dart';
 import 'package:pinpoint/design_system/design_system.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class RecordTypeContent extends StatefulWidget {
   final Function(String transcribedText) onTranscribedText;
@@ -215,7 +216,7 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      'Upgrade for unlimited recording',
+                      AppL10n.of(context).audioUpgradeUnlimited,
                       style: TextStyle(
                         fontSize: 11,
                         color: cs.error.withValues(alpha: 0.8),
@@ -267,7 +268,7 @@ class _RecordTypeContentState extends State<RecordTypeContent> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Your transcribed text will appear here',
+                        AppL10n.of(context).audioTranscriptPlaceholder,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,

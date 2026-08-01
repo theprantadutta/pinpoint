@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/notification_service.dart';
 import 'package:pinpoint/util/localized_dates.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class ReminderTypeContent extends StatefulWidget {
   final TextEditingController notificationTitleController;
@@ -178,19 +179,16 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
       final shouldRequest = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Enable Precise Reminders'),
-          content: const Text(
-            'To ensure your reminders arrive exactly on time, '
-            'we need permission to schedule precise alarms.',
-          ),
+          title: Text(AppL10n.of(context).remPreciseTitle),
+          content: Text(AppL10n.of(context).remPreciseBody),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Skip'),
+              child: Text(AppL10n.of(context).remSkip),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Enable'),
+              child: Text(AppL10n.of(context).remEnable),
             ),
           ],
         ),
@@ -233,8 +231,8 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Reminder time must be in the future'),
+              SnackBar(
+                content: Text(AppL10n.of(context).remMustBeFuture),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -501,13 +499,13 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                       : cs.surfaceContainerHighest.withValues(alpha: 0.5),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'once', child: Text('Once (No Repeat)')),
-                  DropdownMenuItem(value: 'hourly', child: Text('Hourly')),
-                  DropdownMenuItem(value: 'daily', child: Text('Daily')),
-                  DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
-                  DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
-                  DropdownMenuItem(value: 'yearly', child: Text('Yearly')),
+                items: [
+                  DropdownMenuItem(value: 'once', child: Text(AppL10n.of(context).remOnce)),
+                  DropdownMenuItem(value: 'hourly', child: Text(AppL10n.of(context).remHourly)),
+                  DropdownMenuItem(value: 'daily', child: Text(AppL10n.of(context).remDaily)),
+                  DropdownMenuItem(value: 'weekly', child: Text(AppL10n.of(context).remWeekly)),
+                  DropdownMenuItem(value: 'monthly', child: Text(AppL10n.of(context).remMonthly)),
+                  DropdownMenuItem(value: 'yearly', child: Text(AppL10n.of(context).remYearly)),
                 ],
                 onChanged: (value) {
                   if (value != null) {
@@ -526,7 +524,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                         keyboardType: TextInputType.number,
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         decoration: InputDecoration(
-                          labelText: 'Every',
+                          labelText: AppL10n.of(context).remEvery,
                           suffixText: _getIntervalUnit(widget.recurrenceType),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -595,10 +593,10 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                         : cs.surfaceContainerHighest.withValues(alpha: 0.5),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 'never', child: Text('Never Ends')),
-                    DropdownMenuItem(value: 'after_occurrences', child: Text('After X Occurrences')),
-                    DropdownMenuItem(value: 'on_date', child: Text('On Specific Date')),
+                  items: [
+                    DropdownMenuItem(value: 'never', child: Text(AppL10n.of(context).remNeverEnds)),
+                    DropdownMenuItem(value: 'after_occurrences', child: Text(AppL10n.of(context).remAfterOccurrences)),
+                    DropdownMenuItem(value: 'on_date', child: Text(AppL10n.of(context).remOnDate)),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -618,7 +616,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
-                      labelText: 'Number of Occurrences',
+                      labelText: AppL10n.of(context).remOccurrenceCount,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -650,7 +648,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                           const SizedBox(width: 12),
                           Text(
                             _endDate == null
-                                ? 'Select End Date'
+                                ? AppL10n.of(context).remSelectEndDate
                                 : LocalizedDates.fullDate(context, _endDate!),
                             style: TextStyle(fontSize: 15, color: cs.onSurface),
                           ),
@@ -682,7 +680,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                             Icon(Icons.preview_rounded, size: 20, color: cs.primary),
                             const SizedBox(width: 8),
                             Text(
-                              'Preview (Next ${_previewOccurrences.length} Occurrences)',
+                              AppL10n.of(context).remPreview(_previewOccurrences.length),
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -763,7 +761,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Reminder Details',
+                          AppL10n.of(context).remDetails,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,

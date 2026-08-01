@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../animations.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// EditorToolbar - Floating toolbar for markdown/rich text controls
 ///
@@ -179,7 +180,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
         if (widget.onCheckbox != null)
           _ToolbarButton(
             icon: Icons.check_box_outlined,
-            label: 'Checklist',
+            label: AppL10n.of(context).dsChecklist,
             onTap: widget.onCheckbox!,
             toolbarStyle: toolbarStyle,
           ),
@@ -224,7 +225,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
         ),
         const SizedBox(width: 8),
         Text(
-          'Tap to expand',
+          AppL10n.of(context).dsTapToExpand,
           style: TextStyle(
             fontSize: 12,
             color: toolbarStyle.iconColor,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class EmptyStateWidget extends StatelessWidget {
   final String message;
@@ -10,24 +11,29 @@ class EmptyStateWidget extends StatelessWidget {
     required this.iconData,
   });
 
-  // Legendary factory variants
-  factory EmptyStateWidget.defaultNoNotes() => const EmptyStateWidget(
-        message: 'No notes yet. Create your first note!',
+  // Preset variants. Each takes a BuildContext because the copy is localized;
+  // they can no longer be const for the same reason.
+  factory EmptyStateWidget.defaultNoNotes(BuildContext context) =>
+      EmptyStateWidget(
+        message: AppL10n.of(context).emptyNoNotes,
         iconData: Icons.note_add,
       );
 
-  factory EmptyStateWidget.searchNoResults(String query) => EmptyStateWidget(
-        message: "No results for '$query'",
+  factory EmptyStateWidget.searchNoResults(BuildContext context, String query) =>
+      EmptyStateWidget(
+        message: AppL10n.of(context).emptyNoSearchResults(query),
         iconData: Icons.search_off,
       );
 
-  factory EmptyStateWidget.archiveEmpty() => const EmptyStateWidget(
-        message: 'No archived notes yet',
+  factory EmptyStateWidget.archiveEmpty(BuildContext context) =>
+      EmptyStateWidget(
+        message: AppL10n.of(context).emptyNoArchived,
         iconData: Icons.archive_outlined,
       );
 
-  factory EmptyStateWidget.trashEmpty() => const EmptyStateWidget(
-        message: 'Trash is empty',
+  factory EmptyStateWidget.trashEmpty(BuildContext context) =>
+      EmptyStateWidget(
+        message: AppL10n.of(context).trashEmpty,
         iconData: Icons.delete_outline,
       );
 

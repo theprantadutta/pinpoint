@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pinpoint/database/database.dart';
 
 import '../../../services/dialog_service.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class TodoListTypeContent extends StatefulWidget {
   final List<NoteTodoItem> todos;
@@ -23,8 +24,8 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
     DialogService.addSomethingDialog(
       context: context,
       controller: controller,
-      title: 'Add Todo',
-      subtitle: 'What needs to get done?',
+      title: AppL10n.of(context).todoAddTitle,
+      subtitle: AppL10n.of(context).todoAddSubtitle,
       hintText: 'e.g. Buy groceries',
       icon: Icons.add_task_rounded,
       primaryLabel: 'Add',
@@ -62,8 +63,8 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete "${todo.todoTitle}"?'),
+        title: Text(AppL10n.of(context).todoConfirmDelete),
+        content: Text(AppL10n.of(context).todoDeleteConfirmBody(todo.todoTitle)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context), child: Text('Cancel')),
@@ -87,8 +88,8 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
     DialogService.addSomethingDialog(
       context: context,
       controller: controller,
-      title: 'Update Todo',
-      subtitle: 'Edit this task’s title.',
+      title: AppL10n.of(context).todoUpdateTitle,
+      subtitle: AppL10n.of(context).todoUpdateSubtitle,
       hintText: 'e.g. Buy groceries',
       icon: Icons.edit_rounded,
       primaryLabel: 'Save',
@@ -138,7 +139,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'No todos yet',
+                              AppL10n.of(context).todoNoneYet,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -147,7 +148,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Add your first todo to get started',
+                              AppL10n.of(context).todoAddFirst,
                               style: TextStyle(
                                 fontSize: 14,
                                 color: cs.onSurface.withValues(alpha: 0.4),
@@ -273,7 +274,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                           Icons.check_circle_outline_rounded,
                           size: 20,
                         ),
-                        label: Text('Mark All Done'),
+                        label: Text(AppL10n.of(context).todoMarkAllDone),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -295,7 +296,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                     child: FilledButton.icon(
                       onPressed: addTodo,
                       icon: Icon(Icons.add_rounded, size: 20),
-                      label: Text('Add Todo'),
+                      label: Text(AppL10n.of(context).todoAddTitle),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,

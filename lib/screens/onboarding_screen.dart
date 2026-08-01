@@ -8,6 +8,7 @@ import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import 'terms_acceptance_screen.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -28,26 +29,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     getIt<AnalyticsFacade>().trackScreenView(screenName: 'Onboarding');
   }
 
-  final List<OnboardingPage> _pages = [
-    const OnboardingPage(
+  // Built per-call rather than stored in a field: the copy needs
+  // Localizations, which a field initializer cannot reach.
+  List<OnboardingPage> _buildPages(BuildContext context) => [
+    OnboardingPage(
       icon: Symbols.edit_note_rounded,
-      title: 'Capture Your Ideas',
+      title: AppL10n.of(context).obCaptureTitle,
       description:
-          'Create rich notes with text, audio recordings, drawings, and more. Everything you need in one place.',
+          AppL10n.of(context).obCaptureBody,
       gradient: PinpointGradients.azureBloom,
     ),
-    const OnboardingPage(
+    OnboardingPage(
       icon: Symbols.folder_rounded,
-      title: 'Stay Organized',
+      title: AppL10n.of(context).obOrganizeTitle,
       description:
-          'Organize your notes with folders, tags, and powerful search. Find what you need, when you need it.',
+          AppL10n.of(context).obOrganizeBody,
       gradient: PinpointGradients.solarRose,
     ),
-    const OnboardingPage(
+    OnboardingPage(
       icon: Symbols.lock_rounded,
-      title: 'Privacy First',
+      title: AppL10n.of(context).obPrivacyTitle,
       description:
-          'Your notes are encrypted and stored locally. Optional biometric lock keeps everything secure.',
+          AppL10n.of(context).obPrivacyBody,
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -58,11 +61,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ],
       ),
     ),
-    const OnboardingPage(
+    OnboardingPage(
       icon: Symbols.check_circle_rounded,
-      title: 'Ready to Start',
+      title: AppL10n.of(context).obReadyTitle,
       description:
-          'You\'re all set! Start capturing your thoughts and ideas with Pinpoint.',
+          AppL10n.of(context).obReadyBody,
       gradient: LinearGradient(
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
@@ -92,7 +95,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
+    if (_currentPage < _buildPages(context).length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -170,11 +173,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
 
                     // Skip button
-                    if (_currentPage < _pages.length - 1)
+                    if (_currentPage < _buildPages(context).length - 1)
                       TextButton(
                         onPressed: _skipOnboarding,
                         child: Text(
-                          'Skip',
+                          AppL10n.of(context).obSkip,
                           style: TextStyle(
                             color: isDark
                                 ? PinpointColors.darkTextSecondary
@@ -191,10 +194,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: PageView.builder(
                   controller: _pageController,
                   onPageChanged: _onPageChanged,
-                  itemCount: _pages.length,
+                  itemCount: _buildPages(context).length,
                   itemBuilder: (context, index) {
                     return _OnboardingPageWidget(
-                      page: _pages[index],
+                      page: _buildPages(context)[index],
                       isDark: isDark,
                     );
                   },
@@ -207,7 +210,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
-                    _pages.length,
+                    _buildPages(context).length,
                     (index) => AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -241,9 +244,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                     child: Text(
-                      _currentPage == _pages.length - 1
-                          ? 'Get Started'
-                          : 'Next',
+                      _currentPage == _buildPages(context).length - 1
+                          ? AppL10n.of(context).obGetStarted
+                          : AppL10n.of(context).obNext,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -266,7 +269,7 @@ class OnboardingPage {
   final String description;
   final Gradient gradient;
 
-  const OnboardingPage({
+  OnboardingPage({
     required this.icon,
     required this.title,
     required this.description,

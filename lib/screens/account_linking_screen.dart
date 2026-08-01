@@ -4,6 +4,7 @@ import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Screen for linking Google account to existing email/password account
 ///
@@ -94,7 +95,7 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Link Accounts'),
+        title: Text(AppL10n.of(context).linkTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: _isLoading ? null : _handleCancel,
@@ -117,7 +118,7 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
 
               // Title
               Text(
-                'Account Already Exists',
+                AppL10n.of(context).linkAccountExists,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: cs.onSurface,
@@ -146,7 +147,7 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'What\'s happening?',
+                          AppL10n.of(context).linkWhatsHappening,
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: cs.onPrimaryContainer,
@@ -156,9 +157,7 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'An account with this Google email already exists. '
-                      'To link your Google account, please enter your '
-                      'current password to verify your identity.',
+                      AppL10n.of(context).linkExplanation,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: cs.onPrimaryContainer,
                         height: 1.5,
@@ -177,7 +176,7 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Enter your password',
+                      AppL10n.of(context).linkEnterPassword,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: cs.onSurface,
@@ -192,8 +191,8 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
                       obscureText: _obscurePassword,
                       autofocus: true,
                       decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Enter your current password',
+                        labelText: AppL10n.of(context).authPasswordLabel,
+                        hintText: AppL10n.of(context).linkPasswordHint,
                         prefixIcon: const Icon(Icons.lock_outlined),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -213,7 +212,7 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
+                          return AppL10n.of(context).authPasswordRequired;
                         }
                         return null;
                       },
@@ -267,8 +266,8 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text(
-                              'Link Google Account',
+                          : Text(
+                              AppL10n.of(context).linkGoogleAccount,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -319,8 +318,7 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Your password is never stored by Google and is only '
-                        'used to verify that you own this account.',
+                        AppL10n.of(context).linkPasswordNeverStored,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: cs.onSurfaceVariant,
                           height: 1.5,

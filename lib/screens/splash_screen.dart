@@ -11,6 +11,7 @@ import 'home_screen.dart';
 import 'unlock_screen.dart';
 import 'onboarding_screen.dart';
 import 'terms_acceptance_screen.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,7 +23,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  String _statusMessage = 'Loading...';
+  String _statusMessage = '';
 
   @override
   void initState() {
@@ -70,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     // Get auth service (already initialized by provider with caching)
-    _updateStatus('Checking authentication...');
+    _updateStatus(AppL10n.of(context).splashCheckingAuth);
     final backendAuth = context.read<BackendAuthService>();
 
     // Wait for auth initialization to complete (uses cached data, very fast)
@@ -83,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // Navigate based on authentication status
     if (backendAuth.isAuthenticated) {
       debugPrint('✅ [Splash] User authenticated, setting up encryption...');
-      _updateStatus('Setting up...');
+      _updateStatus(AppL10n.of(context).splashSettingUp);
 
       // Zero-knowledge accounts: NEVER generate a key here (that would diverge
       // from the real, wrapped key). Only load an existing local key, then gate
@@ -215,7 +216,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: Text(
-                    'Your thoughts, perfectly organized',
+                    AppL10n.of(context).splashTagline,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                       letterSpacing: 0.3,

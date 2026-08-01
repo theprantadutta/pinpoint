@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../services/api_service.dart';
 import '../services/zero_knowledge_service.dart';
 import 'home_screen.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Shown when a zero-knowledge account must be unlocked before notes can be
 /// read (fresh device, or the 7-day re-lock window has passed).
@@ -54,8 +55,8 @@ class _UnlockScreenState extends State<UnlockScreen> {
       setState(() {
         _busy = false;
         _error = _useRecoveryCode
-            ? 'That recovery code didn\'t work. Check for typos and try again.'
-            : 'Incorrect passphrase. Try again, or use your recovery code.';
+            ? AppL10n.of(context).unlockBadRecoveryCode
+            : AppL10n.of(context).unlockBadPassphrase;
       });
     }
   }
@@ -76,15 +77,15 @@ class _UnlockScreenState extends State<UnlockScreen> {
                   const Icon(Icons.lock_outline_rounded, size: 56),
                   const SizedBox(height: 16),
                   Text(
-                    _useRecoveryCode ? 'Enter recovery code' : 'Unlock your notes',
+                    _useRecoveryCode ? AppL10n.of(context).unlockEnterRecoveryCode : AppL10n.of(context).unlockTitle,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     _useRecoveryCode
-                        ? 'Paste the recovery code you saved when enabling Maximum Privacy.'
-                        : 'Your notes are end-to-end encrypted. Enter your encryption passphrase to unlock them on this device.',
+                        ? AppL10n.of(context).unlockRecoveryHelp
+                        : AppL10n.of(context).unlockPassphraseHelp,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -98,7 +99,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
                     onSubmitted: (_) => _busy ? null : _unlock(),
                     decoration: InputDecoration(
                       labelText:
-                          _useRecoveryCode ? 'Recovery code' : 'Encryption passphrase',
+                          _useRecoveryCode ? AppL10n.of(context).unlockRecoveryCodeLabel : AppL10n.of(context).unlockPassphraseLabel,
                       border: const OutlineInputBorder(),
                       errorText: _error,
                     ),
@@ -114,7 +115,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Text(_useRecoveryCode ? 'Recover' : 'Unlock'),
+                          : Text(_useRecoveryCode ? AppL10n.of(context).unlockRecover : AppL10n.of(context).unlockAction),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -127,8 +128,8 @@ class _UnlockScreenState extends State<UnlockScreen> {
                               _input.clear();
                             }),
                     child: Text(_useRecoveryCode
-                        ? 'Use passphrase instead'
-                        : 'Forgot passphrase? Use recovery code'),
+                        ? AppL10n.of(context).unlockUsePassphrase
+                        : AppL10n.of(context).unlockForgot),
                   ),
                 ],
               ),

@@ -3,6 +3,7 @@ import '../colors.dart';
 import '../theme.dart';
 import '../typography.dart';
 import '../animations.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// TagChip - Animated chip component for tags
 ///
@@ -112,7 +113,7 @@ class _TagChipState extends State<TagChip> with SingleTickerProviderStateMixin {
                   }
                 : null,
             child: Semantics(
-              label: 'Tag: ${widget.label}',
+              label: AppL10n.of(context).a11yTagLabel(widget.label),
               button: widget.onTap != null,
               selected: widget.isSelected,
               child: AnimatedContainer(
@@ -303,7 +304,7 @@ class _TagInputFieldState extends State<TagInputField> {
               controller: _controller,
               focusNode: _focusNode,
               decoration: InputDecoration(
-                hintText: widget.hint ?? 'Add tag...',
+                hintText: widget.hint ?? AppL10n.of(context).dsAddTagHint,
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,

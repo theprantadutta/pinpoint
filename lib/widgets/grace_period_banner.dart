@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:provider/provider.dart';
 import '../screens/subscription_screen.dart';
 import '../services/subscription_manager.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// A prominent banner shown when the user's subscription is in the grace period
 class GracePeriodBanner extends StatelessWidget {
@@ -96,8 +97,8 @@ class _GracePeriodBannerContent extends StatelessWidget {
                     children: [
                       Text(
                         isUrgent
-                            ? 'Subscription Expiring Soon!'
-                            : 'Subscription Grace Period',
+                            ? AppL10n.of(context).graceExpiringSoon
+                            : AppL10n.of(context).graceperiod,
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -105,7 +106,7 @@ class _GracePeriodBannerContent extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _getMessage(daysRemaining),
+                        _getMessage(context, daysRemaining),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
                         ),
@@ -128,15 +129,15 @@ class _GracePeriodBannerContent extends StatelessWidget {
     );
   }
 
-  String _getMessage(int days) {
+  String _getMessage(BuildContext context, int days) {
     if (days <= 0) {
-      return 'Your premium access ends today. Renew now to keep your features.';
+      return AppL10n.of(context).graceEndsToday;
     } else if (days == 1) {
-      return 'Your premium access ends tomorrow. Renew to keep your features.';
+      return AppL10n.of(context).graceEndsTomorrow;
     } else if (days <= 3) {
-      return 'Only $days days left! Renew now to avoid losing premium features.';
+      return AppL10n.of(context).graceDaysUrgent(days);
     } else {
-      return 'You have $days days to renew your subscription.';
+      return AppL10n.of(context).graceDaysRemaining(days);
     }
   }
 }

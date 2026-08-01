@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../gradients.dart';
 import '../animations.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// ConfirmSheet - Bottom sheet with gradient header for confirmations
 ///
@@ -190,7 +191,7 @@ class ConfirmSheet extends StatelessWidget {
                           ),
                           child: Text(
                             primaryLabel ??
-                                (isDestructive ? 'Delete' : 'Confirm'),
+                                (isDestructive ? AppL10n.of(context).commonDelete : AppL10n.of(context).dsConfirm),
                           ),
                         ),
                       ),

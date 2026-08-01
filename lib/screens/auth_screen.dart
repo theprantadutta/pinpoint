@@ -26,6 +26,7 @@ import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:pinpoint/util/api_error_messages.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pinpoint/util/sync_phase_labels.dart';
 
 /// Authentication screen with Google Sign-In and email/password options
 /// Minimum password length enforced at registration. Named rather than inline
@@ -1213,10 +1214,10 @@ class _SyncProgressDialog extends StatelessWidget {
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 250),
                   child: Text(
-                    (p.totalItems > 1 && p.currentItem > 0)
-                        ? l10n.authProgressWithCounter(
-                            p.message, p.currentItem, p.totalItems)
-                        : p.message,
+                    // Rendered from the phase rather than the service's own
+                    // message: the sync layer has no BuildContext and cannot
+                    // localize its status text.
+                    syncPhaseLabel(context, p),
                     key: ValueKey(
                         '${p.message}-${p.currentItem}-${p.totalItems}'),
                     textAlign: TextAlign.center,

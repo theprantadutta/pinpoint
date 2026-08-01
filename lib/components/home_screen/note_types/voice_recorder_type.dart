@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class VoiceRecorderType extends StatelessWidget {
   const VoiceRecorderType({super.key});
@@ -22,7 +23,7 @@ class VoiceRecorderType extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Voice Note',
+                AppL10n.of(context).audioVoiceNote,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,

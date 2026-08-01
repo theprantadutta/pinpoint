@@ -5,6 +5,8 @@ import '../design_system/design_system.dart';
 import '../screens/subscription_screen.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import 'package:pinpoint/constants/premium_limits.dart';
 
 /// Dialog shown when user hits a premium limit
 class PremiumGateDialog extends StatelessWidget {
@@ -137,7 +139,7 @@ class PremiumGateDialog extends StatelessWidget {
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          ctaText ?? 'Upgrade to Premium',
+                          ctaText ?? AppL10n.of(context).gateUpgradeCta,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -160,7 +162,7 @@ class PremiumGateDialog extends StatelessWidget {
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text(
-                  'Maybe Later',
+                  AppL10n.of(context).gateMaybeLater,
                   style: TextStyle(
                     color: isDark
                         ? PinpointColors.darkTextSecondary
@@ -181,12 +183,10 @@ class PremiumGateDialog extends StatelessWidget {
     return showDialog(
       context: context,
       builder: (context) => PremiumGateDialog(
-        title: 'Sync Limit Reached',
-        message:
-            'You\'ve reached the limit of 50 synced notes on the free plan. '
-            'Upgrade to Premium for unlimited cloud sync across all your devices.',
+        title: AppL10n.of(context).gateSyncTitle,
+        message: AppL10n.of(context).gateSyncMessage(PremiumLimits.maxSyncedNotesForFree),
         icon: Icons.cloud_off_rounded,
-        ctaText: 'Unlock Unlimited Sync',
+        ctaText: AppL10n.of(context).gateSyncCta,
       ),
     );
   }
@@ -197,11 +197,10 @@ class PremiumGateDialog extends StatelessWidget {
     return showDialog(
       context: context,
       builder: (context) => PremiumGateDialog(
-        title: 'OCR Limit Reached',
-        message: 'You\'ve used all 20 OCR scans this month. '
-            'Upgrade to Premium for unlimited text recognition from images.',
+        title: AppL10n.of(context).gateOcrTitle,
+        message: AppL10n.of(context).gateOcrMessage(PremiumLimits.maxOcrScansPerMonthForFree),
         icon: Icons.document_scanner_rounded,
-        ctaText: 'Unlock Unlimited OCR',
+        ctaText: AppL10n.of(context).gateOcrCta,
       ),
     );
   }
@@ -211,12 +210,11 @@ class PremiumGateDialog extends StatelessWidget {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'export');
     return showDialog(
       context: context,
-      builder: (context) => const PremiumGateDialog(
-        title: 'Export Limit Reached',
-        message: 'You\'ve used all 10 exports this month. '
-            'Upgrade to Premium for unlimited exports to PDF and Markdown.',
+      builder: (context) => PremiumGateDialog(
+        title: AppL10n.of(context).gateExportTitle,
+        message: AppL10n.of(context).gateExportMessage(PremiumLimits.maxExportsPerMonthForFree),
         icon: Icons.file_download_off_rounded,
-        ctaText: 'Unlock Unlimited Exports',
+        ctaText: AppL10n.of(context).gateExportCta,
       ),
     );
   }
@@ -226,12 +224,11 @@ class PremiumGateDialog extends StatelessWidget {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'voice_recording');
     return showDialog(
       context: context,
-      builder: (context) => const PremiumGateDialog(
-        title: 'Recording Limit',
-        message: 'Free plan recordings are limited to 2 minutes. '
-            'Upgrade to Premium for unlimited voice recording duration.',
+      builder: (context) => PremiumGateDialog(
+        title: AppL10n.of(context).gateRecordingTitle,
+        message: AppL10n.of(context).gateRecordingMessage(PremiumLimits.maxVoiceRecordingDurationForFree ~/ 60),
         icon: Icons.mic_off_rounded,
-        ctaText: 'Unlock Unlimited Recording',
+        ctaText: AppL10n.of(context).gateRecordingCta,
       ),
     );
   }
@@ -241,12 +238,11 @@ class PremiumGateDialog extends StatelessWidget {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'folders');
     return showDialog(
       context: context,
-      builder: (context) => const PremiumGateDialog(
-        title: 'Folder Limit Reached',
-        message: 'You\'ve reached the limit of 5 folders on the free plan. '
-            'Upgrade to Premium for unlimited folders and better organization.',
+      builder: (context) => PremiumGateDialog(
+        title: AppL10n.of(context).gateFolderTitle,
+        message: AppL10n.of(context).gateFolderMessage(PremiumLimits.maxFoldersForFree),
         icon: Icons.folder_off_rounded,
-        ctaText: 'Unlock Unlimited Folders',
+        ctaText: AppL10n.of(context).gateFolderCta,
       ),
     );
   }
@@ -256,12 +252,11 @@ class PremiumGateDialog extends StatelessWidget {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'theme');
     return showDialog(
       context: context,
-      builder: (context) => const PremiumGateDialog(
-        title: 'Premium Theme',
-        message: 'This theme color is exclusive to Premium members. '
-            'Upgrade to unlock all 5 beautiful accent colors.',
+      builder: (context) => PremiumGateDialog(
+        title: AppL10n.of(context).gateThemeTitle,
+        message: AppL10n.of(context).gateThemeMessage(PremiumLimits.totalThemeColors),
         icon: Icons.palette_rounded,
-        ctaText: 'Unlock All Themes',
+        ctaText: AppL10n.of(context).gateThemeCta,
       ),
     );
   }
@@ -273,11 +268,10 @@ class PremiumGateDialog extends StatelessWidget {
     return showDialog(
       context: context,
       builder: (context) => PremiumGateDialog(
-        title: 'Attachment Limit Reached',
-        message: 'You\'ve reached the limit of $max attachments per note. '
-            'Upgrade to Premium for unlimited file attachments.',
+        title: AppL10n.of(context).gateAttachmentTitle,
+        message: AppL10n.of(context).gateAttachmentMessage(max),
         icon: Icons.attach_file_rounded,
-        ctaText: 'Unlock Unlimited Attachments',
+        ctaText: AppL10n.of(context).gateAttachmentCta,
       ),
     );
   }
@@ -287,12 +281,11 @@ class PremiumGateDialog extends StatelessWidget {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'markdown_export');
     return showDialog(
       context: context,
-      builder: (context) => const PremiumGateDialog(
-        title: 'Premium Feature',
-        message: 'Markdown export is a Premium-only feature. '
-            'Export your notes in beautiful, portable markdown format.',
+      builder: (context) => PremiumGateDialog(
+        title: AppL10n.of(context).gatePremiumFeature,
+        message: AppL10n.of(context).gateMarkdownMessage,
         icon: Icons.code_rounded,
-        ctaText: 'Unlock Markdown Export',
+        ctaText: AppL10n.of(context).gateMarkdownCta,
       ),
     );
   }
@@ -302,12 +295,11 @@ class PremiumGateDialog extends StatelessWidget {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'encrypted_sharing');
     return showDialog(
       context: context,
-      builder: (context) => const PremiumGateDialog(
-        title: 'Premium Feature',
-        message: 'Encrypted sharing is a Premium-only feature. '
-            'Share your notes securely with end-to-end encryption.',
+      builder: (context) => PremiumGateDialog(
+        title: AppL10n.of(context).gatePremiumFeature,
+        message: AppL10n.of(context).gateSharingMessage,
         icon: Icons.shield_rounded,
-        ctaText: 'Unlock Secure Sharing',
+        ctaText: AppL10n.of(context).gateSharingCta,
       ),
     );
   }

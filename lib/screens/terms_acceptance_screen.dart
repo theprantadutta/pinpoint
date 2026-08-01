@@ -8,6 +8,7 @@ import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import 'auth_screen.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Terms and Privacy acceptance screen
 /// Shows terms of service and privacy policy with acceptance requirement
@@ -83,8 +84,8 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to save your acceptance. Please try again.'),
+        SnackBar(
+          content: Text(AppL10n.of(context).termsSaveFailed),
           backgroundColor: Colors.red,
         ),
       );
@@ -105,7 +106,7 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(widget.isViewOnly ? 'Terms & Privacy' : 'Review & Accept'),
+        title: Text(widget.isViewOnly ? AppL10n.of(context).setTermsPrivacy : AppL10n.of(context).termsReviewAccept),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: widget.isViewOnly
@@ -116,9 +117,9 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
             : null,
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Terms of Service'),
-            Tab(text: 'Privacy Policy'),
+          tabs: [
+            Tab(text: AppL10n.of(context).termsTabTerms),
+            Tab(text: AppL10n.of(context).termsTabPrivacy),
           ],
           indicatorColor: colorScheme.primary,
           labelColor: colorScheme.primary,
@@ -252,7 +253,7 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
               });
             },
             title: Text(
-              'I have read and agree to the Terms of Service and Privacy Policy',
+              AppL10n.of(context).termsAgreeCheckbox,
               style: TextStyle(
                 fontSize: 14,
                 color: isDark
@@ -278,9 +279,9 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Accept and Continue',
-                style: TextStyle(
+              child: Text(
+                AppL10n.of(context).termsAcceptContinue,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),

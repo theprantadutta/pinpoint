@@ -12,6 +12,7 @@ import '../../models/note_with_details.dart';
 import '../../services/drift_note_service.dart';
 import '../../services/filter_service.dart';
 import '../../util/note_utils.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class HomeScreenRecentNotes extends StatefulWidget {
   final String searchQuery;
@@ -97,15 +98,15 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes>
               if (snapshot.hasError) {
                 return EmptyState(
                   icon: Icons.error_outline_rounded,
-                  title: 'Something went wrong',
-                  message: 'Please try again later',
+                  title: AppL10n.of(context).foldersSomethingWrong,
+                  message: AppL10n.of(context).commonTryAgainLater,
                 );
               }
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return EmptyState(
                   icon: Icons.note_add_rounded,
-                  title: 'No notes yet',
-                  message: 'Create your first note to get started',
+                  title: AppL10n.of(context).notesNoneFound,
+                  message: AppL10n.of(context).notesCreateFirst,
                 );
               }
 

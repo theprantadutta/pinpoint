@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../typography.dart';
 import '../animations.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// A single checklist line shown in a note card preview.
 class NoteChecklistItem {
@@ -141,7 +142,7 @@ class _NoteCardState extends State<NoteCard> {
         onTapUp: (_) => setState(() => _isPressed = false),
         onTapCancel: () => setState(() => _isPressed = false),
         child: Semantics(
-          label: 'Note: ${widget.title}',
+          label: AppL10n.of(context).a11yNoteLabel(widget.title),
           button: true,
           selected: widget.isSelected,
           child: AnimatedContainer(
@@ -308,7 +309,7 @@ class _NoteCardState extends State<NoteCard> {
     // Empty note (no title, no body).
     if (!hasTitle) {
       return Text(
-        'Empty note',
+        AppL10n.of(context).dsEmptyNote,
         style: PinpointTypography.noteCardExcerpt(
           brightness: theme.brightness,
         ).copyWith(

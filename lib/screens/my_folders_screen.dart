@@ -12,6 +12,7 @@ import '../services/logger_service.dart';
 import '../widgets/premium_gate_dialog.dart';
 import '../util/show_a_toast.dart';
 import 'folder_screen.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class MyFoldersScreen extends StatefulWidget {
   static const String kRouteName = '/my-folders';
@@ -47,8 +48,8 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
     DialogService.addSomethingDialog(
       context: context,
       controller: controller,
-      title: 'Add Folder',
-      hintText: 'Enter folder name',
+      title: AppL10n.of(context).foldersAdd,
+      hintText: AppL10n.of(context).foldersNameHint,
       onAddPressed: () async {
         final text = controller.text.trim();
         if (text.isEmpty) return;
@@ -59,8 +60,8 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
           if (!context.mounted) return;
           showErrorToast(
             context: context,
-            title: 'Folder already exists',
-            description: 'Please choose a unique name.',
+            title: AppL10n.of(context).foldersAlreadyExists,
+            description: AppL10n.of(context).foldersChooseUniqueName,
           );
           return;
         }
@@ -80,7 +81,7 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
     return GradientScaffold(
       appBar: GlassAppBar(
         title: Text(
-          'My Folders',
+          AppL10n.of(context).foldersScreenTitle,
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w800,
           ),
@@ -94,7 +95,7 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
         ),
         actions: [
           Tooltip(
-            message: 'Create folder',
+            message: AppL10n.of(context).foldersCreate,
             child: IconButton(
               icon: const Icon(Symbols.add),
               onPressed: () {
@@ -115,8 +116,8 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
             log.e('[my-folders] stream error', snapshot.error);
             return EmptyState(
               icon: Icons.error_outline_rounded,
-              title: 'Something went wrong',
-              message: 'Failed to load folders',
+              title: AppL10n.of(context).foldersSomethingWrong,
+              message: AppL10n.of(context).foldersLoadFailed,
             );
           }
 
@@ -124,9 +125,9 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
           if (folders.isEmpty) {
             return EmptyState(
               icon: Icons.folder_open_rounded,
-              title: 'No folders yet',
-              message: 'Create one to organize your notes',
-              actionLabel: 'Create Folder',
+              title: AppL10n.of(context).foldersEmptyTitle,
+              message: AppL10n.of(context).foldersEmptyHint,
+              actionLabel: AppL10n.of(context).foldersCreateAction,
               onAction: () => _addFolderFlow(context),
             );
           }
@@ -146,7 +147,7 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
               return _FolderCard(
                 folderId: folder.noteFolderId,
                 title: folder.noteFolderTitle,
-                countHint: 'Tap to view',
+                countHint: AppL10n.of(context).foldersTapToView,
                 onRename: (newTitle) async {
                   final text = newTitle.trim();
                   if (text.isEmpty) return;
@@ -159,8 +160,8 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
                     if (!context.mounted) return;
                     showErrorToast(
                       context: context,
-                      title: 'Name already used',
-                      description: 'Please choose a unique name.',
+                      title: AppL10n.of(context).foldersNameUsed,
+                      description: AppL10n.of(context).foldersChooseUniqueName,
                     );
                     return;
                   }
@@ -171,7 +172,7 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
                   PinpointHaptics.success();
                   showSuccessToast(
                     context: context,
-                    title: 'Folder renamed',
+                    title: AppL10n.of(context).foldersRenamed,
                     description: '"${folder.noteFolderTitle}" → "$text"',
                   );
                 },
@@ -179,11 +180,11 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
                   if (!context.mounted) return;
                   final confirmed = await ConfirmSheet.show(
                     context: context,
-                    title: 'Delete folder?',
+                    title: AppL10n.of(context).foldersDeleteTitle,
                     message:
-                        'Notes will remain, but their link to this folder will be removed.',
-                    primaryLabel: 'Delete folder',
-                    secondaryLabel: 'Cancel',
+                        AppL10n.of(context).foldersDeleteBody,
+                    primaryLabel: AppL10n.of(context).foldersDeleteConfirm,
+                    secondaryLabel: AppL10n.of(context).commonCancel,
                     isDestructive: true,
                     icon: Icons.folder_delete_rounded,
                   );
@@ -195,7 +196,7 @@ class _MyFoldersScreenState extends State<MyFoldersScreen> {
                     PinpointHaptics.success();
                     showSuccessToast(
                       context: context,
-                      title: 'Folder deleted',
+                      title: AppL10n.of(context).foldersDeleted,
                       description: '"${folder.noteFolderTitle}" removed',
                     );
                   }
@@ -332,7 +333,7 @@ class _FolderCard extends StatelessWidget {
               ),
               ListTile(
                 leading: const Icon(Icons.drive_file_rename_outline),
-                title: const Text('Rename'),
+                title: Text(AppL10n.of(context).foldersRename),
                 onTap: () async {
                   Navigator.of(ctx).pop();
                   await _showRenameDialog(context, controller);
@@ -342,7 +343,7 @@ class _FolderCard extends StatelessWidget {
                 leading:
                     Icon(Icons.delete_outline, color: theme.colorScheme.error),
                 title: Text(
-                  'Delete',
+                  AppL10n.of(context).commonDelete,
                   style: TextStyle(color: theme.colorScheme.error),
                 ),
                 onTap: () async {
@@ -365,16 +366,16 @@ class _FolderCard extends StatelessWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Rename folder'),
+          title: Text(AppL10n.of(context).foldersRenameTitle),
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(hintText: 'Folder name'),
+            decoration: InputDecoration(hintText: AppL10n.of(context).foldersNameFieldHint),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
+              child: Text(AppL10n.of(context).commonCancel),
             ),
             FilledButton(
               onPressed: () async {

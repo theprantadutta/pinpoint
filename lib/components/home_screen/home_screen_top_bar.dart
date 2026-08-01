@@ -7,6 +7,7 @@ import '../../services/filter_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../widgets/filter_bottom_sheet.dart';
 import '../../walkthrough/walkthrough_keys.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class HomeScreenTopBar extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
@@ -73,7 +74,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
                 child: _isSearchActive
                     ? SearchBarSticky(
                         controller: _searchController,
-                        hint: 'Search your notes',
+                        hint: AppL10n.of(context).homeSearchHint,
                         onSearch: widget.onSearchChanged,
                         autoFocus: true,
                       )
@@ -96,7 +97,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
                         Symbols.filter_alt,
                         fill: hasFilters ? 1 : 0,
                       ),
-                      tooltip: 'Filters',
+                      tooltip: AppL10n.of(context).notesFilters,
                       onPressed: () {
                         showModalBottomSheet(
                           context: context,
@@ -126,7 +127,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
         // Pure status indicator — no tap action, just a colored icon.
         return Tooltip(
           message: offline
-              ? 'Offline — changes are saved and will sync when you reconnect'
+              ? AppL10n.of(context).homeOfflineBanner
               : 'Online',
           child: Padding(
             padding: const EdgeInsets.all(8),
@@ -160,7 +161,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Search your notes',
+                  AppL10n.of(context).homeSearchHint,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyLarge?.copyWith(

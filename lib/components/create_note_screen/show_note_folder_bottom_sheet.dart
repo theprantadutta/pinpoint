@@ -7,6 +7,7 @@ import '../../dtos/note_folder_dto.dart';
 import '../../services/dialog_service.dart';
 import '../../services/drift_note_folder_service.dart';
 import '../../design_system/design_system.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class ShowNoteFolderBottomSheet extends StatefulWidget {
   final List<NoteFolderDto> selectedFolders;
@@ -61,7 +62,7 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
               Icon(Symbols.folder, color: cs.primary, size: 24),
               const SizedBox(width: 12),
               Text(
-                'Select Folders',
+                AppL10n.of(context).folderSelectTitle,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
@@ -77,8 +78,8 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                     DialogService.addSomethingDialog(
                       context: context,
                       controller: controller,
-                      title: 'Add Folder',
-                      hintText: 'Enter folder name',
+                      title: AppL10n.of(context).foldersAdd,
+                      hintText: AppL10n.of(context).foldersNameHint,
                       onAddPressed: () async {
                         final text = controller.text.trim();
                         if (text.isNotEmpty) {
@@ -88,8 +89,8 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                             if (!mounted) return;
                             showErrorToast(
                               context: context,
-                              title: 'Folder Already Exists',
-                              description: 'Please choose a unique name',
+                              title: AppL10n.of(context).foldersAlreadyExists,
+                              description: AppL10n.of(context).foldersChooseUniqueName,
                             );
                             return;
                           }
@@ -165,7 +166,7 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'No folders yet',
+                        AppL10n.of(context).foldersEmptyTitle,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: cs.onSurface.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w500,
@@ -173,7 +174,7 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Tap "New" to create your first folder',
+                        AppL10n.of(context).folderTapNewHint,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: cs.onSurface.withValues(alpha: 0.4),
                         ),
@@ -322,8 +323,8 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                   PinpointHaptics.error();
                   showErrorToast(
                     context: context,
-                    title: 'No Folder Selected',
-                    description: 'Please select at least one folder',
+                    title: AppL10n.of(context).folderNoneSelected,
+                    description: AppL10n.of(context).folderSelectAtLeastOne,
                   );
                   return;
                 }
@@ -347,7 +348,7 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                   Icon(Symbols.check_circle, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'Confirm Selection',
+                    AppL10n.of(context).folderConfirmSelection,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,

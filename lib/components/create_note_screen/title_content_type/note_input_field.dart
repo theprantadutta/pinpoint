@@ -12,6 +12,7 @@ import 'package:pinpoint/services/premium_service.dart';
 import 'package:pinpoint/widgets/premium_gate_dialog.dart';
 import 'package:pinpoint/design_system/design_system.dart';
 import 'package:pinpoint/constants/premium_limits.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class NoteInputField extends StatelessWidget {
   // Picked images are downscaled/recompressed at selection time so we don't
@@ -105,18 +106,18 @@ class NoteInputField extends StatelessWidget {
           final used = premiumService.getOcrScansThisMonth();
           final total = PremiumLimits.maxOcrScansPerMonthForFree;
           final usageText = isPremium
-              ? 'Unlimited OCR scans available'
-              : 'OCR scans: $used/$total this month';
+              ? AppL10n.of(context).ocrUnlimited
+              : AppL10n.of(context).ocrQuota(used, total);
 
           final bool? doOCR = await showDialog<bool>(
             context: context,
             builder: (BuildContext context) => AlertDialog(
-              title: const Text('Perform OCR?'),
+              title: Text(AppL10n.of(context).ocrPerformTitle),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Do you want to extract text from this image?'),
+                  Text(AppL10n.of(context).ocrPerformBody),
                   const SizedBox(height: 12),
                   Text(
                     usageText,

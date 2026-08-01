@@ -300,7 +300,18 @@ class AuthenticationFailedApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Authentication Required',
+      // These run outside the main app shell, so they need their own
+      // Localizations — without this AppL10n.of() below has nothing to read.
+      localizationsDelegates: const [
+        AppL10n.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: LocaleController.supportedLocales,
+      // onGenerateTitle rather than `title`: the latter is evaluated with the
+      // context *above* MaterialApp, where Localizations does not yet exist.
+      onGenerateTitle: (context) => AppL10n.of(context).startupAuthRequired,
       home: Scaffold(
         body: Center(
           child: Column(
@@ -309,12 +320,12 @@ class AuthenticationFailedApp extends StatelessWidget {
               Icon(Icons.lock, size: 64, color: Colors.red),
               SizedBox(height: 16),
               Text(
-                'Authentication Failed',
+                AppL10n.of(context).startupAuthFailed,
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 16),
               Text(
-                'Please restart the app and try again',
+                AppL10n.of(context).startupRestartApp,
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 32),
@@ -323,7 +334,7 @@ class AuthenticationFailedApp extends StatelessWidget {
                   // Try authentication again
                   _retryAuthentication();
                 },
-                child: Text('Try Again'),
+                child: Text(AppL10n.of(context).startupTryAgain),
               ),
             ],
           ),
@@ -349,7 +360,18 @@ class InitializationErrorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Initialization Error',
+      // These run outside the main app shell, so they need their own
+      // Localizations — without this AppL10n.of() below has nothing to read.
+      localizationsDelegates: const [
+        AppL10n.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: LocaleController.supportedLocales,
+      // onGenerateTitle rather than `title`: the latter is evaluated with the
+      // context *above* MaterialApp, where Localizations does not yet exist.
+      onGenerateTitle: (context) => AppL10n.of(context).startupInitError,
       home: Scaffold(
         body: Center(
           child: Padding(
@@ -360,7 +382,7 @@ class InitializationErrorApp extends StatelessWidget {
                 Icon(Icons.error, size: 64, color: Colors.orange),
                 SizedBox(height: 16),
                 Text(
-                  'App Initialization Failed',
+                  AppL10n.of(context).startupInitFailed,
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 16),

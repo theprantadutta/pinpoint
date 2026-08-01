@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../animations.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// ChecklistItem - Animated checkbox with reorder handle
 ///
@@ -210,7 +211,7 @@ class _ChecklistItemState extends State<ChecklistItem>
                     PinpointHaptics.light();
                     widget.onDelete!();
                   },
-                  tooltip: 'Delete task',
+                  tooltip: AppL10n.of(context).dsDeleteTask,
                 ),
               ),
           ],

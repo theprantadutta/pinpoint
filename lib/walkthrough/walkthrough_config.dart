@@ -3,6 +3,7 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 import 'walkthrough_keys.dart';
 import 'walkthrough_content.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Configuration for walkthrough targets.
 /// Defines the order, content, and appearance of each coach mark.
@@ -40,9 +41,9 @@ class WalkthroughConfig {
           TargetContent(
             align: ContentAlign.top,
             builder: (context, controller) => WalkthroughTooltip(
-              title: 'Create a Note',
+              title: AppL10n.of(context).wtCreateTitle,
               description:
-                  'Tap here to create a new note. You can add text, voice recordings, todo lists, and reminders!',
+                  AppL10n.of(context).wtCreateBody,
               icon: Icons.add_rounded,
               accentColor: _mintColor,
               onNext: controller.next,
@@ -65,9 +66,9 @@ class WalkthroughConfig {
           TargetContent(
             align: ContentAlign.bottom,
             builder: (context, controller) => WalkthroughTooltip(
-              title: 'Search Notes',
+              title: AppL10n.of(context).wtSearchTitle,
               description:
-                  'Quickly find any note by searching through titles and content.',
+                  AppL10n.of(context).wtSearchBody,
               icon: Icons.search_rounded,
               onNext: controller.next,
               showNextButton: true,
@@ -89,9 +90,9 @@ class WalkthroughConfig {
           TargetContent(
             align: ContentAlign.bottom,
             builder: (context, controller) => WalkthroughTooltip(
-              title: 'Organize with Folders',
+              title: AppL10n.of(context).wtFoldersTitle,
               description:
-                  'Create folders to keep your notes organized by topic, project, or category.',
+                  AppL10n.of(context).wtFoldersBody,
               icon: Icons.create_new_folder_rounded,
               onNext: controller.next,
               showNextButton: true,
@@ -113,13 +114,13 @@ class WalkthroughConfig {
           TargetContent(
             align: ContentAlign.top,
             builder: (context, controller) => WalkthroughTooltip(
-              title: 'Settings & More',
+              title: AppL10n.of(context).wtSettingsTitle,
               description:
-                  'Access settings, sync options, and customize your experience. You can replay this tutorial anytime from here!',
+                  AppL10n.of(context).wtSettingsBody,
               icon: Icons.settings_rounded,
               onNext: controller.next,
               showNextButton: true,
-              nextButtonText: 'Done',
+              nextButtonText: AppL10n.of(context).wtDone,
             ),
           ),
         ],

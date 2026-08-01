@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../design_system/design_system.dart';
 import '../services/premium_service.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Bottom sheet displaying comprehensive usage statistics
 class UsageStatsBottomSheet extends StatefulWidget {
@@ -76,7 +77,7 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to reconcile: $e'),
+            content: Text(AppL10n.of(context).usageReconcileFailed(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -139,7 +140,7 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Usage Statistics',
+                          AppL10n.of(context).usageStatsTitle,
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: isDark
@@ -163,7 +164,7 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
                   ),
                   // Refresh button (long-press to reconcile)
                   Tooltip(
-                    message: 'Tap to refresh\nLong-press to reconcile',
+                    message: AppL10n.of(context).usageRefreshHint,
                     child: InkWell(
                       onTap: _isRefreshing ? null : _refreshUsageStats,
                       onLongPress: _isRefreshing
@@ -206,7 +207,7 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
                 // Synced Notes
                 _UsageCard(
                   icon: Icons.cloud_sync,
-                  title: 'Synced Notes',
+                  title: AppL10n.of(context).usageSyncedNotes,
                   current: _premiumService.getSyncedNotesCount(),
                   limit: 50,
                   color: cs.primary,
@@ -220,7 +221,7 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
                 // OCR Scans
                 _UsageCard(
                   icon: Icons.document_scanner,
-                  title: 'OCR Scans',
+                  title: AppL10n.of(context).usageOcrScans,
                   current: _premiumService.getOcrScansThisMonth(),
                   limit: 20,
                   color: cs.secondary,
@@ -235,7 +236,7 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
                 // Exports
                 _UsageCard(
                   icon: Icons.download,
-                  title: 'Exports',
+                  title: AppL10n.of(context).usageExports,
                   current: _premiumService.getExportsThisMonth(),
                   limit: 10,
                   color: cs.tertiary,
@@ -293,7 +294,7 @@ class _PremiumUnlimitedCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Unlimited Everything',
+            AppL10n.of(context).usageUnlimitedEverything,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: isDark
@@ -303,7 +304,7 @@ class _PremiumUnlimitedCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'You have unlimited access to all features',
+            AppL10n.of(context).usageUnlimitedBody,
             style: theme.textTheme.bodySmall?.copyWith(
               color: isDark
                   ? PinpointColors.darkTextSecondary
@@ -390,7 +391,7 @@ class _UsageCard extends StatelessWidget {
                     ),
                     if (resetsMonthly)
                       Text(
-                        'Resets monthly',
+                        AppL10n.of(context).usageResetsMonthly,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: isDark
                               ? PinpointColors.darkTextTertiary
@@ -435,7 +436,7 @@ class _UsageCard extends StatelessWidget {
           // Status text
           Text(
             isExceeded
-                ? 'Limit reached - Upgrade to continue'
+                ? AppL10n.of(context).usageLimitReached
                 : (isWarning
                     ? '$remaining remaining - Running low'
                     : '$remaining remaining'),
@@ -471,7 +472,7 @@ class _UpgradeButton extends StatelessWidget {
           context.push('/subscription');
         },
         icon: const Icon(Icons.workspace_premium),
-        label: const Text('Upgrade to Premium'),
+        label: Text(AppL10n.of(context).usageUpgradeToPremium),
         style: FilledButton.styleFrom(
           backgroundColor: cs.primary,
           foregroundColor: cs.onPrimary,

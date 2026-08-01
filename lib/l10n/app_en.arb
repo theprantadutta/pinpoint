@@ -210,24 +210,6 @@
   "@authDecryptionErrors": {
     "description": "Heading on the warning panel shown when some notes downloaded but could not be decrypted."
   },
-  "authProgressWithCounter": "{message}  ({current} of {total})",
-  "@authProgressWithCounter": {
-    "description": "Restore progress line combining the current status message with an item counter, e.g. 'Decrypting notes  (12 of 40)'.",
-    "placeholders": {
-      "message": {
-        "type": "String",
-        "example": "Decrypting notes"
-      },
-      "current": {
-        "type": "int",
-        "example": "12"
-      },
-      "total": {
-        "type": "int",
-        "example": "40"
-      }
-    }
-  },
   "subscriptionNeverExpires": "Never expires",
   "@subscriptionNeverExpires": {
     "description": "Expiry text for a lifetime purchase, which has no end date."
@@ -1391,5 +1373,1705 @@
   "themeAccentBlueOcean": "Blue Ocean",
   "@themeAccentBlueOcean": {
     "description": "Display name of the blue accent colour."
+  },
+  "edTitleHint": "Title",
+  "@edTitleHint": {
+    "description": "Placeholder in the note title field."
+  },
+  "edBodyHint": "Start writing your note...",
+  "@edBodyHint": {
+    "description": "Placeholder in the main note body field."
+  },
+  "edAddToFolder": "Add to folder",
+  "@edAddToFolder": {
+    "description": "Button that assigns the note to a folder."
+  },
+  "edPin": "Pin",
+  "@edPin": {
+    "description": "Tooltip: pin the note to the top of the list."
+  },
+  "edUnpin": "Unpin",
+  "@edUnpin": {
+    "description": "Tooltip: remove the note from the pinned section."
+  },
+  "edArchive": "Archive",
+  "@edArchive": {
+    "description": "Tooltip: move the note to the archive."
+  },
+  "edUnarchive": "Unarchive",
+  "@edUnarchive": {
+    "description": "Tooltip: move the note back out of the archive."
+  },
+  "edColor": "Color",
+  "@edColor": {
+    "description": "Tooltip on the note colour picker."
+  },
+  "edSaveAndClose": "Save & Close",
+  "@edSaveAndClose": {
+    "description": "Menu action that saves the note and leaves the editor."
+  },
+  "edShare": "Share",
+  "@edShare": {
+    "description": "Menu action that shares the note."
+  },
+  "edScanText": "Scan Text from Image",
+  "@edScanText": {
+    "description": "Menu action that runs OCR on a picked image."
+  },
+  "edScanTextQuota": "Scan Text ({used}/{total})",
+  "@edScanTextQuota": {
+    "description": "OCR menu action for free users, showing monthly quota used.",
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "example": "3"
+      },
+      "total": {
+        "type": "int",
+        "example": "20"
+      }
+    }
+  },
+  "edExportMarkdown": "Export Markdown",
+  "@edExportMarkdown": {
+    "description": "Menu action that exports the note as a Markdown file. \"Markdown\" is a format name."
+  },
+  "edExportMarkdownQuota": "Export Markdown ({used}/{total})",
+  "@edExportMarkdownQuota": {
+    "description": "Markdown export action for free users, showing monthly quota used.",
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "example": "3"
+      },
+      "total": {
+        "type": "int",
+        "example": "10"
+      }
+    }
+  },
+  "edExportPdf": "Export PDF",
+  "@edExportPdf": {
+    "description": "Menu action that exports the note as a PDF. \"PDF\" is a format name."
+  },
+  "edExportPdfQuota": "Export PDF ({used}/{total})",
+  "@edExportPdfQuota": {
+    "description": "PDF export action for free users, showing monthly quota used.",
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "example": "3"
+      },
+      "total": {
+        "type": "int",
+        "example": "10"
+      }
+    }
+  },
+  "edShareEncrypted": "Share Encrypted",
+  "@edShareEncrypted": {
+    "description": "Menu action for end-to-end encrypted sharing. Premium feature, not yet released."
+  },
+  "edSoonBadge": "SOON",
+  "@edSoonBadge": {
+    "description": "Small badge marking a feature that is not available yet. Displayed in caps."
+  },
+  "edUsage": "Usage",
+  "@edUsage": {
+    "description": "Menu action showing the note-related usage limits."
+  },
+  "edInfo": "Info",
+  "@edInfo": {
+    "description": "Menu action showing note metadata."
+  },
+  "edRecording": "Recording...",
+  "@edRecording": {
+    "description": "Status shown while a voice note is being captured."
+  },
+  "edTapToStop": "Tap to stop recording",
+  "@edTapToStop": {
+    "description": "Hint under the record button while recording."
+  },
+  "edTapToStart": "Tap to start recording",
+  "@edTapToStart": {
+    "description": "Hint under the record button when idle."
+  },
+  "edRecordAgain": "Record Again",
+  "@edRecordAgain": {
+    "description": "Button that discards the current recording and starts over."
+  },
+  "edAddTodoItem": "Add Todo Item",
+  "@edAddTodoItem": {
+    "description": "Button and dialog title for adding a checklist row."
+  },
+  "edTodoHint": "Enter todo item",
+  "@edTodoHint": {
+    "description": "Placeholder in the new checklist row field."
+  },
+  "edAdd": "Add",
+  "@edAdd": {
+    "description": "Confirm button on the add-todo dialog."
+  },
+  "edDeleteNoteTitle": "Delete Note",
+  "@edDeleteNoteTitle": {
+    "description": "Title of the delete-note confirmation dialog."
+  },
+  "edDeleteNoteConfirm": "Are you sure you want to delete this note?",
+  "@edDeleteNoteConfirm": {
+    "description": "Body of the delete-note confirmation dialog."
+  },
+  "edNoteInfo": "Note Info",
+  "@edNoteInfo": {
+    "description": "Heading of the note metadata sheet."
+  },
+  "edInfoType": "Type",
+  "@edInfoType": {
+    "description": "Label in the note info sheet for the note kind."
+  },
+  "edInfoFolder": "Folder",
+  "@edInfoFolder": {
+    "description": "Label in the note info sheet for the assigned folder."
+  },
+  "edInfoNone": "None",
+  "@edInfoNone": {
+    "description": "Value shown when the note is not in any folder."
+  },
+  "edNothingToShare": "Nothing to Share",
+  "@edNothingToShare": {
+    "description": "Dialog title when sharing an empty note."
+  },
+  "edAddContentBeforeShare": "Please add some content before sharing.",
+  "@edAddContentBeforeShare": {
+    "description": "Body of the empty-note share dialog."
+  },
+  "edNothingToExport": "Nothing to Export",
+  "@edNothingToExport": {
+    "description": "Dialog title when exporting an empty note."
+  },
+  "edAddContentBeforeExport": "Please add some content before exporting.",
+  "@edAddContentBeforeExport": {
+    "description": "Body of the empty-note export dialog."
+  },
+  "edExportedNoteSubject": "Exported Note",
+  "@edExportedNoteSubject": {
+    "description": "Share-sheet subject used when the note has no title."
+  },
+  "edExported": "Exported!",
+  "@edExported": {
+    "description": "Toast title after a successful export."
+  },
+  "edMarkdownExported": "Markdown file exported successfully",
+  "@edMarkdownExported": {
+    "description": "Toast body after exporting Markdown."
+  },
+  "edPdfExported": "PDF file exported successfully",
+  "@edPdfExported": {
+    "description": "Toast body after exporting a PDF."
+  },
+  "edExportFailed": "Export Failed",
+  "@edExportFailed": {
+    "description": "Toast title when an export fails."
+  },
+  "edMarkdownExportFailed": "Unable to export markdown file",
+  "@edMarkdownExportFailed": {
+    "description": "Toast body when a Markdown export fails."
+  },
+  "edPdfExportFailed": "Unable to export PDF file",
+  "@edPdfExportFailed": {
+    "description": "Toast body when a PDF export fails."
+  },
+  "edNoTextFound": "No Text Found",
+  "@edNoTextFound": {
+    "description": "Toast title when OCR found nothing in the image."
+  },
+  "edNoTextFoundBody": "Could not detect any text in the image",
+  "@edNoTextFoundBody": {
+    "description": "Toast body when OCR found nothing."
+  },
+  "edTextExtracted": "Text Extracted!",
+  "@edTextExtracted": {
+    "description": "Toast title after OCR succeeded."
+  },
+  "edTextExtractedBody": "Text from image has been added to your note",
+  "@edTextExtractedBody": {
+    "description": "Toast body after OCR succeeded."
+  },
+  "edOcrFailed": "OCR Failed",
+  "@edOcrFailed": {
+    "description": "Toast title when text recognition fails. OCR = optical character recognition."
+  },
+  "edOcrFailedBody": "Unable to scan text from image",
+  "@edOcrFailedBody": {
+    "description": "Toast body when text recognition fails."
+  },
+  "edExportedFromApp": "Exported from Pinpoint",
+  "@edExportedFromApp": {
+    "description": "Footer line printed at the bottom of an exported PDF. \"Pinpoint\" is the app name."
+  },
+  "edExportedDate": "Date: {date}",
+  "@edExportedDate": {
+    "description": "Date line printed at the bottom of an exported PDF.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Mar 14, 2026 4:05 PM"
+      }
+    }
+  },
+  "gateUpgradeCta": "Upgrade to Premium",
+  "@gateUpgradeCta": {
+    "description": "Default call-to-action on the premium upsell dialog."
+  },
+  "gateMaybeLater": "Maybe Later",
+  "@gateMaybeLater": {
+    "description": "Button dismissing the premium upsell dialog."
+  },
+  "gateSyncTitle": "Sync Limit Reached",
+  "@gateSyncTitle": {
+    "description": "Title of the upsell shown when the free cloud-sync note cap is hit."
+  },
+  "gateSyncMessage": "You've reached the limit of {limit} synced notes on the free plan. Upgrade to Premium for unlimited cloud sync across all your devices.",
+  "@gateSyncMessage": {
+    "description": "Body of the sync-limit upsell. The number comes from PremiumLimits, so it stays in step with the enforced cap.",
+    "placeholders": {
+      "limit": {
+        "type": "int",
+        "example": "50"
+      }
+    }
+  },
+  "gateSyncCta": "Unlock Unlimited Sync",
+  "@gateSyncCta": {
+    "description": "Call-to-action on the sync-limit upsell."
+  },
+  "gateOcrTitle": "OCR Limit Reached",
+  "@gateOcrTitle": {
+    "description": "Title of the upsell shown when the monthly OCR scan quota is used up."
+  },
+  "gateOcrMessage": "You've used all {limit} OCR scans this month. Upgrade to Premium for unlimited text recognition from images.",
+  "@gateOcrMessage": {
+    "description": "Body of the OCR-limit upsell.",
+    "placeholders": {
+      "limit": {
+        "type": "int",
+        "example": "20"
+      }
+    }
+  },
+  "gateOcrCta": "Unlock Unlimited OCR",
+  "@gateOcrCta": {
+    "description": "Call-to-action on the OCR-limit upsell."
+  },
+  "gateExportTitle": "Export Limit Reached",
+  "@gateExportTitle": {
+    "description": "Title of the upsell shown when the monthly export quota is used up."
+  },
+  "gateExportMessage": "You've used all {limit} exports this month. Upgrade to Premium for unlimited exports to PDF and Markdown.",
+  "@gateExportMessage": {
+    "description": "Body of the export-limit upsell. \"PDF\" and \"Markdown\" are format names.",
+    "placeholders": {
+      "limit": {
+        "type": "int",
+        "example": "10"
+      }
+    }
+  },
+  "gateExportCta": "Unlock Unlimited Exports",
+  "@gateExportCta": {
+    "description": "Call-to-action on the export-limit upsell."
+  },
+  "gateRecordingTitle": "Recording Limit",
+  "@gateRecordingTitle": {
+    "description": "Title of the upsell shown when a free voice recording hits its time cap."
+  },
+  "gateRecordingMessage": "Free plan recordings are limited to {minutes} minutes. Upgrade to Premium for unlimited voice recording duration.",
+  "@gateRecordingMessage": {
+    "description": "Body of the recording-limit upsell.",
+    "placeholders": {
+      "minutes": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "gateRecordingCta": "Unlock Unlimited Recording",
+  "@gateRecordingCta": {
+    "description": "Call-to-action on the recording-limit upsell."
+  },
+  "gateFolderTitle": "Folder Limit Reached",
+  "@gateFolderTitle": {
+    "description": "Title of the upsell shown when the free folder cap is hit."
+  },
+  "gateFolderMessage": "You've reached the limit of {limit} folders on the free plan. Upgrade to Premium for unlimited folders and better organization.",
+  "@gateFolderMessage": {
+    "description": "Body of the folder-limit upsell.",
+    "placeholders": {
+      "limit": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "gateFolderCta": "Unlock Unlimited Folders",
+  "@gateFolderCta": {
+    "description": "Call-to-action on the folder-limit upsell."
+  },
+  "gateThemeTitle": "Premium Theme",
+  "@gateThemeTitle": {
+    "description": "Title of the upsell shown when tapping a paid accent colour."
+  },
+  "gateThemeMessage": "This theme color is exclusive to Premium members. Upgrade to unlock all {total} beautiful accent colors.",
+  "@gateThemeMessage": {
+    "description": "Body of the premium-theme upsell.",
+    "placeholders": {
+      "total": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "gateThemeCta": "Unlock All Themes",
+  "@gateThemeCta": {
+    "description": "Call-to-action on the premium-theme upsell."
+  },
+  "gateAttachmentTitle": "Attachment Limit Reached",
+  "@gateAttachmentTitle": {
+    "description": "Title of the upsell shown when a note hits its attachment cap."
+  },
+  "gateAttachmentMessage": "You've reached the limit of {max} attachments per note. Upgrade to Premium for unlimited file attachments.",
+  "@gateAttachmentMessage": {
+    "description": "Body of the attachment-limit upsell.",
+    "placeholders": {
+      "max": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "gateAttachmentCta": "Unlock Unlimited Attachments",
+  "@gateAttachmentCta": {
+    "description": "Call-to-action on the attachment-limit upsell."
+  },
+  "gatePremiumFeature": "Premium Feature",
+  "@gatePremiumFeature": {
+    "description": "Title of the upsell for a feature that is entirely paid-only."
+  },
+  "gateMarkdownMessage": "Markdown export is a Premium-only feature. Export your notes in beautiful, portable markdown format.",
+  "@gateMarkdownMessage": {
+    "description": "Body of the Markdown-export upsell. \"Markdown\" is a format name."
+  },
+  "gateMarkdownCta": "Unlock Markdown Export",
+  "@gateMarkdownCta": {
+    "description": "Call-to-action on the Markdown-export upsell."
+  },
+  "gateSharingMessage": "Encrypted sharing is a Premium-only feature. Share your notes securely with end-to-end encryption.",
+  "@gateSharingMessage": {
+    "description": "Body of the encrypted-sharing upsell."
+  },
+  "gateSharingCta": "Unlock Secure Sharing",
+  "@gateSharingCta": {
+    "description": "Call-to-action on the encrypted-sharing upsell."
+  },
+  "subNoPlansAvailable": "No subscription plans available",
+  "@subNoPlansAvailable": {
+    "description": "Shown when the store returned no products."
+  },
+  "subLoadPlansFailed": "Failed to load subscription plans",
+  "@subLoadPlansFailed": {
+    "description": "Shown when the store lookup failed."
+  },
+  "subRestoreFailed": "Restore Failed",
+  "@subRestoreFailed": {
+    "description": "Toast title when restoring purchases failed."
+  },
+  "subRestoreFailedBody": "Could not restore purchases. Please try again.",
+  "@subRestoreFailedBody": {
+    "description": "Toast body when restoring purchases failed."
+  },
+  "subRestoreComplete": "Restore Complete",
+  "@subRestoreComplete": {
+    "description": "Toast title after purchases were restored."
+  },
+  "subNoPurchasesFound": "No Purchases Found",
+  "@subNoPurchasesFound": {
+    "description": "Toast title when a restore found nothing to restore."
+  },
+  "subNoPurchasesFoundBody": "No previous purchases found to restore.",
+  "@subNoPurchasesFoundBody": {
+    "description": "Toast body when a restore found nothing."
+  },
+  "subPurchaseInitiated": "Purchase Initiated",
+  "@subPurchaseInitiated": {
+    "description": "Toast title once the store checkout has started."
+  },
+  "subProcessingPurchase": "Processing your purchase...",
+  "@subProcessingPurchase": {
+    "description": "Toast body while the store processes the purchase."
+  },
+  "subPurchaseFailed": "Purchase Failed",
+  "@subPurchaseFailed": {
+    "description": "Toast title when a purchase did not go through."
+  },
+  "subPurchaseFailedBody": "Unable to complete purchase",
+  "@subPurchaseFailedBody": {
+    "description": "Toast body when a purchase did not go through."
+  },
+  "subRestore": "Restore",
+  "@subRestore": {
+    "description": "Button that restores previously bought subscriptions."
+  },
+  "subHeroTitle": "Pinpoint Premium",
+  "@subHeroTitle": {
+    "description": "Heading on the paywall. \"Pinpoint\" is the app name."
+  },
+  "subHeroSubtitle": "Unlock all features and sync across devices",
+  "@subHeroSubtitle": {
+    "description": "Subheading on the paywall."
+  },
+  "subUpgradeOptions": "Upgrade Options",
+  "@subUpgradeOptions": {
+    "description": "Heading above the list of purchasable plans."
+  },
+  "subTermsOfUse": "Terms of Use",
+  "@subTermsOfUse": {
+    "description": "Link to the terms of service from the paywall."
+  },
+  "subPrivacyPolicy": "Privacy Policy",
+  "@subPrivacyPolicy": {
+    "description": "Link to the privacy policy from the paywall."
+  },
+  "subFeatureSync": "Unlimited notes synced to the cloud",
+  "@subFeatureSync": {
+    "description": "Paywall feature bullet."
+  },
+  "subFeatureFolders": "Unlimited folders",
+  "@subFeatureFolders": {
+    "description": "Paywall feature bullet."
+  },
+  "subFeatureImages": "Unlimited images & attachments",
+  "@subFeatureImages": {
+    "description": "Paywall feature bullet."
+  },
+  "subFeatureVoice": "Unlimited voice recording length",
+  "@subFeatureVoice": {
+    "description": "Paywall feature bullet."
+  },
+  "subFeatureOcr": "Unlimited OCR text scanning",
+  "@subFeatureOcr": {
+    "description": "Paywall feature bullet. OCR = optical character recognition."
+  },
+  "subFeatureExport": "Unlimited PDF & Markdown export",
+  "@subFeatureExport": {
+    "description": "Paywall feature bullet. \"PDF\" and \"Markdown\" are format names."
+  },
+  "subFeatureDrawing": "Drawing notes",
+  "@subFeatureDrawing": {
+    "description": "Paywall feature bullet for the drawing note type."
+  },
+  "subFeatureSharing": "Encrypted note sharing",
+  "@subFeatureSharing": {
+    "description": "Paywall feature bullet."
+  },
+  "subFeatureThemes": "All accent colors & themes",
+  "@subFeatureThemes": {
+    "description": "Paywall feature bullet."
+  },
+  "subFeatureSupport": "Priority support",
+  "@subFeatureSupport": {
+    "description": "Paywall feature bullet."
+  },
+  "subPaymentPendingBadge": "PAYMENT PENDING",
+  "@subPaymentPendingBadge": {
+    "description": "Badge on the current plan while a renewal payment has not cleared. Displayed in caps."
+  },
+  "subCancelledBadge": "CANCELLED",
+  "@subCancelledBadge": {
+    "description": "Badge on the current plan after cancellation. Displayed in caps."
+  },
+  "subCurrentPlanBadge": "CURRENT PLAN",
+  "@subCurrentPlanBadge": {
+    "description": "Badge marking the plan the user is on. Displayed in caps."
+  },
+  "subResubscribePrompt": "Changed your mind? Resubscribe in {store} to keep premium going.",
+  "@subResubscribePrompt": {
+    "description": "Prompt shown to a user who cancelled but still has access. {store} is App Store or Google Play.",
+    "placeholders": {
+      "store": {
+        "type": "String",
+        "example": "Google Play"
+      }
+    }
+  },
+  "subResubscribeIn": "Resubscribe in {store}",
+  "@subResubscribeIn": {
+    "description": "Button label for re-subscribing through the platform store.",
+    "placeholders": {
+      "store": {
+        "type": "String",
+        "example": "Google Play"
+      }
+    }
+  },
+  "subManageIn": "Manage in {store}",
+  "@subManageIn": {
+    "description": "Button label for managing the subscription in the platform store.",
+    "placeholders": {
+      "store": {
+        "type": "String",
+        "example": "Google Play"
+      }
+    }
+  },
+  "subLoadingPlans": "Loading subscription plans...",
+  "@subLoadingPlans": {
+    "description": "Shown while the store products are being fetched."
+  },
+  "subPlanMonthly": "Monthly",
+  "@subPlanMonthly": {
+    "description": "Short name of the monthly plan card."
+  },
+  "subPlanYearly": "Yearly",
+  "@subPlanYearly": {
+    "description": "Short name of the yearly plan card."
+  },
+  "subPlanLifetime": "Lifetime",
+  "@subPlanLifetime": {
+    "description": "Short name of the one-time lifetime purchase card."
+  },
+  "subBadgeUpgradeSave": "UPGRADE - Save 33%",
+  "@subBadgeUpgradeSave": {
+    "description": "Badge on the yearly plan for users already on monthly. Displayed in caps."
+  },
+  "subBadgeBestValue": "BEST VALUE - Save 33%",
+  "@subBadgeBestValue": {
+    "description": "Badge highlighting the yearly plan as the best deal. Displayed in caps."
+  },
+  "subBadgePayOnce": "Pay once, own forever",
+  "@subBadgePayOnce": {
+    "description": "Badge on the lifetime plan."
+  },
+  "subThankYou": "Thank you for your support!",
+  "@subThankYou": {
+    "description": "Heading shown to lifetime purchasers."
+  },
+  "subLifetimeAccess": "You have lifetime access to all premium features.",
+  "@subLifetimeAccess": {
+    "description": "Body shown to lifetime purchasers."
+  },
+  "subBuyLifetime": "Buy Lifetime",
+  "@subBuyLifetime": {
+    "description": "Purchase button for the one-time lifetime plan."
+  },
+  "subSubscribe": "Subscribe",
+  "@subSubscribe": {
+    "description": "Purchase button for a recurring plan."
+  },
+  "subLegalAutoRenew": "Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period. Payment is charged to your {store} account at confirmation of purchase. Manage or cancel anytime in your {store} account settings. The lifetime plan is a one-time purchase and does not renew.",
+  "@subLegalAutoRenew": {
+    "description": "Store-mandated legal disclosure under the plan list. Wording is required by the app stores — translate faithfully, do not shorten.",
+    "placeholders": {
+      "store": {
+        "type": "String",
+        "example": "Google Play"
+      }
+    }
+  },
+  "foldersScreenTitle": "My Folders",
+  "@foldersScreenTitle": {
+    "description": "Title of the folder management screen."
+  },
+  "foldersSomethingWrong": "Something went wrong",
+  "@foldersSomethingWrong": {
+    "description": "Error heading on the folders screen."
+  },
+  "foldersEmptyTitle": "No folders yet",
+  "@foldersEmptyTitle": {
+    "description": "Empty state heading on the folders screen."
+  },
+  "foldersEmptyHint": "Create one to organize your notes",
+  "@foldersEmptyHint": {
+    "description": "Empty state hint on the folders screen."
+  },
+  "foldersCreateAction": "Create Folder",
+  "@foldersCreateAction": {
+    "description": "Button on the folders empty state."
+  },
+  "foldersTapToView": "Tap to view",
+  "@foldersTapToView": {
+    "description": "Hint under a folder tile showing it can be opened."
+  },
+  "subRestoredCount": "{count, plural, one{{count} purchase restored successfully!} other{{count} purchases restored successfully!}}",
+  "@subRestoredCount": {
+    "description": "Toast body after restoring purchases, showing how many were recovered.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "encTitle": "Encryption",
+  "@encTitle": {
+    "description": "Title of the encryption settings screen."
+  },
+  "encMaxPrivacy": "Maximum Privacy",
+  "@encMaxPrivacy": {
+    "description": "Name of the zero-knowledge encryption mode, where the server cannot read notes."
+  },
+  "encStandard": "Standard",
+  "@encStandard": {
+    "description": "Name of the default encryption mode, where the server keeps a recovery copy of the key."
+  },
+  "encMaxPrivacyDesc": "Only you can read your notes. We cannot — your key never leaves your device unwrapped.",
+  "@encMaxPrivacyDesc": {
+    "description": "Explains the zero-knowledge mode."
+  },
+  "encStandardDesc": "Your notes are encrypted, but we hold a recovery copy of your key so you never get locked out.",
+  "@encStandardDesc": {
+    "description": "Explains the standard mode."
+  },
+  "encUpgradeHeading": "Upgrade to Maximum Privacy",
+  "@encUpgradeHeading": {
+    "description": "Heading above the zero-knowledge opt-in."
+  },
+  "encEnableButton": "Enable Maximum Privacy",
+  "@encEnableButton": {
+    "description": "Button that turns on zero-knowledge encryption."
+  },
+  "encSwitchBackButton": "Switch back to Standard",
+  "@encSwitchBackButton": {
+    "description": "Button that turns zero-knowledge encryption off."
+  },
+  "encStillInitializing": "Encryption is still initializing. Try again in a moment.",
+  "@encStillInitializing": {
+    "description": "Toast when the user acts before the crypto layer is ready."
+  },
+  "encSetPassphraseTitle": "Set encryption passphrase",
+  "@encSetPassphraseTitle": {
+    "description": "Title of the dialog that captures a new encryption passphrase."
+  },
+  "encPassphrase": "Passphrase",
+  "@encPassphrase": {
+    "description": "Field label for the encryption passphrase."
+  },
+  "encConfirmPassphrase": "Confirm passphrase",
+  "@encConfirmPassphrase": {
+    "description": "Field label for re-entering the encryption passphrase."
+  },
+  "encPassphraseTooShort": "Use at least 8 characters",
+  "@encPassphraseTooShort": {
+    "description": "Validation error when the passphrase is too short."
+  },
+  "encPassphraseMismatch": "Passphrases do not match",
+  "@encPassphraseMismatch": {
+    "description": "Validation error when the two passphrase fields differ."
+  },
+  "encContinue": "Continue",
+  "@encContinue": {
+    "description": "Button advancing the encryption setup."
+  },
+  "encSaveRecoveryTitle": "Save your recovery code",
+  "@encSaveRecoveryTitle": {
+    "description": "Title of the dialog showing the one-time recovery code."
+  },
+  "encCopy": "Copy",
+  "@encCopy": {
+    "description": "Button copying the recovery code to the clipboard."
+  },
+  "encRecoveryCopied": "Recovery code copied",
+  "@encRecoveryCopied": {
+    "description": "Toast confirming the recovery code was copied."
+  },
+  "encSavedIt": "I have saved it",
+  "@encSavedIt": {
+    "description": "Button confirming the user stored the recovery code."
+  },
+  "encSwitchBackTitle": "Switch back to Standard?",
+  "@encSwitchBackTitle": {
+    "description": "Title of the confirmation for leaving zero-knowledge mode."
+  },
+  "encSwitchBack": "Switch back",
+  "@encSwitchBack": {
+    "description": "Confirm button for leaving zero-knowledge mode."
+  },
+  "encSwitchedBack": "Switched back to Standard",
+  "@encSwitchedBack": {
+    "description": "Toast after leaving zero-knowledge mode."
+  },
+  "encSomethingWrong": "Something went wrong: {error}",
+  "@encSomethingWrong": {
+    "description": "Toast for an unexpected encryption failure.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Key unavailable"
+      }
+    }
+  },
+  "syncTitle": "Sync",
+  "@syncTitle": {
+    "description": "Title of the sync screen."
+  },
+  "syncCloudSync": "Cloud Sync",
+  "@syncCloudSync": {
+    "description": "Heading of the sync screen hero."
+  },
+  "syncAcrossDevices": "Sync your notes across devices",
+  "@syncAcrossDevices": {
+    "description": "Subheading of the sync screen hero."
+  },
+  "syncStatus": "Sync Status",
+  "@syncStatus": {
+    "description": "Heading of the sync status card."
+  },
+  "syncStatusSynced": "Synced",
+  "@syncStatusSynced": {
+    "description": "Status: everything is up to date."
+  },
+  "syncStatusError": "Error",
+  "@syncStatusError": {
+    "description": "Status: the last sync failed."
+  },
+  "syncStatusSyncing": "Syncing...",
+  "@syncStatusSyncing": {
+    "description": "Status: a sync is in progress."
+  },
+  "syncStatusNotSynced": "Not synced",
+  "@syncStatusNotSynced": {
+    "description": "Status: nothing has been synced yet."
+  },
+  "syncLastSync": "Last sync: {when}",
+  "@syncLastSync": {
+    "description": "Timestamp of the most recent successful sync.",
+    "placeholders": {
+      "when": {
+        "type": "String",
+        "example": "Mar 14, 2026 4:05 PM"
+      }
+    }
+  },
+  "syncActions": "Sync Actions",
+  "@syncActions": {
+    "description": "Heading above the manual sync buttons."
+  },
+  "syncUpload": "Upload",
+  "@syncUpload": {
+    "description": "Button that pushes local notes to the server."
+  },
+  "syncDownload": "Download",
+  "@syncDownload": {
+    "description": "Button that pulls notes from the server."
+  },
+  "syncHowItWorks": "How Sync Works",
+  "@syncHowItWorks": {
+    "description": "Heading of the explanatory section on the sync screen."
+  },
+  "syncUploadComplete": "Upload Complete",
+  "@syncUploadComplete": {
+    "description": "Toast title after a successful upload."
+  },
+  "syncUploadFailed": "Upload Failed",
+  "@syncUploadFailed": {
+    "description": "Toast title when an upload fails."
+  },
+  "syncUploadError": "Upload Error",
+  "@syncUploadError": {
+    "description": "Toast title for an unexpected upload exception."
+  },
+  "syncDownloadComplete": "Download Complete",
+  "@syncDownloadComplete": {
+    "description": "Toast title after a successful download."
+  },
+  "syncDownloadFailed": "Download Failed",
+  "@syncDownloadFailed": {
+    "description": "Toast title when a download fails."
+  },
+  "syncDownloadError": "Download Error",
+  "@syncDownloadError": {
+    "description": "Toast title for an unexpected download exception."
+  },
+  "syncErrorTitle": "Sync Error",
+  "@syncErrorTitle": {
+    "description": "Toast title for an unexpected sync exception."
+  },
+  "mdBold": "Bold",
+  "@mdBold": {
+    "description": "Toolbar tooltip: bold text."
+  },
+  "mdItalic": "Italic",
+  "@mdItalic": {
+    "description": "Toolbar tooltip: italic text."
+  },
+  "mdUnderline": "Underline",
+  "@mdUnderline": {
+    "description": "Toolbar tooltip: underlined text."
+  },
+  "mdStrikethrough": "Strikethrough",
+  "@mdStrikethrough": {
+    "description": "Toolbar tooltip: struck-through text."
+  },
+  "mdHeading1": "Heading 1",
+  "@mdHeading1": {
+    "description": "Toolbar tooltip: top-level heading."
+  },
+  "mdHeading2": "Heading 2",
+  "@mdHeading2": {
+    "description": "Toolbar tooltip: second-level heading."
+  },
+  "mdHeading3": "Heading 3",
+  "@mdHeading3": {
+    "description": "Toolbar tooltip: third-level heading."
+  },
+  "mdBulletList": "Bullet List",
+  "@mdBulletList": {
+    "description": "Toolbar tooltip: unordered list."
+  },
+  "mdNumberedList": "Numbered List",
+  "@mdNumberedList": {
+    "description": "Toolbar tooltip: ordered list."
+  },
+  "mdChecklist": "Checklist",
+  "@mdChecklist": {
+    "description": "Toolbar tooltip: checkbox list."
+  },
+  "mdQuote": "Quote",
+  "@mdQuote": {
+    "description": "Toolbar tooltip: block quote."
+  },
+  "mdCodeBlock": "Code Block",
+  "@mdCodeBlock": {
+    "description": "Toolbar tooltip: preformatted code."
+  },
+  "mdAlignLeft": "Align Left",
+  "@mdAlignLeft": {
+    "description": "Toolbar tooltip: left-align text."
+  },
+  "mdAlignCenter": "Align Center",
+  "@mdAlignCenter": {
+    "description": "Toolbar tooltip: centre text."
+  },
+  "mdAlignRight": "Align Right",
+  "@mdAlignRight": {
+    "description": "Toolbar tooltip: right-align text."
+  },
+  "mdClearFormatting": "Clear Formatting",
+  "@mdClearFormatting": {
+    "description": "Toolbar tooltip: strip all styling from the selection."
+  },
+  "mdInsertLink": "Insert Link",
+  "@mdInsertLink": {
+    "description": "Toolbar tooltip and dialog title for adding a hyperlink."
+  },
+  "mdUrl": "URL",
+  "@mdUrl": {
+    "description": "Field label for the link address. \"URL\" is a technical term."
+  },
+  "mdLinkText": "Link Text",
+  "@mdLinkText": {
+    "description": "Field label for the visible text of a hyperlink."
+  },
+  "mdLinkTextHint": "Click here",
+  "@mdLinkTextHint": {
+    "description": "Placeholder example for hyperlink text."
+  },
+  "mdInsert": "Insert",
+  "@mdInsert": {
+    "description": "Confirm button on the insert-link dialog."
+  },
+  "remPreciseTitle": "Enable Precise Reminders",
+  "@remPreciseTitle": {
+    "description": "Title of the dialog requesting the exact-alarm permission."
+  },
+  "remSkip": "Skip",
+  "@remSkip": {
+    "description": "Button declining the exact-alarm permission."
+  },
+  "remEnable": "Enable",
+  "@remEnable": {
+    "description": "Button granting the exact-alarm permission."
+  },
+  "remMustBeFuture": "Reminder time must be in the future",
+  "@remMustBeFuture": {
+    "description": "Validation error when the chosen reminder time has already passed."
+  },
+  "remOnce": "Once (No Repeat)",
+  "@remOnce": {
+    "description": "Recurrence option: fire a single time."
+  },
+  "remHourly": "Hourly",
+  "@remHourly": {
+    "description": "Recurrence option: every hour."
+  },
+  "remDaily": "Daily",
+  "@remDaily": {
+    "description": "Recurrence option: every day."
+  },
+  "remWeekly": "Weekly",
+  "@remWeekly": {
+    "description": "Recurrence option: every week."
+  },
+  "remMonthly": "Monthly",
+  "@remMonthly": {
+    "description": "Recurrence option: every month."
+  },
+  "remYearly": "Yearly",
+  "@remYearly": {
+    "description": "Recurrence option: every year."
+  },
+  "remEvery": "Every",
+  "@remEvery": {
+    "description": "Field label before the recurrence interval number, e.g. \"Every 2\" weeks."
+  },
+  "remNeverEnds": "Never Ends",
+  "@remNeverEnds": {
+    "description": "Recurrence end option: repeat indefinitely."
+  },
+  "remAfterOccurrences": "After X Occurrences",
+  "@remAfterOccurrences": {
+    "description": "Recurrence end option: stop after a set number of repeats."
+  },
+  "remOnDate": "On Specific Date",
+  "@remOnDate": {
+    "description": "Recurrence end option: stop on a chosen date."
+  },
+  "remOccurrenceCount": "Number of Occurrences",
+  "@remOccurrenceCount": {
+    "description": "Field label for how many times a reminder should repeat."
+  },
+  "remSelectEndDate": "Select End Date",
+  "@remSelectEndDate": {
+    "description": "Button prompting the user to pick when the recurrence stops."
+  },
+  "remPreview": "Preview (Next {count} Occurrences)",
+  "@remPreview": {
+    "description": "Heading above a preview list of upcoming reminder times.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "remDetails": "Reminder Details",
+  "@remDetails": {
+    "description": "Heading of the reminder configuration section."
+  },
+  "filterTitle": "Filters",
+  "@filterTitle": {
+    "description": "Heading of the filter sheet."
+  },
+  "filterClearAll": "Clear All",
+  "@filterClearAll": {
+    "description": "Button removing every active filter."
+  },
+  "filterPinnedOnly": "Pinned Notes Only",
+  "@filterPinnedOnly": {
+    "description": "Filter toggle: show only pinned notes."
+  },
+  "filterNoteTypes": "Note Types",
+  "@filterNoteTypes": {
+    "description": "Heading above the note-type filter chips."
+  },
+  "filterTypeText": "Text Notes",
+  "@filterTypeText": {
+    "description": "Filter chip for plain text notes."
+  },
+  "filterTypeAudio": "Audio Notes",
+  "@filterTypeAudio": {
+    "description": "Filter chip for voice notes."
+  },
+  "filterTypeReminder": "Reminders",
+  "@filterTypeReminder": {
+    "description": "Filter chip for notes that carry a reminder."
+  },
+  "filterDateRange": "Date Range",
+  "@filterDateRange": {
+    "description": "Heading above the date-range filter."
+  },
+  "filterSelectDateRange": "Select date range",
+  "@filterSelectDateRange": {
+    "description": "Placeholder before a date range has been chosen."
+  },
+  "filterDateRangeHint": "Tap to change, long press to clear",
+  "@filterDateRangeHint": {
+    "description": "Hint under a chosen date range."
+  },
+  "filterFolders": "Folders",
+  "@filterFolders": {
+    "description": "Heading above the folder filter chips."
+  },
+  "filterNoFolders": "No folders available",
+  "@filterNoFolders": {
+    "description": "Shown when there are no folders to filter by."
+  },
+  "filterApply": "Apply Filters",
+  "@filterApply": {
+    "description": "Confirm button when no filters are selected yet."
+  },
+  "linkTitle": "Link Accounts",
+  "@linkTitle": {
+    "description": "Title of the account linking screen."
+  },
+  "linkAccountExists": "Account Already Exists",
+  "@linkAccountExists": {
+    "description": "Heading explaining why linking is needed."
+  },
+  "linkWhatsHappening": "What's happening?",
+  "@linkWhatsHappening": {
+    "description": "Heading of the explanatory panel on the linking screen."
+  },
+  "linkExplanation": "An account with this Google email already exists. To link your Google account, please enter your current password to verify your identity.",
+  "@linkExplanation": {
+    "description": "Explains why the user is being asked for a password."
+  },
+  "linkEnterPassword": "Enter your password",
+  "@linkEnterPassword": {
+    "description": "Heading above the password field on the linking screen."
+  },
+  "linkPasswordHint": "Enter your current password",
+  "@linkPasswordHint": {
+    "description": "Placeholder in the linking password field."
+  },
+  "linkGoogleAccount": "Link Google Account",
+  "@linkGoogleAccount": {
+    "description": "Button that performs the account link."
+  },
+  "linkPasswordNeverStored": "Your password is never stored by Google and is only used to verify that you own this account.",
+  "@linkPasswordNeverStored": {
+    "description": "Reassurance under the linking password field."
+  },
+  "obCaptureTitle": "Capture Your Ideas",
+  "@obCaptureTitle": {
+    "description": "Onboarding slide 1 heading."
+  },
+  "obCaptureBody": "Create rich notes with text, audio recordings, drawings, and more. Everything you need in one place.",
+  "@obCaptureBody": {
+    "description": "Onboarding slide 1 body."
+  },
+  "obOrganizeTitle": "Stay Organized",
+  "@obOrganizeTitle": {
+    "description": "Onboarding slide 2 heading."
+  },
+  "obOrganizeBody": "Organize your notes with folders, tags, and powerful search. Find what you need, when you need it.",
+  "@obOrganizeBody": {
+    "description": "Onboarding slide 2 body."
+  },
+  "obPrivacyTitle": "Privacy First",
+  "@obPrivacyTitle": {
+    "description": "Onboarding slide 3 heading."
+  },
+  "obPrivacyBody": "Your notes are encrypted and stored locally. Optional biometric lock keeps everything secure.",
+  "@obPrivacyBody": {
+    "description": "Onboarding slide 3 body."
+  },
+  "obReadyTitle": "Ready to Start",
+  "@obReadyTitle": {
+    "description": "Onboarding final slide heading."
+  },
+  "obReadyBody": "You're all set! Start capturing your thoughts and ideas with Pinpoint.",
+  "@obReadyBody": {
+    "description": "Onboarding final slide body. \"Pinpoint\" is the app name."
+  },
+  "obSkip": "Skip",
+  "@obSkip": {
+    "description": "Button that dismisses the onboarding."
+  },
+  "obGetStarted": "Get Started",
+  "@obGetStarted": {
+    "description": "Button on the final onboarding slide."
+  },
+  "obNext": "Next",
+  "@obNext": {
+    "description": "Button advancing to the next onboarding slide."
+  },
+  "usageStatsTitle": "Usage Statistics",
+  "@usageStatsTitle": {
+    "description": "Heading of the usage statistics sheet."
+  },
+  "usageRefreshHint": "Tap to refresh\nLong-press to reconcile",
+  "@usageRefreshHint": {
+    "description": "Tooltip explaining the refresh gestures on the usage sheet."
+  },
+  "usageReconcileFailed": "Failed to reconcile: {error}",
+  "@usageReconcileFailed": {
+    "description": "Error when re-syncing usage counters with the server fails.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Network error"
+      }
+    }
+  },
+  "usageSyncedNotes": "Synced Notes",
+  "@usageSyncedNotes": {
+    "description": "Usage meter label for notes uploaded to the cloud."
+  },
+  "usageOcrScans": "OCR Scans",
+  "@usageOcrScans": {
+    "description": "Usage meter label for text-recognition scans."
+  },
+  "usageExports": "Exports",
+  "@usageExports": {
+    "description": "Usage meter label for PDF/Markdown exports."
+  },
+  "usageUnlimitedEverything": "Unlimited Everything",
+  "@usageUnlimitedEverything": {
+    "description": "Heading shown to premium users on the usage sheet."
+  },
+  "usageUnlimitedBody": "You have unlimited access to all features",
+  "@usageUnlimitedBody": {
+    "description": "Body shown to premium users on the usage sheet."
+  },
+  "usageResetsMonthly": "Resets monthly",
+  "@usageResetsMonthly": {
+    "description": "Note under a quota that refreshes every month."
+  },
+  "usageLimitReached": "Limit reached - Upgrade to continue",
+  "@usageLimitReached": {
+    "description": "Shown when a free quota is exhausted."
+  },
+  "usageUpgradeToPremium": "Upgrade to Premium",
+  "@usageUpgradeToPremium": {
+    "description": "Button on the usage sheet leading to the paywall."
+  },
+  "usageThisMonth": "Usage This Month",
+  "@usageThisMonth": {
+    "description": "Heading of the compact usage card."
+  },
+  "usageUpgrade": "Upgrade",
+  "@usageUpgrade": {
+    "description": "Short button on the usage card leading to the paywall."
+  },
+  "usagePremiumActive": "Premium Active",
+  "@usagePremiumActive": {
+    "description": "Badge on the usage card for paying users."
+  },
+  "usagePremiumBody": "Unlimited notes, OCR, and exports",
+  "@usagePremiumBody": {
+    "description": "Body on the usage card for paying users."
+  },
+  "wtCreateTitle": "Create a Note",
+  "@wtCreateTitle": {
+    "description": "Walkthrough step highlighting the create button."
+  },
+  "wtCreateBody": "Tap here to create a new note. You can add text, voice recordings, todo lists, and reminders!",
+  "@wtCreateBody": {
+    "description": "Walkthrough body for the create button."
+  },
+  "wtSearchTitle": "Search Notes",
+  "@wtSearchTitle": {
+    "description": "Walkthrough step highlighting search."
+  },
+  "wtSearchBody": "Quickly find any note by searching through titles and content.",
+  "@wtSearchBody": {
+    "description": "Walkthrough body for search."
+  },
+  "wtFoldersTitle": "Organize with Folders",
+  "@wtFoldersTitle": {
+    "description": "Walkthrough step highlighting folders."
+  },
+  "wtFoldersBody": "Create folders to keep your notes organized by topic, project, or category.",
+  "@wtFoldersBody": {
+    "description": "Walkthrough body for folders."
+  },
+  "wtSettingsTitle": "Settings & More",
+  "@wtSettingsTitle": {
+    "description": "Walkthrough step highlighting settings."
+  },
+  "wtSettingsBody": "Access settings, sync options, and customize your experience. You can replay this tutorial anytime from here!",
+  "@wtSettingsBody": {
+    "description": "Walkthrough body for settings."
+  },
+  "wtDone": "Done",
+  "@wtDone": {
+    "description": "Button finishing the walkthrough."
+  },
+  "unlockBadRecoveryCode": "That recovery code didn't work. Check for typos and try again.",
+  "@unlockBadRecoveryCode": {
+    "description": "Error when the entered recovery code is rejected."
+  },
+  "unlockBadPassphrase": "Incorrect passphrase. Try again, or use your recovery code.",
+  "@unlockBadPassphrase": {
+    "description": "Error when the entered encryption passphrase is wrong."
+  },
+  "unlockEnterRecoveryCode": "Enter recovery code",
+  "@unlockEnterRecoveryCode": {
+    "description": "Heading when unlocking with a recovery code."
+  },
+  "unlockTitle": "Unlock your notes",
+  "@unlockTitle": {
+    "description": "Heading on the unlock screen."
+  },
+  "unlockRecoveryHelp": "Paste the recovery code you saved when enabling Maximum Privacy.",
+  "@unlockRecoveryHelp": {
+    "description": "Instruction when unlocking with a recovery code."
+  },
+  "unlockPassphraseHelp": "Your notes are end-to-end encrypted. Enter your encryption passphrase to unlock them on this device.",
+  "@unlockPassphraseHelp": {
+    "description": "Instruction when unlocking with the passphrase."
+  },
+  "unlockRecoveryCodeLabel": "Recovery code",
+  "@unlockRecoveryCodeLabel": {
+    "description": "Field label for the recovery code."
+  },
+  "unlockPassphraseLabel": "Encryption passphrase",
+  "@unlockPassphraseLabel": {
+    "description": "Field label for the encryption passphrase."
+  },
+  "unlockRecover": "Recover",
+  "@unlockRecover": {
+    "description": "Button submitting a recovery code."
+  },
+  "unlockAction": "Unlock",
+  "@unlockAction": {
+    "description": "Button submitting the passphrase."
+  },
+  "unlockUsePassphrase": "Use passphrase instead",
+  "@unlockUsePassphrase": {
+    "description": "Link switching from recovery code back to passphrase entry."
+  },
+  "unlockForgot": "Forgot passphrase? Use recovery code",
+  "@unlockForgot": {
+    "description": "Link switching to recovery code entry."
+  },
+  "termsSaveFailed": "Failed to save your acceptance. Please try again.",
+  "@termsSaveFailed": {
+    "description": "Error when recording terms acceptance fails."
+  },
+  "termsReviewAccept": "Review & Accept",
+  "@termsReviewAccept": {
+    "description": "Screen title when the user must accept the terms."
+  },
+  "termsTabTerms": "Terms of Service",
+  "@termsTabTerms": {
+    "description": "Tab showing the terms of service."
+  },
+  "termsTabPrivacy": "Privacy Policy",
+  "@termsTabPrivacy": {
+    "description": "Tab showing the privacy policy."
+  },
+  "termsAgreeCheckbox": "I have read and agree to the Terms of Service and Privacy Policy",
+  "@termsAgreeCheckbox": {
+    "description": "Checkbox the user must tick to continue."
+  },
+  "termsAcceptContinue": "Accept and Continue",
+  "@termsAcceptContinue": {
+    "description": "Button accepting the terms."
+  },
+  "folderSearchHint": "Search in folder...",
+  "@folderSearchHint": {
+    "description": "Placeholder in the in-folder search field."
+  },
+  "folderEmptyTitle": "No notes in this folder",
+  "@folderEmptyTitle": {
+    "description": "Empty state heading inside a folder."
+  },
+  "folderEmptyHint": "Add notes to this folder to see them here",
+  "@folderEmptyHint": {
+    "description": "Empty state hint inside a folder."
+  },
+  "graceExpiringSoon": "Subscription Expiring Soon!",
+  "@graceExpiringSoon": {
+    "description": "Banner heading when the subscription is about to lapse."
+  },
+  "graceperiod": "Subscription Grace Period",
+  "@graceperiod": {
+    "description": "Banner heading during the post-failure grace window."
+  },
+  "graceEndsToday": "Your premium access ends today. Renew now to keep your features.",
+  "@graceEndsToday": {
+    "description": "Banner body when access lapses today."
+  },
+  "graceEndsTomorrow": "Your premium access ends tomorrow. Renew to keep your features.",
+  "@graceEndsTomorrow": {
+    "description": "Banner body when access lapses tomorrow."
+  },
+  "graceDaysUrgent": "Only {days} days left! Renew now to avoid losing premium features.",
+  "@graceDaysUrgent": {
+    "description": "Urgent banner body with a day count.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "graceDaysRemaining": "You have {days} days to renew your subscription.",
+  "@graceDaysRemaining": {
+    "description": "Calmer banner body with a day count.",
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "7"
+      }
+    }
+  },
+  "splashLoading": "Loading...",
+  "@splashLoading": {
+    "description": "Splash status while the app boots."
+  },
+  "splashCheckingAuth": "Checking authentication...",
+  "@splashCheckingAuth": {
+    "description": "Splash status while the session is validated."
+  },
+  "splashSettingUp": "Setting up...",
+  "@splashSettingUp": {
+    "description": "Splash status while first-run setup completes."
+  },
+  "splashTagline": "Your thoughts, perfectly organized",
+  "@splashTagline": {
+    "description": "Tagline under the logo on the splash screen."
+  },
+  "syncPhaseIdle": "Ready to sync",
+  "@syncPhaseIdle": {
+    "description": "Sync status: nothing running, ready to start."
+  },
+  "syncPhasePreparingFolders": "Preparing folders...",
+  "@syncPhasePreparingFolders": {
+    "description": "Sync status: about to sync folders."
+  },
+  "syncPhaseSyncingFolders": "Syncing folders...",
+  "@syncPhaseSyncingFolders": {
+    "description": "Sync status: folders in progress, count unknown."
+  },
+  "syncPhaseSyncingFoldersCount": "Syncing folders ({current}/{total})",
+  "@syncPhaseSyncingFoldersCount": {
+    "description": "Sync status: folders in progress with a running count.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "3"
+      },
+      "total": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "syncPhasePreparingNotes": "Preparing notes...",
+  "@syncPhasePreparingNotes": {
+    "description": "Sync status: about to sync notes."
+  },
+  "syncPhaseUploadingNotes": "Uploading notes...",
+  "@syncPhaseUploadingNotes": {
+    "description": "Sync status: notes uploading, count unknown."
+  },
+  "syncPhaseUploadingNotesCount": "Uploading notes ({current}/{total})",
+  "@syncPhaseUploadingNotesCount": {
+    "description": "Sync status: notes uploading with a running count.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "3"
+      },
+      "total": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "syncPhaseDownloadingNotes": "Downloading notes...",
+  "@syncPhaseDownloadingNotes": {
+    "description": "Sync status: notes downloading, count unknown."
+  },
+  "syncPhaseDownloadingNotesCount": "Downloading notes ({current}/{total})",
+  "@syncPhaseDownloadingNotesCount": {
+    "description": "Sync status: notes downloading with a running count.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "3"
+      },
+      "total": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "syncPhaseProcessingNotes": "Processing notes...",
+  "@syncPhaseProcessingNotes": {
+    "description": "Sync status: decrypting/merging downloaded notes."
+  },
+  "syncPhaseProcessingNotesCount": "Processing notes ({current}/{total})",
+  "@syncPhaseProcessingNotesCount": {
+    "description": "Sync status: processing notes with a running count.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "3"
+      },
+      "total": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "syncPhaseSyncingReminders": "Syncing reminders...",
+  "@syncPhaseSyncingReminders": {
+    "description": "Sync status: reminders in progress, count unknown."
+  },
+  "syncPhaseSyncingRemindersCount": "Syncing reminders ({current}/{total})",
+  "@syncPhaseSyncingRemindersCount": {
+    "description": "Sync status: reminders in progress with a running count.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "3"
+      },
+      "total": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "syncPhaseFinalizing": "Finalizing...",
+  "@syncPhaseFinalizing": {
+    "description": "Sync status: last cleanup step."
+  },
+  "syncPhaseCompleted": "Sync completed",
+  "@syncPhaseCompleted": {
+    "description": "Sync status: finished successfully."
+  },
+  "startupAuthRequired": "Authentication Required",
+  "@startupAuthRequired": {
+    "description": "Window title of the screen shown when biometric unlock fails at launch."
+  },
+  "startupAuthFailed": "Authentication Failed",
+  "@startupAuthFailed": {
+    "description": "Heading shown when biometric unlock fails at launch."
+  },
+  "startupRestartApp": "Please restart the app and try again",
+  "@startupRestartApp": {
+    "description": "Instruction shown when biometric unlock fails at launch."
+  },
+  "startupTryAgain": "Try Again",
+  "@startupTryAgain": {
+    "description": "Button retrying biometric unlock at launch."
+  },
+  "startupInitError": "Initialization Error",
+  "@startupInitError": {
+    "description": "Window title of the screen shown when the app fails to start."
+  },
+  "startupInitFailed": "App Initialization Failed",
+  "@startupInitFailed": {
+    "description": "Heading shown when the app fails to start."
+  },
+  "foldersRename": "Rename",
+  "@foldersRename": {
+    "description": "Menu action that renames a folder."
+  },
+  "foldersRenameTitle": "Rename folder",
+  "@foldersRenameTitle": {
+    "description": "Title of the rename-folder dialog."
+  },
+  "foldersNameFieldHint": "Folder name",
+  "@foldersNameFieldHint": {
+    "description": "Placeholder in the rename-folder field."
+  },
+  "encWrapExplain": "You set an encryption passphrase. Your data key is wrapped with it and with a one-time recovery code, and the plaintext key is removed from our servers.",
+  "@encWrapExplain": {
+    "description": "Explains what enabling zero-knowledge mode actually does."
+  },
+  "encLoseBothWarning": "Important: if you lose BOTH the passphrase and the recovery code, your notes cannot be recovered by anyone, including us.",
+  "@encLoseBothWarning": {
+    "description": "Critical warning about irrecoverable data loss. Keep the emphasis on BOTH."
+  },
+  "encOnDescription": "Maximum Privacy is on. You will be asked for your passphrase when you sign in on a new device.",
+  "@encOnDescription": {
+    "description": "Status text once zero-knowledge mode is active."
+  },
+  "encRecoveryOnlyWay": "This is the ONLY way to recover your notes if you forget your passphrase. Store it somewhere safe.",
+  "@encRecoveryOnlyWay": {
+    "description": "Warning shown with the one-time recovery code. Keep the emphasis on ONLY."
+  },
+  "encSwitchBackBody": "Your encryption key will be uploaded to our servers again so you never get locked out. This means we could technically read your notes. Continue?",
+  "@encSwitchBackBody": {
+    "description": "Body of the confirmation for leaving zero-knowledge mode."
+  },
+  "folderChangeFolder": "Change Folder",
+  "@folderChangeFolder": {
+    "description": "Button that reassigns the note to a different folder."
+  },
+  "folderSelectTitle": "Select Folders",
+  "@folderSelectTitle": {
+    "description": "Heading of the folder-picker sheet."
+  },
+  "folderTapNewHint": "Tap \"New\" to create your first folder",
+  "@folderTapNewHint": {
+    "description": "Empty state hint in the folder-picker sheet."
+  },
+  "folderNoneSelected": "No Folder Selected",
+  "@folderNoneSelected": {
+    "description": "Error when confirming the picker with nothing chosen."
+  },
+  "folderSelectAtLeastOne": "Please select at least one folder",
+  "@folderSelectAtLeastOne": {
+    "description": "Hint when confirming the picker with nothing chosen."
+  },
+  "folderConfirmSelection": "Confirm Selection",
+  "@folderConfirmSelection": {
+    "description": "Button confirming the folder picker."
+  },
+  "ocrUnlimited": "Unlimited OCR scans available",
+  "@ocrUnlimited": {
+    "description": "Shown to premium users before running OCR."
+  },
+  "ocrQuota": "OCR scans: {used}/{total} this month",
+  "@ocrQuota": {
+    "description": "Remaining OCR quota for free users.",
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "example": "3"
+      },
+      "total": {
+        "type": "int",
+        "example": "20"
+      }
+    }
+  },
+  "ocrPerformTitle": "Perform OCR?",
+  "@ocrPerformTitle": {
+    "description": "Title of the dialog confirming a text scan."
+  },
+  "ocrPerformBody": "Do you want to extract text from this image?",
+  "@ocrPerformBody": {
+    "description": "Body of the OCR confirmation dialog."
+  },
+  "todoAddTitle": "Add Todo",
+  "@todoAddTitle": {
+    "description": "Title of the add-todo sheet and its button."
+  },
+  "todoAddSubtitle": "What needs to get done?",
+  "@todoAddSubtitle": {
+    "description": "Prompt in the add-todo sheet."
+  },
+  "todoConfirmDelete": "Confirm Delete",
+  "@todoConfirmDelete": {
+    "description": "Title of the delete-todo confirmation."
+  },
+  "todoDeleteConfirmBody": "Are you sure you want to delete \"{title}\"?",
+  "@todoDeleteConfirmBody": {
+    "description": "Body of the delete-todo confirmation, naming the item.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Buy milk"
+      }
+    }
+  },
+  "todoUpdateTitle": "Update Todo",
+  "@todoUpdateTitle": {
+    "description": "Title of the edit-todo sheet."
+  },
+  "todoUpdateSubtitle": "Edit this task’s title.",
+  "@todoUpdateSubtitle": {
+    "description": "Prompt in the edit-todo sheet."
+  },
+  "todoNoneYet": "No todos yet",
+  "@todoNoneYet": {
+    "description": "Empty state in the checklist editor."
+  },
+  "todoAddFirst": "Add your first todo to get started",
+  "@todoAddFirst": {
+    "description": "Empty state hint in the checklist editor."
+  },
+  "todoMarkAllDone": "Mark All Done",
+  "@todoMarkAllDone": {
+    "description": "Button ticking every checklist item."
+  },
+  "audioUpgradeUnlimited": "Upgrade for unlimited recording",
+  "@audioUpgradeUnlimited": {
+    "description": "Upsell under the recorder for free users."
+  },
+  "audioTranscriptPlaceholder": "Your transcribed text will appear here",
+  "@audioTranscriptPlaceholder": {
+    "description": "Placeholder in the speech-to-text output area."
+  },
+  "audioVoiceNote": "Voice Note",
+  "@audioVoiceNote": {
+    "description": "Label on a voice-note card."
+  },
+  "remPreciseBody": "To ensure your reminders arrive exactly on time, please allow exact alarms in the next screen.",
+  "@remPreciseBody": {
+    "description": "Body of the exact-alarm permission dialog."
+  },
+  "homeSearchHint": "Search your notes",
+  "@homeSearchHint": {
+    "description": "Placeholder in the home search field."
+  },
+  "homeOfflineBanner": "Offline — changes are saved and will sync when you reconnect",
+  "@homeOfflineBanner": {
+    "description": "Banner shown while the device has no connection."
+  },
+  "emptyNoNotes": "No notes yet. Create your first note!",
+  "@emptyNoNotes": {
+    "description": "Generic empty state for the notes list."
+  },
+  "emptyNoArchived": "No archived notes yet",
+  "@emptyNoArchived": {
+    "description": "Generic empty state for the archive."
+  },
+  "dsDeleteTask": "Delete task",
+  "@dsDeleteTask": {
+    "description": "Tooltip on the checklist row delete button."
+  },
+  "dsConfirm": "Confirm",
+  "@dsConfirm": {
+    "description": "Default confirm label on a non-destructive confirmation sheet."
+  },
+  "dsChecklist": "Checklist",
+  "@dsChecklist": {
+    "description": "Editor toolbar label for inserting a checklist."
+  },
+  "dsTapToExpand": "Tap to expand",
+  "@dsTapToExpand": {
+    "description": "Hint on a collapsed editor toolbar."
+  },
+  "dsEmptyNote": "Empty note",
+  "@dsEmptyNote": {
+    "description": "Placeholder shown on a note card with no content."
+  },
+  "dsRecentSearches": "Recent searches",
+  "@dsRecentSearches": {
+    "description": "Heading above previously used search terms."
+  },
+  "dsCommandHint": "Type a command or search...",
+  "@dsCommandHint": {
+    "description": "Placeholder in the command palette."
+  },
+  "dsAddTagHint": "Add tag...",
+  "@dsAddTagHint": {
+    "description": "Placeholder in the tag input."
+  },
+  "emptyNoSearchResults": "No results for '{query}'",
+  "@emptyNoSearchResults": {
+    "description": "Empty state when a search returned nothing, quoting the search term.",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "groceries"
+      }
+    }
+  },
+  "a11yNoteLabel": "Note: {title}",
+  "@a11yNoteLabel": {
+    "description": "Screen-reader label for a note card.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Shopping list"
+      }
+    }
+  },
+  "a11yTagLabel": "Tag: {label}",
+  "@a11yTagLabel": {
+    "description": "Screen-reader label for a tag chip.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "work"
+      }
+    }
   }
 }

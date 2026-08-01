@@ -6,6 +6,8 @@ import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/widgets/premium_gate_dialog.dart';
 import '../design_system/design_system.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import 'package:pinpoint/util/localized_dates.dart';
 
 class SyncScreen extends StatefulWidget {
   static const String kRouteName = '/sync';
@@ -62,7 +64,7 @@ class _SyncScreenState extends State<SyncScreen> {
           PinpointHaptics.success();
           showSuccessToast(
             context: context,
-            title: 'Sync Complete',
+            title: AppL10n.of(context).setSyncComplete,
             description: result.message,
           );
         } else {
@@ -77,7 +79,7 @@ class _SyncScreenState extends State<SyncScreen> {
           } else {
             showErrorToast(
               context: context,
-              title: 'Sync Failed',
+              title: AppL10n.of(context).setSyncFailed,
               description: result.message,
             );
           }
@@ -89,7 +91,7 @@ class _SyncScreenState extends State<SyncScreen> {
         PinpointHaptics.error();
         showErrorToast(
           context: context,
-          title: 'Sync Error',
+          title: AppL10n.of(context).syncErrorTitle,
           description: e.toString(),
         );
       }
@@ -118,14 +120,14 @@ class _SyncScreenState extends State<SyncScreen> {
           PinpointHaptics.success();
           showSuccessToast(
             context: context,
-            title: 'Upload Complete',
+            title: AppL10n.of(context).syncUploadComplete,
             description: result.message,
           );
         } else {
           PinpointHaptics.error();
           showErrorToast(
             context: context,
-            title: 'Upload Failed',
+            title: AppL10n.of(context).syncUploadFailed,
             description: result.message,
           );
         }
@@ -135,7 +137,7 @@ class _SyncScreenState extends State<SyncScreen> {
         PinpointHaptics.error();
         showErrorToast(
           context: context,
-          title: 'Upload Error',
+          title: AppL10n.of(context).syncUploadError,
           description: e.toString(),
         );
       }
@@ -164,14 +166,14 @@ class _SyncScreenState extends State<SyncScreen> {
           PinpointHaptics.success();
           showSuccessToast(
             context: context,
-            title: 'Download Complete',
+            title: AppL10n.of(context).syncDownloadComplete,
             description: result.message,
           );
         } else {
           PinpointHaptics.error();
           showErrorToast(
             context: context,
-            title: 'Download Failed',
+            title: AppL10n.of(context).syncDownloadFailed,
             description: result.message,
           );
         }
@@ -181,7 +183,7 @@ class _SyncScreenState extends State<SyncScreen> {
         PinpointHaptics.error();
         showErrorToast(
           context: context,
-          title: 'Download Error',
+          title: AppL10n.of(context).syncDownloadError,
           description: e.toString(),
         );
       }
@@ -205,7 +207,7 @@ class _SyncScreenState extends State<SyncScreen> {
           children: [
             Icon(Icons.sync_rounded, color: cs.primary, size: 20),
             const SizedBox(width: 8),
-            const Text('Sync'),
+            Text(AppL10n.of(context).syncTitle),
           ],
         ),
       ),
@@ -216,7 +218,7 @@ class _SyncScreenState extends State<SyncScreen> {
           children: [
             // Header
             Text(
-              'Cloud Sync',
+              AppL10n.of(context).syncCloudSync,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.2,
@@ -224,7 +226,7 @@ class _SyncScreenState extends State<SyncScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Sync your notes across devices',
+              AppL10n.of(context).syncAcrossDevices,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: cs.onSurface.withAlpha(180),
               ),
@@ -239,7 +241,7 @@ class _SyncScreenState extends State<SyncScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Sync Status',
+                    AppL10n.of(context).syncStatus,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.1,
@@ -268,13 +270,13 @@ class _SyncScreenState extends State<SyncScreen> {
                           children: [
                             Text(
                               _syncManager.status == SyncStatus.synced
-                                  ? 'Synced'
+                                  ? AppL10n.of(context).syncStatusSynced
                                   : _syncManager.status == SyncStatus.error
-                                      ? 'Error'
+                                      ? AppL10n.of(context).syncStatusError
                                       : _syncManager.status ==
                                               SyncStatus.syncing
-                                          ? 'Syncing...'
-                                          : 'Not synced',
+                                          ? AppL10n.of(context).syncStatusSyncing
+                                          : AppL10n.of(context).syncStatusNotSynced,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -289,7 +291,7 @@ class _SyncScreenState extends State<SyncScreen> {
                             if (_syncManager.lastSyncDateTime != null) ...[
                               const SizedBox(height: 4),
                               Text(
-                                'Last sync: ${_syncManager.lastSyncDateTime!.toLocal()}',
+                                AppL10n.of(context).syncLastSync(LocalizedDates.dateTime(context, _syncManager.lastSyncDateTime!.toLocal())),
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: cs.onSurface.withAlpha(150),
                                 ),
@@ -308,7 +310,7 @@ class _SyncScreenState extends State<SyncScreen> {
 
             // Sync actions
             Text(
-              'Sync Actions',
+              AppL10n.of(context).syncActions,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.1,
@@ -330,7 +332,7 @@ class _SyncScreenState extends State<SyncScreen> {
                         ),
                       )
                     : const Icon(Icons.sync_rounded),
-                label: const Text('Sync Now'),
+                label: Text(AppL10n.of(context).setSyncNow),
               ),
             ),
 
@@ -342,7 +344,7 @@ class _SyncScreenState extends State<SyncScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _isSyncing ? null : _triggerUpload,
                     icon: const Icon(Icons.upload_rounded),
-                    label: const Text('Upload'),
+                    label: Text(AppL10n.of(context).syncUpload),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -350,7 +352,7 @@ class _SyncScreenState extends State<SyncScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _isSyncing ? null : _triggerDownload,
                     icon: const Icon(Icons.download_rounded),
-                    label: const Text('Download'),
+                    label: Text(AppL10n.of(context).syncDownload),
                   ),
                 ),
               ],
@@ -360,7 +362,7 @@ class _SyncScreenState extends State<SyncScreen> {
 
             // Sync info
             Text(
-              'How Sync Works',
+              AppL10n.of(context).syncHowItWorks,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.1,

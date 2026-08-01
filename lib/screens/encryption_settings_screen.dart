@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../services/encryption_service.dart';
 import '../services/zero_knowledge_service.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Lets the user choose between Standard (server-managed key) and Maximum
 /// Privacy (zero-knowledge: passphrase + recovery code). Opt-in; existing users
@@ -42,7 +43,7 @@ class _EncryptionSettingsScreenState extends State<EncryptionSettingsScreen> {
   Widget build(BuildContext context) {
     final isZk = _mode == ZeroKnowledgeService.modeZeroKnowledge;
     return Scaffold(
-      appBar: AppBar(title: const Text('Encryption')),
+      appBar: AppBar(title: Text(AppL10n.of(context).encTitle)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -53,40 +54,32 @@ class _EncryptionSettingsScreenState extends State<EncryptionSettingsScreen> {
                     leading: Icon(
                       isZk ? Icons.verified_user_rounded : Icons.cloud_done_rounded,
                     ),
-                    title: Text(isZk ? 'Maximum Privacy' : 'Standard'),
+                    title: Text(isZk ? AppL10n.of(context).encMaxPrivacy : AppL10n.of(context).encStandard),
                     subtitle: Text(isZk
-                        ? 'Only you can read your notes. We cannot — your key never leaves your device unwrapped.'
-                        : 'Your notes are encrypted, but we hold a recovery copy of your key so you never get locked out.'),
+                        ? AppL10n.of(context).encMaxPrivacyDesc
+                        : AppL10n.of(context).encStandardDesc),
                   ),
                 ),
                 const SizedBox(height: 16),
                 if (!isZk) ...[
-                  Text('Upgrade to Maximum Privacy',
+                  Text(AppL10n.of(context).encUpgradeHeading,
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
-                  const Text(
-                    'You set an encryption passphrase. Your data key is wrapped with '
-                    'it before it ever reaches our servers, so we can no longer read '
-                    'your notes. You also get a one-time recovery code in case you '
-                    'forget the passphrase.\n\n'
-                    'Important: if you lose BOTH the passphrase and the recovery '
-                    'code, your notes cannot be recovered by anyone.',
-                  ),
+                  Text(AppL10n.of(context).encWrapExplain),
+                  const SizedBox(height: 12),
+                  Text(AppL10n.of(context).encLoseBothWarning),
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     icon: const Icon(Icons.lock_rounded),
-                    label: const Text('Enable Maximum Privacy'),
+                    label: Text(AppL10n.of(context).encEnableButton),
                     onPressed: _startEnableFlow,
                   ),
                 ] else ...[
-                  const Text(
-                    'Maximum Privacy is on. You will be asked for your passphrase '
-                    'on a new device and about once a week on this one.',
-                  ),
+                  Text(AppL10n.of(context).encOnDescription),
                   const SizedBox(height: 16),
                   OutlinedButton.icon(
                     icon: const Icon(Icons.cloud_upload_rounded),
-                    label: const Text('Switch back to Standard'),
+                    label: Text(AppL10n.of(context).encSwitchBackButton),
                     onPressed: _confirmDisable,
                   ),
                 ],
@@ -97,7 +90,7 @@ class _EncryptionSettingsScreenState extends State<EncryptionSettingsScreen> {
 
   Future<void> _startEnableFlow() async {
     if (!SecureEncryptionService.isInitialized) {
-      _toast('Encryption is still initializing. Try again in a moment.');
+      _toast(AppL10n.of(context).encStillInitializing);
       return;
     }
     final passphrase = await _promptNewPassphrase();
@@ -121,41 +114,41 @@ class _EncryptionSettingsScreenState extends State<EncryptionSettingsScreen> {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: const Text('Set encryption passphrase'),
+          title: Text(AppL10n.of(context).encSetPassphraseTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: p1,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Passphrase'),
+                decoration: InputDecoration(labelText: AppL10n.of(context).encPassphrase),
               ),
               TextField(
                 controller: p2,
                 obscureText: true,
                 decoration: InputDecoration(
-                    labelText: 'Confirm passphrase', errorText: error),
+                    labelText: AppL10n.of(context).encConfirmPassphrase, errorText: error),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(AppL10n.of(context).commonCancel),
             ),
             FilledButton(
               onPressed: () {
                 if (p1.text.length < 8) {
-                  setLocal(() => error = 'Use at least 8 characters');
+                  setLocal(() => error = AppL10n.of(context).encPassphraseTooShort);
                   return;
                 }
                 if (p1.text != p2.text) {
-                  setLocal(() => error = 'Passphrases do not match');
+                  setLocal(() => error = AppL10n.of(context).encPassphraseMismatch);
                   return;
                 }
                 Navigator.pop(ctx, p1.text);
               },
-              child: const Text('Continue'),
+              child: Text(AppL10n.of(context).encContinue),
             ),
           ],
         ),
@@ -171,15 +164,12 @@ class _EncryptionSettingsScreenState extends State<EncryptionSettingsScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Save your recovery code'),
+        title: Text(AppL10n.of(context).encSaveRecoveryTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'This is the ONLY way to recover your notes if you forget your '
-              'passphrase. Store it somewhere safe. It will not be shown again.',
-            ),
+            Text(AppL10n.of(context).encRecoveryOnlyWay),
             const SizedBox(height: 16),
             SelectableText(
               code,
@@ -189,10 +179,10 @@ class _EncryptionSettingsScreenState extends State<EncryptionSettingsScreen> {
             const SizedBox(height: 8),
             TextButton.icon(
               icon: const Icon(Icons.copy_rounded),
-              label: const Text('Copy'),
+              label: Text(AppL10n.of(context).encCopy),
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: code));
-                _toast('Recovery code copied');
+                _toast(AppL10n.of(context).encRecoveryCopied);
               },
             ),
           ],
@@ -200,7 +190,7 @@ class _EncryptionSettingsScreenState extends State<EncryptionSettingsScreen> {
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('I have saved it'),
+            child: Text(AppL10n.of(context).encSavedIt),
           ),
         ],
       ),
@@ -211,19 +201,15 @@ class _EncryptionSettingsScreenState extends State<EncryptionSettingsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Switch back to Standard?'),
-        content: const Text(
-          'Your encryption key will be uploaded to our servers again so you '
-          'never get locked out. This means we could technically read your '
-          'notes. Continue?',
-        ),
+        title: Text(AppL10n.of(context).encSwitchBackTitle),
+        content: Text(AppL10n.of(context).encSwitchBackBody),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(AppL10n.of(context).commonCancel)),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Switch back')),
+              child: Text(AppL10n.of(context).encSwitchBack)),
         ],
       ),
     );
@@ -235,7 +221,7 @@ class _EncryptionSettingsScreenState extends State<EncryptionSettingsScreen> {
     });
     if (done == true && mounted) {
       setState(() => _mode = ZeroKnowledgeService.modeStandard);
-      _toast('Switched back to Standard');
+      _toast(AppL10n.of(context).encSwitchedBack);
     }
   }
 
@@ -251,8 +237,11 @@ class _EncryptionSettingsScreenState extends State<EncryptionSettingsScreen> {
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
       return result;
     } catch (e) {
-      if (mounted) Navigator.of(context, rootNavigator: true).pop();
-      _toast('Something went wrong: $e');
+      if (!mounted) return null;
+      Navigator.of(context, rootNavigator: true).pop();
+      // Guarded above: the message is read off the context, and `action()`
+      // may have taken long enough for this screen to be disposed.
+      _toast(AppL10n.of(context).encSomethingWrong(e.toString()));
       return null;
     }
   }

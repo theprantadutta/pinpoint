@@ -19,11 +19,26 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   List<NoteFolder> _availableFolders = [];
   bool _isLoadingFolders = true;
 
-  static const Map<String, String> _noteTypeLabels = {
-    'text': 'Text Notes',
-    'audio': 'Audio Notes',
-    'reminder': 'Reminders',
-  };
+  /// Note-type filter identifiers, in display order.
+  ///
+  /// These strings are persisted in the saved filter and matched against
+  /// `Notes.noteType`, so they stay English. The visible label comes from
+  /// [_noteTypeLabel].
+  static const List<String> _noteTypeKeys = ['text', 'audio', 'reminder'];
+
+  String _noteTypeLabel(BuildContext context, String key) {
+    final l10n = AppL10n.of(context);
+    switch (key) {
+      case 'text':
+        return l10n.filterTypeText;
+      case 'audio':
+        return l10n.filterTypeAudio;
+      case 'reminder':
+        return l10n.filterTypeReminder;
+      default:
+        return key;
+    }
+  }
 
   static const Map<String, IconData> _noteTypeIcons = {
     'text': Icons.text_fields,
@@ -149,7 +164,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     Icon(Icons.filter_list, color: cs.primary),
                     const SizedBox(width: 12),
                     Text(
-                      'Filters',
+                      AppL10n.of(context).filterTitle,
                       style: textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -159,7 +174,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       TextButton.icon(
                         onPressed: _clearFilters,
                         icon: const Icon(Icons.clear_all, size: 18),
-                        label: const Text('Clear All'),
+                        label: Text(AppL10n.of(context).filterClearAll),
                       ),
                   ],
                 ),
@@ -180,7 +195,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           children: [
                             Icon(Icons.push_pin, color: cs.primary, size: 20),
                             const SizedBox(width: 12),
-                            const Text('Pinned Notes Only'),
+                            Text(AppL10n.of(context).filterPinnedOnly),
                           ],
                         ),
                         value: _tempFilters.pinsOnly,
@@ -195,7 +210,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
                     // Note types
                     Text(
-                      'Note Types',
+                      AppL10n.of(context).filterNoteTypes,
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: cs.primary,
@@ -204,19 +219,19 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     const SizedBox(height: 12),
                     Card(
                       child: Column(
-                        children: _noteTypeLabels.entries.map((entry) {
+                        children: _noteTypeKeys.map((typeKey) {
                           final isSelected =
-                              _tempFilters.noteTypes.contains(entry.key);
+                              _tempFilters.noteTypes.contains(typeKey);
                           return CheckboxListTile(
                             title: Row(
                               children: [
                                 Icon(
-                                  _noteTypeIcons[entry.key],
+                                  _noteTypeIcons[typeKey],
                                   color: cs.primary,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 12),
-                                Text(entry.value),
+                                Text(_noteTypeLabel(context, typeKey)),
                               ],
                             ),
                             value: isSelected,
@@ -224,9 +239,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                               final newTypes =
                                   List<String>.from(_tempFilters.noteTypes);
                               if (checked == true) {
-                                newTypes.add(entry.key);
+                                newTypes.add(typeKey);
                               } else {
-                                newTypes.remove(entry.key);
+                                newTypes.remove(typeKey);
                               }
                               _updateFilters(
                                   _tempFilters.copyWith(noteTypes: newTypes));
@@ -240,7 +255,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
                     // Date range
                     Text(
-                      'Date Range',
+                      AppL10n.of(context).filterDateRange,
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: cs.primary,
@@ -254,10 +269,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                           _tempFilters.dateRangeStart != null &&
                                   _tempFilters.dateRangeEnd != null
                               ? '${_formatDate(_tempFilters.dateRangeStart!)} - ${_formatDate(_tempFilters.dateRangeEnd!)}'
-                              : 'Select date range',
+                              : AppL10n.of(context).filterSelectDateRange,
                         ),
                         subtitle: _tempFilters.dateRangeStart != null
-                            ? const Text('Tap to change, long press to clear')
+                            ? Text(AppL10n.of(context).filterDateRangeHint)
                             : null,
                         trailing: _tempFilters.dateRangeStart != null
                             ? IconButton(
@@ -276,7 +291,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
                     // Folders
                     Text(
-                      'Folders',
+                      AppL10n.of(context).filterFolders,
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: cs.primary,
@@ -300,7 +315,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                                   color: cs.onSurface.withValues(alpha: 0.5)),
                               const SizedBox(width: 12),
                               Text(
-                                'No folders available',
+                                AppL10n.of(context).filterNoFolders,
                                 style: TextStyle(
                                     color: cs.onSurface.withValues(alpha: 0.5)),
                               ),
@@ -361,7 +376,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     _tempFilters.hasActiveFilters
                         ? AppL10n.of(context)
                             .filterApplyCount(_tempFilters.activeFilterCount)
-                        : 'Apply Filters',
+                        : AppL10n.of(context).filterApply,
                   ),
                 ),
               ),

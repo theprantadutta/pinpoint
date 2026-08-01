@@ -1444,11 +1444,7 @@ class _LogoutButtonState extends State<_LogoutButton> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppL10n.of(context).setDeleteAccount),
-        content: const Text(
-          'This permanently deletes your account and all of your data — notes, '
-          'folders, reminders, audio, and settings — from our servers and this '
-          'device.\n\nThis action cannot be undone.',
-        ),
+        content: Text(AppL10n.of(context).setDeleteAccountConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),

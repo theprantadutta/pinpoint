@@ -27,6 +27,13 @@ class PremiumLimits {
   static const int maxThemeColorsForFree = 2;
   static const List<String> freeThemeColors = ['Neon Mint', 'Blue Ocean'];
 
+  /// How many accent colours exist in total, free and premium combined.
+  ///
+  /// Quoted in the premium upsell copy ("unlock all N colors"), so it must
+  /// match the list built in theme_screen.dart. Named rather than derived so
+  /// the number in the sales pitch cannot silently drift from what ships.
+  static const int totalThemeColors = 5;
+
   // File Attachment Limits
   static const int maxAttachmentsPerNoteForFree = 3;
   static const int maxAttachmentsPerNoteForPremium = -1;

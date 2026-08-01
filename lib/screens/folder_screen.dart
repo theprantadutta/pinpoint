@@ -12,6 +12,7 @@ import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/filter_service.dart';
 import '../util/note_utils.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class FolderScreen extends StatefulWidget {
   static const String kRouteName = '/folder';
@@ -67,7 +68,7 @@ class _FolderScreenState extends State<FolderScreen> {
         title: _isSearchActive
             ? SearchBarSticky(
                 controller: _searchController,
-                hint: 'Search in folder...',
+                hint: AppL10n.of(context).folderSearchHint,
                 onSearch: (query) {
                   setState(() => _searchQuery = query);
                 },
@@ -105,8 +106,8 @@ class _FolderScreenState extends State<FolderScreen> {
               if (snapshot.hasError) {
                 return EmptyState(
                   icon: Icons.error_outline_rounded,
-                  title: 'Error loading notes',
-                  message: 'Please try again later',
+                  title: AppL10n.of(context).notesLoadError,
+                  message: AppL10n.of(context).commonTryAgainLater,
                 );
               }
               final notes = snapshot.data ?? [];
@@ -141,9 +142,9 @@ class _FolderScreenState extends State<FolderScreen> {
                     child: notes.isEmpty
                         ? EmptyState(
                             icon: Icons.folder_open_rounded,
-                            title: 'No notes in this folder',
+                            title: AppL10n.of(context).folderEmptyTitle,
                             message:
-                                'Add notes to this folder to see them here',
+                                AppL10n.of(context).folderEmptyHint,
                           )
                         : AnimatedListStagger(
                             itemCount: notes.length,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../dtos/note_folder_dto.dart';
 import '../../services/drift_note_folder_service.dart';
 import 'show_note_folder_bottom_sheet.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class CreateNoteFolderSelect extends StatelessWidget {
   final List<NoteFolderDto> selectedFolders;
@@ -54,7 +55,7 @@ class CreateNoteFolderSelect extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Change Folder',
+                  AppL10n.of(context).folderChangeFolder,
                   style: TextStyle(
                     fontSize: 12,
                     color: isDarkTheme
@@ -95,7 +96,7 @@ class CreateNoteFolderSelect extends StatelessWidget {
               }
               if (snapshot.hasError) {
                 return Center(
-                  child: Text('Something Went Wrong'),
+                  child: Text(AppL10n.of(context).foldersSomethingWrong),
                 );
               }
               final noteFolderData = snapshot.data!;

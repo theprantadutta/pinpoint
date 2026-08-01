@@ -60,7 +60,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         setState(() {
           _isLoadingProducts = false;
           if (!_subscriptionService.hasProducts) {
-            _productLoadError = 'No subscription plans available';
+            _productLoadError = AppL10n.of(context).subNoPlansAvailable;
           }
         });
       }
@@ -68,7 +68,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       if (mounted) {
         setState(() {
           _isLoadingProducts = false;
-          _productLoadError = 'Failed to load subscription plans';
+          _productLoadError = AppL10n.of(context).subLoadPlansFailed;
         });
       }
     }
@@ -97,20 +97,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         if (hasError) {
           showErrorToast(
             context: context,
-            title: 'Restore Failed',
-            description: 'Could not restore purchases. Please try again.',
+            title: AppL10n.of(context).subRestoreFailed,
+            description: AppL10n.of(context).subRestoreFailedBody,
           );
         } else if (restoredCount > 0) {
           showSuccessToast(
             context: context,
-            title: 'Restore Complete',
-            description: '$restoredCount purchase(s) restored successfully!',
+            title: AppL10n.of(context).subRestoreComplete,
+            description:
+                AppL10n.of(context).subRestoredCount(restoredCount),
           );
         } else {
           showInfoToast(
             context: context,
-            title: 'No Purchases Found',
-            description: 'No previous purchases found to restore.',
+            title: AppL10n.of(context).subNoPurchasesFound,
+            description: AppL10n.of(context).subNoPurchasesFoundBody,
           );
         }
       },
@@ -135,16 +136,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         analytics.trackPurchaseCompleted(productId: productId);
         showSuccessToast(
           context: context,
-          title: 'Purchase Initiated',
-          description: 'Processing your purchase...',
+          title: AppL10n.of(context).subPurchaseInitiated,
+          description: AppL10n.of(context).subProcessingPurchase,
         );
       } else {
         analytics.trackPurchaseFailed(
             productId: productId, error: 'Unable to complete purchase');
         showErrorToast(
           context: context,
-          title: 'Purchase Failed',
-          description: 'Unable to complete purchase',
+          title: AppL10n.of(context).subPurchaseFailed,
+          description: AppL10n.of(context).subPurchaseFailedBody,
         );
       }
     } catch (e) {
@@ -153,7 +154,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
       showErrorToast(
         context: context,
-        title: 'Error',
+        title: AppL10n.of(context).setErrorTitle,
         description: e.toString(),
       );
     } finally {
@@ -200,7 +201,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           )
                         : TextButton(
                             onPressed: _handleRestore,
-                            child: const Text('Restore'),
+                            child: Text(AppL10n.of(context).subRestore),
                           ),
                   ],
                 ),
@@ -241,14 +242,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                               .fadeIn(duration: 400.ms),
                           const SizedBox(height: 16),
                           Text(
-                            'Pinpoint Premium',
+                            AppL10n.of(context).subHeroTitle,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ).animate(delay: 200.ms).fadeIn(),
                           const SizedBox(height: 8),
                           Text(
-                            'Unlock all features and sync across devices',
+                            AppL10n.of(context).subHeroSubtitle,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: isDark
                                   ? PinpointColors.darkTextSecondary
@@ -299,7 +300,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 16),
                                         child: Text(
-                                          'Upgrade Options',
+                                          AppL10n.of(context).subUpgradeOptions,
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
@@ -368,11 +369,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Column(
       children: [
         Text(
-          'Subscriptions automatically renew unless auto-renew is turned off at '
-          'least 24 hours before the end of the current period. Payment is '
-          'charged to your $_storeName account at confirmation of purchase. '
-          'Manage or cancel anytime in your $_storeName account settings. '
-          'The lifetime plan is a one-time purchase and does not renew.',
+          AppL10n.of(context).subLegalAutoRenew(_storeName),
           style: theme.textTheme.bodySmall
               ?.copyWith(color: tertiary, fontSize: 11),
           textAlign: TextAlign.center,
@@ -385,7 +382,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             GestureDetector(
               onTap: _openLegal,
               child: Text(
-                'Terms of Use',
+                AppL10n.of(context).subTermsOfUse,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: linkColor,
                   fontWeight: FontWeight.w600,
@@ -398,7 +395,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             GestureDetector(
               onTap: _openLegal,
               child: Text(
-                'Privacy Policy',
+                AppL10n.of(context).subPrivacyPolicy,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: linkColor,
                   fontWeight: FontWeight.w600,
@@ -414,16 +411,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   Widget _buildFeaturesList(bool isDark) {
     final features = [
-      _Feature(Symbols.cloud_sync, 'Unlimited notes synced to the cloud'),
-      _Feature(Symbols.folder, 'Unlimited folders'),
-      _Feature(Symbols.image, 'Unlimited images & attachments'),
-      _Feature(Symbols.mic, 'Unlimited voice recording length'),
-      _Feature(Symbols.text_fields, 'Unlimited OCR text scanning'),
-      _Feature(Symbols.file_download, 'Unlimited PDF & Markdown export'),
-      _Feature(Symbols.draw, 'Drawing notes'),
-      _Feature(Symbols.share, 'Encrypted note sharing'),
-      _Feature(Symbols.palette, 'All accent colors & themes'),
-      _Feature(Symbols.support_agent, 'Priority support'),
+      _Feature(Symbols.cloud_sync, AppL10n.of(context).subFeatureSync),
+      _Feature(Symbols.folder, AppL10n.of(context).subFeatureFolders),
+      _Feature(Symbols.image, AppL10n.of(context).subFeatureImages),
+      _Feature(Symbols.mic, AppL10n.of(context).subFeatureVoice),
+      _Feature(Symbols.text_fields, AppL10n.of(context).subFeatureOcr),
+      _Feature(Symbols.file_download, AppL10n.of(context).subFeatureExport),
+      _Feature(Symbols.draw, AppL10n.of(context).subFeatureDrawing),
+      _Feature(Symbols.share, AppL10n.of(context).subFeatureSharing),
+      _Feature(Symbols.palette, AppL10n.of(context).subFeatureThemes),
+      _Feature(Symbols.support_agent, AppL10n.of(context).subFeatureSupport),
     ];
 
     return Column(
@@ -476,13 +473,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   String _getPlanDisplayName(String? subscriptionType) {
     switch (subscriptionType) {
       case 'monthly':
-        return 'Monthly Plan';
+        return AppL10n.of(context).setPlanMonthly;
       case 'yearly':
-        return 'Yearly Plan';
+        return AppL10n.of(context).setPlanYearly;
       case 'lifetime':
-        return 'Lifetime';
+        return AppL10n.of(context).setPlanLifetime;
       default:
-        return 'Premium';
+        return AppL10n.of(context).setPlanPremium;
     }
   }
 
@@ -549,10 +546,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ? PinpointColors.amber
             : PinpointColors.mint;
     final badgeLabel = isGracePeriod
-        ? 'PAYMENT PENDING'
+        ? AppL10n.of(context).subPaymentPendingBadge
         : isCancelledButActive
-            ? 'CANCELLED'
-            : 'CURRENT PLAN';
+            ? AppL10n.of(context).subCancelledBadge
+            : AppL10n.of(context).subCurrentPlanBadge;
     final badgeIcon = isGracePeriod
         ? Icons.warning_amber_rounded
         : isCancelledButActive
@@ -642,7 +639,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 if (isCancelledButActive) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Changed your mind? Resubscribe in $_storeName to keep premium going.',
+                    AppL10n.of(context).subResubscribePrompt(_storeName),
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark
@@ -659,8 +656,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     onPressed: _openManageSubscriptions,
                     icon: const Icon(Icons.settings_outlined, size: 18),
                     label: Text(isCancelledButActive
-                        ? 'Resubscribe in $_storeName'
-                        : 'Manage in $_storeName'),
+                        ? AppL10n.of(context).subResubscribeIn(_storeName)
+                        : AppL10n.of(context).subManageIn(_storeName)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: (isGracePeriod || isCancelledButActive)
                           ? accent
@@ -695,7 +692,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             CircularProgressIndicator(color: colorScheme.primary),
             const SizedBox(height: 16),
             Text(
-              'Loading subscription plans...',
+              AppL10n.of(context).subLoadingPlans,
               style: TextStyle(
                 color: isDark
                     ? PinpointColors.darkTextSecondary
@@ -760,7 +757,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             currentType != 'lifetime') {
           widgets.add(_buildDynamicPlanCard(
             productId: SubscriptionService.premiumMonthly,
-            title: 'Monthly',
+            title: AppL10n.of(context).subPlanMonthly,
             period: 'per month',
             colorScheme: colorScheme,
             isDark: isDark,
@@ -772,11 +769,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           if (widgets.isNotEmpty) widgets.add(const SizedBox(height: 16));
           widgets.add(_buildDynamicPlanCard(
             productId: SubscriptionService.premiumYearly,
-            title: 'Yearly',
+            title: AppL10n.of(context).subPlanYearly,
             period: 'per year',
             badge: currentType == 'monthly'
-                ? 'UPGRADE - Save 33%'
-                : 'BEST VALUE - Save 33%',
+                ? AppL10n.of(context).subBadgeUpgradeSave
+                : AppL10n.of(context).subBadgeBestValue,
             isPopular: true,
             colorScheme: colorScheme,
             isDark: isDark,
@@ -788,9 +785,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           if (widgets.isNotEmpty) widgets.add(const SizedBox(height: 16));
           widgets.add(_buildDynamicPlanCard(
             productId: SubscriptionService.premiumLifetime,
-            title: 'Lifetime',
+            title: AppL10n.of(context).subPlanLifetime,
             period: 'one-time',
-            badge: 'Pay once, own forever',
+            badge: AppL10n.of(context).subBadgePayOnce,
             colorScheme: colorScheme,
             isDark: isDark,
           ));
@@ -810,7 +807,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Thank you for your support!',
+                    AppL10n.of(context).subThankYou,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -821,7 +818,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'You have lifetime access to all premium features.',
+                    AppL10n.of(context).subLifetimeAccess,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -888,7 +885,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     // The lifetime plan is a one-time non-consumable, not a subscription, so its
     // CTA must not say "Subscribe" (accurate purchase labeling — App Store 3.1.2).
     final isOneTime = productId == SubscriptionService.premiumLifetime;
-    final ctaLabel = isOneTime ? 'Buy Lifetime' : 'Subscribe';
+    final ctaLabel = isOneTime ? AppL10n.of(context).subBuyLifetime : AppL10n.of(context).subSubscribe;
 
     return GlassContainer(
       padding: EdgeInsets.zero,

@@ -35,6 +35,8 @@ import '../util/show_a_toast.dart';
 import '../widgets/markdown_editor.dart';
 import '../widgets/premium_gate_dialog.dart';
 import '../widgets/usage_stats_bottom_sheet.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import 'package:pinpoint/util/localized_dates.dart';
 
 /// CreateNoteScreen V2 - Architecture V8 Implementation
 /// Uses new independent note type tables and type-specific services
@@ -660,7 +662,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                           controller: _titleController,
                           focusNode: _titleFocusNode,
                           decoration: InputDecoration(
-                            hintText: 'Title',
+                            hintText: AppL10n.of(context).edTitleHint,
                             // Borderless + unfilled: override the global input
                             // theme so there's no pill background or focus ring.
                             filled: false,
@@ -719,7 +721,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                                       ),
                                       const SizedBox(width: 10),
                                       Text(
-                                        'Add to folder',
+                                        AppL10n.of(context).edAddToFolder,
                                         style: theme.textTheme.bodyMedium
                                             ?.copyWith(
                                           fontWeight: FontWeight.w500,
@@ -866,7 +868,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             ),
             iconSize: 24,
             visualDensity: VisualDensity.compact,
-            tooltip: _isPinned ? 'Unpin' : 'Pin',
+            tooltip: _isPinned ? AppL10n.of(context).edUnpin : AppL10n.of(context).edPin,
             onPressed: () async {
               PinpointHaptics.light();
               setState(() => _isPinned = !_isPinned);
@@ -888,7 +890,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             ),
             iconSize: 24,
             visualDensity: VisualDensity.compact,
-            tooltip: _isArchived ? 'Unarchive' : 'Archive',
+            tooltip: _isArchived ? AppL10n.of(context).edUnarchive : AppL10n.of(context).edArchive,
             onPressed: () async {
               PinpointHaptics.light();
               setState(() => _isArchived = !_isArchived);
@@ -907,7 +909,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             icon: Icon(Symbols.palette, color: cs.onSurface),
             iconSize: 24,
             visualDensity: VisualDensity.compact,
-            tooltip: 'Color',
+            tooltip: AppL10n.of(context).edColor,
             onPressed: () async {
               PinpointHaptics.light();
               final picked = await showNoteColorPicker(
@@ -991,7 +993,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   children: [
                     Icon(Symbols.check, size: 20, color: cs.primary),
                     const SizedBox(width: 12),
-                    const Text('Save & Close'),
+                    Text(AppL10n.of(context).edSaveAndClose),
                   ],
                 ),
               ),
@@ -1014,7 +1016,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   children: [
                     Icon(Symbols.share, size: 20, color: cs.primary),
                     const SizedBox(width: 12),
-                    const Text('Share'),
+                    Text(AppL10n.of(context).edShare),
                   ],
                 ),
               ),
@@ -1035,9 +1037,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                           final total =
                               PremiumLimits.maxOcrScansPerMonthForFree;
 
-                          String ocrText = 'Scan Text from Image';
+                          String ocrText = AppL10n.of(context).edScanText;
                           if (!isPremium) {
-                            ocrText = 'Scan Text ($used/$total)';
+                            ocrText = AppL10n.of(context).edScanTextQuota(used, total);
                           }
 
                           return Text(ocrText);
@@ -1062,9 +1064,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                           final used = premiumService.getExportsThisMonth();
                           final total = PremiumLimits.maxExportsPerMonthForFree;
 
-                          String text = 'Export Markdown';
+                          String text = AppL10n.of(context).edExportMarkdown;
                           if (!isPremium) {
-                            text = 'Export Markdown ($used/$total)';
+                            text = AppL10n.of(context).edExportMarkdownQuota(used, total);
                           }
 
                           return Text(text);
@@ -1089,9 +1091,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                           final used = premiumService.getExportsThisMonth();
                           final total = PremiumLimits.maxExportsPerMonthForFree;
 
-                          String text = 'Export PDF';
+                          String text = AppL10n.of(context).edExportPdf;
                           if (!isPremium) {
-                            text = 'Export PDF ($used/$total)';
+                            text = AppL10n.of(context).edExportPdfQuota(used, total);
                           }
 
                           return Text(text);
@@ -1108,7 +1110,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                     Icon(Icons.lock_outline_rounded,
                         size: 20, color: cs.onSurface.withValues(alpha: 0.4)),
                     const SizedBox(width: 12),
-                    Text('Share Encrypted',
+                    Text(AppL10n.of(context).edShareEncrypted,
                         style: TextStyle(
                             color: cs.onSurface.withValues(alpha: 0.4))),
                     const SizedBox(width: 4),
@@ -1120,7 +1122,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        'SOON',
+                        AppL10n.of(context).edSoonBadge,
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
@@ -1138,7 +1140,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   children: [
                     Icon(Icons.analytics_outlined, size: 20, color: cs.primary),
                     const SizedBox(width: 12),
-                    const Text('Usage'),
+                    Text(AppL10n.of(context).edUsage),
                   ],
                 ),
               ),
@@ -1150,7 +1152,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                       Icon(Icons.info_outline_rounded,
                           size: 20, color: cs.primary),
                       const SizedBox(width: 12),
-                      const Text('Info'),
+                      Text(AppL10n.of(context).edInfo),
                     ],
                   ),
                 ),
@@ -1185,7 +1187,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         child: MarkdownEditor(
           controller: _fleatherController,
           focusNode: _textContentFocusNode,
-          hintText: 'Start writing your note...',
+          hintText: AppL10n.of(context).edBodyHint,
           showToolbar: true,
           onChanged: (markdown) {
             // Content changes are automatically saved via transaction stream
@@ -1235,7 +1237,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            'Recording...',
+                            AppL10n.of(context).edRecording,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -1296,8 +1298,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               // Status text
               Text(
                 _isRecording
-                    ? 'Tap to stop recording'
-                    : 'Tap to start recording',
+                    ? AppL10n.of(context).edTapToStop
+                    : AppL10n.of(context).edTapToStart,
                 style: TextStyle(
                   fontSize: 15,
                   color: cs.onSurface.withValues(alpha: 0.7),
@@ -1471,7 +1473,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
               OutlinedButton.icon(
                 onPressed: _replaceRecording,
                 icon: const Icon(Symbols.refresh),
-                label: const Text('Record Again'),
+                label: Text(AppL10n.of(context).edRecordAgain),
                 style: OutlinedButton.styleFrom(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -1501,7 +1503,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 child: OutlinedButton.icon(
                   onPressed: _addTodoItem,
                   icon: Icon(Symbols.add, size: 20),
-                  label: const Text('Add Todo Item'),
+                  label: Text(AppL10n.of(context).edAddTodoItem),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
@@ -1628,13 +1630,13 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Todo Item'),
+        title: Text(AppL10n.of(context).edAddTodoItem),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Enter todo item',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            hintText: AppL10n.of(context).edTodoHint,
+            border: const OutlineInputBorder(),
           ),
           textInputAction: TextInputAction.done,
           onSubmitted: (value) async {
@@ -1660,7 +1662,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 }
               }
             },
-            child: const Text('Add'),
+            child: Text(AppL10n.of(context).edAdd),
           ),
         ],
       ),
@@ -1924,8 +1926,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Note'),
-        content: const Text('Are you sure you want to delete this note?'),
+        title: Text(AppL10n.of(context).edDeleteNoteTitle),
+        content: Text(AppL10n.of(context).edDeleteNoteConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -1985,19 +1987,19 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Note Info',
+              AppL10n.of(context).edNoteInfo,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
             ),
             const SizedBox(height: 24),
-            _buildInfoRow('Type', selectedNoteType, cs),
+            _buildInfoRow(AppL10n.of(context).edInfoType, selectedNoteType, cs),
             const SizedBox(height: 12),
             _buildInfoRow('ID', _currentNoteId.toString(), cs),
             const SizedBox(height: 12),
             _buildInfoRow(
-              'Folder',
-              selectedFolders.isEmpty ? 'None' : selectedFolders.first.title,
+              AppL10n.of(context).edInfoFolder,
+              selectedFolders.isEmpty ? AppL10n.of(context).edInfoNone : selectedFolders.first.title,
               cs,
             ),
             const SizedBox(height: 24),
@@ -2064,8 +2066,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Nothing to Share'),
-          content: const Text('Please add some content before sharing.'),
+          title: Text(AppL10n.of(context).edNothingToShare),
+          content: Text(AppL10n.of(context).edAddContentBeforeShare),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -2100,8 +2102,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Nothing to Export'),
-          content: const Text('Please add some content before exporting.'),
+          title: Text(AppL10n.of(context).edNothingToExport),
+          content: Text(AppL10n.of(context).edAddContentBeforeExport),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -2124,6 +2126,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     }
 
     try {
+      // Read before the file I/O below; the context may be defunct after.
+      final exportedNoteSubject = AppL10n.of(context).edExportedNoteSubject;
+
       final markdown = StringBuffer();
 
       if (title.isNotEmpty) {
@@ -2150,7 +2155,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          subject: title.isNotEmpty ? title : 'Exported Note',
+          subject: title.isNotEmpty ? title : exportedNoteSubject,
         ),
       );
 
@@ -2164,8 +2169,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       if (context.mounted) {
         showSuccessToast(
           context: context,
-          title: 'Exported!',
-          description: 'Markdown file exported successfully',
+          title: AppL10n.of(context).edExported,
+          description: AppL10n.of(context).edMarkdownExported,
         );
       }
     } catch (e) {
@@ -2175,8 +2180,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       if (context.mounted) {
         showErrorToast(
           context: context,
-          title: 'Export Failed',
-          description: 'Unable to export markdown file',
+          title: AppL10n.of(context).edExportFailed,
+          description: AppL10n.of(context).edMarkdownExportFailed,
         );
       }
     }
@@ -2194,8 +2199,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Nothing to Export'),
-          content: const Text('Please add some content before exporting.'),
+          title: Text(AppL10n.of(context).edNothingToExport),
+          content: Text(AppL10n.of(context).edAddContentBeforeExport),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -2218,11 +2223,16 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     }
 
     try {
-      // Read the direction before the await below, so the BuildContext is not
-      // used across an async gap. The pdf package has its own TextDirection.
+      // Read everything that needs the Flutter BuildContext before the await
+      // below, and before entering pw.Page's builder — its `context` parameter
+      // is a pw.Context that shadows this one.
       final pageDirection = Directionality.of(context) == TextDirection.rtl
           ? pw.TextDirection.rtl
           : pw.TextDirection.ltr;
+      final exportedFromLine = AppL10n.of(context).edExportedFromApp;
+      final exportedDateLine = AppL10n.of(context)
+          .edExportedDate(LocalizedDates.dateTime(context, DateTime.now()));
+      final exportedNoteSubject = AppL10n.of(context).edExportedNoteSubject;
 
       // Embed real fonts: the PDF base-14 defaults are Latin-only, so a Thai,
       // Bengali, Arabic or Persian note would otherwise export as blank pages.
@@ -2260,14 +2270,14 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 pw.Divider(),
                 pw.SizedBox(height: 10),
                 pw.Text(
-                  'Exported from Pinpoint',
+                  exportedFromLine,
                   style: pw.TextStyle(
                     fontSize: 10,
                     fontStyle: pw.FontStyle.italic,
                   ),
                 ),
                 pw.Text(
-                  'Date: ${DateTime.now().toString().split('.')[0]}',
+                  exportedDateLine,
                   style: pw.TextStyle(
                     fontSize: 10,
                     fontStyle: pw.FontStyle.italic,
@@ -2289,7 +2299,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          subject: title.isNotEmpty ? title : 'Exported Note',
+          subject: title.isNotEmpty ? title : exportedNoteSubject,
         ),
       );
 
@@ -2303,8 +2313,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       if (context.mounted) {
         showSuccessToast(
           context: context,
-          title: 'Exported!',
-          description: 'PDF file exported successfully',
+          title: AppL10n.of(context).edExported,
+          description: AppL10n.of(context).edPdfExported,
         );
       }
     } catch (e) {
@@ -2314,8 +2324,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       if (context.mounted) {
         showErrorToast(
           context: context,
-          title: 'Export Failed',
-          description: 'Unable to export PDF file',
+          title: AppL10n.of(context).edExportFailed,
+          description: AppL10n.of(context).edPdfExportFailed,
         );
       }
     }
@@ -2368,8 +2378,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         if (context.mounted) {
           showErrorToast(
             context: context,
-            title: 'No Text Found',
-            description: 'Could not detect any text in the image',
+            title: AppL10n.of(context).edNoTextFound,
+            description: AppL10n.of(context).edNoTextFoundBody,
           );
         }
         return;
@@ -2390,8 +2400,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       if (context.mounted) {
         showSuccessToast(
           context: context,
-          title: 'Text Extracted!',
-          description: 'Text from image has been added to your note',
+          title: AppL10n.of(context).edTextExtracted,
+          description: AppL10n.of(context).edTextExtractedBody,
         );
       }
     } catch (e) {
@@ -2405,8 +2415,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       if (context.mounted) {
         showErrorToast(
           context: context,
-          title: 'OCR Failed',
-          description: 'Unable to scan text from image',
+          title: AppL10n.of(context).edOcrFailed,
+          description: AppL10n.of(context).edOcrFailedBody,
         );
       }
     }
