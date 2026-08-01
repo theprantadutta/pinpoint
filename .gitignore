@@ -71,3 +71,7 @@ lib/**/*.g.dart
 l10n_untranslated.json
 notes.txt
 firebase_admin_key.json
+
+# Per-developer Claude Code settings (tool permissions granted on this machine).
+# The shared .claude/settings.json, if one is ever added, stays tracked.
+.claude/settings.local.json
