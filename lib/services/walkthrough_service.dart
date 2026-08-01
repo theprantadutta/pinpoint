@@ -92,6 +92,8 @@ class WalkthroughService {
 
     _isShowing = true;
 
+    final accent = Theme.of(context).colorScheme.primary;
+
     _tutorialCoachMark = TutorialCoachMark(
       targets: validTargets,
       colorShadow: Colors.black,
@@ -107,18 +109,22 @@ class WalkthroughService {
       skipWidget: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          // Follows the theme rather than a fixed hex. The accent is
+          // user-selectable, so a hardcoded value would drift out of step with
+          // whatever the user actually picked — which is how this button ended
+          // up mint while the rest of the app had moved on.
+          //
+          // begin/end deliberately do not mirror in RTL, matching the rest of
+          // the design system's gradients.
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF4ECCA3), // PinpointColors.mint
-              Color(0xFF3DB890),
-            ],
+            colors: [accent, _shade(accent)],
           ),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4ECCA3).withValues(alpha: 0.4),
+              color: accent.withValues(alpha: 0.4),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -181,4 +187,15 @@ class WalkthroughService {
 
   /// Check if walkthrough is currently showing
   bool get isShowing => _isShowing;
+
+  /// A slightly darker companion to [color], for the Skip button's gradient.
+  ///
+  /// Derived rather than paired with a second constant, because the accent is
+  /// user-selectable and every accent would otherwise need its own hand-picked
+  /// shade. Working in HSL keeps the hue and saturation intact, so the result
+  /// reads as the same colour rather than a muddier one.
+  static Color _shade(Color color) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl.withLightness((hsl.lightness - 0.12).clamp(0.0, 1.0)).toColor();
+  }
 }

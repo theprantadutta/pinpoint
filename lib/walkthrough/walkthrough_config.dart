@@ -10,9 +10,6 @@ import 'package:pinpoint/generated/l10n/app_localizations.dart';
 class WalkthroughConfig {
   WalkthroughConfig._();
 
-  /// Mint color used in the app's primary accent
-  static const Color _mintColor = Color(0xFF4ECCA3);
-
   // tutorial_coach_mark's `alignSkip` is typed as a plain [Alignment], which
   // has no directional variant and therefore never mirrors on its own. Without
   // these helpers the Skip button lands on top of the highlighted target in
@@ -45,7 +42,6 @@ class WalkthroughConfig {
               description:
                   AppL10n.of(context).wtCreateBody,
               icon: Icons.add_rounded,
-              accentColor: _mintColor,
               onNext: controller.next,
               showNextButton: true,
             ),

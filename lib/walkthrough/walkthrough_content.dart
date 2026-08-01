@@ -7,7 +7,6 @@ class WalkthroughTooltip extends StatelessWidget {
   final String title;
   final String description;
   final IconData icon;
-  final Color? accentColor;
   final VoidCallback? onNext;
   final bool showNextButton;
   /// Null means "use the default label", resolved at build time — a default
@@ -19,7 +18,6 @@ class WalkthroughTooltip extends StatelessWidget {
     required this.title,
     required this.description,
     required this.icon,
-    this.accentColor,
     this.onNext,
     this.showNextButton = true,
     this.nextButtonText,
@@ -28,7 +26,11 @@ class WalkthroughTooltip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = accentColor ?? theme.colorScheme.primary;
+    // Always the theme accent. There is deliberately no override parameter:
+    // the accent is user-selectable, and the one caller that used to pass a
+    // fixed colour is why the first coach mark stayed mint after the app moved
+    // to the indigo-blue accent.
+    final color = theme.colorScheme.primary;
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 300),
