@@ -67,7 +67,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
         content: Text(AppL10n.of(context).todoDeleteConfirmBody(todo.todoTitle)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context), child: Text('Cancel')),
+              onPressed: () => Navigator.pop(context), child: Text(AppL10n.of(context).commonCancel)),
           TextButton(
             onPressed: () async {
               widget.onTodoChanged(
@@ -75,7 +75,8 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
               if (!context.mounted) return;
               Navigator.pop(context);
             },
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(AppL10n.of(context).commonDelete,
+                style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -92,7 +93,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
       subtitle: AppL10n.of(context).todoUpdateSubtitle,
       hintText: 'e.g. Buy groceries',
       icon: Icons.edit_rounded,
-      primaryLabel: 'Save',
+      primaryLabel: AppL10n.of(context).commonSave,
       onAddPressed: () async {
         if (controller.text.isNotEmpty) {
           widget.onTodoChanged([
@@ -237,7 +238,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                                           Icon(Icons.edit_rounded,
                                               size: 20, color: cs.primary),
                                           const SizedBox(width: 12),
-                                          const Text('Edit'),
+                                          Text(AppL10n.of(context).commonEdit),
                                         ],
                                       ),
                                     ),
@@ -248,7 +249,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                                           Icon(Icons.delete_rounded,
                                               size: 20, color: cs.error),
                                           const SizedBox(width: 12),
-                                          const Text('Delete'),
+                                          Text(AppL10n.of(context).commonDelete),
                                         ],
                                       ),
                                     ),

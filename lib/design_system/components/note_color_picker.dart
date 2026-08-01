@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../colors.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Horizontal row of Keep-style color swatches. Returns the chosen swatch name
 /// (or 'default') via [onSelected]. Used in the editor and selection mode.
@@ -115,7 +116,7 @@ Future<String?> showNoteColorPicker(
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                 child: Text(
-                  'Color',
+                  AppL10n.of(context).colorPickerTitle,
                   style: Theme.of(sheetContext)
                       .textTheme
                       .titleMedium

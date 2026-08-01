@@ -64,7 +64,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
                   builder: (context) => IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(Symbols.menu),
-                    tooltip: 'Menu',
+                    tooltip: AppL10n.of(context).navMenuTooltip,
                     onPressed: () => Scaffold.of(context).openDrawer(),
                   ),
                 ),
@@ -128,7 +128,7 @@ class _HomeScreenTopBarState extends State<HomeScreenTopBar> {
         return Tooltip(
           message: offline
               ? AppL10n.of(context).homeOfflineBanner
-              : 'Online',
+              : AppL10n.of(context).homeOnline,
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Icon(

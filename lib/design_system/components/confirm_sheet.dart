@@ -165,7 +165,7 @@ class ConfirmSheet extends StatelessWidget {
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: Text(secondaryLabel ?? 'Cancel'),
+                          child: Text(secondaryLabel ?? AppL10n.of(context).commonCancel),
                         ),
                       ),
 

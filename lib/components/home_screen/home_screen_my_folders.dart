@@ -194,7 +194,7 @@ class HomeScreenMyFolders extends StatelessWidget {
                             message:
                                 AppL10n.of(context).foldersDeleteBody,
                             primaryLabel: AppL10n.of(context).foldersDeleteConfirm,
-                            secondaryLabel: 'Cancel',
+                            secondaryLabel: AppL10n.of(context).commonCancel,
                             isDestructive: true,
                             icon: Icons.folder_delete_rounded,
                           );

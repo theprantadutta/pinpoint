@@ -260,7 +260,7 @@ class NoteInputField extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(noteAttachments.isEmpty
-                        ? 'Attach'
+                        ? AppL10n.of(context).attachButton
                         : '${noteAttachments.length} Attached'),
                     SizedBox(width: 3),
                     Icon(Icons.attach_file_outlined),

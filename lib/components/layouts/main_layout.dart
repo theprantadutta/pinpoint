@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import '../../constants/selectors.dart';
 import '../shared/floating_theme_change_button.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class MainLayout extends StatelessWidget {
   final Widget body;
@@ -72,7 +73,7 @@ class MainLayout extends StatelessWidget {
                               ),
                               SizedBox(width: 3),
                               Text(
-                                'Back',
+                                AppL10n.of(context).commonBack,
                                 style: TextStyle(
                                   color: darkerColor,
                                 ),

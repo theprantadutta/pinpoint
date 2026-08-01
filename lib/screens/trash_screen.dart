@@ -167,7 +167,7 @@ class _TrashScreenState extends State<TrashScreen> {
                                       message:
                                           AppL10n.of(context).trashRestoreBody,
                                       primaryLabel: AppL10n.of(context).trashRestore,
-                                      secondaryLabel: 'Cancel',
+                                      secondaryLabel: AppL10n.of(context).commonCancel,
                                       isDestructive: false,
                                       icon: Icons.restore_from_trash_rounded,
                                     );
@@ -185,7 +185,7 @@ class _TrashScreenState extends State<TrashScreen> {
                                       message:
                                           AppL10n.of(context).trashDeleteForeverBody,
                                       primaryLabel: AppL10n.of(context).trashDeleteForever,
-                                      secondaryLabel: 'Cancel',
+                                      secondaryLabel: AppL10n.of(context).commonCancel,
                                       isDestructive: true,
                                       icon: Icons.delete_forever_rounded,
                                     );

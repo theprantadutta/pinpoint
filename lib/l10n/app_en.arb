@@ -3073,5 +3073,193 @@
         "example": "work"
       }
     }
+  },
+  "navNotes": "Notes",
+  "@navNotes": {
+    "description": "Drawer entry for the main notes list."
+  },
+  "navLabels": "Labels",
+  "@navLabels": {
+    "description": "Drawer entry for note labels/folders. Mirrors the Google Keep concept."
+  },
+  "navArchive": "Archive",
+  "@navArchive": {
+    "description": "Drawer entry for archived notes."
+  },
+  "navTrash": "Trash",
+  "@navTrash": {
+    "description": "Drawer entry for deleted notes."
+  },
+  "navUpgrade": "Upgrade to Premium",
+  "@navUpgrade": {
+    "description": "Drawer entry leading to the paywall."
+  },
+  "navSettings": "Settings",
+  "@navSettings": {
+    "description": "Drawer entry for app settings."
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "Bottom navigation label for the home tab."
+  },
+  "navFolder": "Folder",
+  "@navFolder": {
+    "description": "Bottom navigation label for the folders tab."
+  },
+  "navTodo": "Todo",
+  "@navTodo": {
+    "description": "Bottom navigation label for the todo tab."
+  },
+  "navSettingsShort": "Settings",
+  "@navSettingsShort": {
+    "description": "Bottom navigation label for the settings tab."
+  },
+  "exitAreYouSure": "Are you sure?",
+  "@exitAreYouSure": {
+    "description": "Title of the confirm-exit dialog raised by the Android back button."
+  },
+  "exitConfirmBody": "Do you want to exit the app?",
+  "@exitConfirmBody": {
+    "description": "Body of the confirm-exit dialog."
+  },
+  "toolbarBold": "Bold",
+  "@toolbarBold": {
+    "description": "Editor toolbar label: bold."
+  },
+  "toolbarItalic": "Italic",
+  "@toolbarItalic": {
+    "description": "Editor toolbar label: italic."
+  },
+  "toolbarCode": "Code",
+  "@toolbarCode": {
+    "description": "Editor toolbar label: inline code."
+  },
+  "toolbarQuote": "Quote",
+  "@toolbarQuote": {
+    "description": "Editor toolbar label: block quote."
+  },
+  "toolbarLink": "Link",
+  "@toolbarLink": {
+    "description": "Editor toolbar label: hyperlink."
+  },
+  "toolbarImage": "Image",
+  "@toolbarImage": {
+    "description": "Editor toolbar label: insert image."
+  },
+  "colorPickerTitle": "Color",
+  "@colorPickerTitle": {
+    "description": "Heading of the note colour picker sheet."
+  },
+  "commonEdit": "Edit",
+  "@commonEdit": {
+    "description": "Menu action that opens an item for editing."
+  },
+  "gateFeatureIsPremium": "{feature} is a Premium feature",
+  "@gateFeatureIsPremium": {
+    "description": "Heading of the inline premium gate sheet.",
+    "placeholders": {
+      "feature": {
+        "type": "String",
+        "example": "Drawing"
+      }
+    }
+  },
+  "gateFeatureUpsell": "Upgrade to Pinpoint Premium to unlock {feature} and more power-user features.",
+  "@gateFeatureUpsell": {
+    "description": "Body of the inline premium gate sheet. \"Pinpoint\" is the app name.",
+    "placeholders": {
+      "feature": {
+        "type": "String",
+        "example": "Drawing"
+      }
+    }
+  },
+  "gateSeePremium": "See Premium",
+  "@gateSeePremium": {
+    "description": "Button on the inline premium gate sheet leading to the paywall."
+  },
+  "navMenuTooltip": "Menu",
+  "@navMenuTooltip": {
+    "description": "Tooltip on the button that opens the navigation drawer."
+  },
+  "homeOnline": "Online",
+  "@homeOnline": {
+    "description": "Connectivity badge shown when the device is connected."
+  },
+  "sectionPinned": "PINNED",
+  "@sectionPinned": {
+    "description": "Section header above pinned notes. Displayed in caps."
+  },
+  "sectionOthers": "OTHERS",
+  "@sectionOthers": {
+    "description": "Section header above unpinned notes. Displayed in caps."
+  },
+  "attachButton": "Attach",
+  "@attachButton": {
+    "description": "Button that attaches an image to the note."
+  },
+  "dsClear": "Clear",
+  "@dsClear": {
+    "description": "Tooltip on the button that empties the search field."
+  },
+  "updateRequiredTitle": "Update Required",
+  "@updateRequiredTitle": {
+    "description": "Heading of the blocking screen shown when the installed app version is too old to run."
+  },
+  "updateRequiredBody": "A new version of Pinpoint is available. Please update to continue using the app.",
+  "@updateRequiredBody": {
+    "description": "Body of the blocking update screen. \"Pinpoint\" is the app name."
+  },
+  "updateRequiredNote": "This update includes important improvements and bug fixes.",
+  "@updateRequiredNote": {
+    "description": "Secondary line on the blocking update screen."
+  },
+  "updateNow": "Update Now",
+  "@updateNow": {
+    "description": "Button on the blocking update screen that opens the store."
+  },
+  "errNetworkTimeout": "Connection timed out.",
+  "@errNetworkTimeout": {
+    "description": "Shown when a request did not complete in time."
+  },
+  "errNetworkTimeoutHint": "Please check your internet connection and try again.",
+  "@errNetworkTimeoutHint": {
+    "description": "Recovery hint for a connection timeout."
+  },
+  "errServerSlow": "Server is taking too long to respond.",
+  "@errServerSlow": {
+    "description": "Shown when the server accepted the request but did not answer in time."
+  },
+  "errTryAgainMoment": "Please try again in a moment.",
+  "@errTryAgainMoment": {
+    "description": "Recovery hint asking the user to retry shortly."
+  },
+  "errCannotConnect": "Unable to connect to server.",
+  "@errCannotConnect": {
+    "description": "Shown when the device could not reach the backend at all."
+  },
+  "errCheckConnection": "Please check your internet connection.",
+  "@errCheckConnection": {
+    "description": "Recovery hint for an unreachable server."
+  },
+  "errServerProblem": "Something went wrong on our end.",
+  "@errServerProblem": {
+    "description": "Shown for a 5xx server error."
+  },
+  "errServerUnavailable": "Server is temporarily unavailable.",
+  "@errServerUnavailable": {
+    "description": "Shown for a 502/503/504 maintenance response."
+  },
+  "errRateLimited": "Too many requests. Please wait before trying again.",
+  "@errRateLimited": {
+    "description": "Shown when the server rate-limits the client (HTTP 429)."
+  },
+  "errUnexpected": "An unexpected error occurred.",
+  "@errUnexpected": {
+    "description": "Catch-all message for an unclassified failure."
+  },
+  "errTryAgainLater": "Please try again later.",
+  "@errTryAgainLater": {
+    "description": "Recovery hint for an unclassified failure."
   }
 }

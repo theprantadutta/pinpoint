@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../screens/subscription_screen.dart';
 import 'premium_service.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Lightweight gate for premium-only features (images, drawing, audio, etc.).
 ///
@@ -38,7 +39,7 @@ class PremiumGate {
                     Icon(Icons.workspace_premium_rounded, color: cs.primary),
                     const SizedBox(width: 10),
                     Text(
-                      '$feature is a Premium feature',
+                      AppL10n.of(context).gateFeatureIsPremium(feature),
                       style: Theme.of(sheetContext)
                           .textTheme
                           .titleMedium
@@ -48,8 +49,7 @@ class PremiumGate {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Upgrade to Pinpoint Premium to add ${feature.toLowerCase()} '
-                  'to your notes, plus more power-user features.',
+                  AppL10n.of(context).gateFeatureUpsell(feature),
                   style: Theme.of(sheetContext).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 20),
@@ -60,7 +60,7 @@ class PremiumGate {
                       Navigator.of(sheetContext).pop();
                       context.push(SubscriptionScreen.kRouteName);
                     },
-                    child: const Text('See Premium'),
+                    child: Text(AppL10n.of(context).gateSeePremium),
                   ),
                 ),
               ],

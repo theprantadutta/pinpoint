@@ -130,9 +130,9 @@ class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes>
     final slivers = <Widget>[];
 
     if (hasPinned) {
-      slivers.add(_sectionHeaderSliver('PINNED'));
+      slivers.add(_sectionHeaderSliver(AppL10n.of(context).sectionPinned));
       slivers.add(_notesSliver(pinned));
-      if (others.isNotEmpty) slivers.add(_sectionHeaderSliver('OTHERS'));
+      if (others.isNotEmpty) slivers.add(_sectionHeaderSliver(AppL10n.of(context).sectionOthers));
     }
     if (others.isNotEmpty) {
       slivers.add(_notesSliver(others));

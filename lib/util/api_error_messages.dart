@@ -16,8 +16,13 @@ import '../services/api_service.dart';
 /// about it, and the user sees imperfect-but-correct text rather than nothing.
 String localizedApiError(BuildContext context, ApiError error) {
   final code = error.errorCode;
-  if (code == null) return error.userMessage;
-  return _messageForCode(AppL10n.of(context), code) ?? error.userMessage;
+  if (code != null) {
+    final mapped = _messageForCode(AppL10n.of(context), code);
+    if (mapped != null) return mapped;
+  }
+  // No code, or a code this build does not know: fall back to the transport
+  // classification, which still beats the service's English literal.
+  return localizedTransportError(context, error).message;
 }
 
 /// Same as [localizedApiError] but for a bare code string.
@@ -114,5 +119,47 @@ String? _messageForCode(AppL10n l10n, String code) {
     //   MISSING_ZERO_KNOWLEDGE_FIELDS
     default:
       return null;
+  }
+}
+
+/// Localized text for a failure that never reached the server, or that the
+/// server answered without a code (network, timeout, 5xx, rate limit).
+///
+/// [ApiService] runs with no BuildContext, so it classifies the failure into an
+/// [ApiErrorType] and stores English fallbacks; this turns that classification
+/// into copy at the point of display. Same split as the sync layer: the service
+/// produces something machine-readable, the UI renders it.
+({String message, String? suggestion}) localizedTransportError(
+  BuildContext context,
+  ApiError error,
+) {
+  final l10n = AppL10n.of(context);
+  switch (error.type) {
+    case ApiErrorType.network:
+      return (message: l10n.errCannotConnect, suggestion: l10n.errCheckConnection);
+    case ApiErrorType.timeout:
+      return (
+        message: l10n.errNetworkTimeout,
+        suggestion: l10n.errNetworkTimeoutHint,
+      );
+    case ApiErrorType.serverError:
+      return (message: l10n.errServerProblem, suggestion: l10n.errTryAgainLater);
+    case ApiErrorType.maintenance:
+      return (
+        message: l10n.errServerUnavailable,
+        suggestion: l10n.errTryAgainMoment,
+      );
+    case ApiErrorType.rateLimit:
+      return (message: l10n.errRateLimited, suggestion: l10n.errTryAgainMoment);
+    case ApiErrorType.unauthorized:
+      return (message: l10n.errSessionExpired, suggestion: null);
+    case ApiErrorType.forbidden:
+      return (message: l10n.errAccessDenied, suggestion: null);
+    case ApiErrorType.notFound:
+    case ApiErrorType.conflict:
+    case ApiErrorType.unknown:
+      // No better classification available; fall back to whatever the service
+      // recorded, which for a coded error is the server's English message.
+      return (message: error.userMessage, suggestion: error.suggestion);
   }
 }

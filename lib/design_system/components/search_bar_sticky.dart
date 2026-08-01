@@ -101,7 +101,7 @@ class _SearchBarStickyState extends State<SearchBarSticky> {
                       }
                       setState(() {});
                     },
-                    tooltip: 'Clear',
+                    tooltip: AppL10n.of(context).dsClear,
                   )
                 : null,
             border: OutlineInputBorder(

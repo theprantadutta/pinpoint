@@ -135,21 +135,21 @@ class _EditorToolbarState extends State<EditorToolbar> {
         if (widget.onBold != null)
           _ToolbarButton(
             icon: Icons.format_bold_rounded,
-            label: 'Bold',
+            label: AppL10n.of(context).toolbarBold,
             onTap: widget.onBold!,
             toolbarStyle: toolbarStyle,
           ),
         if (widget.onItalic != null)
           _ToolbarButton(
             icon: Icons.format_italic_rounded,
-            label: 'Italic',
+            label: AppL10n.of(context).toolbarItalic,
             onTap: widget.onItalic!,
             toolbarStyle: toolbarStyle,
           ),
         if (widget.onCode != null)
           _ToolbarButton(
             icon: Icons.code_rounded,
-            label: 'Code',
+            label: AppL10n.of(context).toolbarCode,
             onTap: widget.onCode!,
             toolbarStyle: toolbarStyle,
           ),
@@ -187,7 +187,7 @@ class _EditorToolbarState extends State<EditorToolbar> {
         if (widget.onQuote != null)
           _ToolbarButton(
             icon: Icons.format_quote_rounded,
-            label: 'Quote',
+            label: AppL10n.of(context).toolbarQuote,
             onTap: widget.onQuote!,
             toolbarStyle: toolbarStyle,
           ),
@@ -199,14 +199,14 @@ class _EditorToolbarState extends State<EditorToolbar> {
         if (widget.onLink != null)
           _ToolbarButton(
             icon: Icons.link_rounded,
-            label: 'Link',
+            label: AppL10n.of(context).toolbarLink,
             onTap: widget.onLink!,
             toolbarStyle: toolbarStyle,
           ),
         if (widget.onImage != null)
           _ToolbarButton(
             icon: Icons.image_outlined,
-            label: 'Image',
+            label: AppL10n.of(context).toolbarImage,
             onTap: widget.onImage!,
             toolbarStyle: toolbarStyle,
           ),

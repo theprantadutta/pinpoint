@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 Future<void> showTextFormDialog(
   BuildContext context, {
@@ -21,14 +22,14 @@ Future<void> showTextFormDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppL10n.of(context).commonCancel),
           ),
           TextButton(
             onPressed: () {
               onSave(controller.text);
               Navigator.of(context).pop();
             },
-            child: const Text('Save'),
+            child: Text(AppL10n.of(context).commonSave),
           ),
         ],
       );

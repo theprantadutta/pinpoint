@@ -172,7 +172,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                                       message:
                                           AppL10n.of(context).trashDeleteForeverBody,
                                       primaryLabel: AppL10n.of(context).trashDeleteForever,
-                                      secondaryLabel: 'Cancel',
+                                      secondaryLabel: AppL10n.of(context).commonCancel,
                                       isDestructive: true,
                                       icon: Icons.delete_forever_rounded,
                                     );

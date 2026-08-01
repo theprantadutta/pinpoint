@@ -387,7 +387,7 @@ class _FolderCard extends StatelessWidget {
                 if (!ctx.mounted) return;
                 Navigator.of(ctx).pop();
               },
-              child: const Text('Save'),
+              child: Text(AppL10n.of(context).commonSave),
             ),
           ],
         );

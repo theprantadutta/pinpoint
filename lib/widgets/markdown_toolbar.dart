@@ -467,7 +467,7 @@ class _LinkDialogState extends State<_LinkDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(AppL10n.of(context).commonCancel),
         ),
         FilledButton(
           onPressed: () {

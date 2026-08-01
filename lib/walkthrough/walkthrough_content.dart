@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Custom tooltip widget for walkthrough coach marks.
 /// Provides a beautiful, theme-aware tooltip with icon, title, description, and next button.
@@ -9,7 +10,9 @@ class WalkthroughTooltip extends StatelessWidget {
   final Color? accentColor;
   final VoidCallback? onNext;
   final bool showNextButton;
-  final String nextButtonText;
+  /// Null means "use the default label", resolved at build time — a default
+  /// parameter value cannot read Localizations.
+  final String? nextButtonText;
 
   const WalkthroughTooltip({
     super.key,
@@ -19,7 +22,7 @@ class WalkthroughTooltip extends StatelessWidget {
     this.accentColor,
     this.onNext,
     this.showNextButton = true,
-    this.nextButtonText = 'Next',
+    this.nextButtonText,
   });
 
   @override
@@ -101,7 +104,7 @@ class WalkthroughTooltip extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      nextButtonText,
+                      nextButtonText ?? AppL10n.of(context).commonNext,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(width: 4),

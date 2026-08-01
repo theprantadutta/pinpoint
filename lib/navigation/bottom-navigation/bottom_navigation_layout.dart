@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../screens/home_screen.dart';
 import '../../services/walkthrough_service.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Top-level shell. The app moved from a bottom navigation bar to a Keep-style
 /// navigation drawer (hosted by [HomeScreen]), so this is now a thin wrapper
@@ -43,8 +44,8 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
     final shouldExit = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Are you sure?'),
-            content: const Text('Do you want to exit the app?'),
+            title: Text(AppL10n.of(context).exitAreYouSure),
+            content: Text(AppL10n.of(context).exitConfirmBody),
             actions: <Widget>[
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),

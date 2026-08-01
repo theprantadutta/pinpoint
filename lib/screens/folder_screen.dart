@@ -82,7 +82,7 @@ class _FolderScreenState extends State<FolderScreen> {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.search),
-                    tooltip: 'Search',
+                    tooltip: AppL10n.of(context).commonSearch,
                     onPressed: () {
                       setState(() => _isSearchActive = !_isSearchActive);
                     },

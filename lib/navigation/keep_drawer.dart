@@ -7,6 +7,7 @@ import '../screens/my_folders_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/subscription_screen.dart';
 import '../screens/trash_screen.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Google-Keep-style navigation drawer. Replaces the old bottom navigation.
 ///
@@ -79,7 +80,7 @@ class KeepDrawer extends StatelessWidget {
         ),
         _DrawerItem(
           icon: Icons.lightbulb_outline_rounded,
-          label: 'Notes',
+          label: AppL10n.of(context).navNotes,
           selected: true,
           // Already on the Notes (home) destination. Only dismiss the modal
           // drawer; in permanent mode there's nothing to close.
@@ -89,30 +90,30 @@ class KeepDrawer extends StatelessWidget {
         ),
         _DrawerItem(
           icon: Icons.label_outline_rounded,
-          label: 'Labels',
+          label: AppL10n.of(context).navLabels,
           onTap: () => _go(context, MyFoldersScreen.kRouteName),
         ),
         const Divider(height: 16, indent: 16, endIndent: 16),
         _DrawerItem(
           icon: Icons.archive_outlined,
-          label: 'Archive',
+          label: AppL10n.of(context).navArchive,
           onTap: () => _go(context, ArchiveScreen.kRouteName),
         ),
         _DrawerItem(
           icon: Icons.delete_outline_rounded,
-          label: 'Trash',
+          label: AppL10n.of(context).navTrash,
           onTap: () => _go(context, TrashScreen.kRouteName),
         ),
         const Divider(height: 16, indent: 16, endIndent: 16),
         _DrawerItem(
           icon: Icons.workspace_premium_outlined,
-          label: 'Upgrade to Premium',
+          label: AppL10n.of(context).navUpgrade,
           iconColor: const Color(0xFFFFC107),
           onTap: () => _go(context, SubscriptionScreen.kRouteName),
         ),
         _DrawerItem(
           icon: Icons.settings_outlined,
-          label: 'Settings',
+          label: AppL10n.of(context).navSettings,
           onTap: () => _go(context, SettingsScreen.kRouteName),
         ),
       ],

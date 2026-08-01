@@ -486,9 +486,9 @@ class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
                   const SizedBox(height: 40),
 
                   // Title
-                  const Text(
-                    'Update Required',
-                    style: TextStyle(
+                  Text(
+                    AppL10n.of(context).updateRequiredTitle,
+                    style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -499,8 +499,7 @@ class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
 
                   // Description
                   Text(
-                    'A new version of Pinpoint is available. '
-                    'Please update to continue using the app.',
+                    AppL10n.of(context).updateRequiredBody,
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white.withValues(alpha: 0.8),
@@ -510,7 +509,7 @@ class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'This update includes important improvements and bug fixes.',
+                    AppL10n.of(context).updateRequiredNote,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.white.withValues(alpha: 0.6),
@@ -544,14 +543,14 @@ class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
                                 color: Colors.black,
                               ),
                             )
-                          : const Row(
+                          : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.download_rounded, size: 24),
-                                SizedBox(width: 12),
+                                const Icon(Icons.download_rounded, size: 24),
+                                const SizedBox(width: 12),
                                 Text(
-                                  'Update Now',
-                                  style: TextStyle(
+                                  AppL10n.of(context).updateNow,
+                                  style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -715,6 +714,15 @@ class _MyAppState extends State<MyApp> {
     if (_updateRequired) {
       return MaterialApp(
         title: 'Pinpoint',
+        // Its own shell, shown before the main app builds, so it needs its
+        // own Localizations.
+        localizationsDelegates: const [
+          AppL10n.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: LocaleController.supportedLocales,
         themeMode: ThemeMode.dark,
         darkTheme: ThemeData.dark(useMaterial3: true),
         debugShowCheckedModeBanner: false,
