@@ -19,8 +19,15 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.pranta.pinpoint"
-    // compileSdk = flutter.compileSdkVersion
-    compileSdk = 36
+    // Pinned rather than tracking flutter.compileSdkVersion, which still
+    // resolves to 36. permission_handler_android 13.0.0 publishes AAR metadata
+    // requiring compileSdk 37, so the build fails at :app:checkDebugAarMetadata
+    // without this.
+    //
+    // compileSdk only controls which APIs are available at compile time — it is
+    // independent of targetSdk (below), which opts into new runtime behaviour
+    // and is deliberately left on Flutter's value.
+    compileSdk = 37
     // ndkVersion = flutter.ndkVersion
     ndkVersion = "29.0.13113456"
 
