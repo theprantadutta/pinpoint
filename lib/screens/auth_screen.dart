@@ -835,7 +835,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        'or continue with email',
+                        _l10n.authEmailDivider,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),

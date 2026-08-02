@@ -28,6 +28,7 @@
   "authHaveAccountPrompt": "¿Ya tienes cuenta? ",
   "authContinueWithGoogle": "Continuar con Google",
   "authContinueWithApple": "Continuar con Apple",
+  "authEmailDivider": "o continúa con tu correo",
   "authGoogleSignInCancelled": "Se canceló o falló el inicio de sesión con Google",
   "authAppleSignInCancelled": "Se canceló o falló el inicio de sesión con Apple",
   "authFirebaseTokenFailed": "No se pudo obtener el token de Firebase",

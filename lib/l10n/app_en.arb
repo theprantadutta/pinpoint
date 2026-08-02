@@ -118,6 +118,10 @@
   "@authContinueWithApple": {
     "description": "Third-party sign-in button. 'Apple' is a brand name and must not be translated."
   },
+  "authEmailDivider": "or continue with email",
+  "@authEmailDivider": {
+    "description": "Label centred in the divider that separates the third-party sign-in buttons from the email/password form. Lowercase in English by design."
+  },
   "authGoogleSignInCancelled": "Google Sign-In was cancelled or failed",
   "@authGoogleSignInCancelled": {
     "description": "Error shown when the Google sign-in sheet closes without producing an account."

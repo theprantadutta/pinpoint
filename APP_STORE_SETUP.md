@@ -175,38 +175,49 @@ shared version to `2.2.0+22` means your next Play upload should use build ≥ 22
 
 ---
 
-## Localization: one manual Xcode step required
+## Localization
 
-The app ships 9 languages. Everything is wired **except** registering the
-`InfoPlist.strings` files with the Xcode project, which cannot be done reliably
-by editing `project.pbxproj` by hand.
+The app ships 9 languages. iOS is fully wired — no manual Xcode step remains.
 
-**Already done (committed):**
+**All committed:**
 
 - `ios/Runner/<lang>.lproj/InfoPlist.strings` for `en, es, pt, it, fr, th, bn,
   ar, fa` — the 7 `NS*UsageDescription` permission prompts, translated.
 - `CFBundleLocalizations` in `ios/Runner/Info.plist` listing all 9.
 - `knownRegions` in `project.pbxproj` extended to all 9.
+- The nine `InfoPlist.strings` registered in `project.pbxproj` as a
+  `PBXVariantGroup` and added to the Runner *Copy Bundle Resources* phase.
 
-**Still needed — do this once, on a Mac:**
+That last item was previously written up here as a manual "add the files in
+Xcode" step on the belief that `project.pbxproj` could not be edited reliably by
+hand. It can: the variant group is four coordinated entries (`PBXBuildFile`,
+nine `PBXFileReference`s, the `PBXVariantGroup`, and the resources phase), and
+`plutil -lint` verifies the result parses. Doing it in-repo means a fresh clone
+builds correctly rather than depending on one machine's Xcode session.
 
-1. Open `ios/Runner.xcworkspace` in Xcode.
-2. Right-click the **Runner** group → *Add Files to "Runner"…*
-3. Select `ios/Runner/en.lproj/InfoPlist.strings`. Leave *Copy items if needed*
-   **unchecked** (the files are already in place) and make sure the **Runner**
-   target is ticked.
-4. Select the newly added `InfoPlist.strings` in the navigator, open the **File
-   Inspector** (right pane), and under **Localization** tick every language.
-   Xcode collapses the nine files into one localized group and adds it to the
-   *Copy Bundle Resources* build phase.
-5. Verify: `Product → Build`, then check that the built `.app` contains
-   `es.lproj/InfoPlist.strings`.
+**Verifying it still works** — this is a silent failure mode, so check the
+artifact rather than the source:
 
-**How to tell it worked:** set the device language to Spanish and trigger the
-microphone permission prompt. The alert body should be Spanish. If it is still
-English, step 4 did not take — the files exist on disk but are not in the
-bundle, which is a silent failure with no build error.
+    flutter build ios --simulator --debug
+    ls build/ios/iphonesimulator/Runner.app/*.lproj/InfoPlist.strings
+
+All nine should be listed. `plutil -p` on any one of them shows the translated
+strings. End to end, launch the simulator in a given language and trigger the
+microphone prompt — the alert body should not be English:
+
+    xcrun simctl launch booted com.pranta.pinpoint -AppleLanguages "(es)" -AppleLocale "es_ES"
 
 Android needs nothing equivalent: its permission prompts use OS-supplied text,
 and the notification-channel names are localized at runtime by
 `lib/services/notification_channels.dart`.
+
+### OCR language (iOS only)
+
+Apple Vision recognizes `en-US` only unless told otherwise, and with
+`usesLanguageCorrection` on it will "correct" other languages' accented words
+toward English — so a localized build read *worse* than an unlocalized one.
+`OCRService.recognizeText` now passes the app's current language, and
+`AppDelegate.swift` intersects it with `supportedRecognitionLanguages()` for the
+running OS. Languages Apple has no model for (Bengali, Persian) degrade to
+English instead of failing the scan. Android is unaffected — ML Kit's default
+recognizer already covers the whole Latin script.

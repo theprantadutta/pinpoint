@@ -28,6 +28,7 @@
   "authHaveAccountPrompt": "มีบัญชีอยู่แล้วใช่ไหม ",
   "authContinueWithGoogle": "ดำเนินการต่อด้วย Google",
   "authContinueWithApple": "ดำเนินการต่อด้วย Apple",
+  "authEmailDivider": "หรือดำเนินการต่อด้วยอีเมล",
   "authGoogleSignInCancelled": "การเข้าสู่ระบบด้วย Google ถูกยกเลิกหรือล้มเหลว",
   "authAppleSignInCancelled": "การเข้าสู่ระบบด้วย Apple ถูกยกเลิกหรือล้มเหลว",
   "authFirebaseTokenFailed": "ไม่สามารถรับโทเค็น Firebase ได้",

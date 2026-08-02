@@ -1005,7 +1005,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                       Icon(Icons.delete_outline_rounded,
                           size: 20, color: cs.error),
                       const SizedBox(width: 12),
-                      const Text('Delete'),
+                      Text(AppL10n.of(context).commonDelete),
                     ],
                   ),
                 ),
@@ -1651,7 +1651,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(AppL10n.of(context).commonCancel),
           ),
           FilledButton(
             onPressed: () async {
@@ -1931,7 +1931,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(AppL10n.of(context).commonCancel),
           ),
           TextButton(
             onPressed: () async {
@@ -1962,7 +1962,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                 _exitEditor(context);
               }
             },
-            child: Text('Delete', style: TextStyle(color: cs.error)),
+            child: Text(AppL10n.of(context).commonDelete,
+                style: TextStyle(color: cs.error)),
           ),
         ],
       ),

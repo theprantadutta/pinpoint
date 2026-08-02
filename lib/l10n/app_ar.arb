@@ -28,6 +28,7 @@
   "authHaveAccountPrompt": "لديك حساب بالفعل؟ ",
   "authContinueWithGoogle": "المتابعة باستخدام Google",
   "authContinueWithApple": "المتابعة باستخدام Apple",
+  "authEmailDivider": "أو تابع باستخدام البريد الإلكتروني",
   "authGoogleSignInCancelled": "تم إلغاء تسجيل الدخول عبر Google أو فشل",
   "authAppleSignInCancelled": "تم إلغاء تسجيل الدخول عبر Apple أو فشل",
   "authFirebaseTokenFailed": "تعذّر الحصول على رمز Firebase",

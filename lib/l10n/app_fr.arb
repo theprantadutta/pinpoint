@@ -28,6 +28,7 @@
   "authHaveAccountPrompt": "Vous avez déjà un compte ? ",
   "authContinueWithGoogle": "Continuer avec Google",
   "authContinueWithApple": "Continuer avec Apple",
+  "authEmailDivider": "ou continuez avec votre e-mail",
   "authGoogleSignInCancelled": "La connexion avec Google a été annulée ou a échoué",
   "authAppleSignInCancelled": "La connexion avec Apple a été annulée ou a échoué",
   "authFirebaseTokenFailed": "Impossible d'obtenir le jeton Firebase",

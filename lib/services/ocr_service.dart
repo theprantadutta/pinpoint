@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
 
+import 'locale_controller.dart';
+
 /// On-device OCR (image → text).
 ///
 /// Backed by native platform OCR engines through a [MethodChannel]:
@@ -17,10 +19,18 @@ class OCRService {
 
   /// Recognizes text in the image at [imagePath] and returns it as a single
   /// string (empty when nothing is detected).
+  ///
+  /// The app's current language is passed along because Apple Vision needs to
+  /// be told which languages to expect — left alone it assumes English and
+  /// "corrects" other languages' accented words toward it. Android ignores the
+  /// hint: ML Kit's default recognizer already reads the whole Latin script.
   static Future<String> recognizeText(String imagePath) async {
     final String? text = await _channel.invokeMethod<String>(
       'recognizeText',
-      <String, dynamic>{'path': imagePath},
+      <String, dynamic>{
+        'path': imagePath,
+        'languageTag': LocaleController.currentTag,
+      },
     );
     return text ?? '';
   }

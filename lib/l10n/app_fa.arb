@@ -28,6 +28,7 @@
   "authHaveAccountPrompt": "قبلاً حساب دارید؟ ",
   "authContinueWithGoogle": "ادامه با Google",
   "authContinueWithApple": "ادامه با Apple",
+  "authEmailDivider": "یا با ایمیل ادامه دهید",
   "authGoogleSignInCancelled": "ورود با Google لغو شد یا ناموفق بود",
   "authAppleSignInCancelled": "ورود با Apple لغو شد یا ناموفق بود",
   "authFirebaseTokenFailed": "دریافت توکن Firebase ناموفق بود",

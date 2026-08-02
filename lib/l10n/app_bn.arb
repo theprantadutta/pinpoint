@@ -28,6 +28,7 @@
   "authHaveAccountPrompt": "ইতিমধ্যে অ্যাকাউন্ট আছে? ",
   "authContinueWithGoogle": "Google দিয়ে চালিয়ে যান",
   "authContinueWithApple": "Apple দিয়ে চালিয়ে যান",
+  "authEmailDivider": "অথবা ইমেইল দিয়ে চালিয়ে যান",
   "authGoogleSignInCancelled": "Google সাইন-ইন বাতিল হয়েছে বা ব্যর্থ হয়েছে",
   "authAppleSignInCancelled": "Apple সাইন-ইন বাতিল হয়েছে বা ব্যর্থ হয়েছে",
   "authFirebaseTokenFailed": "Firebase টোকেন পাওয়া যায়নি",

@@ -21,6 +21,7 @@
 		9A74A1A82FF545CA00BD82A5 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 9A74A1A72FF545CA00BD82A5 /* Products.storekit */; };
 		9A74A1A92FF545CA00BD82A5 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 9A74A1A72FF545CA00BD82A5 /* Products.storekit */; };
 		AA0000000000000000000003 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* PrivacyInfo.xcprivacy */; };
+		AA0000000000000000000010 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000011 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +50,15 @@
 /* Begin PBXFileReference section */
 		039C83177D6DC7F96F175561 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
+		AA0000000000000000000012 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA0000000000000000000013 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA0000000000000000000014 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA0000000000000000000015 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA0000000000000000000016 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA0000000000000000000017 /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = th; path = th.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA0000000000000000000018 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA0000000000000000000019 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA000000000000000000001A /* fa */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fa; path = fa.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -170,6 +180,7 @@
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
 				97C147021CF9000F007C117D /* Info.plist */,
+				AA0000000000000000000011 /* InfoPlist.strings */,
 				AA0000000000000000000001 /* Runner.entitlements */,
 				AA0000000000000000000002 /* PrivacyInfo.xcprivacy */,
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
@@ -298,6 +309,7 @@
 				7D99BF968E159610631C91C6 /* GoogleService-Info.plist in Resources */,
 				9A74A1A92FF545CA00BD82A5 /* Products.storekit in Resources */,
 				AA0000000000000000000003 /* PrivacyInfo.xcprivacy in Resources */,
+				AA0000000000000000000010 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -459,6 +471,22 @@
 				97C147001CF9000F007C117D /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000011 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				AA0000000000000000000012 /* en */,
+				AA0000000000000000000013 /* es */,
+				AA0000000000000000000014 /* pt */,
+				AA0000000000000000000015 /* it */,
+				AA0000000000000000000016 /* fr */,
+				AA0000000000000000000017 /* th */,
+				AA0000000000000000000018 /* bn */,
+				AA0000000000000000000019 /* ar */,
+				AA000000000000000000001A /* fa */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
