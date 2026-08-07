@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pinpoint/database/database.dart';
 
 import '../../../services/dialog_service.dart';
+import '../../../services/crash_breadcrumbs.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class TodoListTypeContent extends StatefulWidget {
@@ -219,7 +220,14 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                                   ),
                                 ),
                                 trailing: PopupMenuButton<String>(
+                                  onOpened: () => CrashBreadcrumbs
+                                      .popupMenuOpened('editor.todoItem'),
+                                  onCanceled: () => CrashBreadcrumbs
+                                      .popupMenuClosed('editor.todoItem'),
                                   onSelected: (value) {
+                                    CrashBreadcrumbs.popupMenuClosed(
+                                        'editor.todoItem',
+                                        selected: value);
                                     if (value == 'edit') updateTodo(todo);
                                     if (value == 'delete') deleteTodo(todo);
                                   },

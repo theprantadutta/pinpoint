@@ -35,6 +35,7 @@ import '../util/show_a_toast.dart';
 import '../widgets/markdown_editor.dart';
 import '../widgets/premium_gate_dialog.dart';
 import '../widgets/usage_stats_bottom_sheet.dart';
+import '../services/crash_breadcrumbs.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:pinpoint/util/localized_dates.dart';
 
@@ -940,7 +941,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
+            onOpened: () => CrashBreadcrumbs.popupMenuOpened('editor.overflow'),
+            onCanceled: () =>
+                CrashBreadcrumbs.popupMenuClosed('editor.overflow'),
             onSelected: (value) async {
+              CrashBreadcrumbs.popupMenuClosed('editor.overflow',
+                  selected: value);
               PinpointHaptics.light();
               switch (value) {
                 case 'save':

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -110,6 +111,24 @@ void main() async {
         );
         return true;
       };
+      // The two handlers above only see the main isolate. Anything thrown in a
+      // spawned isolate — `compute()`, and the background work drift and the
+      // save queue hand off — dies silently otherwise, because an uncaught
+      // isolate error never reaches this zone.
+      //
+      // The error arrives as a two-element list of strings, so the stack has to
+      // be reconstructed rather than passed through.
+      Isolate.current.addErrorListener(RawReceivePort((dynamic pair) async {
+        final errorAndStacktrace = pair as List<dynamic>;
+        final stack = errorAndStacktrace.last == null
+            ? null
+            : StackTrace.fromString(errorAndStacktrace.last as String);
+        await FirebaseCrashlytics.instance.recordError(
+          errorAndStacktrace.first,
+          stack,
+          fatal: true,
+        );
+      }).sendPort);
     }
 
     // Handle biometric authentication
