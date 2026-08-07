@@ -652,21 +652,45 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  /// Raise the display to the highest refresh rate offered at the current
+  /// resolution. Android only.
+  ///
+  /// `flutter_displaymode` registers a plugin for Android alone — its `ios/`
+  /// directory is vestigial and is not listed under `flutter.plugin.platforms`
+  /// — and the package adds no platform guard of its own, so on iOS the very
+  /// first call hits a method channel with no handler and throws
+  /// `MissingPluginException`. This runs unawaited from [initState], so that
+  /// landed in `PlatformDispatcher.onError` and was recorded as a *fatal*
+  /// Crashlytics error on every single iOS launch.
+  ///
+  /// iOS needs no equivalent: ProMotion varies the refresh rate on its own, and
+  /// `CADisableMinimumFrameDurationOnPhone` in Info.plist already opts the app
+  /// out of the 60 Hz cap.
   Future<void> setOptimalDisplayMode() async {
-    final List<DisplayMode> supported = await FlutterDisplayMode.supported;
-    final DisplayMode active = await FlutterDisplayMode.active;
+    if (!Platform.isAndroid) return;
 
-    final List<DisplayMode> sameResolution = supported
-        .where((DisplayMode m) =>
-            m.width == active.width && m.height == active.height)
-        .toList()
-      ..sort((DisplayMode a, DisplayMode b) =>
-          b.refreshRate.compareTo(a.refreshRate));
+    try {
+      final List<DisplayMode> supported = await FlutterDisplayMode.supported;
+      final DisplayMode active = await FlutterDisplayMode.active;
 
-    final DisplayMode mostOptimalMode =
-        sameResolution.isNotEmpty ? sameResolution.first : active;
+      final List<DisplayMode> sameResolution = supported
+          .where((DisplayMode m) =>
+              m.width == active.width && m.height == active.height)
+          .toList()
+        ..sort((DisplayMode a, DisplayMode b) =>
+            b.refreshRate.compareTo(a.refreshRate));
 
-    await FlutterDisplayMode.setPreferredMode(mostOptimalMode);
+      final DisplayMode mostOptimalMode =
+          sameResolution.isNotEmpty ? sameResolution.first : active;
+
+      await FlutterDisplayMode.setPreferredMode(mostOptimalMode);
+    } catch (e) {
+      // Refresh rate is a nicety, and Android OEMs reject or under-report modes
+      // in ways the plugin surfaces as PlatformException. Swallow it here: the
+      // call is unawaited, so anything escaping becomes an unhandled async
+      // error and gets logged as a crash.
+      debugPrint('Could not set optimal display mode: $e');
+    }
   }
 
   bool _updateCheckCompleted = false;
