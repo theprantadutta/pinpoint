@@ -633,6 +633,7 @@
   "startupRestartApp": "Reinicia la aplicación e inténtalo de nuevo",
   "startupTryAgain": "Intentar de nuevo",
   "startupInitError": "Error de inicialización",
+  "startupErrorDetail": "Error: {error}",
   "startupInitFailed": "No se pudo inicializar la aplicación",
   "foldersRename": "Renombrar",
   "foldersRenameTitle": "Renombrar carpeta",

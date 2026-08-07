@@ -633,6 +633,7 @@
   "startupRestartApp": "Redémarrez l’application et réessayez",
   "startupTryAgain": "Réessayer",
   "startupInitError": "Erreur d’initialisation",
+  "startupErrorDetail": "Erreur : {error}",
   "startupInitFailed": "Échec de l’initialisation de l’app",
   "foldersRename": "Renommer",
   "foldersRenameTitle": "Renommer le dossier",

@@ -633,6 +633,7 @@
   "startupRestartApp": "لطفاً برنامه را دوباره اجرا کنید و تلاش کنید",
   "startupTryAgain": "تلاش دوباره",
   "startupInitError": "خطای راه‌اندازی",
+  "startupErrorDetail": "خطا: {error}",
   "startupInitFailed": "راه‌اندازی برنامه ناموفق بود",
   "foldersRename": "تغییر نام",
   "foldersRenameTitle": "تغییر نام پوشه",

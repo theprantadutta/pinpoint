@@ -633,6 +633,7 @@
   "startupRestartApp": "โปรดเริ่มแอปใหม่แล้วลองอีกครั้ง",
   "startupTryAgain": "ลองอีกครั้ง",
   "startupInitError": "ข้อผิดพลาดในการเริ่มต้น",
+  "startupErrorDetail": "ข้อผิดพลาด: {error}",
   "startupInitFailed": "เริ่มต้นแอปไม่สำเร็จ",
   "foldersRename": "เปลี่ยนชื่อ",
   "foldersRenameTitle": "เปลี่ยนชื่อโฟลเดอร์",

@@ -14,6 +14,7 @@ import '../services/analytics/analytics_facade.dart';
 import '../services/filter_service.dart';
 import '../util/note_utils.dart';
 import '../widgets/filter_bottom_sheet.dart';
+import '../services/crash_breadcrumbs.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class NotesScreen extends StatefulWidget {
@@ -156,7 +157,10 @@ class _NotesScreenState extends State<NotesScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
+            onOpened: () => CrashBreadcrumbs.popupMenuOpened('notes.sort'),
+            onCanceled: () => CrashBreadcrumbs.popupMenuClosed('notes.sort'),
             onSelected: (String result) {
+              CrashBreadcrumbs.popupMenuClosed('notes.sort', selected: result);
               PinpointHaptics.selection();
               setState(() {
                 if (result.startsWith('sort:')) {

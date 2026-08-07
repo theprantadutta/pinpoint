@@ -7,6 +7,7 @@ import 'package:pinpoint/util/note_utils.dart';
 import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
+import '../services/crash_breadcrumbs.dart';
 import 'create_note_screen_v2.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
@@ -57,7 +58,11 @@ class _TodoScreenState extends State<TodoScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
+            onOpened: () => CrashBreadcrumbs.popupMenuOpened('todos.filter'),
+            onCanceled: () => CrashBreadcrumbs.popupMenuClosed('todos.filter'),
             onSelected: (String result) {
+              CrashBreadcrumbs.popupMenuClosed('todos.filter',
+                  selected: result);
               PinpointHaptics.selection();
               getIt<AnalyticsFacade>().trackTodoFilterChanged(filter: result);
               setState(() {

@@ -633,6 +633,7 @@
   "startupRestartApp": "অ্যাপটি পুনরায় চালু করে আবার চেষ্টা করুন",
   "startupTryAgain": "আবার চেষ্টা করুন",
   "startupInitError": "সূচনায় ত্রুটি",
+  "startupErrorDetail": "ত্রুটি: {error}",
   "startupInitFailed": "অ্যাপ চালু করা যায়নি",
   "foldersRename": "নাম বদলান",
   "foldersRenameTitle": "ফোল্ডারের নাম বদলান",

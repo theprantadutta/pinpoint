@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -110,6 +111,24 @@ void main() async {
         );
         return true;
       };
+      // The two handlers above only see the main isolate. Anything thrown in a
+      // spawned isolate — `compute()`, and the background work drift and the
+      // save queue hand off — dies silently otherwise, because an uncaught
+      // isolate error never reaches this zone.
+      //
+      // The error arrives as a two-element list of strings, so the stack has to
+      // be reconstructed rather than passed through.
+      Isolate.current.addErrorListener(RawReceivePort((dynamic pair) async {
+        final errorAndStacktrace = pair as List<dynamic>;
+        final stack = errorAndStacktrace.last == null
+            ? null
+            : StackTrace.fromString(errorAndStacktrace.last as String);
+        await FirebaseCrashlytics.instance.recordError(
+          errorAndStacktrace.first,
+          stack,
+          fatal: true,
+        );
+      }).sendPort);
     }
 
     // Handle biometric authentication
@@ -312,31 +331,37 @@ class AuthenticationFailedApp extends StatelessWidget {
       // onGenerateTitle rather than `title`: the latter is evaluated with the
       // context *above* MaterialApp, where Localizations does not yet exist.
       onGenerateTitle: (context) => AppL10n.of(context).startupAuthRequired,
-      home: Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.lock, size: 64, color: Colors.red),
-              SizedBox(height: 16),
-              Text(
-                AppL10n.of(context).startupAuthFailed,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16),
-              Text(
-                AppL10n.of(context).startupRestartApp,
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () {
-                  // Try authentication again
-                  _retryAuthentication();
-                },
-                child: Text(AppL10n.of(context).startupTryAgain),
-              ),
-            ],
+      // Builder for the same reason as onGenerateTitle above: `home` is
+      // evaluated here, with build's own context, which sits *above* the
+      // Localizations this MaterialApp installs. Reading AppL10n from it finds
+      // nothing and throws on the null check.
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.lock, size: 64, color: Colors.red),
+                SizedBox(height: 16),
+                Text(
+                  AppL10n.of(context).startupAuthFailed,
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  AppL10n.of(context).startupRestartApp,
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () {
+                    // Try authentication again
+                    _retryAuthentication();
+                  },
+                  child: Text(AppL10n.of(context).startupTryAgain),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -372,34 +397,40 @@ class InitializationErrorApp extends StatelessWidget {
       // onGenerateTitle rather than `title`: the latter is evaluated with the
       // context *above* MaterialApp, where Localizations does not yet exist.
       onGenerateTitle: (context) => AppL10n.of(context).startupInitError,
-      home: Scaffold(
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error, size: 64, color: Colors.orange),
-                SizedBox(height: 16),
-                Text(
-                  AppL10n.of(context).startupInitFailed,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Error: $error',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.red),
-                ),
-                SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () {
-                    // Restart the app
-                    main();
-                  },
-                  child: Text('Retry'),
-                ),
-              ],
+      // Builder for the same reason as onGenerateTitle above: `home` is
+      // evaluated here, with build's own context, which sits *above* the
+      // Localizations this MaterialApp installs. Reading AppL10n from it finds
+      // nothing and throws on the null check.
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, size: 64, color: Colors.orange),
+                  SizedBox(height: 16),
+                  Text(
+                    AppL10n.of(context).startupInitFailed,
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    AppL10n.of(context).startupErrorDetail(error),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Restart the app
+                      main();
+                    },
+                    child: Text(AppL10n.of(context).commonRetry),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -621,21 +652,45 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  /// Raise the display to the highest refresh rate offered at the current
+  /// resolution. Android only.
+  ///
+  /// `flutter_displaymode` registers a plugin for Android alone — its `ios/`
+  /// directory is vestigial and is not listed under `flutter.plugin.platforms`
+  /// — and the package adds no platform guard of its own, so on iOS the very
+  /// first call hits a method channel with no handler and throws
+  /// `MissingPluginException`. This runs unawaited from [initState], so that
+  /// landed in `PlatformDispatcher.onError` and was recorded as a *fatal*
+  /// Crashlytics error on every single iOS launch.
+  ///
+  /// iOS needs no equivalent: ProMotion varies the refresh rate on its own, and
+  /// `CADisableMinimumFrameDurationOnPhone` in Info.plist already opts the app
+  /// out of the 60 Hz cap.
   Future<void> setOptimalDisplayMode() async {
-    final List<DisplayMode> supported = await FlutterDisplayMode.supported;
-    final DisplayMode active = await FlutterDisplayMode.active;
+    if (!Platform.isAndroid) return;
 
-    final List<DisplayMode> sameResolution = supported
-        .where((DisplayMode m) =>
-            m.width == active.width && m.height == active.height)
-        .toList()
-      ..sort((DisplayMode a, DisplayMode b) =>
-          b.refreshRate.compareTo(a.refreshRate));
+    try {
+      final List<DisplayMode> supported = await FlutterDisplayMode.supported;
+      final DisplayMode active = await FlutterDisplayMode.active;
 
-    final DisplayMode mostOptimalMode =
-        sameResolution.isNotEmpty ? sameResolution.first : active;
+      final List<DisplayMode> sameResolution = supported
+          .where((DisplayMode m) =>
+              m.width == active.width && m.height == active.height)
+          .toList()
+        ..sort((DisplayMode a, DisplayMode b) =>
+            b.refreshRate.compareTo(a.refreshRate));
 
-    await FlutterDisplayMode.setPreferredMode(mostOptimalMode);
+      final DisplayMode mostOptimalMode =
+          sameResolution.isNotEmpty ? sameResolution.first : active;
+
+      await FlutterDisplayMode.setPreferredMode(mostOptimalMode);
+    } catch (e) {
+      // Refresh rate is a nicety, and Android OEMs reject or under-report modes
+      // in ways the plugin surfaces as PlatformException. Swallow it here: the
+      // call is unawaited, so anything escaping becomes an unhandled async
+      // error and gets logged as a crash.
+      debugPrint('Could not set optimal display mode: $e');
+    }
   }
 
   bool _updateCheckCompleted = false;

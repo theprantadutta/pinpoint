@@ -2856,6 +2856,16 @@
   "@startupInitError": {
     "description": "Window title of the screen shown when the app fails to start."
   },
+  "startupErrorDetail": "Error: {error}",
+  "@startupErrorDetail": {
+    "description": "Raw exception text shown under the startup-failure heading. Only the label is translated; {error} is an untranslated technical message.",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Failed to open database"
+      }
+    }
+  },
   "startupInitFailed": "App Initialization Failed",
   "@startupInitFailed": {
     "description": "Heading shown when the app fails to start."

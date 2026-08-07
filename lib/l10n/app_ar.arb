@@ -633,6 +633,7 @@
   "startupRestartApp": "يرجى إعادة تشغيل التطبيق والمحاولة مرة أخرى",
   "startupTryAgain": "إعادة المحاولة",
   "startupInitError": "خطأ في التهيئة",
+  "startupErrorDetail": "خطأ: {error}",
   "startupInitFailed": "فشلت تهيئة التطبيق",
   "foldersRename": "إعادة تسمية",
   "foldersRenameTitle": "إعادة تسمية المجلد",
