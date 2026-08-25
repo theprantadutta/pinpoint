@@ -53,6 +53,13 @@ class AppDatabase extends _$AppDatabase {
   // These are described in the getting started guide: https://drift.simonbinder.eu/setup/
   AppDatabase() : super(_openConnection());
 
+  /// Opens against [executor] instead of the on-disk encrypted database.
+  ///
+  /// Lets tests run the real schema — constraints included — against
+  /// `NativeDatabase.memory()`.
+  @visibleForTesting
+  AppDatabase.forTesting(super.executor);
+
   @override
   int get schemaVersion => 10;
 

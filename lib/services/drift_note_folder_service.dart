@@ -8,8 +8,33 @@ import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
 import '../service_locators/init_service_locators.dart';
 
+/// Thrown when a folder title is already taken.
+///
+/// `NoteFolders.noteFolderTitle` is `UNIQUE`, so violating it raises a raw
+/// `SqliteException(2067)` that, left alone, reaches Crashlytics as a fatal
+/// error. Callers get this instead: an expected, presentable outcome.
+class FolderTitleTakenException implements Exception {
+  const FolderTitleTakenException(this.title);
+
+  final String title;
+
+  @override
+  String toString() => 'FolderTitleTakenException: "$title" is already used';
+}
+
 class DriftNoteFolderService {
   DriftNoteFolderService._();
+
+  /// Whether a raw database error is the folder-title uniqueness violation.
+  ///
+  /// Matched on the message rather than by importing `sqlite3` for its
+  /// exception type: the message carries the offending column, so this cannot
+  /// mistake a different UNIQUE index (`uuid`, say) for this one.
+  static bool _isDuplicateTitle(Object error) {
+    final text = error.toString();
+    return text.contains('UNIQUE constraint failed') &&
+        text.contains('note_folders.note_folder_title');
+  }
 
   static final _noteFolders = [
     'Random',
@@ -100,8 +125,36 @@ class DriftNoteFolderService {
     }
   }
 
+  /// Whether [title] is already used, ignoring case.
+  ///
+  /// The database is the only authority here. Callers used to check a list of
+  /// folders they were holding, which goes stale the moment a folder arrives
+  /// from sync or is created on another screen — and the insert then died on
+  /// the UNIQUE index.
+  ///
+  /// Note the deliberate mismatch with SQLite: the column's UNIQUE index uses
+  /// BINARY collation and so treats "Work" and "work" as different, while the
+  /// app treats them as the same folder. This check is the stricter of the two,
+  /// which is what users expect.
+  static Future<bool> isTitleTaken(String title, {int? excludingId}) async {
+    final database = getIt<AppDatabase>();
+    final query = database.select(database.noteFolders)
+      ..where((tbl) => tbl.noteFolderTitle.lower().equals(title.toLowerCase()));
+    if (excludingId != null) {
+      query.where((tbl) => tbl.noteFolderId.equals(excludingId).not());
+    }
+    return await query.getSingleOrNull() != null;
+  }
+
+  /// Creates a folder.
+  ///
+  /// Throws [FolderTitleTakenException] if the title is in use.
   static Future<NoteFolderDto> insertNoteFolder(String text) async {
     final database = getIt<AppDatabase>();
+
+    if (await isTitleTaken(text)) {
+      throw FolderTitleTakenException(text);
+    }
 
     final now = Value(DateTime.now());
     const uuid = Uuid();
@@ -112,15 +165,37 @@ class DriftNoteFolderService {
       updatedAt: now,
     );
 
-    final id = await database.into(database.noteFolders).insert(noteFolder);
-    return NoteFolderDto(id: id, title: text);
+    try {
+      final id = await database.into(database.noteFolders).insert(noteFolder);
+      return NoteFolderDto(id: id, title: text);
+    } catch (e) {
+      // The check above closes the common case; this closes the race, where a
+      // sync writes the same title between the check and the insert.
+      if (_isDuplicateTitle(e)) throw FolderTitleTakenException(text);
+      rethrow;
+    }
   }
 
+  /// Renames a folder.
+  ///
+  /// Throws [FolderTitleTakenException] if another folder already uses
+  /// [newTitle]. Renaming a folder to a different casing of its own title is
+  /// allowed.
   static Future<void> renameFolder(int folderId, String newTitle) async {
     final database = getIt<AppDatabase>();
-    await (database.update(database.noteFolders)
-          ..where((tbl) => tbl.noteFolderId.equals(folderId)))
-        .write(NoteFoldersCompanion(noteFolderTitle: Value(newTitle)));
+
+    if (await isTitleTaken(newTitle, excludingId: folderId)) {
+      throw FolderTitleTakenException(newTitle);
+    }
+
+    try {
+      await (database.update(database.noteFolders)
+            ..where((tbl) => tbl.noteFolderId.equals(folderId)))
+          .write(NoteFoldersCompanion(noteFolderTitle: Value(newTitle)));
+    } catch (e) {
+      if (_isDuplicateTitle(e)) throw FolderTitleTakenException(newTitle);
+      rethrow;
+    }
   }
 
   static Future<void> deleteFolder(int folderId) async {

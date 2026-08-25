@@ -95,9 +95,23 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                             return;
                           }
 
-                          final noteFolder =
-                              await DriftNoteFolderService.insertNoteFolder(
-                                  text);
+                          // The list check above can be stale (a folder may
+                          // have arrived from sync since this sheet opened), so
+                          // the database has the final say.
+                          final NoteFolderDto noteFolder;
+                          try {
+                            noteFolder = await DriftNoteFolderService
+                                .insertNoteFolder(text);
+                          } on FolderTitleTakenException {
+                            if (!context.mounted) return;
+                            showErrorToast(
+                              context: context,
+                              title: AppL10n.of(context).foldersAlreadyExists,
+                              description:
+                                  AppL10n.of(context).foldersChooseUniqueName,
+                            );
+                            return;
+                          }
 
                           if (context.mounted) {
                             setState(() {
