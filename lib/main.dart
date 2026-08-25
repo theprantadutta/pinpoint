@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -162,7 +163,8 @@ void main() async {
     if (!kDebugMode) {
       try {
         if (Firebase.apps.isNotEmpty) {
-          FirebaseCrashlytics.instance.recordError(error, stackTrace, fatal: true);
+          FirebaseCrashlytics.instance
+              .recordError(error, stackTrace, fatal: true);
         }
       } catch (_) {}
     }
@@ -258,7 +260,8 @@ Future<void> _initializeCoreServices() async {
   // FirebaseNotificationService (the slow part) still initializes in background.
   try {
     debugPrint('🔥 [main.dart] Initializing Firebase core...');
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
     debugPrint('✅ [main.dart] Firebase core initialized');
   } catch (e, stackTrace) {
     debugPrint('⚠️ [main.dart] Firebase core init failed: $e');
@@ -326,6 +329,15 @@ class AuthenticationFailedApp extends StatelessWidget {
         GlobalMaterialLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
+        // Flutter has split Material into package:material_ui, which declares
+        // its own MaterialLocalizations type. Packages that have migrated
+        // (fleather 1.28, go_router 18) look up *that* type, which the
+        // flutter_localizations delegates above cannot satisfy — without these
+        // the editor's selection toolbar asserts "No MaterialLocalizations
+        // found" the moment you long-press text. Both sets are registered
+        // because the app itself still speaks package:flutter/material.dart;
+        // the two types are distinct, so they coexist rather than clash.
+        ...material_ui.GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: LocaleController.supportedLocales,
       // onGenerateTitle rather than `title`: the latter is evaluated with the
@@ -392,6 +404,9 @@ class InitializationErrorApp extends StatelessWidget {
         GlobalMaterialLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
+        // See the note on the first delegate list — material_ui's own
+        // MaterialLocalizations type, for packages that have migrated.
+        ...material_ui.GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: LocaleController.supportedLocales,
       // onGenerateTitle rather than `title`: the latter is evaluated with the
@@ -632,7 +647,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       _isBiometricEnabled = isisBiometricEnabled;
       _sharedPreferences?.setBool(kBiometricKey, isisBiometricEnabled);
     });
-    getIt<AnalyticsFacade>().trackBiometricToggled(enabled: isisBiometricEnabled);
+    getIt<AnalyticsFacade>()
+        .trackBiometricToggled(enabled: isisBiometricEnabled);
   }
 
   Future<void> initializeSharedPreferences() async {
@@ -742,7 +758,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
         if (!updateStarted && mounted) {
           // If immediate update fails, show blocking update screen
-          debugPrint('❌ [MyApp] Immediate update failed - showing update screen');
+          debugPrint(
+              '❌ [MyApp] Immediate update failed - showing update screen');
           setState(() => _updateRequired = true);
         }
       } else {
@@ -768,6 +785,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           GlobalMaterialLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
+          // See the note on the first delegate list.
+          ...material_ui.GlobalMaterialLocalizations.delegates,
         ],
         supportedLocales: LocaleController.supportedLocales,
         themeMode: ThemeMode.dark,
@@ -806,6 +825,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               GlobalMaterialLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
+              // See the note on the first delegate list.
+              ...material_ui.GlobalMaterialLocalizations.delegates,
             ],
             supportedLocales: LocaleController.supportedLocales,
             // Null means "follow the device", which is Flutter's own default
@@ -823,8 +844,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             // Keeps the Android notification channels in the app's language.
             // Sits inside MaterialApp because it needs Localizations, which is
             // only available below this point in the tree.
-            builder: (context, child) =>
-                _LocalizedNotificationChannels(child: child ?? const SizedBox.shrink()),
+            builder: (context, child) => _LocalizedNotificationChannels(
+                child: child ?? const SizedBox.shrink()),
             themeMode: themeController.mode,
             theme: PinpointTheme.light(
               accentColor: themeController.accent,
