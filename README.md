@@ -59,7 +59,7 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
 - **What is not end-to-end encrypted** - Be aware of these before you rely on them:
   - **Voice recordings synced to the cloud** are stored on our servers without end-to-end encryption.
   - **Reminder title, body and schedule** are stored in readable form, because our server has to render and send the push notification at the right time.
-- **Diagnostics, not surveillance — but not anonymous** - Release builds use Firebase Analytics and Crashlytics for crash reports and product-usage events. When you are signed in these are **tied to your account ID**, so they are not anonymous. Note content, titles, search terms, transcripts, purchase tokens, passphrases, recovery codes and encryption keys are never sent to them. See [`assets/legal/privacy_policy.md`](assets/legal/privacy_policy.md)
+- **Diagnostics, not surveillance — but not anonymous** - Release builds use Firebase Analytics and Crashlytics for crash reports and product-usage events. When you are signed in these are **tied to your account ID**, so they are not anonymous. Note content, titles, search terms, transcripts, purchase tokens, passphrases, recovery codes and encryption keys are never sent to them. See [`assets/legal/privacy.md`](assets/legal/privacy.md)
 
 ### 🎨 Design & Customization
 

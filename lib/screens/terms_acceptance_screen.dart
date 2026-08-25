@@ -43,9 +43,9 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
   Future<void> _loadLegalDocuments() async {
     try {
       final termsData =
-          await rootBundle.loadString('assets/legal/terms_of_service.md');
+          await rootBundle.loadString('assets/legal/terms.md');
       final privacyData =
-          await rootBundle.loadString('assets/legal/privacy_policy.md');
+          await rootBundle.loadString('assets/legal/privacy.md');
 
       setState(() {
         _termsContent = termsData;

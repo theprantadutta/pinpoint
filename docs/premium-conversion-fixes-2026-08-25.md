@@ -305,7 +305,7 @@ No agent can do any of these from this repo.
       listing, any marketing site, social profiles, screenshots. The in-repo README overclaim is fixed;
       the live copies are not, and this specific claim contradicts both the shipped privacy policy and
       the Data safety form.
-- [ ] **Privacy policy** — confirm the published version (not just `assets/legal/privacy_policy.md`)
+- [ ] **Privacy policy** — confirm the published version (not just `assets/legal/privacy.md`)
       discloses Firebase Analytics, Crashlytics, the account-id user identifier, and the coarse search
       length bucket; and that it matches the Data safety declaration word for word on categories.
 - [ ] **Free trials** — check every base plan and every offer on all three products. The app and all

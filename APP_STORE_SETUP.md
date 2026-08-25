@@ -75,7 +75,7 @@ Answers derived from `ios/Runner/PrivacyInfo.xcprivacy`. Declare data collected,
   `NSPrivacyTracking = false`).
 
 ### 3e. Legal URLs (App Information)
-- ⬜ **Privacy Policy URL** (required): host `assets/legal/privacy_policy.md` (see §5).
+- ⬜ **Privacy Policy URL** (required): host `assets/legal/privacy.md` (see §5).
 - ⬜ **License Agreement**: default Apple EULA is fine (Terms already reference it),
   or paste custom terms.
 
@@ -111,8 +111,8 @@ Answers derived from `ios/Runner/PrivacyInfo.xcprivacy`. Declare data collected,
 App Store Connect needs a public **Privacy Policy URL** (and auto-renewable
 subscriptions need Terms/EULA reachable). Easiest: serve the two files on your
 domain, e.g.:
-- `https://pinpoint.pranta.dev/privacy` ← `assets/legal/privacy_policy.md`
-- `https://pinpoint.pranta.dev/terms`   ← `assets/legal/terms_of_service.md`
+- `https://pinpoint.pranta.dev/privacy` ← `assets/legal/privacy.md`
+- `https://pinpoint.pranta.dev/terms`   ← `assets/legal/terms.md`
 
 (The in-app paywall + Settings already show the bundled copies; these URLs are
 just for the store listing.)

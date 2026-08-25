@@ -346,7 +346,7 @@ Pinpoint also uses Firebase Analytics and Crashlytics for diagnostics and produc
 When a user is signed in these are tied to their account ID, so do **not** describe them
 as anonymous. Note content, titles, search terms, transcripts, purchase tokens,
 passphrases, recovery codes and encryption keys are never sent to them.
-See `assets/legal/privacy_policy.md`.
+See `assets/legal/privacy.md`.
 
 ---
 
