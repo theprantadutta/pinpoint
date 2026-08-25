@@ -16,6 +16,7 @@ import '../util/note_utils.dart';
 import '../widgets/filter_bottom_sheet.dart';
 import '../services/crash_breadcrumbs.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import 'package:pinpoint/widgets/pinpoint_popup_menu_button.dart';
 
 class NotesScreen extends StatefulWidget {
   static const String kRouteName = '/notes';
@@ -154,7 +155,7 @@ class _NotesScreenState extends State<NotesScreen>
             },
             tooltip: _isGridView ? AppL10n.of(context).notesListView : AppL10n.of(context).notesGridView,
           ),
-          PopupMenuButton<String>(
+          PinpointPopupMenuButton<String>(
             icon: const Icon(Icons.sort),
             tooltip: AppL10n.of(context).notesSort,
             shape: RoundedRectangleBorder(

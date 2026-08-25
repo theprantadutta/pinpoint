@@ -10,6 +10,7 @@ import '../services/analytics/analytics_facade.dart';
 import '../services/crash_breadcrumbs.dart';
 import 'create_note_screen_v2.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import 'package:pinpoint/widgets/pinpoint_popup_menu_button.dart';
 
 class TodoScreen extends StatefulWidget {
   static const String kRouteName = '/todo';
@@ -52,7 +53,7 @@ class _TodoScreenState extends State<TodoScreen>
           ],
         ),
         actions: [
-          PopupMenuButton<String>(
+          PinpointPopupMenuButton<String>(
             icon: const Icon(Icons.filter_list_rounded),
             tooltip: AppL10n.of(context).todosFilter,
             shape: RoundedRectangleBorder(

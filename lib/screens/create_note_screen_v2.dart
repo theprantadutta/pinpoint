@@ -38,6 +38,7 @@ import '../widgets/usage_stats_bottom_sheet.dart';
 import '../services/crash_breadcrumbs.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:pinpoint/util/localized_dates.dart';
+import '../widgets/pinpoint_popup_menu_button.dart';
 
 /// CreateNoteScreen V2 - Architecture V8 Implementation
 /// Uses new independent note type tables and type-specific services
@@ -933,7 +934,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
           ),
 
           // Three-dot menu
-          PopupMenuButton<String>(
+          PinpointPopupMenuButton<String>(
             icon: Icon(Icons.more_vert_rounded, color: cs.onSurface),
             iconSize: 24,
             padding: EdgeInsets.zero,

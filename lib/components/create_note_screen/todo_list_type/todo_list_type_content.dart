@@ -4,6 +4,7 @@ import 'package:pinpoint/database/database.dart';
 import '../../../services/dialog_service.dart';
 import '../../../services/crash_breadcrumbs.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import 'package:pinpoint/widgets/pinpoint_popup_menu_button.dart';
 
 class TodoListTypeContent extends StatefulWidget {
   final List<NoteTodoItem> todos;
@@ -219,7 +220,7 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                                     ),
                                   ),
                                 ),
-                                trailing: PopupMenuButton<String>(
+                                trailing: PinpointPopupMenuButton<String>(
                                   onOpened: () => CrashBreadcrumbs
                                       .popupMenuOpened('editor.todoItem'),
                                   onCanceled: () => CrashBreadcrumbs
