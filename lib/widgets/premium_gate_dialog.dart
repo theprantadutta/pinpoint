@@ -276,31 +276,10 @@ class PremiumGateDialog extends StatelessWidget {
     );
   }
 
-  /// Show premium gate for markdown export
-  static Future<void> showMarkdownExportPremium(BuildContext context) {
-    getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'markdown_export');
-    return showDialog(
-      context: context,
-      builder: (context) => PremiumGateDialog(
-        title: AppL10n.of(context).gatePremiumFeature,
-        message: AppL10n.of(context).gateMarkdownMessage,
-        icon: Icons.code_rounded,
-        ctaText: AppL10n.of(context).gateMarkdownCta,
-      ),
-    );
-  }
-
-  /// Show premium gate for encrypted sharing
-  static Future<void> showEncryptedSharingPremium(BuildContext context) {
-    getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'encrypted_sharing');
-    return showDialog(
-      context: context,
-      builder: (context) => PremiumGateDialog(
-        title: AppL10n.of(context).gatePremiumFeature,
-        message: AppL10n.of(context).gateSharingMessage,
-        icon: Icons.shield_rounded,
-        ctaText: AppL10n.of(context).gateSharingCta,
-      ),
-    );
-  }
+  // Removed: showMarkdownExportPremium / showEncryptedSharingPremium.
+  // Both had zero call sites and both were untrue — Markdown export ships free
+  // under the monthly export quota (see canExport), and encrypted sharing is
+  // not implemented at all (the editor menu entry is disabled and marked SOON).
+  // Their strings (gatePremiumFeature, gateMarkdown*, gateSharing*) were dropped
+  // from all nine .arb files with them.
 }

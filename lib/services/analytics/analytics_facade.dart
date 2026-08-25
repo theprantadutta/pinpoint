@@ -187,9 +187,9 @@ class AnalyticsFacade implements AnalyticsClient {
 
   // Search & Organization
   @override
-  Future<void> trackSearchPerformed({required String query}) async {
-    unawaited(_logger?.trackSearchPerformed(query: query));
-    _trackFirebase((c) => c.trackSearchPerformed(query: query));
+  Future<void> trackSearchPerformed({required int queryLength}) async {
+    unawaited(_logger?.trackSearchPerformed(queryLength: queryLength));
+    _trackFirebase((c) => c.trackSearchPerformed(queryLength: queryLength));
   }
 
   @override
@@ -212,21 +212,87 @@ class AnalyticsFacade implements AnalyticsClient {
   }
 
   @override
-  Future<void> trackPurchaseInitiated({required String productId}) async {
-    unawaited(_logger?.trackPurchaseInitiated(productId: productId));
-    _trackFirebase((c) => c.trackPurchaseInitiated(productId: productId));
+  Future<void> trackCheckoutStarted({required String productId}) async {
+    unawaited(_logger?.trackCheckoutStarted(productId: productId));
+    _trackFirebase((c) => c.trackCheckoutStarted(productId: productId));
   }
 
   @override
-  Future<void> trackPurchaseCompleted({required String productId}) async {
-    unawaited(_logger?.trackPurchaseCompleted(productId: productId));
-    _trackFirebase((c) => c.trackPurchaseCompleted(productId: productId));
+  Future<void> trackCheckoutLaunchSucceeded({required String productId}) async {
+    unawaited(_logger?.trackCheckoutLaunchSucceeded(productId: productId));
+    _trackFirebase((c) => c.trackCheckoutLaunchSucceeded(productId: productId));
   }
 
   @override
-  Future<void> trackPurchaseFailed({required String productId, required String error}) async {
-    unawaited(_logger?.trackPurchaseFailed(productId: productId, error: error));
-    _trackFirebase((c) => c.trackPurchaseFailed(productId: productId, error: error));
+  Future<void> trackCheckoutLaunchFailed({
+    required String productId,
+    required String reason,
+  }) async {
+    unawaited(_logger?.trackCheckoutLaunchFailed(productId: productId, reason: reason));
+    _trackFirebase((c) => c.trackCheckoutLaunchFailed(productId: productId, reason: reason));
+  }
+
+  @override
+  Future<void> trackCheckoutCancelled({required String productId}) async {
+    unawaited(_logger?.trackCheckoutCancelled(productId: productId));
+    _trackFirebase((c) => c.trackCheckoutCancelled(productId: productId));
+  }
+
+  @override
+  Future<void> trackCheckoutPending({required String productId}) async {
+    unawaited(_logger?.trackCheckoutPending(productId: productId));
+    _trackFirebase((c) => c.trackCheckoutPending(productId: productId));
+  }
+
+  @override
+  Future<void> trackCheckoutError({
+    required String productId,
+    required String reason,
+  }) async {
+    unawaited(_logger?.trackCheckoutError(productId: productId, reason: reason));
+    _trackFirebase((c) => c.trackCheckoutError(productId: productId, reason: reason));
+  }
+
+  @override
+  Future<void> trackStorePurchaseConfirmed({
+    required String productId,
+    required String source,
+  }) async {
+    unawaited(_logger?.trackStorePurchaseConfirmed(productId: productId, source: source));
+    _trackFirebase((c) => c.trackStorePurchaseConfirmed(productId: productId, source: source));
+  }
+
+  @override
+  Future<void> trackPurchaseVerified({
+    required String productId,
+    required String platform,
+    required String source,
+  }) async {
+    unawaited(_logger?.trackPurchaseVerified(
+        productId: productId, platform: platform, source: source));
+    _trackFirebase((c) => c.trackPurchaseVerified(
+        productId: productId, platform: platform, source: source));
+  }
+
+  @override
+  Future<void> trackPurchaseProvisionallyGranted({
+    required String productId,
+    required String platform,
+    required String reason,
+  }) async {
+    unawaited(_logger?.trackPurchaseProvisionallyGranted(
+        productId: productId, platform: platform, reason: reason));
+    _trackFirebase((c) => c.trackPurchaseProvisionallyGranted(
+        productId: productId, platform: platform, reason: reason));
+  }
+
+  @override
+  Future<void> trackVerificationFailed({
+    required String productId,
+    required String reason,
+  }) async {
+    unawaited(_logger?.trackVerificationFailed(productId: productId, reason: reason));
+    _trackFirebase((c) => c.trackVerificationFailed(productId: productId, reason: reason));
   }
 
   // Sync

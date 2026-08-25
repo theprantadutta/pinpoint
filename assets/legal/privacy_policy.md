@@ -44,7 +44,11 @@ We use the collected information to:
 
 - **Optional Sync:** Cloud synchronization is entirely optional
 - **Encryption in Transit:** All data transmitted to our servers uses TLS/SSL encryption
-- **Server Security:** Data stored on our servers is encrypted and protected with industry-standard security measures
+- **Note Content:** Your note text, checklists, colors and labels are encrypted on your device before they are uploaded. Our servers store that as an unreadable blob.
+- **How your key is held — please read this part:**
+  - **Standard mode (the default):** we keep a recovery copy of your encryption key on our servers so that you can restore your notes on a new device. This means that we hold a key capable of decrypting your synced notes.
+  - **Zero-knowledge mode (optional):** your encryption key is wrapped using a key derived from a passphrase that you choose, plus a recovery code. We store only the wrapped result, so only your passphrase can unlock your notes and we cannot read them. If you lose both your passphrase and your recovery code, we cannot recover your notes either.
+- **What is not end-to-end encrypted:** Voice recordings that you sync to the cloud are stored on our servers without end-to-end encryption. Reminder titles, reminder text and reminder times are also stored in readable form, because our servers must read them in order to send you the notification at the scheduled time.
 - **Third-Party Services:** We use Firebase for authentication and cloud storage, which is governed by Google's privacy policies
 
 ## Data Sharing
@@ -76,7 +80,7 @@ Our app integrates with the following third-party services, each governed by its
 
 - **Google Sign-In:** Authentication using your Google account
 - **Sign in with Apple:** Authentication on iOS, including Apple's optional private email relay
-- **Firebase (Google):** Authentication, optional cloud storage/sync, push notifications (Firebase Cloud Messaging), analytics (Firebase Analytics), and crash reporting (Firebase Crashlytics)
+- **Firebase (Google):** Authentication, optional cloud storage/sync, push notifications (Firebase Cloud Messaging), analytics (Firebase Analytics), and crash reporting (Firebase Crashlytics). Analytics and crash reporting are **not anonymous**: when you are signed in, we set your account identifier on them, so the events and crash reports are associated with your account. They never receive your note content, note titles, search terms, transcripts, purchase tokens, passphrases, recovery codes or encryption keys.
 - **Apple App Store & Google Play Billing:** Processing and managing in-app purchases and subscriptions
 - **Google ML Kit:** On-device OCR text recognition (processing stays on your device and is not sent to us)
 

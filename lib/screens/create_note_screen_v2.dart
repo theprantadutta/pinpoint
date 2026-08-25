@@ -1784,13 +1784,20 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         _recordedDuration = Duration.zero;
       });
 
-      // Start timer to update duration
+      // Start timer to update duration, stopping free users at the cap.
       _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (mounted) {
-          setState(() {
-            _recordedDuration =
-                Duration(seconds: _recordedDuration.inSeconds + 1);
-          });
+        if (!mounted) return;
+        setState(() {
+          _recordedDuration =
+              Duration(seconds: _recordedDuration.inSeconds + 1);
+        });
+
+        // A negative max means unlimited (premium). Free recordings stop at
+        // PremiumLimits.maxVoiceRecordingDurationForFree and offer the upgrade
+        // — the audio recorded so far is kept, never discarded.
+        final maxDuration = PremiumService().getMaxVoiceRecordingDuration();
+        if (maxDuration > 0 && _recordedDuration.inSeconds >= maxDuration) {
+          unawaited(_stopRecordingAtFreeLimit());
         }
       });
 
@@ -1798,6 +1805,20 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     } catch (e) {
       debugPrint('❌ [VoiceNote] Failed to start recording: $e');
     }
+  }
+
+  /// Stop because a free user reached the recording cap, then offer Premium.
+  ///
+  /// The recording is stopped and kept first, so the user never loses what they
+  /// just said; the gate is a prompt about the *next* recording, not a
+  /// punishment for this one.
+  Future<void> _stopRecordingAtFreeLimit() async {
+    _recordingTimer?.cancel();
+    if (!_isRecording) return;
+
+    await _stopRecording();
+    if (!mounted) return;
+    await PremiumGateDialog.showVoiceRecordingLimit(context);
   }
 
   Future<void> _stopRecording() async {

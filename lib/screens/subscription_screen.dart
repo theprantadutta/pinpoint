@@ -74,11 +74,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _subscriptionService.dispose();
-    super.dispose();
-  }
+  // NOTE: no dispose() override on purpose. SubscriptionService is a
+  // process-wide singleton and owns the app-lifetime purchase listener; this
+  // screen only reads it. Tearing it down here used to kill every subsequent
+  // purchase, restore and deferred payment for the rest of the session.
 
   Future<void> _handleRestore() async {
     getIt<AnalyticsFacade>().trackRestorePurchaseInitiated();
@@ -124,8 +123,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       _selectedProductId = productId;
     });
 
-    final analytics = getIt<AnalyticsFacade>();
-    analytics.trackPurchaseInitiated(productId: productId);
+    // Only the user's intent is tracked here. Everything downstream — whether
+    // the billing sheet launched, whether the user cancelled, whether the sale
+    // was verified — is emitted by SubscriptionService, which keeps listening
+    // after this route is gone.
+    getIt<AnalyticsFacade>().trackCheckoutStarted(productId: productId);
 
     try {
       final success = await _subscriptionService.purchase(productId);
@@ -133,15 +135,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       if (!mounted) return;
 
       if (success) {
-        analytics.trackPurchaseCompleted(productId: productId);
         showSuccessToast(
           context: context,
           title: AppL10n.of(context).subPurchaseInitiated,
           description: AppL10n.of(context).subProcessingPurchase,
         );
       } else {
-        analytics.trackPurchaseFailed(
-            productId: productId, error: 'Unable to complete purchase');
         showErrorToast(
           context: context,
           title: AppL10n.of(context).subPurchaseFailed,
@@ -149,7 +148,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         );
       }
     } catch (e) {
-      analytics.trackPurchaseFailed(productId: productId, error: e.toString());
+      // purchase() swallows store errors and returns false after emitting
+      // checkout_launch_failed itself, so nothing is tracked here.
       if (!mounted) return;
 
       showErrorToast(
@@ -410,17 +410,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildFeaturesList(bool isDark) {
+    // Every bullet here must describe a limit that PremiumService actually
+    // enforces today, so the paywall never sells something the app cannot do.
+    // The removed bullets (images/attachments, drawing, encrypted sharing,
+    // priority support) had no shipped free/premium delta; do not add a bullet
+    // back until its gate has a live call site. Voice length was removed for
+    // the same reason and then restored once the cap became real — the free
+    // recorder now stops at PremiumLimits.maxVoiceRecordingDurationForFree in
+    // create_note_screen_v2.dart.
     final features = [
       _Feature(Symbols.cloud_sync, AppL10n.of(context).subFeatureSync),
       _Feature(Symbols.folder, AppL10n.of(context).subFeatureFolders),
-      _Feature(Symbols.image, AppL10n.of(context).subFeatureImages),
       _Feature(Symbols.mic, AppL10n.of(context).subFeatureVoice),
       _Feature(Symbols.text_fields, AppL10n.of(context).subFeatureOcr),
       _Feature(Symbols.file_download, AppL10n.of(context).subFeatureExport),
-      _Feature(Symbols.draw, AppL10n.of(context).subFeatureDrawing),
-      _Feature(Symbols.share, AppL10n.of(context).subFeatureSharing),
       _Feature(Symbols.palette, AppL10n.of(context).subFeatureThemes),
-      _Feature(Symbols.support_agent, AppL10n.of(context).subFeatureSupport),
     ];
 
     return Column(

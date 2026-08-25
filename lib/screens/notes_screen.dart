@@ -56,8 +56,11 @@ class _NotesScreenState extends State<NotesScreen>
       setState(() {
         _searchQuery = query;
       });
-      if (query.isNotEmpty) {
-        getIt<AnalyticsFacade>().trackSearchPerformed(query: query);
+      // Search text is note content — only its length ever leaves the device.
+      // Count runes, not UTF-16 units, so bn/th/ar/fa bucket sensibly.
+      final queryLength = query.trim().runes.length;
+      if (queryLength > 0) {
+        getIt<AnalyticsFacade>().trackSearchPerformed(queryLength: queryLength);
       }
     });
   }

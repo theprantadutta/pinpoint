@@ -3,7 +3,71 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:pinpoint/service_locators/init_service_locators.dart';
+import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/services/api_service.dart';
+
+/// How a purchase verification actually ended.
+///
+/// The distinction matters for revenue reporting: only [confirmed] means the
+/// backend validated the purchase against the store. [provisional] means the
+/// store charged the user but the backend could not confirm it, so premium was
+/// unlocked locally and the purchase was stored for retry — an entitlement, not
+/// a confirmed sale.
+enum PurchaseVerificationOutcome {
+  /// The backend validated the purchase. This — and only this — is a sale.
+  confirmed,
+
+  /// Premium was granted locally pending a later backend confirmation.
+  provisional,
+
+  /// Verification could not be attempted at all; nothing was granted.
+  failed,
+}
+
+/// Short, bounded codes explaining a non-[PurchaseVerificationOutcome.confirmed]
+/// result. Safe for analytics: never carries a server message or a token.
+abstract final class PurchaseVerificationReasons {
+  /// No device id, so the API call could not even be made.
+  static const String noDeviceId = 'no_device_id';
+
+  /// The backend answered, but did not confirm the purchase.
+  static const String backendRejected = 'backend_rejected';
+
+  /// The backend could not be reached (network, timeout, parse failure).
+  static const String backendUnreachable = 'backend_unreachable';
+}
+
+/// The outcome of [SubscriptionManager.verifyPurchase].
+///
+/// Replaces the old bare `bool`, which returned true for both a confirmed sale
+/// and a provisional grant and so made `purchase_verified` over-count.
+class PurchaseVerificationResult {
+  const PurchaseVerificationResult(this.outcome, {this.reason});
+
+  const PurchaseVerificationResult.confirmed()
+      : outcome = PurchaseVerificationOutcome.confirmed,
+        reason = null;
+
+  const PurchaseVerificationResult.provisional(String this.reason)
+      : outcome = PurchaseVerificationOutcome.provisional;
+
+  const PurchaseVerificationResult.failed(String this.reason)
+      : outcome = PurchaseVerificationOutcome.failed;
+
+  final PurchaseVerificationOutcome outcome;
+
+  /// One of [PurchaseVerificationReasons]; null when [isConfirmed].
+  final String? reason;
+
+  bool get isConfirmed => outcome == PurchaseVerificationOutcome.confirmed;
+  bool get isProvisional => outcome == PurchaseVerificationOutcome.provisional;
+
+  /// Whether the user should be treated as premium right now. True for both a
+  /// confirmed and a provisional outcome — a paying user is never locked out
+  /// just because the backend is having a bad day.
+  bool get grantsEntitlement => outcome != PurchaseVerificationOutcome.failed;
+}
 
 /// Manages subscription status without requiring user authentication
 /// Uses device ID for identification and local storage for offline access
@@ -14,6 +78,11 @@ class SubscriptionManager extends ChangeNotifier {
   SubscriptionManager._internal();
 
   final ApiService _apiService = ApiService();
+
+  /// Null-safe because this singleton can run before (or without) the service
+  /// locator being populated — e.g. in tests.
+  AnalyticsFacade? get _analytics =>
+      getIt.isRegistered<AnalyticsFacade>() ? getIt<AnalyticsFacade>() : null;
 
   bool _isPremium = false;
   bool _isInGracePeriod = false;
@@ -283,7 +352,7 @@ class SubscriptionManager extends ChangeNotifier {
   ///
   /// Optionally pass [userId] to sync the subscription with the user's account.
   /// When provided, both device and user records will be updated on the backend.
-  Future<bool> verifyPurchase({
+  Future<PurchaseVerificationResult> verifyPurchase({
     required String purchaseToken,
     required String productId,
     String? userId,
@@ -293,7 +362,8 @@ class SubscriptionManager extends ChangeNotifier {
 
     if (_deviceId == null) {
       debugPrint('❌ Device ID not available - cannot verify purchase');
-      return false;
+      return const PurchaseVerificationResult.failed(
+          PurchaseVerificationReasons.noDeviceId);
     }
 
     debugPrint('📱 Using device ID: $_deviceId');
@@ -328,7 +398,7 @@ class SubscriptionManager extends ChangeNotifier {
         notifyListeners();
 
         debugPrint('✅ Purchase verified: premium=$_isPremium, tier=$_subscriptionTier, userId=$userId');
-        return true;
+        return const PurchaseVerificationResult.confirmed();
       }
 
       // The store already charged the user; the backend just couldn't confirm
@@ -343,7 +413,8 @@ class SubscriptionManager extends ChangeNotifier {
         userId: userId,
         platform: platform,
       );
-      return true;
+      return const PurchaseVerificationResult.provisional(
+          PurchaseVerificationReasons.backendRejected);
     } catch (e, stackTrace) {
       debugPrint('⚠️ Purchase verification error: $e — granting provisional entitlement');
       debugPrint('Stack trace: $stackTrace');
@@ -353,7 +424,8 @@ class SubscriptionManager extends ChangeNotifier {
         userId: userId,
         platform: platform,
       );
-      return true;
+      return const PurchaseVerificationResult.provisional(
+          PurchaseVerificationReasons.backendUnreachable);
     }
   }
 
@@ -442,6 +514,17 @@ class SubscriptionManager extends ChangeNotifier {
         await _saveLocalSubscriptionStatus();
         notifyListeners();
         debugPrint('✅ Pending purchase verification resolved');
+
+        // The sale is only now confirmed. Without this the funnel would swing
+        // from over-counting (the old bool) to under-counting: every purchase
+        // that went out provisionally would never produce a conversion event.
+        // `source: retry` marks it as a deferred confirmation rather than one
+        // observed live on the purchase stream.
+        _analytics?.trackPurchaseVerified(
+          productId: pending['productId'] as String,
+          platform: (pending['platform'] as String?) ?? 'android',
+          source: 'retry',
+        );
         return false;
       }
       debugPrint('⏳ Pending verification still unconfirmed: ${response['message']}');

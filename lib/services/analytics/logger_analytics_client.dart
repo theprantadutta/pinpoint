@@ -88,8 +88,9 @@ class LoggerAnalyticsClient implements AnalyticsClient {
   Future<void> trackFolderDeleted() async => _log('folder_deleted');
 
   @override
-  Future<void> trackSearchPerformed({required String query}) async =>
-      _log('search_performed', {'query': query});
+  Future<void> trackSearchPerformed({required int queryLength}) async =>
+      _log('search_performed',
+          {'query_length_bucket': searchLengthBucket(queryLength)});
 
   @override
   Future<void> trackSortChanged({required String sortBy, required String direction}) async =>
@@ -104,16 +105,72 @@ class LoggerAnalyticsClient implements AnalyticsClient {
       _log('subscription_screen_viewed');
 
   @override
-  Future<void> trackPurchaseInitiated({required String productId}) async =>
-      _log('purchase_initiated', {'product_id': productId});
+  Future<void> trackCheckoutStarted({required String productId}) async =>
+      _log('checkout_started', {'product_id': productId});
 
   @override
-  Future<void> trackPurchaseCompleted({required String productId}) async =>
-      _log('purchase_completed', {'product_id': productId});
+  Future<void> trackCheckoutLaunchSucceeded({required String productId}) async =>
+      _log('checkout_launch_succeeded', {'product_id': productId});
 
   @override
-  Future<void> trackPurchaseFailed({required String productId, required String error}) async =>
-      _log('purchase_failed', {'product_id': productId, 'error': error});
+  Future<void> trackCheckoutLaunchFailed({
+    required String productId,
+    required String reason,
+  }) async =>
+      _log('checkout_launch_failed', {'product_id': productId, 'reason': reason});
+
+  @override
+  Future<void> trackCheckoutCancelled({required String productId}) async =>
+      _log('checkout_cancelled', {'product_id': productId});
+
+  @override
+  Future<void> trackCheckoutPending({required String productId}) async =>
+      _log('checkout_pending', {'product_id': productId});
+
+  @override
+  Future<void> trackCheckoutError({
+    required String productId,
+    required String reason,
+  }) async =>
+      _log('checkout_error', {'product_id': productId, 'reason': reason});
+
+  @override
+  Future<void> trackStorePurchaseConfirmed({
+    required String productId,
+    required String source,
+  }) async =>
+      _log('store_purchase_confirmed', {'product_id': productId, 'source': source});
+
+  @override
+  Future<void> trackPurchaseVerified({
+    required String productId,
+    required String platform,
+    required String source,
+  }) async =>
+      _log('purchase_verified', {
+        'product_id': productId,
+        'platform': platform,
+        'source': source,
+      });
+
+  @override
+  Future<void> trackPurchaseProvisionallyGranted({
+    required String productId,
+    required String platform,
+    required String reason,
+  }) async =>
+      _log('purchase_provisionally_granted', {
+        'product_id': productId,
+        'platform': platform,
+        'reason': reason,
+      });
+
+  @override
+  Future<void> trackVerificationFailed({
+    required String productId,
+    required String reason,
+  }) async =>
+      _log('verification_failed', {'product_id': productId, 'reason': reason});
 
   @override
   Future<void> trackSyncStarted() async => _log('sync_started');

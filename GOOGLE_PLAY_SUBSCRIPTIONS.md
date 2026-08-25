@@ -4,6 +4,12 @@
 
 Use these details when creating subscription products in Google Play Console.
 
+> **Accuracy rule for this file:** every feature listed below must be something the
+> shipped app actually does today. Do not copy a bullet in here because it is on a
+> roadmap — Play listing copy that describes unshipped functionality is a policy risk.
+> Product IDs must stay byte-identical to `SubscriptionService.premiumMonthly` /
+> `premiumYearly` / `premiumLifetime` in `lib/services/subscription_service.dart`.
+
 ---
 
 ## 📦 Subscription Products
@@ -18,16 +24,14 @@ Use these details when creating subscription products in Google Play Console.
 ```
 Unlock all premium features with Pinpoint Premium:
 
-✓ Unlimited cloud sync across all devices
-✓ Unlimited audio recording & transcription
-✓ Advanced OCR (unlimited text recognition)
-✓ All premium themes & fonts
-✓ Priority support
-✓ Export to multiple formats (PDF, Markdown, DOCX)
-✓ Shared encrypted notes
-✓ Advanced search & smart folders
+✓ Unlimited cloud sync (free accounts sync up to 50 notes)
+✓ Unlimited folders (free accounts get 5)
+✓ Unlimited OCR text scanning (free accounts get 20 scans a month)
+✓ Unlimited PDF & Markdown export (free accounts get 10 exports a month)
+✓ Unlimited voice recording length (free recordings stop at 2 minutes)
+✓ Every accent color (free accounts get 2 of 5)
 
-Cancel anytime. Your privacy is always protected with end-to-end encryption.
+Cancel anytime. Your notes are encrypted on your device before they sync; turn on zero-knowledge mode and only your passphrase can unlock them.
 ```
 
 **Price**: $4.99 USD/month
@@ -50,19 +54,16 @@ Cancel anytime. Your privacy is always protected with end-to-end encryption.
 ```
 Get Pinpoint Premium for a full year and save 33%!
 
-✓ Unlimited cloud sync across all devices
-✓ Unlimited audio recording & transcription
-✓ Advanced OCR (unlimited text recognition)
-✓ All premium themes & fonts (8 Google Fonts)
-✓ Priority support
-✓ Export to multiple formats (PDF, Markdown, DOCX)
-✓ Shared encrypted notes with E2E encryption
-✓ Advanced search & smart folders
-✓ Auto-backup & version history
+✓ Unlimited cloud sync (free accounts sync up to 50 notes)
+✓ Unlimited folders (free accounts get 5)
+✓ Unlimited OCR text scanning (free accounts get 20 scans a month)
+✓ Unlimited PDF & Markdown export (free accounts get 10 exports a month)
+✓ Unlimited voice recording length (free recordings stop at 2 minutes)
+✓ Every accent color (free accounts get 2 of 5)
 
 Best value - only $3.33/month when billed annually!
 
-Cancel anytime. Your privacy is always protected with end-to-end encryption.
+Cancel anytime. Your notes are encrypted on your device before they sync; turn on zero-knowledge mode and only your passphrase can unlock them.
 ```
 
 **Price**: $39.99 USD/year (equivalent to $3.33/month)
@@ -87,7 +88,6 @@ Get Pinpoint Premium for life with a one-time payment!
 
 ✓ All premium features forever
 ✓ Unlimited cloud sync
-✓ Unlimited AI features
 ✓ All future updates included
 ✓ No recurring payments
 ✓ Best value for long-term users
@@ -103,43 +103,58 @@ One payment. Lifetime access. Your privacy protected forever.
 
 ---
 
+## 🆓 Free trial policy
+
+**No product ships with a free trial.** There is no trial logic anywhere in the client —
+no trial constants, no trial copy, no trial-aware gating (`grep -rni trial lib/` returns
+nothing), and the paywall never mentions one.
+
+> **This doc's trial copy must match the live Play base-plan/offer configuration.**
+> A free trial on Google Play is a *base-plan offer*, so it can be switched on in the
+> Console without touching the app — and the moment someone does, this file, the paywall
+> and the store listing are all wrong. If a trial offer is ever added in the Console,
+> update this section, the three product descriptions above, and the paywall copy in
+> `lib/l10n/app_*.arb` in the same change. Until then: leave the trial fields empty in
+> the Console.
+
+---
+
 ## 🎯 Feature Comparison
 
+Everything in the free column is genuinely enforced in `lib/services/premium_service.dart`
+against the limits in `lib/constants/premium_limits.dart`. Premium is the unlimited
+version of each of those, and nothing else.
+
 ### Free Tier
-- ✅ Basic note-taking (text, audio, todo, reminders)
-- ✅ Local storage with encryption
-- ✅ Up to 5 folders
+- ✅ Note-taking (text, checklists, voice memos, reminders)
+- ✅ Notes encrypted on device before sync; optional zero-knowledge mode
 - ✅ Biometric lock
-- ✅ 2 color themes (Neon Mint, Blue Ocean)
-- ✅ Audio recording (2 min limit)
-- ✅ OCR (20 images/month)
 - ✅ Cloud sync (up to 50 notes)
-- ✅ Exports (10/month)
-- ✅ Up to 3 attachments per note
-- ✅ Local backup
-- ❌ Multi-device unlimited sync
-- ❌ Premium themes (3 additional colors)
+- ✅ Up to 5 folders
+- ✅ OCR text scanning (20 scans/month)
+- ✅ PDF & Markdown export (10 exports/month)
+- ✅ 2 accent colors (Neon Mint, Blue Ocean)
+- ✅ Light, dark and system themes
+- ✅ All bundled fonts
+- ❌ Unlimited sync, folders, OCR, exports or voice-recording length
+- ❌ The other 3 accent colors
 
 ### Premium Tier (All Plans)
 - ✅ Everything in Free
-- ✅ **Unlimited cloud sync** across devices
-- ✅ **Multi-device support** (phone, tablet, desktop)
-- ✅ **Unlimited audio recording** (no time limit)
-- ✅ **Unlimited OCR** text recognition
-- ✅ **Unlimited voice transcription**
-- ✅ **All 8 premium Google Fonts**
-- ✅ **5 premium color themes**
-- ✅ **Custom gradients**
-- ✅ **Unlimited folders** & nested folders
-- ✅ **Smart folders** (auto-organize)
-- ✅ **Advanced search** with filters
-- ✅ **Export to PDF, Markdown, DOCX, HTML**
-- ✅ **Batch export**
-- ✅ **Encrypted sharing** (share notes securely)
-- ✅ **Shared folders** with E2E encryption
-- ✅ **Auto-backup** with version history
-- ✅ **Priority support**
-- ✅ **Early access** to new features
+- ✅ **Unlimited cloud sync**
+- ✅ **Unlimited folders**
+- ✅ **Unlimited OCR** text scanning
+- ✅ **Unlimited PDF & Markdown export**
+- ✅ **Unlimited voice recording length** (free stops at 2 minutes)
+- ✅ **All 5 accent colors**
+
+> Themes (light/dark/system) and the bundled fonts are free for everyone — do **not**
+> list them as premium. Drawing, encrypted note sharing, templates, advanced search,
+> smart folders, DOCX/HTML export, version history and any AI feature are **not
+> implemented**; do not list them until they ship. The per-note **attachment** limit is
+> still not enforced anywhere in the shipping editor (there is no attachment picker), so
+> it is not a free/premium difference — do not list it. The 2-minute voice cap *is*
+> enforced, in `create_note_screen_v2.dart`.
 
 ---
 
@@ -160,7 +175,6 @@ One payment. Lifetime access. Your privacy protected forever.
 - ✅ No free trial
 - ✅ Cancel anytime
 - ✅ Grace period for failed payments
-- ✅ Family Library sharing (optional)
 
 ### Renewal Settings
 - **Auto-renew**: Yes (Monthly & Yearly)
@@ -206,36 +220,36 @@ One payment. Lifetime access. Your privacy protected forever.
 
 ---
 
-## 🎁 Promotional Offers (Optional)
+## 🎁 Promotional Offers
 
-### Launch Offer
-- **50% off first 3 months** (Monthly only)
-- Product ID: `pinpoint_premium_monthly_launch`
-- Limited time offer
-
-### Annual Discount
-- **Free first month** on yearly plan
-- Available during holidays
+**None configured.** The client only ever queries the three product IDs above
+(`SubscriptionService.productIds`), so any promotional product created in the Console
+would be invisible to the app. If a promo offer is wanted, add it as an *offer on an
+existing base plan* rather than as a new product ID, and confirm the entitlement still
+verifies against the same product ID before announcing it.
 
 ---
 
 ## 🔐 Server-Side Verification
 
-Your backend (`pinpoint_backend`) automatically verifies all purchases with Google Play:
+The backend verifies every purchase with Google Play before granting an entitlement.
+The client posts the purchase to:
 
 ```
-POST /api/v1/subscription/verify
+POST /api/v1/subscription/verify-device
 {
+  "device_id": "...",
   "purchase_token": "...",
-  "product_id": "pinpoint_premium_monthly"
+  "product_id": "pinpoint_premium_monthly",
+  "platform": "android",
+  "user_id": "..."          // optional, sent when signed in
 }
 ```
 
 This ensures:
 - ✅ Valid purchases only
-- ✅ No fraud
-- ✅ Automatic subscription management
-- ✅ Real-time status updates
+- ✅ Entitlements survive reinstall (device-scoped) and follow the account when signed in
+- ✅ Subscription status is refreshed from the server, not trusted from the store client
 
 ---
 
@@ -260,10 +274,13 @@ Track these metrics in Google Play Console:
 ### App Store Description
 
 **Free features:**
-Create notes, todos, voice memos, and reminders. All data encrypted locally. Sync up to 50 notes to the cloud.
+Create notes, checklists, voice memos, and reminders. Note text is encrypted on your device before it syncs, with an optional zero-knowledge mode.
+Sync up to 50 notes to the cloud, keep up to 5 folders, scan 20 images with OCR a month,
+export 10 notes a month to PDF or Markdown, and record voice notes up to 2 minutes each.
 
 **Premium features:**
-Unlock unlimited cloud sync, unlimited OCR, premium themes, and cross-device access.
+Unlock unlimited cloud sync, unlimited folders, unlimited OCR, unlimited PDF and Markdown
+export, unlimited voice recording length, and every accent color.
 
 **Pricing:**
 - Monthly: $4.99/month
@@ -279,31 +296,57 @@ Before launching subscriptions:
 - [ ] Create all 3 products in Google Play Console
 - [ ] Set up pricing for all countries
 - [ ] Do not enable free trials (Monthly & Yearly)
+- [ ] Confirm the Console descriptions match the "Feature Comparison" section above
 - [ ] Test purchase flow
 - [ ] Verify backend integration
 - [ ] Test subscription status checking
 - [ ] Test cancellation flow
 - [ ] Set up grace periods
 - [ ] Configure notifications
-- [ ] Add promotional offers (optional)
+- [ ] Set a real support contact in the Play listing (see below)
 - [ ] Submit for review
 
 ---
 
 ## 📞 Support
 
-**For subscription issues:**
-- Email: support@pinpoint.app
-- In-app: Settings → Help & Support
-- Response time: <24 hours
+Support runs through the web page the backend serves at **`/support`**
+(`pinpoint-backend/src/Pinpoint.Api/wwwroot/support.html`), which lists the developer's
+email and a 1-2 day response target. Put that URL in the Play Console listing's support
+fields.
+
+**Open items:** there is no in-app help/contact entry point (nothing in `lib/` links to
+`/support`), and there is no priority queue for paying users — so do **not** advertise
+"priority support" as a Premium benefit anywhere.
 
 **Refund policy:**
-Full refund within 48 hours of purchase, no questions asked.
+Google Play's standard refund terms apply. Do not promise a custom refund window in the
+listing unless there is a process behind it.
 
 ---
 
-**Privacy Promise:**
-All subscriptions are processed securely through Google Play. Your notes remain end-to-end encrypted. We never see your data. Cancel anytime.
+**Privacy Promise — state it exactly like this:**
+All subscriptions are processed securely through Google Play. Note text, checklists,
+colors and labels are encrypted on your device before they sync.
+
+Be precise about the key, because the two modes are genuinely different:
+
+- **Standard mode (default):** a recovery copy of your encryption key is stored on our
+  server so you can get your notes back on a new device — which means we hold a key that
+  can decrypt them.
+- **Zero-knowledge mode (opt-in):** your key is wrapped with your passphrase, so only your
+  passphrase unlocks your notes and we cannot read them. Lose the passphrase and the
+  recovery code, and neither can we.
+
+Two things are **not** end-to-end encrypted, and the listing must not imply otherwise:
+voice recordings synced to the cloud, and reminder title/body/schedule (our server needs
+to read those to send the notification).
+
+Pinpoint also uses Firebase Analytics and Crashlytics for diagnostics and product usage.
+When a user is signed in these are tied to their account ID, so do **not** describe them
+as anonymous. Note content, titles, search terms, transcripts, purchase tokens,
+passphrases, recovery codes and encryption keys are never sent to them.
+See `assets/legal/privacy_policy.md`.
 
 ---
 

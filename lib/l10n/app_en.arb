@@ -1756,26 +1756,6 @@
   "@gateAttachmentCta": {
     "description": "Call-to-action on the attachment-limit upsell."
   },
-  "gatePremiumFeature": "Premium Feature",
-  "@gatePremiumFeature": {
-    "description": "Title of the upsell for a feature that is entirely paid-only."
-  },
-  "gateMarkdownMessage": "Markdown export is a Premium-only feature. Export your notes in beautiful, portable markdown format.",
-  "@gateMarkdownMessage": {
-    "description": "Body of the Markdown-export upsell. \"Markdown\" is a format name."
-  },
-  "gateMarkdownCta": "Unlock Markdown Export",
-  "@gateMarkdownCta": {
-    "description": "Call-to-action on the Markdown-export upsell."
-  },
-  "gateSharingMessage": "Encrypted sharing is a Premium-only feature. Share your notes securely with end-to-end encryption.",
-  "@gateSharingMessage": {
-    "description": "Body of the encrypted-sharing upsell."
-  },
-  "gateSharingCta": "Unlock Secure Sharing",
-  "@gateSharingCta": {
-    "description": "Call-to-action on the encrypted-sharing upsell."
-  },
   "subNoPlansAvailable": "No subscription plans available",
   "@subNoPlansAvailable": {
     "description": "Shown when the store returned no products."
@@ -1852,13 +1832,9 @@
   "@subFeatureFolders": {
     "description": "Paywall feature bullet."
   },
-  "subFeatureImages": "Unlimited images & attachments",
-  "@subFeatureImages": {
-    "description": "Paywall feature bullet."
-  },
   "subFeatureVoice": "Unlimited voice recording length",
   "@subFeatureVoice": {
-    "description": "Paywall feature bullet."
+    "description": "Paywall feature bullet. Premium removes the free 2-minute cap on how long a single voice note can be."
   },
   "subFeatureOcr": "Unlimited OCR text scanning",
   "@subFeatureOcr": {
@@ -1868,21 +1844,9 @@
   "@subFeatureExport": {
     "description": "Paywall feature bullet. \"PDF\" and \"Markdown\" are format names."
   },
-  "subFeatureDrawing": "Drawing notes",
-  "@subFeatureDrawing": {
-    "description": "Paywall feature bullet for the drawing note type."
-  },
-  "subFeatureSharing": "Encrypted note sharing",
-  "@subFeatureSharing": {
-    "description": "Paywall feature bullet."
-  },
-  "subFeatureThemes": "All accent colors & themes",
+  "subFeatureThemes": "All accent colors",
   "@subFeatureThemes": {
-    "description": "Paywall feature bullet."
-  },
-  "subFeatureSupport": "Priority support",
-  "@subFeatureSupport": {
-    "description": "Paywall feature bullet."
+    "description": "Paywall feature bullet. Appears in the Premium feature list on the subscription screen; means every accent color in Settings > Theme is unlocked (free accounts get only some of them)."
   },
   "subPaymentPendingBadge": "PAYMENT PENDING",
   "@subPaymentPendingBadge": {
@@ -2448,7 +2412,7 @@
   "@obCaptureTitle": {
     "description": "Onboarding slide 1 heading."
   },
-  "obCaptureBody": "Create rich notes with text, audio recordings, drawings, and more. Everything you need in one place.",
+  "obCaptureBody": "Create rich notes with text, audio recordings, and more. Everything you need in one place.",
   "@obCaptureBody": {
     "description": "Onboarding slide 1 body."
   },
@@ -2456,7 +2420,7 @@
   "@obOrganizeTitle": {
     "description": "Onboarding slide 2 heading."
   },
-  "obOrganizeBody": "Organize your notes with folders, tags, and powerful search. Find what you need, when you need it.",
+  "obOrganizeBody": "Organize your notes with folders and powerful search. Find what you need, when you need it.",
   "@obOrganizeBody": {
     "description": "Onboarding slide 2 body."
   },

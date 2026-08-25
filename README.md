@@ -16,14 +16,14 @@
 
 ## 🎯 Overview
 
-Pinpoint is a feature-rich, privacy-first note-taking application that combines beautiful design with powerful functionality. Built with Flutter and Material Design 3, it offers a seamless experience across all platforms with end-to-end encryption, multiple note types, and advanced organization features.
+Pinpoint is a feature-rich, privacy-first note-taking application that combines beautiful design with powerful functionality. Built with Flutter and Material Design 3, it offers a seamless experience across all platforms with on-device encryption (with an opt-in zero-knowledge mode), multiple note types, and advanced organization features.
 
 ### Why Pinpoint?
 
-- 🔐 **Privacy First**: End-to-end AES-256 encryption with biometric authentication
+- 🔐 **Privacy First**: AES-256 encryption on device, biometric lock, and an opt-in zero-knowledge mode where only your passphrase can unlock your notes
 - 🎨 **Beautiful Design**: Glassmorphism UI with smooth animations and Material 3
 - 📝 **Versatile**: Multiple note types - text, audio, todo lists, and reminders
-- 🗂️ **Organized**: Hierarchical folders, tags, pinning, and powerful search
+- 🗂️ **Organized**: Folders, pinning, archive, and powerful search
 - 🌙 **Dark First**: Gorgeous dark mode with 5 accent color themes
 - ⚡ **Fast**: Optimized performance with high refresh rate support
 - 🔄 **Cloud Sync**: Real-time sync across devices with backend API
@@ -42,7 +42,7 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
 
 ### 🗂️ Organization
 
-- **Folders** - Hierarchical organization with many-to-many relationships
+- **Folders** - Group notes into folders (a note can live in more than one)
 - **Pinning** - Keep important notes at the top
 - **Archive** - Store completed or old notes
 - **Trash** - Soft delete with restore functionality
@@ -52,9 +52,14 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
 ### 🔒 Security & Privacy
 
 - **Biometric Lock** - Fingerprint/Face ID authentication
-- **End-to-End Encryption** - AES-256 encryption for note content
-- **Secure Storage** - Device-specific key management
-- **Privacy Focus** - No analytics, no tracking
+- **Encrypted on device** - Note text, checklists, colors and labels are encrypted with AES-256-GCM before they leave the device, and the local database is encrypted at rest
+- **Two key modes, with different trade-offs** - This is the part worth reading:
+  - **Standard mode (default):** a copy of your data key is kept on our server so you can recover your notes on a new device. Convenient, but it means **we hold a key that can decrypt your notes**.
+  - **Zero-knowledge mode (opt-in):** your data key is wrapped with a key derived from your passphrase (Argon2id) plus a recovery code. The server stores only the wrapped blob, so **only your passphrase protects your notes and we cannot read them** — and if you lose both the passphrase and the recovery code, neither can we recover them.
+- **What is not end-to-end encrypted** - Be aware of these before you rely on them:
+  - **Voice recordings synced to the cloud** are stored on our servers without end-to-end encryption.
+  - **Reminder title, body and schedule** are stored in readable form, because our server has to render and send the push notification at the right time.
+- **Diagnostics, not surveillance — but not anonymous** - Release builds use Firebase Analytics and Crashlytics for crash reports and product-usage events. When you are signed in these are **tied to your account ID**, so they are not anonymous. Note content, titles, search terms, transcripts, purchase tokens, passphrases, recovery codes and encryption keys are never sent to them. See [`assets/legal/privacy_policy.md`](assets/legal/privacy_policy.md)
 
 ### 🎨 Design & Customization
 
@@ -68,29 +73,29 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
 
 ### 🚀 Advanced Features
 
-- **OCR** - Extract text from images using Google ML Kit
-- **Voice Transcription** - Speech-to-text for quick note creation
-- **Drawing Canvas** - Sketch and draw within notes
-- **Attachments** - Add images and files to notes
+- **OCR** - Extract text from images using Google ML Kit (on-device)
 - **Export** - Share notes as PDF or Markdown
-- **Import/Export** - Backup and restore your notes
 
 ### 💎 Premium & Usage Limits
 
 | Feature | Free Tier | Premium |
 |---------|-----------|---------|
 | Synced Notes | 50 total | Unlimited |
-| OCR Scans | 20/month | Unlimited |
-| Exports | 10/month | Unlimited |
-| Voice Recording | 2 minutes | Unlimited |
 | Folders | 5 | Unlimited |
-| Theme Colors | 2 | All 5 |
-| Attachments/Note | 3 | Unlimited |
+| OCR Scans | 20/month | Unlimited |
+| Exports (PDF & Markdown) | 10/month | Unlimited |
+| Voice recording length | 2 min per note | Unlimited |
+| Accent Colors | 2 | All 5 |
+
+Everything else in the app - note types, reminders, folders' basic use, light/dark themes
+and all bundled fonts - is free for everyone. These six rows are the whole of the Premium
+difference; they are enforced in `lib/services/premium_service.dart` against
+`lib/constants/premium_limits.dart`.
 
 ### 🔄 Cloud Sync
 
 - **Firebase Authentication** - Google Sign-In with secure token management
-- **End-to-End Encryption** - Notes encrypted before leaving device
+- **Encrypted before upload** - Note text is encrypted on the device before it is synced. In standard mode a recovery copy of the key is held server-side; zero-knowledge mode keeps the key off our servers. Cloud voice recordings and reminder text are not end-to-end encrypted
 - **Real-time Sync** - Changes sync instantly across devices
 - **Offline Support** - Full functionality without internet
 - **Usage Tracking** - Cloud-based limits prevent bypass
@@ -138,8 +143,8 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
 - **Record** + **Audioplayers** - Audio recording and playback
 - **Image Picker** - Image selection from gallery/camera
 - **Google ML Kit** - OCR text recognition
-- **Speech to Text** - Voice transcription
-- **Painter** - Drawing canvas
+- **Speech to Text** - dependency present; transcription is not wired into the shipping editor yet
+- **Painter** - dependency present; the drawing canvas has no entry point in the shipping editor yet
 
 ### Navigation & State
 - **Go Router** - Declarative routing

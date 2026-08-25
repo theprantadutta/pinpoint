@@ -96,8 +96,10 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
       _analytics.logEvent(name: 'folder_deleted');
 
   @override
-  Future<void> trackSearchPerformed({required String query}) =>
-      _analytics.logEvent(name: 'search_performed', parameters: {'query': query});
+  Future<void> trackSearchPerformed({required int queryLength}) =>
+      _analytics.logEvent(
+          name: 'search_performed',
+          parameters: {'query_length_bucket': searchLengthBucket(queryLength)});
 
   @override
   Future<void> trackSortChanged({required String sortBy, required String direction}) =>
@@ -112,16 +114,85 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
       _analytics.logEvent(name: 'subscription_screen_viewed');
 
   @override
-  Future<void> trackPurchaseInitiated({required String productId}) =>
-      _analytics.logEvent(name: 'purchase_initiated', parameters: {'product_id': productId});
+  Future<void> trackCheckoutStarted({required String productId}) =>
+      _analytics.logEvent(name: 'checkout_started', parameters: {'product_id': productId});
 
   @override
-  Future<void> trackPurchaseCompleted({required String productId}) =>
-      _analytics.logEvent(name: 'purchase_completed', parameters: {'product_id': productId});
+  Future<void> trackCheckoutLaunchSucceeded({required String productId}) =>
+      _analytics.logEvent(
+          name: 'checkout_launch_succeeded', parameters: {'product_id': productId});
 
   @override
-  Future<void> trackPurchaseFailed({required String productId, required String error}) =>
-      _analytics.logEvent(name: 'purchase_failed', parameters: {'product_id': productId, 'error': error});
+  Future<void> trackCheckoutLaunchFailed({
+    required String productId,
+    required String reason,
+  }) =>
+      _analytics.logEvent(
+          name: 'checkout_launch_failed',
+          parameters: {'product_id': productId, 'reason': reason});
+
+  @override
+  Future<void> trackCheckoutCancelled({required String productId}) =>
+      _analytics.logEvent(name: 'checkout_cancelled', parameters: {'product_id': productId});
+
+  @override
+  Future<void> trackCheckoutPending({required String productId}) =>
+      _analytics.logEvent(name: 'checkout_pending', parameters: {'product_id': productId});
+
+  @override
+  Future<void> trackCheckoutError({
+    required String productId,
+    required String reason,
+  }) =>
+      _analytics.logEvent(
+          name: 'checkout_error',
+          parameters: {'product_id': productId, 'reason': reason});
+
+  @override
+  Future<void> trackStorePurchaseConfirmed({
+    required String productId,
+    required String source,
+  }) =>
+      _analytics.logEvent(
+          name: 'store_purchase_confirmed',
+          parameters: {'product_id': productId, 'source': source});
+
+  @override
+  Future<void> trackPurchaseVerified({
+    required String productId,
+    required String platform,
+    required String source,
+  }) =>
+      _analytics.logEvent(
+          name: 'purchase_verified',
+          parameters: {
+            'product_id': productId,
+            'platform': platform,
+            'source': source,
+          });
+
+  @override
+  Future<void> trackPurchaseProvisionallyGranted({
+    required String productId,
+    required String platform,
+    required String reason,
+  }) =>
+      _analytics.logEvent(
+          name: 'purchase_provisionally_granted',
+          parameters: {
+            'product_id': productId,
+            'platform': platform,
+            'reason': reason,
+          });
+
+  @override
+  Future<void> trackVerificationFailed({
+    required String productId,
+    required String reason,
+  }) =>
+      _analytics.logEvent(
+          name: 'verification_failed',
+          parameters: {'product_id': productId, 'reason': reason});
 
   @override
   Future<void> trackSyncStarted() =>

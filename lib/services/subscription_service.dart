@@ -1,12 +1,45 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:pinpoint/service_locators/init_service_locators.dart';
+import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/services/premium_service.dart';
 import 'package:pinpoint/services/logger_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 
+/// Coarse, closed-set reason codes for checkout/verification analytics.
+///
+/// Analytics parameters must never carry an exception string, a store debug
+/// message, a purchase token or verification data — raw detail goes to the
+/// device log via `log.e` only. Anything not in this list is reported as
+/// [_ReasonCodes.unknown].
+abstract final class _ReasonCodes {
+  static const String storeUnavailable = 'store_unavailable';
+  static const String productNotFound = 'product_not_found';
+  static const String launchRejected = 'launch_rejected';
+  static const String noPurchaseToken = 'no_purchase_token';
+  static const String verificationRejected = 'verification_rejected';
+  static const String unknown = 'unknown';
+
+  /// Firebase caps string parameter values at 100 chars; store error codes are
+  /// short enums in practice, but clamp defensively.
+  static const int maxLength = 100;
+}
+
+/// Owns the app's single, app-lifetime in-app-purchase stream listener.
+///
+/// Testing: `InAppPurchase` delegates every call to `InAppPurchasePlatform
+/// .instance`, which has a public setter, so a test drives purchases by
+/// assigning a fake platform (`extends InAppPurchasePlatform`, backed by a
+/// broadcast `StreamController<List<PurchaseDetails>>`) before touching this
+/// singleton — no injection point is needed here. Set
+/// `debugDefaultTargetPlatformOverride = TargetPlatform.windows` first so the
+/// plugin does not register the real Android platform over the fake, and call
+/// [resetForTesting] between cases because the singleton is process-global.
 class SubscriptionService {
   static final SubscriptionService _instance = SubscriptionService._internal();
   factory SubscriptionService() => _instance;
@@ -29,9 +62,34 @@ class SubscriptionService {
   List<ProductDetails> get products => _products;
   bool get hasProducts => _products.isNotEmpty;
 
+  /// The one and only purchase-stream subscription.
+  ///
+  /// This listener is APP-LIFETIME. The store delivers purchases, restores and
+  /// deferred-payment resolutions on it at any moment — including long after
+  /// the paywall route has closed — so it must never be cancelled by UI. There
+  /// is deliberately no public `dispose()`; see [resetForTesting].
   StreamSubscription<List<PurchaseDetails>>? _subscription;
+  int _purchaseListenerStarts = 0;
+
   bool _isAvailable = false;
   bool get isAvailable => _isAvailable;
+
+  // Idempotency guards. [_initialized] answers "has initialization already
+  // succeeded"; [_initializing] lets concurrent callers await the SAME work
+  // instead of racing into a second listener and a second restore storm.
+  bool _initialized = false;
+  Future<void>? _initializing;
+
+  /// Whether initialization has completed successfully at least once.
+  bool get isInitialized => _initialized;
+
+  /// Whether a purchase-stream listener is currently attached.
+  bool get hasActivePurchaseListener => _subscription != null;
+
+  /// How many purchase-stream listeners have been created in this process.
+  /// Must never exceed 1 — anything higher means every purchase event is being
+  /// handled (and verified, and completed) more than once.
+  int get purchaseListenerStarts => _purchaseListenerStarts;
 
   // Track restore state
   bool _isRestoring = false;
@@ -39,17 +97,33 @@ class SubscriptionService {
   int _restoredCount = 0;
   Function(int restoredCount, bool hasError)? _onRestoreComplete;
 
-  /// Static initialize method for use in main.dart
-  static Future<void> initialize() async {
-    await _instance._initialize();
+  /// Analytics sink, or null when the locator has not been initialized (tests).
+  AnalyticsFacade? get _analytics =>
+      getIt.isRegistered<AnalyticsFacade>() ? getIt<AnalyticsFacade>() : null;
+
+  /// Static initialize method for use at app startup.
+  ///
+  /// Safe to call repeatedly: the second and later calls are no-ops (or await
+  /// the in-flight first call). Callers who want a genuinely fresh restore
+  /// should call [restorePurchases] directly instead.
+  static Future<void> initialize() => _instance._initialize();
+
+  /// Initialize subscription service (idempotent + concurrency-safe).
+  Future<void> _initialize() {
+    if (_initialized) return Future.value();
+    // `??=` only evaluates the right-hand side when nothing is in flight, so
+    // two concurrent callers share one _runInitialize().
+    return _initializing ??=
+        _runInitialize().whenComplete(() => _initializing = null);
   }
 
-  /// Initialize subscription service
-  Future<void> _initialize() async {
+  Future<void> _runInitialize() async {
     // Check if in-app purchases are available
     _isAvailable = await _iap.isAvailable();
 
     if (!_isAvailable) {
+      // Leave _initialized false: the store may become available later, and
+      // no listener was created so there is nothing to duplicate.
       log.w('In-app purchases not available');
       return;
     }
@@ -57,13 +131,18 @@ class SubscriptionService {
     // Load products
     await loadProducts();
 
-    // Listen to purchase updates
-    _subscription = _iap.purchaseStream.listen(
-      _onPurchaseUpdate,
-      onError: (error) {
-        log.e('Purchase stream error: $error');
-      },
-    );
+    // Listen to purchase updates — exactly once per process.
+    if (_subscription == null) {
+      _purchaseListenerStarts++;
+      _subscription = _iap.purchaseStream.listen(
+        _onPurchaseUpdate,
+        onError: (error) {
+          log.e('Purchase stream error: $error');
+        },
+      );
+    }
+
+    _initialized = true;
 
     // Restore previous purchases
     await restorePurchases();
@@ -107,16 +186,25 @@ class SubscriptionService {
     }
   }
 
-  /// Purchase a subscription
+  /// Launch the store's billing sheet for [productId].
+  ///
+  /// The returned bool only says whether the sheet was LAUNCHED — the actual
+  /// purchase outcome arrives later on the purchase stream. The launch-stage
+  /// analytics are emitted here rather than from the paywall because this is
+  /// the only place that can tell the failure modes apart.
   Future<bool> purchase(String productId) async {
     if (!_isAvailable) {
       log.e('In-app purchases not available');
+      _analytics?.trackCheckoutLaunchFailed(
+          productId: productId, reason: _ReasonCodes.storeUnavailable);
       return false;
     }
 
     final product = getProduct(productId);
     if (product == null) {
       log.e('Product not found: $productId');
+      _analytics?.trackCheckoutLaunchFailed(
+          productId: productId, reason: _ReasonCodes.productNotFound);
       return false;
     }
 
@@ -125,20 +213,40 @@ class SubscriptionService {
         productDetails: product,
       );
 
-      bool success;
-      if (productId == premiumLifetime) {
-        // One-time purchase
-        success = await _iap.buyNonConsumable(purchaseParam: purchaseParam);
-      } else {
-        // Subscription
-        success = await _iap.buyNonConsumable(purchaseParam: purchaseParam);
-      }
+      // Both subscriptions and the lifetime SKU are non-consumable purchases.
+      final success = await _iap.buyNonConsumable(purchaseParam: purchaseParam);
 
+      if (success) {
+        _analytics?.trackCheckoutLaunchSucceeded(productId: productId);
+      } else {
+        _analytics?.trackCheckoutLaunchFailed(
+            productId: productId, reason: _ReasonCodes.launchRejected);
+      }
       return success;
     } catch (e) {
+      // Raw detail stays on-device; analytics gets a coarse code only.
       log.e('Purchase error: $e');
+      _analytics?.trackCheckoutLaunchFailed(
+          productId: productId, reason: _coarseCodeForException(e));
       return false;
     }
+  }
+
+  /// Maps a thrown store error to a short, bounded code. Never returns free
+  /// text: `PlatformException.message`/`details` can carry Play's debugMessage
+  /// or iOS `NSError.userInfo`, neither of which may leave the device.
+  String _coarseCodeForException(Object error) {
+    final code = error is PlatformException ? error.code : null;
+    return _sanitizeCode(code);
+  }
+
+  /// Normalises a store-supplied code into a lower-case, length-capped token.
+  String _sanitizeCode(String? code) {
+    if (code == null || code.trim().isEmpty) return _ReasonCodes.unknown;
+    final normalized = code.trim().toLowerCase();
+    return normalized.length <= _ReasonCodes.maxLength
+        ? normalized
+        : normalized.substring(0, _ReasonCodes.maxLength);
   }
 
   /// Restore previous purchases
@@ -180,33 +288,68 @@ class SubscriptionService {
     log.i('Restore completed: $_restoredCount purchases restored');
   }
 
-  /// Handle purchase updates
+  /// Handle purchase updates.
+  ///
+  /// Every stream-sourced analytics event is emitted from here, never from the
+  /// paywall — the store can deliver an outcome minutes after the paywall route
+  /// closed, and this listener outlives it.
   Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
       log.i('Purchase update: ${purchase.productID} - ${purchase.status}');
 
-      if (purchase.status == PurchaseStatus.pending) {
-        // Payment pending
-        log.i('Purchase pending: ${purchase.productID}');
-      } else if (purchase.status == PurchaseStatus.purchased) {
-        // Purchase successful
-        await _handleSuccessfulPurchase(purchase);
-      } else if (purchase.status == PurchaseStatus.error) {
-        // Purchase failed
-        log.e('Purchase error: ${purchase.error}');
-        await _iap.completePurchase(purchase);
-      } else if (purchase.status == PurchaseStatus.restored) {
-        // Purchase restored
-        log.i('Processing restored purchase: ${purchase.productID}');
-        await _handleSuccessfulPurchase(purchase);
+      switch (purchase.status) {
+        case PurchaseStatus.pending:
+          // Payment pending (deferred payment, parental approval, …)
+          log.i('Purchase pending: ${purchase.productID}');
+          _analytics?.trackCheckoutPending(productId: purchase.productID);
 
-        // Track restored count
-        if (_isRestoring) {
-          _restoredCount++;
-        }
+        case PurchaseStatus.purchased:
+          _analytics?.trackStorePurchaseConfirmed(
+              productId: purchase.productID, source: _sourceFor(purchase));
+          await _handleSuccessfulPurchase(purchase);
+
+        case PurchaseStatus.canceled:
+          // The user dismissed the billing sheet. Previously this fell through
+          // the if/else chain unhandled, so cancellations were invisible.
+          log.i('Purchase cancelled: ${purchase.productID}');
+          _analytics?.trackCheckoutCancelled(productId: purchase.productID);
+          if (purchase.pendingCompletePurchase) {
+            await _iap.completePurchase(purchase);
+          }
+
+        case PurchaseStatus.error:
+          // purchase.error.message/details can carry store prose — log it
+          // locally, but send only the coarse code onwards.
+          log.e('Purchase error: ${purchase.error}');
+          _analytics?.trackCheckoutError(
+              productId: purchase.productID,
+              reason: _sanitizeCode(purchase.error?.code));
+          await _iap.completePurchase(purchase);
+
+        case PurchaseStatus.restored:
+          log.i('Processing restored purchase: ${purchase.productID}');
+          _analytics?.trackStorePurchaseConfirmed(
+              productId: purchase.productID, source: _sourceFor(purchase));
+          await _handleSuccessfulPurchase(purchase);
+
+          // Track restored count
+          if (_isRestoring) {
+            _restoredCount++;
+          }
       }
     }
   }
+
+  /// `'restore'` for anything the user already owned, `'purchase'` for a new
+  /// sale. Keeps restores from inflating the conversion count.
+  ///
+  /// The status is the ONLY input. It deliberately does not consult
+  /// `_isRestoring`: a restore runs a 3-second window during which a genuine
+  /// new purchase can land — a user who taps buy while a restore is in flight,
+  /// or whose deferred payment resolves then — and tagging that `restore`
+  /// silently dropped a real sale out of the conversion count.
+  String _sourceFor(PurchaseDetails purchase) =>
+      purchase.status == PurchaseStatus.restored ? 'restore' : 'purchase';
 
   /// Handle successful purchase
   Future<void> _handleSuccessfulPurchase(PurchaseDetails purchase) async {
@@ -220,7 +363,9 @@ class SubscriptionService {
       if (Platform.isAndroid && purchase is GooglePlayPurchaseDetails) {
         purchaseToken = purchase.billingClientPurchase.purchaseToken;
         platform = 'android';
-        log.i('📦 Got Google Play purchase token: ${purchaseToken.substring(0, 20)}...');
+        // Never log any part of the token — `log` writes to the device log in
+        // release builds too. Length is enough to confirm we got one.
+        log.i('📦 Got Google Play purchase token (${purchaseToken.length} chars)');
       } else if (Platform.isIOS) {
         // StoreKit 2: serverVerificationData is the JWS signed transaction the
         // backend verifies against Apple's certificate chain.
@@ -253,16 +398,45 @@ class SubscriptionService {
         log.i('👤 User authenticated: ${backendAuthService.isAuthenticated}, userId: $userId');
 
         log.i('🚀 Calling verifyPurchase...');
-        final verified = await subscriptionManager.verifyPurchase(
+        final result = await subscriptionManager.verifyPurchase(
           purchaseToken: purchaseToken,
           productId: purchase.productID,
           userId: userId, // Sync with user record if authenticated
           platform: platform,
         );
 
-        if (verified) {
+        if (result.isConfirmed) {
           log.i('✅ Purchase verified: ${purchase.productID}, userId: $userId');
 
+          // The single conversion event. It fires only for a backend-confirmed
+          // purchase: a provisional grant reports itself separately below, so
+          // this number is a count of real, verified sales.
+          _analytics?.trackPurchaseVerified(
+            productId: purchase.productID,
+            platform: platform,
+            source: _sourceFor(purchase),
+          );
+        } else if (result.isProvisional) {
+          // The store charged the user but the backend could not confirm it.
+          // Premium is unlocked locally and the purchase is queued for retry;
+          // when that retry confirms, SubscriptionManager emits the real
+          // `purchase_verified` with source `retry`. NOT a conversion.
+          log.w('⚠️ Provisional entitlement granted for ${purchase.productID} '
+              '(${result.reason})');
+          _analytics?.trackPurchaseProvisionallyGranted(
+            productId: purchase.productID,
+            platform: platform,
+            reason: result.reason ?? _ReasonCodes.unknown,
+          );
+        } else {
+          log.e('❌ Purchase verification failed for ${purchase.productID}');
+          _analytics?.trackVerificationFailed(
+            productId: purchase.productID,
+            reason: result.reason ?? _ReasonCodes.verificationRejected,
+          );
+        }
+
+        if (result.grantsEntitlement) {
           // Force refresh subscription status to update UI immediately
           await subscriptionManager.checkSubscriptionStatus(forceRefresh: true);
 
@@ -271,11 +445,13 @@ class SubscriptionService {
           // features stay locked until the next app launch.
           await PremiumService().refreshPremiumStatus();
           log.i('✅ Subscription status refreshed');
-        } else {
-          log.e('❌ Purchase verification failed for ${purchase.productID}');
         }
       } else {
+        // No token means verification could not even be attempted.
         log.e('❌ Purchase token is null!');
+        _analytics?.trackVerificationFailed(
+            productId: purchase.productID,
+            reason: _ReasonCodes.noPurchaseToken);
       }
 
       // Complete the purchase
@@ -316,8 +492,23 @@ class SubscriptionService {
     return product.price;
   }
 
-  /// Dispose subscription
-  void dispose() {
+  /// Tear the singleton back down to its pre-[initialize] state.
+  ///
+  /// TESTS ONLY. There is intentionally no public `dispose()`: the purchase
+  /// stream listener is app-lifetime and must NEVER be cancelled by a widget —
+  /// a paywall route closing used to kill it, after which no purchase, restore
+  /// or deferred payment was ever processed again for the rest of the session.
+  @visibleForTesting
+  void resetForTesting() {
     _subscription?.cancel();
+    _subscription = null;
+    _purchaseListenerStarts = 0;
+    _initialized = false;
+    _initializing = null;
+    _isAvailable = false;
+    _products = [];
+    _isRestoring = false;
+    _restoredCount = 0;
+    _onRestoreComplete = null;
   }
 }
