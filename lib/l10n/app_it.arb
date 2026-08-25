@@ -724,5 +724,26 @@
   "errServerUnavailable": "Il server non è temporaneamente disponibile.",
   "errRateLimited": "Troppe richieste. Attendi prima di riprovare.",
   "errUnexpected": "Si è verificato un errore imprevisto.",
-  "errTryAgainLater": "Riprova più tardi."
+  "errTryAgainLater": "Riprova più tardi.",
+  "setDisplay": "Schermo",
+  "setDisplaySubtitle": "Movimento fluido e frequenza di aggiornamento",
+  "displayTitle": "Schermo",
+  "displaySmoothMotion": "Movimento fluido",
+  "displaySmoothMotionSubtitle": "Usa la frequenza di aggiornamento più alta supportata da questo schermo. Consuma un po' più batteria.",
+  "displayCurrentRate": "In uso ora",
+  "displayMaxRate": "Massimo dello schermo",
+  "displaySupportedRates": "Questo schermo supporta",
+  "displaySingleRateNote": "Questo schermo funziona a una sola frequenza di aggiornamento, quindi non c'è nulla da sbloccare. Pinpoint è già il più fluido possibile su questo dispositivo.",
+  "displayBatterySaverNote": "Il risparmio energetico è attivo, quindi lo schermo potrebbe restare alla frequenza standard finché non lo disattivi.",
+  "displayThermalNote": "Il dispositivo è caldo. Potrebbe mantenere una frequenza più bassa per un po' per raffreddarsi, il che è normale.",
+  "displayFooterNote": "Frequenze di aggiornamento più alte rendono scorrimento e animazioni più fluidi e consumano un po' più batteria. Pinpoint non ignora mai il risparmio energetico del tuo dispositivo.",
+  "displayRateUnit": "{rate} Hz",
+  "@displayRateUnit": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "displayUnknownRate": "Verifica…"
 }

@@ -724,5 +724,26 @@
   "errServerUnavailable": "سرور موقتاً در دسترس نیست.",
   "errRateLimited": "درخواست‌های بیش از حد. پیش از تلاش دوباره کمی صبر کنید.",
   "errUnexpected": "خطای غیرمنتظره‌ای رخ داد.",
-  "errTryAgainLater": "لطفاً بعداً دوباره تلاش کنید."
+  "errTryAgainLater": "لطفاً بعداً دوباره تلاش کنید.",
+  "setDisplay": "نمایش",
+  "setDisplaySubtitle": "روانی حرکت و نرخ نوسازی",
+  "displayTitle": "نمایش",
+  "displaySmoothMotion": "حرکت روان",
+  "displaySmoothMotionSubtitle": "بالاترین نرخ نوسازی که این نمایشگر پشتیبانی می‌کند استفاده می‌شود. کمی بیشتر باتری مصرف می‌کند.",
+  "displayCurrentRate": "هم‌اکنون در حال اجرا",
+  "displayMaxRate": "بیشینه نمایشگر",
+  "displaySupportedRates": "این نمایشگر پشتیبانی می‌کند از",
+  "displaySingleRateNote": "این نمایشگر با یک نرخ نوسازی ثابت کار می‌کند، بنابراین چیزی برای فعال‌سازی وجود ندارد. Pinpoint هم‌اکنون روی این دستگاه در روان‌ترین حالت ممکن است.",
+  "displayBatterySaverNote": "ذخیره‌ساز باتری روشن است، بنابراین ممکن است نمایشگر تا زمانی که آن را خاموش کنید در نرخ استاندارد بماند.",
+  "displayThermalNote": "دستگاه شما گرم است. ممکن است مدتی نرخ پایین‌تری را حفظ کند تا خنک شود، که طبیعی است.",
+  "displayFooterNote": "نرخ‌های نوسازی بالاتر باعث می‌شوند پیمایش و انیمیشن روان‌تر حس شوند و کمی بیشتر باتری مصرف می‌کنند. Pinpoint هرگز حالت ذخیره انرژی دستگاه شما را نادیده نمی‌گیرد.",
+  "displayRateUnit": "{rate} Hz",
+  "@displayRateUnit": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "displayUnknownRate": "در حال بررسی…"
 }

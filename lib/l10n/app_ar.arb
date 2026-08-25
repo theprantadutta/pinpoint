@@ -724,5 +724,26 @@
   "errServerUnavailable": "الخادم غير متاح مؤقتًا.",
   "errRateLimited": "طلبات كثيرة جدًا. يرجى الانتظار قبل المحاولة مجددًا.",
   "errUnexpected": "حدث خطأ غير متوقع.",
-  "errTryAgainLater": "يرجى المحاولة لاحقًا."
+  "errTryAgainLater": "يرجى المحاولة لاحقًا.",
+  "setDisplay": "الشاشة",
+  "setDisplaySubtitle": "الحركة السلسة ومعدل التحديث",
+  "displayTitle": "الشاشة",
+  "displaySmoothMotion": "حركة سلسة",
+  "displaySmoothMotionSubtitle": "استخدام أعلى معدل تحديث تدعمه هذه الشاشة. يستهلك قدرًا أكبر قليلاً من البطارية.",
+  "displayCurrentRate": "قيد التشغيل الآن",
+  "displayMaxRate": "الحد الأقصى للشاشة",
+  "displaySupportedRates": "تدعم هذه الشاشة",
+  "displaySingleRateNote": "تعمل هذه الشاشة بمعدل تحديث واحد فقط، لذا لا يوجد ما يمكن تفعيله هنا. Pinpoint بالفعل بأقصى سلاسة ممكنة على هذا الجهاز.",
+  "displayBatterySaverNote": "موفّر البطارية مُفعّل، لذا قد تبقى الشاشة على معدلها القياسي حتى تُوقفه.",
+  "displayThermalNote": "جهازك دافئ. قد يبقى على معدل أقل لبعض الوقت ليبرد، وهذا أمر طبيعي.",
+  "displayFooterNote": "معدلات التحديث الأعلى تجعل التمرير والحركة أكثر سلاسة، وتستهلك قدرًا أكبر قليلاً من البطارية. لا يتجاوز Pinpoint أبدًا وضع توفير الطاقة في جهازك.",
+  "displayRateUnit": "{rate} Hz",
+  "@displayRateUnit": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "displayUnknownRate": "جارٍ التحقق…"
 }

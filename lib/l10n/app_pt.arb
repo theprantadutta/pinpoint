@@ -724,5 +724,26 @@
   "errServerUnavailable": "O servidor está temporariamente indisponível.",
   "errRateLimited": "Muitas solicitações. Aguarde antes de tentar novamente.",
   "errUnexpected": "Ocorreu um erro inesperado.",
-  "errTryAgainLater": "Tente novamente mais tarde."
+  "errTryAgainLater": "Tente novamente mais tarde.",
+  "setDisplay": "Tela",
+  "setDisplaySubtitle": "Movimento suave e taxa de atualização",
+  "displayTitle": "Tela",
+  "displaySmoothMotion": "Movimento suave",
+  "displaySmoothMotionSubtitle": "Usa a maior taxa de atualização que esta tela suporta. Consome um pouco mais de bateria.",
+  "displayCurrentRate": "Em uso agora",
+  "displayMaxRate": "Máximo da tela",
+  "displaySupportedRates": "Esta tela oferece",
+  "displaySingleRateNote": "Esta tela funciona em uma única taxa de atualização, então não há nada a desbloquear. O Pinpoint já está o mais fluido possível neste aparelho.",
+  "displayBatterySaverNote": "A economia de bateria está ativada, então a tela pode permanecer na taxa padrão até você desativá-la.",
+  "displayThermalNote": "Seu aparelho está aquecido. Ele pode manter uma taxa mais baixa por um tempo para esfriar, o que é normal.",
+  "displayFooterNote": "Taxas de atualização mais altas deixam a rolagem e as animações mais fluidas e consomem um pouco mais de bateria. O Pinpoint nunca ignora a economia de energia do seu aparelho.",
+  "displayRateUnit": "{rate} Hz",
+  "@displayRateUnit": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "displayUnknownRate": "Verificando…"
 }

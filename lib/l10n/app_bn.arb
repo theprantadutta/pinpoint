@@ -724,5 +724,26 @@
   "errServerUnavailable": "সার্ভার সাময়িকভাবে অনুপলব্ধ।",
   "errRateLimited": "অনেক বেশি অনুরোধ। আবার চেষ্টার আগে অপেক্ষা করুন।",
   "errUnexpected": "একটি অপ্রত্যাশিত ত্রুটি ঘটেছে।",
-  "errTryAgainLater": "অনুগ্রহ করে পরে আবার চেষ্টা করুন।"
+  "errTryAgainLater": "অনুগ্রহ করে পরে আবার চেষ্টা করুন।",
+  "setDisplay": "ডিসপ্লে",
+  "setDisplaySubtitle": "মসৃণ গতি ও রিফ্রেশ রেট",
+  "displayTitle": "ডিসপ্লে",
+  "displaySmoothMotion": "মসৃণ গতি",
+  "displaySmoothMotionSubtitle": "এই স্ক্রিন যে সর্বোচ্চ রিফ্রেশ রেট সমর্থন করে তা ব্যবহার করে। কিছুটা বেশি ব্যাটারি খরচ হয়।",
+  "displayCurrentRate": "এখন চলছে",
+  "displayMaxRate": "ডিসপ্লের সর্বোচ্চ",
+  "displaySupportedRates": "এই ডিসপ্লে সমর্থন করে",
+  "displaySingleRateNote": "এই স্ক্রিন একটিমাত্র রিফ্রেশ রেটে চলে, তাই এখানে আনলক করার কিছু নেই। এই ডিভাইসে Pinpoint ইতিমধ্যেই যতটা মসৃণ হওয়া সম্ভব ততটাই।",
+  "displayBatterySaverNote": "ব্যাটারি সেভার চালু আছে, তাই আপনি বন্ধ না করা পর্যন্ত ডিসপ্লে তার স্বাভাবিক রেটেই থাকতে পারে।",
+  "displayThermalNote": "আপনার ডিভাইস গরম হয়েছে। ঠান্ডা হতে কিছুক্ষণ কম রেট ধরে রাখতে পারে, যা স্বাভাবিক।",
+  "displayFooterNote": "বেশি রিফ্রেশ রেটে স্ক্রলিং ও অ্যানিমেশন আরও মসৃণ মনে হয়, এবং কিছুটা বেশি ব্যাটারি খরচ হয়। Pinpoint কখনোই আপনার ডিভাইসের পাওয়ার সেভিং উপেক্ষা করে না।",
+  "displayRateUnit": "{rate} Hz",
+  "@displayRateUnit": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "displayUnknownRate": "পরীক্ষা করা হচ্ছে…"
 }

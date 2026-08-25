@@ -18,6 +18,7 @@ import 'package:pinpoint/services/logout_service.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/screens/theme_screen.dart';
 import 'package:pinpoint/screens/language_screen.dart';
+import 'package:pinpoint/screens/display_screen.dart';
 import 'package:pinpoint/screens/encryption_settings_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 import 'package:pinpoint/screens/admin_panel_screen.dart';
@@ -408,6 +409,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () {
                 PinpointHaptics.medium();
                 AppNavigation.router.push(LanguageScreen.kRouteName);
+              },
+            ),
+            const SizedBox(height: PinpointSpacing.md),
+            _SettingsTile(
+              title: AppL10n.of(context).setDisplay,
+              subtitle: AppL10n.of(context).setDisplaySubtitle,
+              icon: Icons.monitor_rounded,
+              onTap: () {
+                PinpointHaptics.medium();
+                AppNavigation.router.push(DisplayScreen.kRouteName);
               },
             ),
 

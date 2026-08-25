@@ -3275,5 +3275,66 @@
   "errTryAgainLater": "Please try again later.",
   "@errTryAgainLater": {
     "description": "Recovery hint for an unclassified failure."
+  },
+  "setDisplay": "Display",
+  "@setDisplay": {
+    "description": "Settings row in the Appearance section that opens the display and refresh-rate screen. Sits beside Theme and Language."
+  },
+  "setDisplaySubtitle": "Smooth motion and refresh rate",
+  "@setDisplaySubtitle": {
+    "description": "Secondary text under the Display settings row."
+  },
+  "displayTitle": "Display",
+  "@displayTitle": {
+    "description": "Title of the Display settings screen."
+  },
+  "displaySmoothMotion": "Smooth motion",
+  "@displaySmoothMotion": {
+    "description": "Label of the toggle that opts the app into the display's highest refresh rate."
+  },
+  "displaySmoothMotionSubtitle": "Use the highest refresh rate this screen supports. Uses a little more battery.",
+  "@displaySmoothMotionSubtitle": {
+    "description": "Explanation under the smooth-motion toggle. Mentions the battery trade-off honestly."
+  },
+  "displayCurrentRate": "Running now",
+  "@displayCurrentRate": {
+    "description": "Heading above the live readout showing the refresh rate the display is running at right now."
+  },
+  "displayMaxRate": "Display maximum",
+  "@displayMaxRate": {
+    "description": "Label for the highest refresh rate the display hardware supports, shown beside the current rate."
+  },
+  "displaySupportedRates": "This display supports",
+  "@displaySupportedRates": {
+    "description": "Section header above the list of refresh rates this display can switch between."
+  },
+  "displaySingleRateNote": "This screen runs at a single refresh rate, so there is nothing to unlock here. Pinpoint is already as smooth as it gets on this device.",
+  "@displaySingleRateNote": {
+    "description": "Shown instead of the toggle when the device has only one refresh rate, so there is nothing to unlock."
+  },
+  "displayBatterySaverNote": "Battery saver is on, so your display may stay at its standard rate until you turn it off.",
+  "@displayBatterySaverNote": {
+    "description": "Warning shown when battery saver is active, because the OS throttles the refresh rate regardless of the app's request."
+  },
+  "displayThermalNote": "Your device is warm. It may hold a lower rate for a while to cool down, which is normal.",
+  "@displayThermalNote": {
+    "description": "Warning shown when the device is running warm and the OS is holding a lower refresh rate to cool down."
+  },
+  "displayFooterNote": "Higher refresh rates make scrolling and animation feel smoother, and use a little more battery. Pinpoint never overrides your device's power saving.",
+  "@displayFooterNote": {
+    "description": "Explanatory paragraph at the bottom of the Display screen. Reassures the user the app never overrides OS power saving."
+  },
+  "displayRateUnit": "{rate} Hz",
+  "@displayRateUnit": {
+    "description": "Refresh rate with its unit, e.g. '120 Hz'. {rate} is the number. Hz is the SI symbol and is not translated.",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "displayUnknownRate": "Checking…",
+  "@displayUnknownRate": {
+    "description": "Shown in place of a refresh-rate number while the platform has not reported one yet."
   }
 }

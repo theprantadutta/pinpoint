@@ -724,5 +724,26 @@
   "errServerUnavailable": "Le serveur est temporairement indisponible.",
   "errRateLimited": "Trop de requêtes. Patientez avant de réessayer.",
   "errUnexpected": "Une erreur inattendue est survenue.",
-  "errTryAgainLater": "Veuillez réessayer plus tard."
+  "errTryAgainLater": "Veuillez réessayer plus tard.",
+  "setDisplay": "Affichage",
+  "setDisplaySubtitle": "Fluidité et fréquence d'affichage",
+  "displayTitle": "Affichage",
+  "displaySmoothMotion": "Mouvement fluide",
+  "displaySmoothMotionSubtitle": "Utilise la fréquence d'affichage la plus élevée prise en charge par cet écran. Consomme un peu plus de batterie.",
+  "displayCurrentRate": "Actuellement",
+  "displayMaxRate": "Maximum de l'écran",
+  "displaySupportedRates": "Cet écran prend en charge",
+  "displaySingleRateNote": "Cet écran fonctionne à une seule fréquence d'affichage : il n'y a donc rien à débloquer ici. Pinpoint est déjà aussi fluide que possible sur cet appareil.",
+  "displayBatterySaverNote": "L'économiseur de batterie est activé : l'écran peut rester à sa fréquence standard tant que vous ne le désactivez pas.",
+  "displayThermalNote": "Votre appareil est chaud. Il peut conserver une fréquence plus basse le temps de refroidir, ce qui est normal.",
+  "displayFooterNote": "Des fréquences d'affichage plus élevées rendent le défilement et les animations plus fluides, et consomment un peu plus de batterie. Pinpoint ne contourne jamais l'économie d'énergie de votre appareil.",
+  "displayRateUnit": "{rate} Hz",
+  "@displayRateUnit": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "displayUnknownRate": "Vérification…"
 }

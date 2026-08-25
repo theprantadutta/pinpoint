@@ -724,5 +724,26 @@
   "errServerUnavailable": "เซิร์ฟเวอร์ไม่พร้อมใช้งานชั่วคราว",
   "errRateLimited": "คำขอมากเกินไป โปรดรอสักครู่แล้วลองใหม่",
   "errUnexpected": "เกิดข้อผิดพลาดที่ไม่คาดคิด",
-  "errTryAgainLater": "โปรดลองอีกครั้งภายหลัง"
+  "errTryAgainLater": "โปรดลองอีกครั้งภายหลัง",
+  "setDisplay": "การแสดงผล",
+  "setDisplaySubtitle": "ความลื่นไหลและอัตรารีเฟรช",
+  "displayTitle": "การแสดงผล",
+  "displaySmoothMotion": "การเคลื่อนไหวลื่นไหล",
+  "displaySmoothMotionSubtitle": "ใช้อัตรารีเฟรชสูงสุดที่หน้าจอนี้รองรับ ใช้แบตเตอรี่มากขึ้นเล็กน้อย",
+  "displayCurrentRate": "กำลังใช้งาน",
+  "displayMaxRate": "สูงสุดของหน้าจอ",
+  "displaySupportedRates": "หน้าจอนี้รองรับ",
+  "displaySingleRateNote": "หน้าจอนี้ทำงานที่อัตรารีเฟรชเดียว จึงไม่มีอะไรให้ปลดล็อก Pinpoint ลื่นไหลที่สุดเท่าที่อุปกรณ์นี้ทำได้แล้ว",
+  "displayBatterySaverNote": "โหมดประหยัดแบตเตอรี่เปิดอยู่ หน้าจอจึงอาจคงอัตรามาตรฐานไว้จนกว่าคุณจะปิด",
+  "displayThermalNote": "อุปกรณ์ของคุณร้อน อาจคงอัตราที่ต่ำกว่าไว้สักครู่เพื่อระบายความร้อน ซึ่งเป็นเรื่องปกติ",
+  "displayFooterNote": "อัตรารีเฟรชที่สูงขึ้นทำให้การเลื่อนและแอนิเมชันลื่นไหลขึ้น และใช้แบตเตอรี่มากขึ้นเล็กน้อย Pinpoint จะไม่ลบล้างการประหยัดพลังงานของอุปกรณ์คุณ",
+  "displayRateUnit": "{rate} Hz",
+  "@displayRateUnit": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "displayUnknownRate": "กำลังตรวจสอบ…"
 }
