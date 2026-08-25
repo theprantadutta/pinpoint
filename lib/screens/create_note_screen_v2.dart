@@ -2413,13 +2413,20 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         return;
       }
 
-      final currentText =
-          MarkdownEditor.controllerToMarkdown(_fleatherController);
-      final newText = currentText.isEmpty
-          ? recognizedText
-          : '$currentText\n\n$recognizedText';
-      _fleatherController =
-          MarkdownEditor.createControllerFromMarkdown(newText);
+      // Append into the live document. This used to serialize the document to
+      // a JSON delta, string-concatenate the OCR text onto it, and parse the
+      // result back: that produced invalid JSON, so the raw delta was dumped
+      // into the note body as visible text, the document lost its trailing
+      // line break (which later crashed the editor from the keyboard path),
+      // and all existing formatting was destroyed. Replacing the controller
+      // without setState also left the editor bound to the old one.
+      final document = _fleatherController.document;
+      final hasExistingText = document.toPlainText().trim().isNotEmpty;
+      document.insert(
+        document.length - 1, // Before the document's trailing line break.
+        hasExistingText ? '\n\n$recognizedText' : recognizedText,
+      );
+      _scheduleAutoSave();
 
       await premiumService.incrementOcrScans();
 

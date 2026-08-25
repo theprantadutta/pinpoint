@@ -22,6 +22,55 @@ class MarkdownEditor extends StatefulWidget {
     this.onChanged,
   });
 
+  /// Forces a delta to satisfy Parchment's document invariant: it must end with
+  /// a line break.
+  ///
+  /// Parchment checks this with an `assert` inside
+  /// `ParchmentDocument._loadDocument`, and asserts are stripped from release
+  /// builds. So an un-terminated delta does NOT fail loudly in production — it
+  /// quietly builds a malformed node tree, and the damage surfaces later and
+  /// somewhere else entirely: the next insert near the end of that document
+  /// walks off the end of the tree and dies inside `ContainerNode.insert` with
+  /// "Null check operator used on a null value", reported from the keyboard
+  /// path (`RawEditorStateTextInputClientMixin.updateEditingValueWithDeltas`).
+  /// In debug the assert fires instead and the old catch-all swallowed it,
+  /// which showed up as a note opening blank.
+  ///
+  /// Every delta must pass through here before it reaches Parchment.
+  static Delta _asDocumentDelta(Delta delta) {
+    if (delta.isEmpty) return Delta()..insert('\n');
+    final data = delta.last.data;
+    if (data is String && data.endsWith('\n')) return delta;
+    // Un-terminated text, or a trailing embed, both need a closing line break.
+    return Delta.from(delta)..insert('\n');
+  }
+
+  /// Decodes stored note content into a valid document delta.
+  ///
+  /// Content is normally a JSON Delta array. Anything else — genuinely plain
+  /// text from an old note, or JSON that is not a delta array (a bare number,
+  /// `true`, an object) — is treated as the note's literal text. That last case
+  /// used to fall through to an empty controller, which silently wiped the note
+  /// on the next save.
+  static Delta _deltaForStoredContent(String content) {
+    Object? decoded;
+    try {
+      decoded = jsonDecode(content);
+    } catch (_) {
+      decoded = null; // Not JSON at all.
+    }
+
+    if (decoded is List) {
+      try {
+        return _asDocumentDelta(Delta.fromJson(decoded));
+      } catch (_) {
+        // A JSON array that isn't a usable delta; keep the raw text instead.
+      }
+    }
+
+    return _asDocumentDelta(Delta()..insert(content));
+  }
+
   /// Creates a FleatherController from stored content (JSON Delta format)
   /// Supports both plain text and rich JSON format for backward compatibility
   static FleatherController createControllerFromMarkdown(String content) {
@@ -30,31 +79,23 @@ class MarkdownEditor extends StatefulWidget {
     }
 
     try {
-      // Try to parse as JSON (rich text format)
-      final jsonData = jsonDecode(content);
-
-      if (jsonData is List) {
-        // It's a Delta JSON array
-        final delta = Delta.fromJson(jsonData);
-        final doc = ParchmentDocument.fromDelta(delta);
-        return FleatherController(document: doc);
-      }
+      return FleatherController(
+        document: ParchmentDocument.fromDelta(_deltaForStoredContent(content)),
+      );
     } catch (e) {
-      // Not JSON, treat as plain text for backward compatibility
-      // This maintains compatibility with old notes
+      debugPrint('⚠️ [MarkdownEditor] Could not load note content: $e');
+      // Never throw while opening a note. Keep the text as one plain line
+      // rather than dropping what the user wrote.
       try {
-        final doc = ParchmentDocument.fromDelta(
-          Delta()..insert(content),
+        return FleatherController(
+          document: ParchmentDocument.fromDelta(
+            _asDocumentDelta(Delta()..insert(content)),
+          ),
         );
-        return FleatherController(document: doc);
-      } catch (e) {
-        // Fallback to empty controller
+      } catch (_) {
         return FleatherController();
       }
     }
-
-    // Fallback
-    return FleatherController();
   }
 
   /// Converts the current controller content to JSON format
