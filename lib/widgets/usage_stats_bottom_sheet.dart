@@ -468,8 +468,19 @@ class _UpgradeButton extends StatelessWidget {
       width: double.infinity,
       child: FilledButton.icon(
         onPressed: () {
-          context.pop();
-          context.push('/subscription');
+          // This sheet is presented with showModalBottomSheet, so it is a
+          // Navigator route — not a GoRouter one. context.pop() asks GoRouter
+          // to pop its OWN stack instead: with StatefulShellRoute.indexedStack
+          // in the tree that walks into ShellRouteMatch and dereferences
+          // `walker.navigatorKey.currentState!` on a branch navigator that is
+          // not currently mounted, throwing "Null check operator used on a
+          // null value" (go_router delegate.dart:126).
+          //
+          // Resolve the router BEFORE popping: afterwards this element is
+          // deactivated and looking anything up from its context is unsafe.
+          final router = GoRouter.of(context);
+          Navigator.of(context).pop();
+          router.push('/subscription');
         },
         icon: const Icon(Icons.workspace_premium),
         label: Text(AppL10n.of(context).usageUpgradeToPremium),
