@@ -9,6 +9,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_timezone
   printing
   record_linux
+  refresh_rate
   url_launcher_linux
 )
 

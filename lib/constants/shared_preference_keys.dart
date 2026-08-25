@@ -31,3 +31,9 @@ const kHasCompletedWalkthroughKey = 'has_completed_walkthrough';
 // terms and privacy keys
 const kHasAcceptedTermsKey = 'has_accepted_terms';
 const kTermsAcceptedDateKey = 'terms_accepted_date';
+
+// display / refresh-rate key. Stored per device rather than per account:
+// whether smooth motion is worth the battery depends on the hardware in your
+// hand, so a phone and a tablet are allowed to disagree. Same store the theme
+// and language use.
+const kHighRefreshRateKey = 'high_refresh_rate_key';

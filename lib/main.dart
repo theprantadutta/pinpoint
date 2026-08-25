@@ -5,7 +5,6 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
@@ -34,6 +33,7 @@ import 'services/app_update_service.dart';
 import 'services/api_service.dart';
 import 'services/theme_controller.dart';
 import 'services/locale_controller.dart';
+import 'services/refresh_rate_controller.dart';
 import 'services/notification_channels.dart';
 import 'screens/auth_screen.dart';
 
@@ -612,7 +612,7 @@ class MyApp extends StatefulWidget {
       context.findAncestorStateOfType<_MyAppState>()!;
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   bool _isBiometricEnabled = false;
   SharedPreferences? _sharedPreferences;
 
@@ -645,6 +645,11 @@ class _MyAppState extends State<MyApp> {
     // renders English and then visibly switches.
     await _localeController.load();
 
+    // Reads the stored preference and pushes it to the display. Doing it here
+    // rather than in initState means the very first frame is already drawn at
+    // the rate the user asked for.
+    await _refreshRateController.load();
+
     // Load biometric setting
     final isFingerPrintEnabled = _sharedPreferences?.getBool(kBiometricKey);
     if (isFingerPrintEnabled != null) {
@@ -652,46 +657,13 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  /// Raise the display to the highest refresh rate offered at the current
-  /// resolution. Android only.
+  /// Owns the "smooth motion" preference and pushes it to the display.
   ///
-  /// `flutter_displaymode` registers a plugin for Android alone — its `ios/`
-  /// directory is vestigial and is not listed under `flutter.plugin.platforms`
-  /// — and the package adds no platform guard of its own, so on iOS the very
-  /// first call hits a method channel with no handler and throws
-  /// `MissingPluginException`. This runs unawaited from [initState], so that
-  /// landed in `PlatformDispatcher.onError` and was recorded as a *fatal*
-  /// Crashlytics error on every single iOS launch.
-  ///
-  /// iOS needs no equivalent: ProMotion varies the refresh rate on its own, and
-  /// `CADisableMinimumFrameDurationOnPhone` in Info.plist already opts the app
-  /// out of the 60 Hz cap.
-  Future<void> setOptimalDisplayMode() async {
-    if (!Platform.isAndroid) return;
-
-    try {
-      final List<DisplayMode> supported = await FlutterDisplayMode.supported;
-      final DisplayMode active = await FlutterDisplayMode.active;
-
-      final List<DisplayMode> sameResolution = supported
-          .where((DisplayMode m) =>
-              m.width == active.width && m.height == active.height)
-          .toList()
-        ..sort((DisplayMode a, DisplayMode b) =>
-            b.refreshRate.compareTo(a.refreshRate));
-
-      final DisplayMode mostOptimalMode =
-          sameResolution.isNotEmpty ? sameResolution.first : active;
-
-      await FlutterDisplayMode.setPreferredMode(mostOptimalMode);
-    } catch (e) {
-      // Refresh rate is a nicety, and Android OEMs reject or under-report modes
-      // in ways the plugin surfaces as PlatformException. Swallow it here: the
-      // call is unawaited, so anything escaping becomes an unhandled async
-      // error and gets logged as a crash.
-      debugPrint('Could not set optimal display mode: $e');
-    }
-  }
+  /// Replaces a `flutter_displaymode` call that forced the highest Android
+  /// mode unconditionally, with no way for the user to decline and no iOS
+  /// path. [RefreshRateController] is cross-platform, honours a stored
+  /// preference, and is re-applied on resume — see [didChangeAppLifecycleState].
+  final RefreshRateController _refreshRateController = RefreshRateController();
 
   bool _updateCheckCompleted = false;
   bool _updateRequired = false;
@@ -699,7 +671,9 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    setOptimalDisplayMode();
+    // Watch for resume so the display preference can be re-asserted; Android
+    // discards the window's preferred mode whenever the app is backgrounded.
+    WidgetsBinding.instance.addObserver(this);
     initializeSharedPreferences();
 
     // Register session expiry handler for automatic token refresh failures
@@ -714,6 +688,24 @@ class _MyAppState extends State<MyApp> {
       // Check for updates
       _checkForMandatoryUpdate();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // Android drops the window's preferred display mode when the app goes to
+    // the background, so a task switch would otherwise leave the app stuck at
+    // 60 Hz until the next cold start. Re-assert it on the way back in.
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshRateController.apply());
+    }
   }
 
   /// Register callback for when user session expires (refresh token also expired)
@@ -789,6 +781,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider.value(value: _themeController),
         ChangeNotifierProvider.value(value: _localeController),
+        ChangeNotifierProvider.value(value: _refreshRateController),
         ChangeNotifierProvider.value(
           value: SubscriptionManager()..initialize(),
         ),

@@ -497,12 +497,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.file_upload_rounded,
               onTap: () async {
                 PinpointHaptics.medium();
-                final result = await FilePicker.pickFiles(
+                // file_picker 12 returns a list from pickFiles() and defaults
+                // allowMultiple to true; pickFile() is the single-selection
+                // API, which is what importing one note actually wants.
+                final picked = await FilePicker.pickFile(
                   type: FileType.custom,
                   allowedExtensions: ['pinpoint-note'],
                 );
-                if (result != null && result.files.isNotEmpty) {
-                  final picked = result.files.first;
+                if (picked != null) {
                   final path = picked.path;
                   if (path == null) {
                     return;
@@ -511,8 +513,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   // allowedExtensions, so users can select any file. Guard
                   // against non-.pinpoint-note files (e.g. an audio recording)
                   // whose binary contents can't be decoded as UTF-8 text.
+                  // file_picker 12 dropped PlatformFile.extension; `name`
+                  // carries the extension, and it survives Android's SAF copy
+                  // better than the temp `path` does, so it is checked first.
                   final isValidExtension =
-                      picked.extension?.toLowerCase() == 'pinpoint-note' ||
+                      picked.name.toLowerCase().endsWith('.pinpoint-note') ||
                           path.toLowerCase().endsWith('.pinpoint-note');
                   if (!isValidExtension) {
                     final ctx = context;
