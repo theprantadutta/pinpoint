@@ -99,17 +99,13 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
 
 ## 📸 Screenshots
 
-### Light Mode
+| Home | Navigation | Note Editor | Checklist |
+|:----:|:----------:|:-----------:|:---------:|
+| ![Home](screenshots/1_home_screen.jpg) | ![Navigation drawer](screenshots/2_navigation_drawer.jpg) | ![Note editor](screenshots/3_create_note_screen.jpg) | ![Checklist note](screenshots/4_create_todo_screen.jpg) |
 
-| Home | Notes | Create Note |
-|:----:|:-----:|:-----------:|
-| ![Home Light](docs/screenshots/home-light.png) | ![Notes Light](docs/screenshots/notes-light.png) | ![Create Light](docs/screenshots/create-light.png) |
-
-### Dark Mode
-
-| Home | Notes | Create Note |
-|:----:|:-----:|:-----------:|
-| ![Home Dark](docs/screenshots/home-dark.png) | ![Notes Dark](docs/screenshots/notes-dark.png) | ![Create Dark](docs/screenshots/create-dark.png) |
+| Folders | Filters | Settings | Premium |
+|:-------:|:-------:|:--------:|:-------:|
+| ![Folders](screenshots/5_my_folders.jpg) | ![Search filters](screenshots/6_search_filters.jpg) | ![Settings](screenshots/7_settings_screen.jpg) | ![Premium](screenshots/8_premium_screen.jpg) |
 
 ---
 
