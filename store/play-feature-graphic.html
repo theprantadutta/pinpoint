@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* Palette sampled directly from the Pinpoint App Store Screenshots canvas,
+     so the Play listing and the App Store shots read as one family. */
+  :root{
+    --ground-1:#F5F6FC;
+    --ground-2:#E6E9F8;
+    --ink:#1B2037;
+    --muted:#80839F;
+    --eyebrow:#6D5DEB;
+    --accent:#6C8FF5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:1024px;height:500px;overflow:hidden;}
+  body{
+    font-family:'Inter','Segoe UI',-apple-system,system-ui,sans-serif;
+    background:var(--ground-1);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .canvas{
+    position:relative;width:1024px;height:500px;overflow:hidden;
+    background:
+      radial-gradient(900px 520px at 88% 12%, #E3E8FF 0%, rgba(227,232,255,0) 62%),
+      radial-gradient(680px 460px at 4% 92%, #EDE9FF 0%, rgba(237,233,255,0) 60%),
+      linear-gradient(140deg, var(--ground-1) 0%, var(--ground-2) 100%);
+  }
+
+  /* Soft accent bloom behind the device, so the phone sits in light rather
+     than on a flat panel. */
+  .bloom{
+    position:absolute;right:-40px;top:34px;width:520px;height:520px;border-radius:50%;
+    background:radial-gradient(circle at 45% 45%, rgba(108,143,245,.30) 0%, rgba(108,143,245,.10) 42%, rgba(108,143,245,0) 70%);
+  }
+
+  /* ---------- Copy ---------- */
+  .copy{position:absolute;left:86px;top:116px;width:520px;}
+
+  .eyebrow{
+    font-size:15px;font-weight:700;letter-spacing:.20em;text-transform:uppercase;
+    color:var(--eyebrow);margin-bottom:20px;
+  }
+  .headline{
+    font-size:62px;line-height:1.04;font-weight:800;letter-spacing:-.028em;
+    color:var(--ink);
+  }
+  .headline .em{
+    background:linear-gradient(96deg,#6C8FF5 0%,#6D5DEB 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{
+    margin-top:22px;font-size:20px;line-height:1.5;font-weight:400;color:var(--muted);
+    max-width:470px;
+  }
+
+  .chips{display:flex;gap:10px;margin-top:30px;}
+  .chip{
+    display:flex;align-items:center;gap:8px;
+    padding:9px 15px 9px 12px;border-radius:999px;
+    background:rgba(255,255,255,.88);
+    border:1px solid rgba(108,143,245,.20);
+    box-shadow:0 2px 10px rgba(27,32,55,.05);
+    font-size:14px;font-weight:600;color:#3B4160;white-space:nowrap;
+  }
+  .chip svg{width:15px;height:15px;flex:none;}
+
+  /* ---------- Device ---------- */
+  .device{
+    position:absolute;right:-34px;top:58px;width:308px;height:600px;
+    border-radius:46px;background:#12141C;
+    padding:9px;
+    box-shadow:0 40px 80px -24px rgba(27,32,55,.42), 0 0 0 1px rgba(27,32,55,.06);
+    transform:rotate(-2.4deg);
+  }
+  .screen{
+    width:100%;height:100%;border-radius:38px;background:#FBFBFE;overflow:hidden;position:relative;
+  }
+  .island{
+    position:absolute;top:11px;left:50%;transform:translateX(-50%);
+    width:88px;height:25px;border-radius:14px;background:#12141C;z-index:3;
+  }
+  .statusbar{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 22px 0;font-size:12px;font-weight:600;color:#1B2037;
+  }
+  .searchbar{
+    margin:16px 16px 0;height:36px;border-radius:11px;background:#F0F2FB;
+    display:flex;align-items:center;padding:0 12px;gap:8px;
+    font-size:12px;color:#A0A4BC;font-weight:500;
+  }
+  .sectionrow{
+    display:flex;justify-content:space-between;align-items:center;
+    margin:16px 16px 10px;font-size:13px;font-weight:700;color:var(--ink);
+  }
+  .sectionrow .all{font-size:11px;font-weight:600;color:var(--accent);}
+  .folders{display:flex;gap:7px;margin:0 16px 14px;}
+  .folder{
+    padding:5px 10px;border-radius:8px;background:#EEF1FD;
+    font-size:10px;font-weight:600;color:#5B658F;
+  }
+  .grid{display:flex;gap:9px;padding:0 16px;}
+  .col{flex:1;display:flex;flex-direction:column;gap:9px;}
+  .note{
+    background:#FFFFFF;border-radius:12px;padding:11px;
+    box-shadow:0 1px 3px rgba(27,32,55,.07);border:1px solid rgba(27,32,55,.045);
+  }
+  .note h4{font-size:11px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:-.01em;}
+  .line{height:4px;border-radius:3px;background:#E6E8F2;margin-bottom:5px;}
+  .tag{
+    display:inline-block;margin-top:7px;padding:3px 7px;border-radius:6px;
+    background:#EEF1FD;color:#7C86AE;font-size:8px;font-weight:700;
+  }
+  .todo{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+  .box{width:9px;height:9px;border-radius:3px;border:1.6px solid #C6CBE0;flex:none;}
+  .box.done{background:var(--accent);border-color:var(--accent);}
+  .todo .line{flex:1;margin:0;}
+  .fab{
+    position:absolute;right:16px;bottom:18px;width:42px;height:42px;border-radius:15px;
+    background:linear-gradient(150deg,#7E9DFF 0%,#6C8FF5 55%,#5B7BE8 100%);
+    box-shadow:0 8px 18px rgba(108,143,245,.45);
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  /* Floating cards echoing the masonry, adding depth between the copy and the
+     device without crowding the centre. */
+  .float{
+    position:absolute;background:rgba(255,255,255,.94);border-radius:14px;
+    box-shadow:0 14px 34px -10px rgba(27,32,55,.20);
+    border:1px solid rgba(255,255,255,.9);
+    padding:12px 14px;
+  }
+  .float .line{background:#E9EBF5;}
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="bloom"></div>
+
+  <div class="float" style="left:556px;top:118px;width:126px;transform:rotate(-6deg);">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;">
+      <div style="width:15px;height:15px;border-radius:5px;background:#6C8FF5;"></div>
+      <div class="line" style="width:46px;margin:0;"></div>
+    </div>
+    <div class="line" style="width:100%;"></div>
+    <div class="line" style="width:70%;margin-bottom:0;"></div>
+  </div>
+
+  <section class="copy">
+    <div class="eyebrow">Privacy-first notes</div>
+    <h1 class="headline">Every thought,<br><span class="em">pinpointed.</span></h1>
+    <p class="sub">End-to-end encrypted notes, checklists, voice&nbsp;and reminders.</p>
+
+    <div class="chips">
+      <div class="chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6C8FF5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        End-to-end encrypted
+      </div>
+      <div class="chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6D5DEB" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        Text, voice &amp; todos
+      </div>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="screen">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span>&#9646;&#9646;&#9646;</span></div>
+
+      <div class="searchbar">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#A0A4BC" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+        Search your notes
+      </div>
+
+      <div class="sectionrow"><span>My folders</span><span class="all">View all</span></div>
+      <div class="folders">
+        <div class="folder">Random</div>
+        <div class="folder">HomeWork</div>
+        <div class="folder">Workout</div>
+      </div>
+
+      <div class="grid">
+        <div class="col">
+          <div class="note">
+            <h4>Random Note</h4>
+            <div class="line" style="width:100%"></div>
+            <div class="line" style="width:92%"></div>
+            <div class="line" style="width:70%"></div>
+            <div class="tag">Random</div>
+          </div>
+          <div class="note">
+            <h4>Todos</h4>
+            <div class="todo"><div class="box done"></div><div class="line"></div></div>
+            <div class="todo"><div class="box"></div><div class="line"></div></div>
+            <div class="todo" style="margin-bottom:0;"><div class="box"></div><div class="line" style="width:60%"></div></div>
+          </div>
+          <div class="note">
+            <h4>New Note</h4>
+            <div class="line" style="width:100%"></div>
+            <div class="line" style="width:64%;margin-bottom:0;"></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="note">
+            <h4>Important Address</h4>
+            <div class="line" style="width:100%"></div>
+            <div class="line" style="width:86%"></div>
+            <div class="tag">Random</div>
+          </div>
+          <div class="note">
+            <h4>Spider-Man</h4>
+            <div class="line" style="width:100%"></div>
+            <div class="line" style="width:94%"></div>
+            <div class="line" style="width:52%;margin-bottom:0;"></div>
+          </div>
+          <div class="note">
+            <h4>Another Note</h4>
+            <div class="line" style="width:88%"></div>
+            <div class="line" style="width:100%;margin-bottom:0;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fab">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
