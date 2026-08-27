@@ -404,6 +404,8 @@
   "subUpgradeOptions": "گزینه‌های ارتقا",
   "subTermsOfUse": "شرایط استفاده",
   "subPrivacyPolicy": "سیاست حریم خصوصی",
+  "subTrialCta": "{days, plural, =1{شروع دورهٔ آزمایشی رایگان ۱ روزه} other{شروع دورهٔ آزمایشی رایگان {days} روزه}}",
+  "subTrialThenPrice": "{days, plural, =1{۱ روز رایگان، سپس {price}} other{{days} روز رایگان، سپس {price}}}",
   "subFeatureSync": "یادداشت‌های نامحدود همگام با فضای ابری",
   "subFeatureFolders": "پوشه‌های نامحدود",
   "subFeatureVoice": "ضبط صدا با طول نامحدود",

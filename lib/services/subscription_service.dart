@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+// PricingPhaseWrapper lives here, not in the package's main export.
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
@@ -471,25 +473,78 @@ class SubscriptionService {
   /// recurring price, so any zero-priced intro phase is skipped. Falls back to
   /// `product.price` (non-Android / no offer details).
   String getDisplayPrice(ProductDetails product) {
-    if (product is GooglePlayProductDetails) {
-      try {
-        final offers = product.productDetails.subscriptionOfferDetails;
-        if (offers != null && offers.isNotEmpty) {
-          final idx = (product.subscriptionIndex != null &&
-                  product.subscriptionIndex! >= 0 &&
-                  product.subscriptionIndex! < offers.length)
-              ? product.subscriptionIndex!
-              : 0;
-          final phases = offers[idx].pricingPhases;
-          final paid =
-              phases.where((p) => p.priceAmountMicros > 0).toList();
-          if (paid.isNotEmpty) return paid.last.formattedPrice;
-        }
-      } catch (e) {
-        log.w('⚠️ getDisplayPrice fallback for ${product.id}: $e');
+    try {
+      final phases = _pricingPhasesOf(product);
+      if (phases != null) {
+        final paid = phases.where((p) => p.priceAmountMicros > 0).toList();
+        if (paid.isNotEmpty) return paid.last.formattedPrice;
       }
+    } catch (e) {
+      log.w('⚠️ getDisplayPrice fallback for ${product.id}: $e');
     }
     return product.price;
+  }
+
+  /// The free-trial length in days the store is offering on [product], or null
+  /// when there is no trial.
+  ///
+  /// ALWAYS read from the store, never hardcoded. A free trial is a Google Play
+  /// base-plan *offer*: it can be switched on, shortened, lengthened or
+  /// withdrawn in the Console with no app release, and it can differ by country
+  /// or by user eligibility (Play withholds the offer from someone who has
+  /// already used one). A constant here would make the paywall promise a trial
+  /// the user will not actually get — the exact kind of untrue paid claim this
+  /// app has been cleaning up.
+  ///
+  /// Returns null on iOS. StoreKit models this as an introductory offer on a
+  /// different type; wiring that up is a separate change, and null simply means
+  /// the paywall shows its normal copy.
+  int? getTrialDays(ProductDetails product) {
+    try {
+      final phases = _pricingPhasesOf(product);
+      if (phases == null) return null;
+      for (final phase in phases) {
+        if (phase.priceAmountMicros != 0) continue;
+        final days = _daysInBillingPeriod(phase.billingPeriod);
+        if (days != null && days > 0) return days;
+      }
+    } catch (e) {
+      log.w('⚠️ getTrialDays failed for ${product.id}: $e');
+    }
+    return null;
+  }
+
+  /// The pricing phases of the offer Play selected for [product].
+  ///
+  /// Shared by [getDisplayPrice] and [getTrialDays] so both always read the
+  /// same offer — reading different ones would let the card advertise a trial
+  /// belonging to a price it is not showing.
+  List<PricingPhaseWrapper>? _pricingPhasesOf(ProductDetails product) {
+    if (product is! GooglePlayProductDetails) return null;
+    final offers = product.productDetails.subscriptionOfferDetails;
+    if (offers == null || offers.isEmpty) return null;
+    final index = (product.subscriptionIndex != null &&
+            product.subscriptionIndex! >= 0 &&
+            product.subscriptionIndex! < offers.length)
+        ? product.subscriptionIndex!
+        : 0;
+    return offers[index].pricingPhases;
+  }
+
+  /// Days in an ISO-8601 billing period as Play reports it (`P3D`, `P1W`, …).
+  ///
+  /// Months and years are approximated; a trial is never expressed in them in
+  /// practice, and the value is only used for display.
+  static int? _daysInBillingPeriod(String? period) {
+    if (period == null || period.isEmpty) return null;
+    final match = RegExp(r'^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$')
+        .firstMatch(period);
+    if (match == null) return null;
+
+    int part(int group) => int.tryParse(match.group(group) ?? '') ?? 0;
+    final total =
+        part(1) * 365 + part(2) * 30 + part(3) * 7 + part(4);
+    return total > 0 ? total : null;
   }
 
   /// Tear the singleton back down to its pre-[initialize] state.

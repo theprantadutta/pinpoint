@@ -404,6 +404,8 @@
   "subUpgradeOptions": "Opciones de mejora",
   "subTermsOfUse": "Términos de uso",
   "subPrivacyPolicy": "Política de privacidad",
+  "subTrialCta": "{days, plural, =1{Empezar prueba gratis de 1 día} other{Empezar prueba gratis de {days} días}}",
+  "subTrialThenPrice": "{days, plural, =1{1 día gratis, luego {price}} other{{days} días gratis, luego {price}}}",
   "subFeatureSync": "Notas ilimitadas sincronizadas en la nube",
   "subFeatureFolders": "Carpetas ilimitadas",
   "subFeatureVoice": "Grabaciones de voz sin límite de duración",

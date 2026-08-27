@@ -867,6 +867,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       title: title,
       price: _subscriptionService.getDisplayPrice(product),
       period: period,
+      // Read from the live Play offer, so the card stops advertising a trial
+      // the moment the offer is withdrawn in the Console.
+      trialDays: _subscriptionService.getTrialDays(product),
       badge: badge,
       isPopular: isPopular,
       colorScheme: colorScheme,
@@ -879,6 +882,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     required String title,
     required String price,
     required String period,
+    int? trialDays,
     String? badge,
     bool isPopular = false,
     required ColorScheme colorScheme,
@@ -889,7 +893,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     // The lifetime plan is a one-time non-consumable, not a subscription, so its
     // CTA must not say "Subscribe" (accurate purchase labeling — App Store 3.1.2).
     final isOneTime = productId == SubscriptionService.premiumLifetime;
-    final ctaLabel = isOneTime ? AppL10n.of(context).subBuyLifetime : AppL10n.of(context).subSubscribe;
+    // A one-time purchase can never carry a trial, whatever the store reports.
+    final hasTrial = !isOneTime && trialDays != null && trialDays > 0;
+    final ctaLabel = isOneTime
+        ? AppL10n.of(context).subBuyLifetime
+        : hasTrial
+            ? AppL10n.of(context).subTrialCta(trialDays)
+            : AppL10n.of(context).subSubscribe;
 
     return GlassContainer(
       padding: EdgeInsets.zero,
@@ -966,6 +976,29 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     ],
                   ),
                 ),
+                if (hasTrial) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Symbols.card_giftcard,
+                          size: 16, color: colorScheme.primary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          // The price is already formatted and localized by the
+                          // store; it is inserted, never rebuilt here.
+                          AppL10n.of(context)
+                              .subTrialThenPrice(trialDays, price),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,

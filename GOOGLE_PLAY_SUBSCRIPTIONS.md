@@ -38,7 +38,7 @@ Cancel anytime. Your notes are encrypted on your device before they sync; turn o
 
 **Billing Period**: 1 month
 
-**Free Trial**: None
+**Free Trial**: 3 days (base-plan offer)
 
 **Grace Period**: 3 days
 
@@ -70,7 +70,7 @@ Cancel anytime. Your notes are encrypted on your device before they sync; turn o
 
 **Billing Period**: 1 year
 
-**Free Trial**: None
+**Free Trial**: 7 days (base-plan offer)
 
 **Grace Period**: 3 days
 
@@ -105,17 +105,22 @@ One payment. Lifetime access. Your privacy protected forever.
 
 ## 🆓 Free trial policy
 
-**No product ships with a free trial.** There is no trial logic anywhere in the client —
-no trial constants, no trial copy, no trial-aware gating (`grep -rni trial lib/` returns
-nothing), and the paywall never mentions one.
+**Monthly carries a 3-day free trial; yearly carries 7 days.** Lifetime is a one-time
+purchase and can never have one.
 
-> **This doc's trial copy must match the live Play base-plan/offer configuration.**
-> A free trial on Google Play is a *base-plan offer*, so it can be switched on in the
-> Console without touching the app — and the moment someone does, this file, the paywall
-> and the store listing are all wrong. If a trial offer is ever added in the Console,
-> update this section, the three product descriptions above, and the paywall copy in
-> `lib/l10n/app_*.arb` in the same change. Until then: leave the trial fields empty in
-> the Console.
+Both are configured as Google Play **base-plan offers**, not in the app. The client reads
+the length from the live offer — `SubscriptionService.getTrialDays()` takes the
+zero-priced pricing phase's `billingPeriod` (`P3D`, `P7D`) — and renders it through the
+`subTrialCta` / `subTrialThenPrice` ARB plurals.
+
+> **Never hardcode "3-day" or "7-day" into app copy or into the product descriptions
+> below.** An offer can be shortened, lengthened or withdrawn in the Console with no app
+> release, and Play withholds it from a user who has already used one. Copy that names a
+> fixed length promises a trial some users will not be granted. If you change the offer,
+> nothing in the app needs to change — but re-check this file and the store listing.
+
+iOS is not wired up: StoreKit models this as an introductory offer on a different type,
+so `getTrialDays()` returns null there and the paywall shows its normal copy.
 
 ---
 
@@ -172,7 +177,7 @@ version of each of those, and nothing else.
 
 ### Subscription Benefits
 - ✅ Automatic renewal
-- ✅ No free trial
+- ✅ Free trial: 3 days monthly, 7 days yearly (configured as Play offers)
 - ✅ Cancel anytime
 - ✅ Grace period for failed payments
 
@@ -194,7 +199,8 @@ version of each of those, and nothing else.
 4. Add Title and Description
 5. Set Base plan (Monthly/Yearly)
 6. Configure pricing
-7. Do not add a free trial offer
+7. Add the free-trial offer on the base plan (3 days monthly / 7 days yearly). The app
+   reads the length from the offer, so no app change is needed to adjust it.
 8. Save and activate
 
 ### 2. Create One-Time Product (Lifetime)
@@ -295,7 +301,8 @@ Before launching subscriptions:
 
 - [ ] Create all 3 products in Google Play Console
 - [ ] Set up pricing for all countries
-- [ ] Do not enable free trials (Monthly & Yearly)
+- [ ] Confirm the free-trial offers are active (3 days monthly, 7 days yearly) in every
+      intended country — the paywall shows trial copy only when Play reports the offer
 - [ ] Confirm the Console descriptions match the "Feature Comparison" section above
 - [ ] Test purchase flow
 - [ ] Verify backend integration

@@ -1824,6 +1824,27 @@
   "@subPrivacyPolicy": {
     "description": "Link to the privacy policy from the paywall."
   },
+  "subTrialCta": "{days, plural, =1{Start 1-day free trial} other{Start {days}-day free trial}}",
+  "@subTrialCta": {
+    "description": "Primary button on a subscription plan card when the store reports a free-trial offer on that plan; it replaces the usual \"Subscribe\" label. {days} is the trial length in days, read from the live Google Play offer rather than hardcoded, so it can be any number.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subTrialThenPrice": "{days, plural, =1{1 day free, then {price}} other{{days} days free, then {price}}}",
+  "@subTrialThenPrice": {
+    "description": "Line shown under the price on a plan card that has a free trial. {days} is the trial length in days. {price} is the recurring price already formatted and localized by the store, e.g. \"$4.99\" — insert it as-is, never translate or reformat it.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
   "subFeatureSync": "Unlimited notes synced to the cloud",
   "@subFeatureSync": {
     "description": "Paywall feature bullet."

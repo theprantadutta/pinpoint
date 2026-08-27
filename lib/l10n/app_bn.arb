@@ -404,6 +404,8 @@
   "subUpgradeOptions": "আপগ্রেড অপশন",
   "subTermsOfUse": "ব্যবহারের শর্তাবলি",
   "subPrivacyPolicy": "গোপনীয়তা নীতি",
+  "subTrialCta": "{days, plural, =1{১ দিনের ফ্রি ট্রায়াল শুরু করুন} other{{days} দিনের ফ্রি ট্রায়াল শুরু করুন}}",
+  "subTrialThenPrice": "{days, plural, =1{১ দিন ফ্রি, তারপর {price}} other{{days} দিন ফ্রি, তারপর {price}}}",
   "subFeatureSync": "ক্লাউডে সীমাহীন নোট সিঙ্ক",
   "subFeatureFolders": "সীমাহীন ফোল্ডার",
   "subFeatureVoice": "সীমাহীন দৈর্ঘ্যের ভয়েস রেকর্ডিং",

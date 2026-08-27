@@ -404,6 +404,8 @@
   "subUpgradeOptions": "ตัวเลือกการอัปเกรด",
   "subTermsOfUse": "ข้อกำหนดการใช้งาน",
   "subPrivacyPolicy": "นโยบายความเป็นส่วนตัว",
+  "subTrialCta": "{days, plural, other{เริ่มทดลองใช้ฟรี {days} วัน}}",
+  "subTrialThenPrice": "{days, plural, other{ฟรี {days} วัน จากนั้น {price}}}",
   "subFeatureSync": "ซิงค์โน้ตขึ้นคลาวด์ได้ไม่จำกัด",
   "subFeatureFolders": "โฟลเดอร์ไม่จำกัด",
   "subFeatureVoice": "บันทึกเสียงได้ไม่จำกัดความยาว",
