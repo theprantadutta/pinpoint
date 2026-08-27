@@ -6,6 +6,8 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 // PricingPhaseWrapper lives here, not in the package's main export.
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
@@ -485,54 +487,98 @@ class SubscriptionService {
     return product.price;
   }
 
-  /// The free-trial length in days the store is offering on [product], or null
-  /// when there is no trial.
+  /// The free-trial length in days the store is offering on [product] TO THIS
+  /// USER, or null when they would not get one.
   ///
-  /// ALWAYS read from the store, never hardcoded. A free trial is a Google Play
-  /// base-plan *offer*: it can be switched on, shortened, lengthened or
-  /// withdrawn in the Console with no app release, and it can differ by country
-  /// or by user eligibility (Play withholds the offer from someone who has
-  /// already used one). A constant here would make the paywall promise a trial
-  /// the user will not actually get — the exact kind of untrue paid claim this
-  /// app has been cleaning up.
+  /// ALWAYS read from the store, never hardcoded, and never served from our own
+  /// backend. Two independent reasons:
   ///
-  /// Returns null on iOS, and that is a plugin limitation rather than unfinished
-  /// work here — do not "fix" it by reaching for the SK2 product.
+  /// 1. A trial is store *configuration* — a Play base-plan offer, an App Store
+  ///    introductory offer. It can be shortened, lengthened or withdrawn with no
+  ///    app release, and it varies by country.
+  /// 2. More importantly, it is **per user**. Both stores grant a trial only to
+  ///    someone who has not already used one in that subscription group. Only
+  ///    the device can answer that: Play omits the offer from the queried
+  ///    product for an ineligible user, and StoreKit answers it through
+  ///    `isIntroductoryOfferEligible`. A server reading the catalogue knows what
+  ///    offers *exist*, never who gets one — so backend-served trial copy would
+  ///    promise a free trial to returning subscribers who are charged
+  ///    immediately.
   ///
-  /// `in_app_purchase_storekit` defaults to StoreKit 2
-  /// (`_useStoreKit2 = true`), which this app never disables, so iOS products
-  /// arrive as `AppStoreProduct2Details`. Its `SK2SubscriptionInfo` maps only
-  /// `subscriptionGroupID`, `promotionalOffers` and `subscriptionPeriod`:
-  /// Apple's `introductoryOffer` — where a free trial actually lives — is not
-  /// surfaced anywhere in the package (checked in 0.4.11+1, the latest
-  /// resolvable). A promotional offer is a different App Store Connect concept
-  /// and is not a substitute.
-  ///
-  /// StoreKit 1 does expose it (`SKProductWrapper.introductoryPrice`), but
-  /// opting back into SK1 would break purchase verification: the backend
-  /// verifies the SK2 JWS signed transaction that `_handleSuccessfulPurchase`
-  /// sends. So iOS shows no trial copy until the plugin exposes the SK2
-  /// introductory offer. Apple still discloses the trial terms in its own
-  /// purchase sheet, so nothing is misrepresented — the paywall simply shows
-  /// its normal copy.
-  int? getTrialDays(ProductDetails product) {
+  /// Async because the StoreKit eligibility check is a platform call. Returns
+  /// null on any failure: showing no trial copy is always safe, showing a trial
+  /// that will not be granted is not.
+  Future<int?> resolveTrialDays(ProductDetails product) async {
     try {
-      final phases = _pricingPhasesOf(product);
-      if (phases == null) return null;
-      for (final phase in phases) {
-        if (phase.priceAmountMicros != 0) continue;
-        final days = _daysInBillingPeriod(phase.billingPeriod);
-        if (days != null && days > 0) return days;
+      if (product is GooglePlayProductDetails) return _playTrialDays(product);
+      if (product is AppStoreProduct2Details) {
+        return await _appStoreTrialDays(product);
       }
     } catch (e) {
-      log.w('⚠️ getTrialDays failed for ${product.id}: $e');
+      log.w('⚠️ resolveTrialDays failed for ${product.id}: $e');
     }
     return null;
   }
 
+  /// Play: the zero-priced pricing phase of the selected offer.
+  ///
+  /// No eligibility call is needed. Play only returns offers the user qualifies
+  /// for, so an ineligible user simply has no free phase to find.
+  int? _playTrialDays(GooglePlayProductDetails product) {
+    final phases = _pricingPhasesOf(product);
+    if (phases == null) return null;
+    for (final phase in phases) {
+      if (phase.priceAmountMicros != 0) continue;
+      final days = _daysInBillingPeriod(phase.billingPeriod);
+      if (days != null && days > 0) return days;
+    }
+    return null;
+  }
+
+  /// App Store: the introductory offer, confirmed against this user's
+  /// eligibility.
+  ///
+  /// Note the plugin's field name is a misnomer — `promotionalOffers` carries
+  /// EVERY offer the native side found (win-back, promotional AND introductory);
+  /// `SK2SubscriptionOffer.type` is what separates them. Reading the list
+  /// without filtering on [SK2SubscriptionOfferType.introductory] and
+  /// [SK2SubscriptionOfferPaymentMode.freeTrial] would advertise a paid
+  /// promotional offer as a free trial.
+  Future<int?> _appStoreTrialDays(AppStoreProduct2Details product) async {
+    final offers = product.sk2Product.subscription?.promotionalOffers;
+    if (offers == null || offers.isEmpty) return null;
+
+    SK2SubscriptionOffer? intro;
+    for (final offer in offers) {
+      if (offer.type == SK2SubscriptionOfferType.introductory &&
+          offer.paymentMode == SK2SubscriptionOfferPaymentMode.freeTrial) {
+        intro = offer;
+        break;
+      }
+    }
+    if (intro == null) return null;
+
+    // Configured is not the same as granted: a returning subscriber sees the
+    // offer on the product but is not entitled to it. Called on the wrapper
+    // rather than InAppPurchaseStoreKitPlatform, whose constructor is
+    // @visibleForTesting; reaching this line at all means StoreKit 2 is active,
+    // since AppStoreProduct2Details exists only under SK2.
+    final eligible = await SK2Product.isIntroductoryOfferEligible(product.id);
+    if (!eligible) return null;
+
+    final unitDays = switch (intro.period.unit) {
+      SK2SubscriptionPeriodUnit.day => 1,
+      SK2SubscriptionPeriodUnit.week => 7,
+      SK2SubscriptionPeriodUnit.month => 30,
+      SK2SubscriptionPeriodUnit.year => 365,
+    };
+    final total = intro.period.value * unitDays * intro.periodCount;
+    return total > 0 ? total : null;
+  }
+
   /// The pricing phases of the offer Play selected for [product].
   ///
-  /// Shared by [getDisplayPrice] and [getTrialDays] so both always read the
+  /// Shared by [getDisplayPrice] and [_playTrialDays] so both always read the
   /// same offer — reading different ones would let the card advertise a trial
   /// belonging to a price it is not showing.
   List<PricingPhaseWrapper>? _pricingPhasesOf(ProductDetails product) {

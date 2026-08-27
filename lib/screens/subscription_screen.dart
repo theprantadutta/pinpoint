@@ -33,6 +33,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   String? _selectedProductId;
   String? _productLoadError;
 
+  /// Trial length per product id, as the store reports it FOR THIS USER.
+  /// Resolved once when products load — the StoreKit eligibility check is a
+  /// platform call, so it cannot happen during build.
+  final Map<String, int?> _trialDays = {};
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +60,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     try {
       await _subscriptionService.loadProducts();
+      await _resolveTrials();
 
       if (mounted) {
         setState(() {
@@ -70,6 +76,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           _isLoadingProducts = false;
           _productLoadError = AppL10n.of(context).subLoadPlansFailed;
         });
+      }
+    }
+  }
+
+  /// Ask the store what trial, if any, each plan carries for this user.
+  ///
+  /// Never throws: a plan whose trial cannot be resolved simply shows its
+  /// normal copy. Silence is always safe here; a wrong trial claim is not.
+  Future<void> _resolveTrials() async {
+    for (final product in _subscriptionService.products) {
+      try {
+        _trialDays[product.id] =
+            await _subscriptionService.resolveTrialDays(product);
+      } catch (_) {
+        _trialDays[product.id] = null;
       }
     }
   }
@@ -867,9 +888,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       title: title,
       price: _subscriptionService.getDisplayPrice(product),
       period: period,
-      // Read from the live Play offer, so the card stops advertising a trial
-      // the moment the offer is withdrawn in the Console.
-      trialDays: _subscriptionService.getTrialDays(product),
+      // Resolved from the live store offer for THIS user, so the card stops
+      // advertising a trial the moment the offer is withdrawn — or when this
+      // particular user is no longer eligible for one.
+      trialDays: _trialDays[productId],
       badge: badge,
       isPopular: isPopular,
       colorScheme: colorScheme,

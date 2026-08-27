@@ -120,12 +120,14 @@ zero-priced pricing phase's `billingPeriod` (`P3D`, `P7D`) — and renders it th
 > nothing in the app needs to change — but re-check this file and the store listing.
 
 **This file covers Google Play only.** The App Store equivalent is an *introductory
-offer* configured per subscription in App Store Connect, and the iOS paywall cannot
-currently display it: `in_app_purchase_storekit` runs StoreKit 2 by default and does not
-expose `introductoryOffer` on its SK2 subscription info (0.4.11+1, latest resolvable).
-StoreKit 1 exposes it, but switching back would break verification, which parses the SK2
-JWS transaction. Apple still shows the trial terms in its own purchase sheet, so an iOS
-trial is disclosed to the buyer — just not on our screen. Revisit when the plugin adds it.
+offer*, configured per subscription in App Store Connect — set it up there separately.
+The iOS paywall does display it: the client reads the introductory offer out of StoreKit 2
+and then confirms this user's eligibility before showing any trial copy.
+
+> **Both stores grant a trial only to a user who has not already used one** in that
+> subscription group. So the paywall can show trial copy to one user and not another, by
+> design. That is also why the length must never be served from our backend: a server
+> reading the store catalogue knows what offers exist, never who gets one.
 
 ---
 
