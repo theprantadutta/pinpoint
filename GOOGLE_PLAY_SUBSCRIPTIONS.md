@@ -119,8 +119,13 @@ zero-priced pricing phase's `billingPeriod` (`P3D`, `P7D`) — and renders it th
 > fixed length promises a trial some users will not be granted. If you change the offer,
 > nothing in the app needs to change — but re-check this file and the store listing.
 
-iOS is not wired up: StoreKit models this as an introductory offer on a different type,
-so `getTrialDays()` returns null there and the paywall shows its normal copy.
+**This file covers Google Play only.** The App Store equivalent is an *introductory
+offer* configured per subscription in App Store Connect, and the iOS paywall cannot
+currently display it: `in_app_purchase_storekit` runs StoreKit 2 by default and does not
+expose `introductoryOffer` on its SK2 subscription info (0.4.11+1, latest resolvable).
+StoreKit 1 exposes it, but switching back would break verification, which parses the SK2
+JWS transaction. Apple still shows the trial terms in its own purchase sheet, so an iOS
+trial is disclosed to the buyer — just not on our screen. Revisit when the plugin adds it.
 
 ---
 

@@ -496,9 +496,25 @@ class SubscriptionService {
   /// the user will not actually get — the exact kind of untrue paid claim this
   /// app has been cleaning up.
   ///
-  /// Returns null on iOS. StoreKit models this as an introductory offer on a
-  /// different type; wiring that up is a separate change, and null simply means
-  /// the paywall shows its normal copy.
+  /// Returns null on iOS, and that is a plugin limitation rather than unfinished
+  /// work here — do not "fix" it by reaching for the SK2 product.
+  ///
+  /// `in_app_purchase_storekit` defaults to StoreKit 2
+  /// (`_useStoreKit2 = true`), which this app never disables, so iOS products
+  /// arrive as `AppStoreProduct2Details`. Its `SK2SubscriptionInfo` maps only
+  /// `subscriptionGroupID`, `promotionalOffers` and `subscriptionPeriod`:
+  /// Apple's `introductoryOffer` — where a free trial actually lives — is not
+  /// surfaced anywhere in the package (checked in 0.4.11+1, the latest
+  /// resolvable). A promotional offer is a different App Store Connect concept
+  /// and is not a substitute.
+  ///
+  /// StoreKit 1 does expose it (`SKProductWrapper.introductoryPrice`), but
+  /// opting back into SK1 would break purchase verification: the backend
+  /// verifies the SK2 JWS signed transaction that `_handleSuccessfulPurchase`
+  /// sends. So iOS shows no trial copy until the plugin exposes the SK2
+  /// introductory offer. Apple still discloses the trial terms in its own
+  /// purchase sheet, so nothing is misrepresented — the paywall simply shows
+  /// its normal copy.
   int? getTrialDays(ProductDetails product) {
     try {
       final phases = _pricingPhasesOf(product);
