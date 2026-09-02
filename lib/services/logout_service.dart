@@ -138,9 +138,10 @@ class LogoutService {
       analytics.trackLogout();
       analytics.setUserId(null);
 
-      // 1. Delete the account on the backend (requires a valid token).
+      // 1. Delete the account on the backend (requires a valid token). This is
+      //    the authoritative step and the only one allowed to fail the request.
       _updatePhase(LogoutPhase.signingOut);
-      await _backendAuthService.deleteAccount();
+      await _backendAuthService.deleteAccountOnServer();
 
       // 2. Sign out of Google/Firebase (Firebase sign-out also covers Apple).
       try {
@@ -149,9 +150,21 @@ class LogoutService {
         debugPrint('⚠️ [LogoutService] Provider sign-out during deletion: $e');
       }
 
-      // 3. Wipe all local data.
+      // 3. Wipe all local data. Best-effort from here on: the account is
+      //    already gone server-side, so a failure to scrub the device must not
+      //    report "deletion failed" and strand the user on a signed-in screen
+      //    for an account that no longer exists.
       _updatePhase(LogoutPhase.cleaningData);
-      await _cleanupLocalData();
+      try {
+        await _cleanupLocalData();
+      } catch (e, stackTrace) {
+        debugPrint('⚠️ [LogoutService] Local wipe after deletion failed: $e');
+        debugPrint('Stack trace: $stackTrace');
+      }
+
+      // 4. Only now flip auth state. Doing this earlier rebuilt the Settings
+      //    account section and disposed the widget running this flow.
+      await _backendAuthService.resetLocalAuthState();
 
       _updatePhase(LogoutPhase.completed);
       debugPrint('✅ [LogoutService] Account deletion completed successfully');
@@ -275,30 +288,42 @@ class LogoutService {
     }
   }
 
-  /// Delete all audio files from filesystem
+  /// Delete all recorded audio files from the filesystem.
+  ///
+  /// Both note families have to be swept. The legacy `audio_notes` table is
+  /// where recordings used to live; every recording made by the shipping
+  /// editor goes to `voice_notes_v2`, so looking only at the old table left
+  /// every voice recording on disk after a sign-out or an account deletion.
+  ///
+  /// A [VoiceNotesV2] row whose audio has been uploaded stores the server path
+  /// instead of a local one; those simply do not exist on disk and are skipped.
   Future<void> _deleteAudioFiles() async {
     try {
-      final audioNotes = await _database.select(_database.audioNotes).get();
+      final paths = <String>{
+        for (final note in await _database.select(_database.audioNotes).get())
+          note.audioFilePath,
+        for (final note in await _database.select(_database.voiceNotesV2).get())
+          note.audioFilePath,
+      }..removeWhere((path) => path.isEmpty);
 
-      if (audioNotes.isEmpty) {
+      if (paths.isEmpty) {
         debugPrint('ℹ️ [LogoutService] No audio files to delete');
         return;
       }
 
-      debugPrint(
-          '🗑️ [LogoutService] Deleting ${audioNotes.length} audio files...');
+      debugPrint('🗑️ [LogoutService] Deleting ${paths.length} audio files...');
 
       int deletedCount = 0;
-      for (final audioNote in audioNotes) {
+      for (final path in paths) {
         try {
-          final file = File(audioNote.audioFilePath);
+          final file = File(path);
           if (await file.exists()) {
             await file.delete();
             deletedCount++;
           }
         } catch (e) {
           debugPrint(
-              '⚠️ [LogoutService] Failed to delete audio file: ${audioNote.audioFilePath} - $e');
+              '⚠️ [LogoutService] Failed to delete audio file: $path - $e');
           // Continue with other files
         }
       }
@@ -310,36 +335,20 @@ class LogoutService {
     }
   }
 
-  /// Clear all database tables
+  /// Clear every table in the local database.
+  ///
+  /// This used to delete only `notes` and `note_folders` and trust "CASCADE
+  /// will handle related tables". Nothing enforced those cascades, so note
+  /// bodies, checklist items, attachments and the whole V2 note family
+  /// survived a wipe that claimed to have destroyed them. The wipe now lives
+  /// on the database itself — see [AppDatabase.wipeAllData].
   Future<void> _clearDatabase() async {
     try {
-      // Count items before deleting
-      final notesCount = await _database.select(_database.notes).get();
-      final foldersCount = await _database.select(_database.noteFolders).get();
-
       debugPrint('🗑️ [LogoutService] Clearing database...');
-      debugPrint('   - Deleting ${notesCount.length} notes (and related data via CASCADE)');
-      debugPrint('   - Deleting ${foldersCount.length} folders');
-
-      await _database.transaction(() async {
-        // Delete notes (CASCADE will handle related tables)
-        await _database.delete(_database.notes).go();
-
-        // Delete folders
-        await _database.delete(_database.noteFolders).go();
-      });
-
-      // Verify deletion
-      final remainingNotes = await _database.select(_database.notes).get();
-      final remainingFolders = await _database.select(_database.noteFolders).get();
-
-      if (remainingNotes.isEmpty && remainingFolders.isEmpty) {
-        debugPrint('✅ [LogoutService] Database cleared successfully');
-        debugPrint('   - Confirmed: 0 notes remaining');
-        debugPrint('   - Confirmed: 0 folders remaining');
-      } else {
-        debugPrint('⚠️ [LogoutService] Warning: ${remainingNotes.length} notes and ${remainingFolders.length} folders still remain!');
-      }
+      final clearedRows = await _database.wipeAllData();
+      debugPrint(
+          '✅ [LogoutService] Database cleared: $clearedRows rows across '
+          '${_database.allTables.length} tables');
     } catch (e) {
       debugPrint('❌ [LogoutService] Error clearing database: $e');
       rethrow;

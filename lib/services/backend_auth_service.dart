@@ -278,13 +278,20 @@ class BackendAuthService extends ChangeNotifier {
     }
   }
 
-  /// Permanently delete the account (backend deletion + local auth-state reset).
+  /// Delete the account on the server. Throws if it fails, so the caller can
+  /// keep the user signed in and surface the error.
   ///
-  /// Throws if the backend deletion fails (caller keeps the user signed in and
-  /// surfaces the error). On success, mirrors [logout]'s local state teardown.
-  Future<void> deleteAccount() async {
-    await _apiService.deleteAccount(); // throws on failure — do not reset state
+  /// Deliberately leaves local auth state alone. Flipping [isAuthenticated]
+  /// here used to tear the Settings account section (and with it the Delete
+  /// Account row that is driving the deletion) out of the tree mid-flight, so
+  /// the rest of the wipe ran against a disposed widget and neither the
+  /// success nor the failure toast could ever be shown. Call
+  /// [resetLocalAuthState] once the device-side wipe is done.
+  Future<void> deleteAccountOnServer() => _apiService.deleteAccount();
 
+  /// Tear down local auth state after a completed account deletion and notify
+  /// listeners. Mirrors [logout]'s local teardown.
+  Future<void> resetLocalAuthState() async {
     _isAuthenticated = false;
     _isPremium = false;
     _userEmail = null;
