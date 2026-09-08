@@ -210,10 +210,32 @@ class DriftNoteFolderService {
     });
   }
 
+  /// Narrows [folders] to the ones that still exist in `note_folders`.
+  ///
+  /// Folder pickers hold a list read earlier in the session, so a folder
+  /// deleted in the meantime leaves a stale id behind. While foreign keys went
+  /// unenforced that produced a dangling relation row nobody ever rendered
+  /// (every read inner-joins the folder). Now it would fail the note save
+  /// outright, so drop the stale entries instead and keep saving.
+  static Future<List<NoteFolderDto>> existingFolders(
+      List<NoteFolderDto> folders) async {
+    if (folders.isEmpty) return folders;
+
+    final database = getIt<AppDatabase>();
+    final ids = folders.map((f) => f.id).toList();
+    final live = await (database.select(database.noteFolders)
+          ..where((f) => f.noteFolderId.isIn(ids)))
+        .get();
+    final liveIds = live.map((f) => f.noteFolderId).toSet();
+
+    return folders.where((f) => liveIds.contains(f.id)).toList();
+  }
+
   static Future<bool> upsertNoteFoldersWithNote(
-      List<NoteFolderDto> folders, int noteId) async {
+      List<NoteFolderDto> foldersRequested, int noteId) async {
     try {
       final database = getIt<AppDatabase>();
+      final folders = await existingFolders(foldersRequested);
 
       // Get current relations
       final existingRelations =

@@ -1475,7 +1475,16 @@ class _LogoutButtonState extends State<_LogoutButton> {
       ),
     );
 
-    if (confirm != true) return;
+    if (confirm != true || !context.mounted) return;
+
+    // Resolved up front: deletion ends with this screen being replaced, and a
+    // lookup against a torn-down context is exactly how the outcome message
+    // used to get lost.
+    final l10n = AppL10n.of(context);
+    final deletedTitle = l10n.setAccountDeleted;
+    final deletedBody = l10n.setAccountDeletedBody;
+    final failedTitle = l10n.setDeletionFailed;
+    final failedBody = l10n.setDeletionFailedBody;
 
     setState(() => _isDeleting = true);
     try {
@@ -1486,25 +1495,26 @@ class _LogoutButtonState extends State<_LogoutButton> {
       await logoutService.performAccountDeletion();
 
       PinpointHaptics.success();
+      // Toast first, navigate second. The overlay entry lives in the root
+      // navigator and survives the route change, whereas the old
+      // navigate-then-toast-after-500ms order always found this screen
+      // unmounted and silently showed nothing at all.
+      if (context.mounted) {
+        showSuccessToast(
+          context: context,
+          title: deletedTitle,
+          description: deletedBody,
+        );
+      }
       AppNavigation.router.go('/auth');
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (context.mounted) {
-          showSuccessToast(
-            context: context,
-            title: AppL10n.of(context).setAccountDeleted,
-            description:
-                AppL10n.of(context).setAccountDeletedBody,
-          );
-        }
-      });
     } catch (e) {
       if (mounted) setState(() => _isDeleting = false);
       if (context.mounted) {
         PinpointHaptics.error();
         showErrorToast(
           context: context,
-          title: AppL10n.of(context).setDeletionFailed,
-          description: AppL10n.of(context).setDeletionFailedBody,
+          title: failedTitle,
+          description: failedBody,
         );
       }
     }

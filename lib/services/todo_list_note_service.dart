@@ -6,6 +6,7 @@ import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
 import '../service_locators/init_service_locators.dart';
 import '../sync/sync_manager.dart';
+import 'drift_note_folder_service.dart';
 
 /// Service for managing todo list notes with items
 /// Part of Architecture V8: Independent note types
@@ -413,8 +414,12 @@ class TodoListNoteService {
   // ==================== PRIVATE HELPER METHODS ====================
 
   /// Link todo list note to folders
-  static Future<void> _linkToFolders(int todoListNoteId, List<NoteFolderDto> folders) async {
+  static Future<void> _linkToFolders(int todoListNoteId, List<NoteFolderDto> foldersRequested) async {
     final database = getIt<AppDatabase>();
+    // A folder deleted since the picker was built would now fail the whole
+    // save on a foreign key rather than quietly dropping the link.
+    final folders =
+        await DriftNoteFolderService.existingFolders(foldersRequested);
 
     await database.batch((batch) {
       for (final folder in folders) {

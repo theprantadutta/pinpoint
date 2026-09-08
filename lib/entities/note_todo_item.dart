@@ -22,8 +22,21 @@ class NoteTodoItems extends Table {
 
   /// Parent note UUID (for sync)
   /// This references the parent note's UUID for cross-device sync
+  ///
+  /// CASCADE DELETE, same as [noteId]: the two columns point at the same
+  /// parent row, so a non-cascading rule here would have blocked the delete
+  /// that the other column asks to cascade.
+  ///
+  /// ON UPDATE too, unlike the id-based keys: a uuid is a natural key that sync
+  /// can legitimately rewrite, and without this that rewrite would fail against
+  /// the child rows instead of carrying through to them.
   @ReferenceName('noteTodoItemsByUuid')
-  TextColumn get noteUuid => text().references(Notes, #uuid)();
+  TextColumn get noteUuid => text().references(
+        Notes,
+        #uuid,
+        onUpdate: KeyAction.cascade,
+        onDelete: KeyAction.cascade,
+      )();
 
   /// The text content of the todo item
   TextColumn get todoTitle => text()();

@@ -7,6 +7,7 @@ import '../dtos/note_folder_dto.dart';
 import '../service_locators/init_service_locators.dart';
 import '../sync/sync_manager.dart';
 import 'api_service.dart';
+import 'drift_note_folder_service.dart';
 
 /// Service for managing reminder notes with scheduled notifications
 /// Part of Architecture V8: Independent note types
@@ -635,8 +636,12 @@ class ReminderNoteService {
   // ==================== PRIVATE HELPER METHODS ====================
 
   /// Link reminder note to folders
-  static Future<void> _linkToFolders(int reminderNoteId, List<NoteFolderDto> folders) async {
+  static Future<void> _linkToFolders(int reminderNoteId, List<NoteFolderDto> foldersRequested) async {
     final database = getIt<AppDatabase>();
+    // A folder deleted since the picker was built would now fail the whole
+    // save on a foreign key rather than quietly dropping the link.
+    final folders =
+        await DriftNoteFolderService.existingFolders(foldersRequested);
 
     await database.batch((batch) {
       for (final folder in folders) {

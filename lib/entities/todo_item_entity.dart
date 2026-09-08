@@ -22,9 +22,21 @@ class TodoItemsV2 extends Table {
 
   /// Foreign key to TodoListNotesV2 table (UUID for sync)
   /// Used for cross-device sync to link items to their parent todo list
+  ///
+  /// CASCADE DELETE, same as [todoListNoteId]: both columns point at the same
+  /// parent row, so a non-cascading rule here would have blocked the delete
+  /// that the other column asks to cascade.
+  ///
+  /// ON UPDATE too, unlike the id-based keys: a uuid is a natural key that sync
+  /// can legitimately rewrite, and without this that rewrite would fail against
+  /// the child rows instead of carrying through to them.
   @ReferenceName('todoItemsV2ByUuid')
-  TextColumn get todoListNoteUuid =>
-      text().references(TodoListNotesV2, #uuid)();
+  TextColumn get todoListNoteUuid => text().references(
+        TodoListNotesV2,
+        #uuid,
+        onUpdate: KeyAction.cascade,
+        onDelete: KeyAction.cascade,
+      )();
 
   /// The text content of this todo item
   TextColumn get content => text()();
