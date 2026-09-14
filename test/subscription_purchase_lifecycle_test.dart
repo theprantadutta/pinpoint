@@ -1,41 +1,57 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_inapp_purchase/flutter_inapp_purchase.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-// ignore: depend_on_referenced_packages
-import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
+import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/services/subscription_service.dart';
 
 import 'support/analytics_recorder.dart';
-import 'support/fake_in_app_purchase.dart';
+import 'support/fake_iap_client.dart';
 import 'support/project_source.dart';
 
-/// Lifecycle contract of the app's single in-app-purchase stream listener.
+/// Lifecycle contract of the app's single in-app-purchase listener.
 ///
 /// The store can deliver a purchase, a restore or a deferred-payment
 /// resolution at any moment — including long after the paywall route closed —
-/// so the listener is owned by the process, created exactly once, and cancelled
-/// by nothing.
+/// so the listener is owned by the process, created exactly once, and
+/// cancelled by nothing.
+///
+/// Under OpenIAP there are two streams (purchases and errors) and both must be
+/// attached before `initConnection()`, which makes "exactly once" harder to
+/// get right, not easier.
 void main() {
-  late FakeInAppPurchasePlatform fake;
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late FakeIapClient fake;
   late RecordingAnalyticsFacade analytics;
 
   setUpAll(() {
-    // See FakeInAppPurchasePlatform's doc comment: resolve
-    // `InAppPurchase.instance` once on a platform the plugin does not register
-    // for, so the real Android BillingClient is never constructed.
-    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    SubscriptionService();
-    debugDefaultTargetPlatformOverride = null;
+    // Constructing SubscriptionManager constructs ApiService, whose
+    // `static final baseUrl` reads dotenv. Nothing here talks to a server —
+    // the point is that verification now runs far enough to fail honestly.
+    dotenv.loadFromString(
+      envString: '''
+API_BASE_URL_DEV=http://localhost:8000
+API_BASE_URL_PROD=http://localhost:8000
+GOOGLE_WEB_CLIENT_ID=test-client-id
+''',
+    );
   });
 
-  setUp(() {
-    fake = FakeInAppPurchasePlatform(
-      knownProductIds: SubscriptionService.productIds,
-    );
-    InAppPurchasePlatform.instance = fake;
+  setUp(() async {
+    // A device id is what lets SubscriptionManager attempt a verification at
+    // all. With no backend reachable the attempt fails, which is the realistic
+    // "store charged, server unavailable" path: premium is granted
+    // provisionally, the receipt is queued for retry, and — crucially — the
+    // purchase is still acknowledged so Play does not refund it.
+    SharedPreferences.setMockInitialValues(
+        <String, Object>{'device_id': 'test-device'});
+    await SubscriptionManager().initialize();
+
+    fake = FakeIapClient(knownProductIds: SubscriptionService.productIds);
 
     analytics = RecordingAnalyticsFacade();
     if (getIt.isRegistered<AnalyticsFacade>()) {
@@ -44,6 +60,7 @@ void main() {
     getIt.registerSingleton<AnalyticsFacade>(analytics);
 
     SubscriptionService().resetForTesting();
+    SubscriptionService().debugIapClient = fake;
   });
 
   tearDown(() async {
@@ -53,6 +70,21 @@ void main() {
     }
     await fake.close();
   });
+
+  /// Waits for a stream-delivered purchase to finish being fulfilled.
+  ///
+  /// The listener hands off with `unawaited`, and fulfilment now includes a
+  /// real verification attempt against an unreachable backend, so the work
+  /// outlives `pumpEventQueue` (which drains microtasks, not socket I/O).
+  Future<void> waitFor(
+    bool Function() done, {
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    final deadline = DateTime.now().add(timeout);
+    while (!done() && DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  }
 
   group('initialize() idempotency', () {
     test('a single initialize() starts exactly one listener', () async {
@@ -74,14 +106,18 @@ void main() {
         SubscriptionService().purchaseListenerStarts,
         1,
         reason: 'Two listeners means every purchase is verified twice and '
-            'completePurchase is called twice.',
+            'finishTransaction is called twice.',
       );
       expect(
-        fake.restoreCalls,
+        fake.availablePurchaseCalls,
         1,
-        reason: 'A repeated initialize() must not re-run the restore storm.',
+        reason: 'A repeated initialize() must not re-run the reconcile sweep.',
       );
-      expect(fake.queryProductCalls, 1);
+      expect(
+        fake.fetchProductCalls,
+        2,
+        reason: 'One products load: subs and in-app are separate queries.',
+      );
     });
 
     test('two concurrent initialize() calls share one initialization',
@@ -94,7 +130,7 @@ void main() {
       ]);
 
       expect(SubscriptionService().purchaseListenerStarts, 1);
-      expect(fake.restoreCalls, 1);
+      expect(fake.availablePurchaseCalls, 1);
     });
 
     test('four concurrent initialize() calls still start one listener',
@@ -114,21 +150,18 @@ void main() {
       await SubscriptionService.initialize();
 
       analytics.clear();
-      fake.emit([
-        fakePurchase(
-          productId: SubscriptionService.premiumMonthly,
-          purchaseId: 'once-only',
-          status: PurchaseStatus.purchased,
-        ),
-      ]);
-      await pumpEventQueue();
+      fake.emit(fakePurchase(
+        productId: SubscriptionService.premiumMonthly,
+        purchaseId: 'once-only',
+      ));
+      await waitFor(() => fake.finishedPurchaseIds.isNotEmpty);
 
       expect(
         analytics.all('store_purchase_confirmed'),
         hasLength(1),
         reason: 'A duplicated listener would double-handle the purchase.',
       );
-      expect(fake.completedPurchaseIds, ['once-only']);
+      expect(fake.finishedPurchaseIds, ['once-only']);
     });
 
     test('an unavailable store creates no listener and stays uninitialized',
@@ -137,21 +170,33 @@ void main() {
 
       await SubscriptionService.initialize();
 
-      expect(SubscriptionService().purchaseListenerStarts, 0);
-      expect(SubscriptionService().hasActivePurchaseListener, isFalse);
       expect(
         SubscriptionService().isInitialized,
         isFalse,
         reason: 'The store may become available later; a retry must be able '
-            'to succeed. Nothing was subscribed, so nothing can duplicate.',
+            'to succeed.',
       );
+      expect(SubscriptionService().isAvailable, isFalse);
+    });
+
+    test('a store that refuses the connection is not fatal', () async {
+      // initConnection throws PurchaseError rather than returning false when
+      // billing is unavailable — an unhandled throw here would take down app
+      // startup for anyone without Play Services.
+      fake.initConnectionThrows =
+          PurchaseError(code: ErrorCode.InitConnection, message: 'no billing');
+
+      await SubscriptionService.initialize();
+
+      expect(SubscriptionService().isAvailable, isFalse);
+      expect(SubscriptionService().isInitialized, isFalse);
     });
 
     test('a retry after the store becomes available starts one listener',
         () async {
       fake.available = false;
       await SubscriptionService.initialize();
-      expect(SubscriptionService().purchaseListenerStarts, 0);
+      expect(SubscriptionService().isInitialized, isFalse);
 
       fake.available = true;
       await SubscriptionService.initialize();
@@ -159,11 +204,24 @@ void main() {
       expect(SubscriptionService().purchaseListenerStarts, 1);
       expect(SubscriptionService().isInitialized, isTrue);
     });
+
+    test('products are fetched as subs and in-app separately', () async {
+      // OpenIAP types the two kinds apart: a `subs` query will not return the
+      // lifetime unlock and an `in-app` query will not return the plans, so a
+      // single mixed call silently yields an empty paywall.
+      await SubscriptionService.initialize();
+
+      expect(fake.fetchedTypes,
+          containsAll([ProductQueryType.Subs, ProductQueryType.InApp]));
+      expect(
+        SubscriptionService().products.map((p) => p.id),
+        containsAll(SubscriptionService.productIds),
+      );
+    });
   });
 
   group('the listener outlives the UI', () {
-    test(
-        'the exact sequence the paywall performs leaves the listener alive',
+    test('the exact sequence the paywall performs leaves the listener alive',
         () async {
       await SubscriptionService.initialize();
 
@@ -191,40 +249,187 @@ void main() {
       // Paywall closed here.
 
       analytics.clear();
-      fake.emit([
-        fakePurchase(
-          productId: SubscriptionService.premiumYearly,
-          purchaseId: 'deferred-1',
-          status: PurchaseStatus.purchased,
-        ),
-      ]);
-      await pumpEventQueue();
+      fake.emit(fakePurchase(
+        productId: SubscriptionService.premiumYearly,
+        purchaseId: 'deferred-1',
+      ));
+      await waitFor(() => fake.finishedPurchaseIds.contains('deferred-1'));
 
       expect(analytics.names, contains('store_purchase_confirmed'));
-      expect(fake.completedPurchaseIds, contains('deferred-1'));
+      expect(fake.finishedPurchaseIds, contains('deferred-1'));
     });
 
     test('a deferred payment that resolves later is still seen', () async {
       await SubscriptionService.initialize();
-      final purchase = fakePurchase(
+
+      analytics.clear();
+      fake.emit(fakePurchase(
         productId: SubscriptionService.premiumMonthly,
         purchaseId: 'deferred-2',
-        status: PurchaseStatus.pending,
+        state: PurchaseState.Pending,
+      ));
+      await pumpEventQueue();
+
+      expect(analytics.names, ['checkout_pending']);
+      expect(
+        fake.finishedPurchaseIds,
+        isEmpty,
+        reason: 'Finishing a pending purchase acknowledges money that has not '
+            'been taken.',
       );
 
-      analytics.clear();
-      fake.emit([purchase]);
-      await pumpEventQueue();
-      expect(analytics.names, ['checkout_pending']);
-
       // Hours later, the parent approves.
-      purchase.status = PurchaseStatus.purchased;
       analytics.clear();
-      fake.emit([purchase]);
-      await pumpEventQueue();
+      fake.emit(fakePurchase(
+        productId: SubscriptionService.premiumMonthly,
+        purchaseId: 'deferred-2',
+      ));
+      await waitFor(() => fake.finishedPurchaseIds.contains('deferred-2'));
 
       expect(analytics.names, contains('store_purchase_confirmed'));
-      expect(fake.completedPurchaseIds, contains('deferred-2'));
+      expect(fake.finishedPurchaseIds, contains('deferred-2'));
+    });
+  });
+
+  group('reconciling with the store', () {
+    test('an owned purchase completed while the app was away is delivered',
+        () async {
+      // OpenIAP never re-announces this on the stream — getAvailablePurchases
+      // is the only thing that surfaces it, which is why the resume hook in
+      // main.dart exists.
+      await SubscriptionService.initialize();
+
+      analytics.clear();
+      fake.owned = [
+        fakePurchase(
+          productId: SubscriptionService.premiumYearly,
+          purchaseId: 'while-away',
+        ),
+      ];
+      await SubscriptionService().reconcileStoreState();
+
+      expect(analytics.names, contains('store_purchase_confirmed'));
+      expect(fake.finishedPurchaseIds, contains('while-away'));
+    });
+
+    test('a second reconcile grants nothing twice', () async {
+      // getAvailablePurchases returns every owned item every time it is
+      // called, so without dedup every resume would re-verify and re-report
+      // the same sale.
+      await SubscriptionService.initialize();
+      fake.owned = [
+        fakePurchase(
+          productId: SubscriptionService.premiumYearly,
+          purchaseId: 'owned-1',
+        ),
+      ];
+
+      await SubscriptionService().reconcileStoreState();
+      analytics.clear();
+      await SubscriptionService().reconcileStoreState();
+
+      expect(
+        analytics.contains('store_purchase_confirmed'),
+        isFalse,
+        reason: 'Already delivered; re-reporting it inflates the funnel.',
+      );
+    });
+
+    test('an already-delivered purchase is still finished again', () async {
+      // An acknowledgement that failed the first time would otherwise leave
+      // Play to refund a purchase the user is actively using.
+      await SubscriptionService.initialize();
+      fake.owned = [
+        fakePurchase(
+          productId: SubscriptionService.premiumYearly,
+          purchaseId: 'owned-2',
+        ),
+      ];
+
+      await SubscriptionService().reconcileStoreState();
+      await SubscriptionService().reconcileStoreState();
+
+      expect(
+        fake.finishedPurchaseIds.where((id) => id == 'owned-2'),
+        hasLength(2),
+      );
+    });
+
+    test('a pending purchase in the owned list grants nothing', () async {
+      await SubscriptionService.initialize();
+
+      analytics.clear();
+      fake.owned = [
+        fakePurchase(
+          productId: SubscriptionService.premiumMonthly,
+          purchaseId: 'still-pending',
+          state: PurchaseState.Pending,
+        ),
+      ];
+      await SubscriptionService().reconcileStoreState();
+
+      expect(analytics.names, isEmpty);
+      expect(fake.finishedPurchaseIds, isEmpty);
+    });
+
+    test('nothing is ever finished as a consumable', () async {
+      // Consuming the lifetime unlock would put it back on sale.
+      await SubscriptionService.initialize();
+      fake.owned = [
+        fakePurchase(
+          productId: SubscriptionService.premiumLifetime,
+          purchaseId: 'lifetime-1',
+        ),
+      ];
+      await SubscriptionService().reconcileStoreState();
+
+      expect(fake.finishedAsConsumable, everyElement(isFalse));
+    });
+
+    test('an explicit restore reports how many entitlements were found',
+        () async {
+      await SubscriptionService.initialize();
+      fake.owned = [
+        fakePurchase(
+            productId: SubscriptionService.premiumYearly, purchaseId: 'r1'),
+      ];
+
+      int? restored;
+      bool? failed;
+      await SubscriptionService().restorePurchases(
+        onComplete: (count, hasError) {
+          restored = count;
+          failed = hasError;
+        },
+      );
+
+      // The count is real now: the old plugin re-emitted restores on the
+      // stream and the service guessed at the total after a 3-second timer.
+      expect(restored, 1);
+      expect(failed, isFalse);
+      expect(fake.restoreCalls, 1);
+      expect(SubscriptionService().isRestoring, isFalse);
+    });
+
+    test('a failed restore reports the error and clears the flag', () async {
+      await SubscriptionService.initialize();
+      fake.restorePurchasesThrows = StateError('sync failed');
+
+      bool? failed;
+      await SubscriptionService()
+          .restorePurchases(onComplete: (_, hasError) => failed = hasError);
+
+      expect(failed, isTrue);
+      expect(SubscriptionService().isRestoring, isFalse);
+    });
+
+    test('startup never syncs with the App Store', () async {
+      // restorePurchases() calls AppStore.sync on iOS, which can raise an
+      // Apple ID password prompt. It must only ever run when the user asks.
+      await SubscriptionService.initialize();
+
+      expect(fake.restoreCalls, 0);
+      expect(fake.availablePurchaseCalls, 1);
     });
   });
 
@@ -247,13 +452,14 @@ void main() {
             'the paywall kill the app-wide purchase listener.',
       );
       // The only member allowed to cancel is the test-only reset hook.
-      final cancelSites = RegExp(r'_subscription\??\.cancel\(\)')
+      final cancelSites = RegExp(r'_(purchase|error)Subscription\??\.cancel\(\)')
           .allMatches(serviceSource)
           .length;
       expect(
         cancelSites,
-        1,
-        reason: 'Exactly one cancel site is expected, inside resetForTesting.',
+        2,
+        reason: 'Exactly one cancel site per stream is expected, both inside '
+            'resetForTesting.',
       );
       expect(
         serviceSource,
@@ -292,6 +498,21 @@ void main() {
         }
       }
       expect(offenders, isEmpty);
+    });
+
+    test('the old in_app_purchase plugin is gone from lib/', () {
+      final offenders = <String>[];
+      for (final entry in dartFilesUnder('lib')) {
+        if (RegExp(r'package:in_app_purchase').hasMatch(entry.value)) {
+          offenders.add(entry.key);
+        }
+      }
+      expect(
+        offenders,
+        isEmpty,
+        reason: 'Play Billing 8+ is mandatory; the old plugin was pinned to a '
+            'version Google no longer accepts.',
+      );
     });
   });
 }

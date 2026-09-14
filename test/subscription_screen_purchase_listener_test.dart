@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -6,9 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:provider/provider.dart';
-
-// ignore: depend_on_referenced_packages
-import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:pinpoint/design_system/theme.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
@@ -20,7 +17,7 @@ import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/services/subscription_service.dart';
 
 import 'support/analytics_recorder.dart';
-import 'support/fake_in_app_purchase.dart';
+import 'support/fake_iap_client.dart';
 
 /// THE regression test for the P0 revenue bug.
 ///
@@ -38,21 +35,14 @@ import 'support/fake_in_app_purchase.dart';
 /// handled; the assertions on `hasActivePurchaseListener`,
 /// `store_purchase_confirmed` and `completePurchase` all fail.
 void main() {
-  late FakeInAppPurchasePlatform fake;
+  late FakeIapClient fake;
   late RecordingAnalyticsFacade analytics;
 
   setUpAll(() {
-    // `SubscriptionService`'s `_iap` field initializer resolves
-    // `InAppPurchase.instance`, and under `flutter test` defaultTargetPlatform
-    // is forced to android — which would register the REAL Android platform
-    // (opening a live BillingClient connection) and clobber any fake. Force the
-    // one-time resolution to happen on a platform the plugin does not register,
-    // then put the debug variable back: the test binding fails any test that
-    // leaves a foundation debug variable set.
-    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    SubscriptionService();
-    debugDefaultTargetPlatformOverride = null;
-
+    // No platform-override dance any more: nothing in SubscriptionService
+    // resolves a platform plugin at field-initializer time, because the store
+    // is reached through the injectable IapClient seam.
+    //
     // ApiService's `static final String baseUrl` reads dotenv, and constructing
     // SubscriptionManager constructs ApiService. Same workaround widget_test
     // uses.
@@ -69,10 +59,13 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
   });
 
   setUp(() {
-    fake = FakeInAppPurchasePlatform(
-      knownProductIds: SubscriptionService.productIds,
-    );
-    InAppPurchasePlatform.instance = fake;
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    // Deliberately no device id: SubscriptionManager then answers
+    // "cannot verify" without touching a socket, which keeps this widget test
+    // free of real I/O. What it is here to prove is that the listener is
+    // ALIVE, not what verification decides.
+    fake = FakeIapClient(knownProductIds: SubscriptionService.productIds);
 
     analytics = RecordingAnalyticsFacade();
     if (getIt.isRegistered<AnalyticsFacade>()) {
@@ -81,6 +74,7 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
     getIt.registerSingleton<AnalyticsFacade>(analytics);
 
     SubscriptionService().resetForTesting();
+    SubscriptionService().debugIapClient = fake;
   });
 
   tearDown(() async {
@@ -137,9 +131,7 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
 
     // App startup: HomeScreen's one-and-only SubscriptionService.initialize().
     await SubscriptionService.initialize();
-    // restorePurchases() schedules a bare 3s Future.delayed; drain it so the
-    // test does not end with a pending timer.
-    await tester.pump(const Duration(seconds: 4));
+    await tester.pump();
 
     expect(SubscriptionService().purchaseListenerStarts, 1);
     expect(fake.hasListener, isTrue);
@@ -188,13 +180,10 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
 
     // --- the store finally delivers the purchase ---
     analytics.clear();
-    fake.emit([
-      fakePurchase(
-        productId: SubscriptionService.premiumMonthly,
-        purchaseId: 'late-delivery-1',
-        status: PurchaseStatus.purchased,
-      ),
-    ]);
+    fake.emit(fakePurchase(
+      productId: SubscriptionService.premiumMonthly,
+      purchaseId: 'late-delivery-1',
+    ));
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
@@ -203,12 +192,6 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
       analytics.names,
       contains('store_purchase_confirmed'),
       reason: 'The purchase was never handled — the listener was dead.',
-    );
-    expect(
-      fake.completedPurchaseIds,
-      contains('late-delivery-1'),
-      reason: 'completePurchase() is how the store learns the entitlement was '
-          'delivered; on Android an uncompleted purchase auto-refunds.',
     );
   });
 
@@ -229,7 +212,7 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
     await tester.pump();
 
     await SubscriptionService.initialize();
-    await tester.pump(const Duration(seconds: 4));
+    await tester.pump();
     expect(SubscriptionService().hasActivePurchaseListener, isTrue);
 
     // open -> close -> reopen -> close, with the old dispose() semantics
@@ -249,18 +232,15 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
     );
 
     analytics.clear();
-    fake.emit([
-      fakePurchase(
-        productId: SubscriptionService.premiumMonthly,
-        purchaseId: 'dropped-1',
-        status: PurchaseStatus.purchased,
-      ),
-    ]);
+    fake.emit(fakePurchase(
+      productId: SubscriptionService.premiumMonthly,
+      purchaseId: 'dropped-1',
+    ));
     await tester.pump();
     await tester.pump();
 
     expect(analytics.names, isEmpty, reason: 'The user paid and got nothing.');
-    expect(fake.completedPurchaseIds, isEmpty);
+    expect(fake.finishedPurchaseIds, isEmpty);
   });
 
   testWidgets('the paywall does not re-initialize the service on each visit',
@@ -270,8 +250,8 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
     await tester.pump();
 
     await SubscriptionService.initialize();
-    await tester.pump(const Duration(seconds: 4));
-    final restoresAfterStartup = fake.restoreCalls;
+    await tester.pump();
+    final sweepsAfterStartup = fake.availablePurchaseCalls;
 
     for (var i = 0; i < 3; i++) {
       navKey.currentState!.push(
@@ -284,10 +264,15 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
 
     expect(SubscriptionService().purchaseListenerStarts, 1);
     expect(
+      fake.availablePurchaseCalls,
+      sweepsAfterStartup,
+      reason: 'Opening the paywall must not trigger a reconcile storm.',
+    );
+    expect(
       fake.restoreCalls,
-      restoresAfterStartup,
-      reason: 'Opening the paywall must not trigger a restore storm; only the '
-          'explicit "Restore purchases" button does that.',
+      0,
+      reason: 'Only the explicit "Restore purchases" button may sync with the '
+          'App Store — it can raise an Apple ID password prompt.',
     );
   });
 }

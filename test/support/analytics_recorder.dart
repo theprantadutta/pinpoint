@@ -120,6 +120,23 @@ class RecordingAnalyticsFacade extends AnalyticsFacade {
         'source': source,
       });
 
+  /// The store charged the user but the backend could not confirm it.
+  ///
+  /// Not recorded before the OpenIAP migration: the old implementation gated
+  /// verification on `dart:io Platform.isAndroid`, which is false on a test
+  /// host, so this branch was unreachable and no fake needed it.
+  @override
+  Future<void> trackPurchaseProvisionallyGranted({
+    required String productId,
+    required String platform,
+    required String reason,
+  }) async =>
+      _rec('purchase_provisionally_granted', {
+        'product_id': productId,
+        'platform': platform,
+        'reason': reason,
+      });
+
   @override
   Future<void> trackVerificationFailed({
     required String productId,
