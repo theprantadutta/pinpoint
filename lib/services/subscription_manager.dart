@@ -36,6 +36,31 @@ abstract final class PurchaseVerificationReasons {
 
   /// The backend could not be reached (network, timeout, parse failure).
   static const String backendUnreachable = 'backend_unreachable';
+
+  /// The STORE says the purchase is not active — cancelled, expired, refunded
+  /// or revoked. Authoritative, and the opposite of the two above: it grants
+  /// nothing and withdraws anything granted provisionally.
+  static const String storeRejected = 'store_rejected';
+}
+
+/// Stable codes the backend sends alongside a failed verification.
+///
+/// A bare `success: false` cannot distinguish "the store says this
+/// subscription is over" from "I could not reach the store", and the client
+/// has to do opposite things in those two cases. Conflating them is what made
+/// a provisional entitlement impossible to revoke: a purchase made during a
+/// backend outage stayed premium for the full locally-invented expiry, and
+/// cancelling in the store could not touch it.
+///
+/// Kept in step with `ErrorCodes` on the backend; an unrecognised code is
+/// treated as transient, which is the safe default for a paying user.
+abstract final class PurchaseVerificationCodes {
+  /// Authoritative: the store confirmed the purchase is not active.
+  static const String subscriptionNotActive = 'SUBSCRIPTION_NOT_ACTIVE';
+
+  /// Transient: the store could not be reached or did not answer.
+  static const String verificationUnavailable =
+      'PURCHASE_VERIFICATION_UNAVAILABLE';
 }
 
 /// The outcome of [SubscriptionManager.verifyPurchase].
@@ -77,7 +102,15 @@ class SubscriptionManager extends ChangeNotifier {
   factory SubscriptionManager() => _instance;
   SubscriptionManager._internal();
 
-  final ApiService _apiService = ApiService();
+  ApiService _apiService = ApiService();
+
+  /// Swap in a fake backend. TESTS ONLY.
+  ///
+  /// `ApiService` is a singleton behind a private constructor, so this is the
+  /// only way to drive the three verification outcomes — confirmed, transient,
+  /// and the store's own refusal — without a live server.
+  @visibleForTesting
+  set debugApiService(ApiService api) => _apiService = api;
 
   /// Null-safe because this singleton can run before (or without) the service
   /// locator being populated — e.g. in tests.
@@ -401,10 +434,21 @@ class SubscriptionManager extends ChangeNotifier {
         return const PurchaseVerificationResult.confirmed();
       }
 
-      // The store already charged the user; the backend just couldn't confirm
-      // the purchase (service unavailable, misconfiguration, ...). Never leave
-      // a paid user locked out: grant premium provisionally and keep retrying
-      // verification in the background until the backend confirms.
+      // The store itself says this purchase is not active — cancelled,
+      // expired, refunded or revoked. That is an answer, not a failure to get
+      // one, so grant nothing and keep no receipt to retry. Anything already
+      // granted is corrected by the status fetch that follows.
+      if (_storeRejected(response)) {
+        debugPrint('❌ Store reports the purchase is not active — no entitlement');
+        await _clearPendingVerification();
+        return const PurchaseVerificationResult.failed(
+            PurchaseVerificationReasons.storeRejected);
+      }
+
+      // Otherwise the store already charged the user and the backend just
+      // couldn't confirm it (service unavailable, misconfiguration, ...).
+      // Never leave a paid user locked out: grant premium provisionally and
+      // keep retrying verification in the background until it confirms.
       debugPrint('⚠️ API returned success=false: ${response['message']} '
           '— granting provisional entitlement');
       await _grantProvisionalEntitlement(
@@ -527,11 +571,56 @@ class SubscriptionManager extends ChangeNotifier {
         );
         return false;
       }
+      // The store has now answered, and the answer is no. Drop the receipt and
+      // the entitlement it was holding open, then return false so the caller
+      // goes on to fetch the real device status — the backend, not this
+      // device's optimistic guess, decides what happens next.
+      //
+      // THE bug this closes: every non-success looked identical here, so a
+      // cancelled subscription read as "still unconfirmed", the caller
+      // returned early, and the self-granted premium survived every launch
+      // until its invented expiry — up to a year of free premium that no
+      // cancellation, refund or chargeback could remove.
+      if (_storeRejected(response)) {
+        debugPrint('❌ Store reports the pending purchase is not active '
+            '— withdrawing the provisional entitlement');
+        await _withdrawProvisionalEntitlement();
+        return false;
+      }
+
       debugPrint('⏳ Pending verification still unconfirmed: ${response['message']}');
     } catch (e) {
+      // No answer at all. Hold the entitlement and try again next time.
       debugPrint('⏳ Pending verification retry failed: $e');
     }
     return true;
+  }
+
+  /// Whether [response] is the store's own verdict that the purchase is dead,
+  /// as opposed to the backend being unable to ask.
+  ///
+  /// An unknown or missing code is NOT treated as a rejection: a client that
+  /// has not learned a new code must keep a paying user's entitlement rather
+  /// than revoke it on a response it does not understand.
+  static bool _storeRejected(Map<String, dynamic> response) =>
+      response['code'] == PurchaseVerificationCodes.subscriptionNotActive;
+
+  /// Undo a provisional grant the store has since disowned.
+  ///
+  /// Clears the queued receipt as well — retrying it can only ever produce the
+  /// same refusal, and leaving it would make [checkSubscriptionStatus] skip
+  /// the real status fetch forever.
+  Future<void> _withdrawProvisionalEntitlement() async {
+    _isPremium = false;
+    _subscriptionTier = 'free';
+    _subscriptionType = null;
+    _subscriptionExpiresAt = null;
+    _isInGracePeriod = false;
+    _gracePeriodEndsAt = null;
+
+    await _clearPendingVerification();
+    await _saveLocalSubscriptionStatus();
+    notifyListeners();
   }
 
   /// Grant premium access (for testing or promotions)
