@@ -48,6 +48,12 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true // Required for Firebase dependencies
+
+        // flutter_inapp_purchase ships one Android module per store
+        // (play / horizon / amazon) as a product flavor. Without a choice the
+        // build fails to resolve the dependency; Pinpoint sells through Google
+        // Play only.
+        missingDimensionStrategy("platform", "play")
     }
 
     signingConfigs {
@@ -65,6 +71,13 @@ android {
             // Disable R8, ProGuard, and code shrinking
             isMinifyEnabled = false
             isShrinkResources = false
+            // Inert while minification is off, but the billing classes are
+            // reflected over at runtime and would be stripped the moment it is
+            // turned on. Kept wired so that switch stays a one-line change.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

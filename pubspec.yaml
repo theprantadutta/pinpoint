@@ -59,10 +59,11 @@ dependencies:
   pdf: ^3.10.8
   flutter_secure_storage: ^11.0.0
   flutter_timezone: ^5.0.1
-  in_app_purchase: ^3.3.0
-  in_app_purchase_android: ^0.5.2
-  # iOS StoreKit backend for in_app_purchase (App Store billing on iOS)
-  in_app_purchase_storekit: ^0.4.10
+  # OpenIAP. Replaced the in_app_purchase trio: that line was pinned to Play
+  # Billing 8.x, and Google requires 8+ for all updates from 2026-08-31 (hard
+  # stop 2026-11-01). 10.6.1 pins openiap-google 3.5.1 -> billing 9.1.0, and
+  # is StoreKit 2 on iOS, which is what the backend already verifies (JWS).
+  flutter_inapp_purchase: ^10.6.1
   # Sign in with Apple (required by App Store Guideline 4.8 alongside Google Sign-In)
   sign_in_with_apple: ^8.1.0
   # SHA-256 nonce hashing for Sign in with Apple (was transitive; now used directly)

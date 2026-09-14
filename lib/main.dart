@@ -37,6 +37,7 @@ import 'services/locale_controller.dart';
 import 'services/refresh_rate_controller.dart';
 import 'services/notification_channels.dart';
 import 'screens/auth_screen.dart';
+import 'package:pinpoint/services/subscription_service.dart';
 
 // void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
@@ -721,6 +722,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // 60 Hz until the next cold start. Re-assert it on the way back in.
     if (state == AppLifecycleState.resumed) {
       unawaited(_refreshRateController.apply());
+
+      // Reconcile entitlements with the store on the way back in.
+      //
+      // Under OpenIAP a purchase that completed while the app was away — a
+      // deferred payment clearing, a sheet the user finished after a task
+      // switch, a verification that failed offline — is never re-announced on
+      // the purchase stream. `getAvailablePurchases()` is the only thing that
+      // surfaces it, so without this the user stays unentitled for something
+      // they paid for. Cheap and deduplicated: already-delivered purchases
+      // grant nothing a second time, and it never syncs with the App Store,
+      // so it cannot raise a password prompt.
+      unawaited(SubscriptionService().reconcileStoreState());
     }
   }
 
