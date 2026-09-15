@@ -471,19 +471,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _SettingsTile(
               title: AppL10n.of(context).setBiometricLock,
               subtitle:
-                  MyApp.of(context).isBiometricEnabled ? AppL10n.of(context).commonEnabled : AppL10n.of(context).commonDisabled,
+                  PinPointApp.of(context).isBiometricEnabled ? AppL10n.of(context).commonEnabled : AppL10n.of(context).commonDisabled,
               icon: Icons.fingerprint_rounded,
               trailing: Switch(
-                value: MyApp.of(context).isBiometricEnabled,
+                value: PinPointApp.of(context).isBiometricEnabled,
                 onChanged: (value) {
                   PinpointHaptics.light();
-                  MyApp.of(context).changeBiometricEnabledEnabled(value);
+                  PinPointApp.of(context).changeBiometricEnabledEnabled(value);
                 },
               ),
               onTap: () {
                 PinpointHaptics.light();
-                final current = MyApp.of(context).isBiometricEnabled;
-                MyApp.of(context).changeBiometricEnabledEnabled(!current);
+                final current = PinPointApp.of(context).isBiometricEnabled;
+                PinPointApp.of(context).changeBiometricEnabledEnabled(!current);
               },
             ),
             const SizedBox(height: PinpointSpacing.md),
