@@ -38,6 +38,8 @@ import 'services/refresh_rate_controller.dart';
 import 'services/notification_channels.dart';
 import 'screens/auth_screen.dart';
 import 'package:pinpoint/services/subscription_service.dart';
+import 'package:pinpoint/design_system/theme.dart';
+import 'package:flutter/services.dart';
 
 // void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
@@ -59,7 +61,7 @@ import 'package:pinpoint/services/subscription_service.dart';
 
 //   await     SecureEncryptionService.initialize();
 //   runApp(
-//     MyApp(),
+//     PinPointApp(),
 //   );
 // }
 
@@ -81,6 +83,20 @@ void main() async {
   // or fonts.gstatic.com is unreachable. google_fonts discovers the bundled
   // TTFs automatically via the asset manifest.
   GoogleFonts.config.allowRuntimeFetching = false;
+
+  // Draw under the status and navigation bars.
+  //
+  // From Android 15, an app targeting SDK 35+ is displayed edge-to-edge by the
+  // system whether it opts in or not — and Pinpoint targets 36. Without this
+  // call Flutter still lays out as though the bars were opaque, so the system
+  // draws the app full-bleed while the app reserves nothing for the insets:
+  // content ends up under the gesture bar. Declaring the mode makes Flutter
+  // report the real insets through MediaQuery, which is what SafeArea and
+  // Scaffold then honour.
+  //
+  // Play Console flags the absence of this as "Edge-to-edge may not display
+  // for all users"; it is the Flutter counterpart of enableEdgeToEdge().
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   try {
     // Initialize core services first
@@ -153,8 +169,8 @@ void main() async {
         '🔑 [main.dart] Skipping encryption initialization - will initialize after auth check');
 
     // Run the main app
-    // Update check happens AFTER app renders (in MyApp.initState)
-    runApp(const MyApp());
+    // Update check happens AFTER app renders (in PinPointApp.initState)
+    runApp(const PinPointApp());
   } catch (error, stackTrace) {
     // Handle initialization errors gracefully
     debugPrint('App initialization error: $error');
@@ -385,7 +401,7 @@ class AuthenticationFailedApp extends StatelessWidget {
     final isAuthenticated = await _handleBiometricAuth();
     if (isAuthenticated) {
       // Don't initialize encryption here - it will be done in splash screen
-      runApp(const MyApp());
+      runApp(const PinPointApp());
     }
   }
 }
@@ -616,19 +632,19 @@ class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
   }
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class PinPointApp extends StatefulWidget {
+  const PinPointApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<PinPointApp> createState() => _PinPointAppState();
 
   //https://gist.github.com/ben-xx/10000ed3bf44e0143cf0fe7ac5648254
   // ignore: library_private_types_in_public_api
-  static _MyAppState of(BuildContext context) =>
-      context.findAncestorStateOfType<_MyAppState>()!;
+  static _PinPointAppState of(BuildContext context) =>
+      context.findAncestorStateOfType<_PinPointAppState>()!;
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
   bool _isBiometricEnabled = false;
   SharedPreferences? _sharedPreferences;
 
@@ -740,7 +756,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   /// Register callback for when user session expires (refresh token also expired)
   void _registerSessionExpiryHandler() {
     ApiService().onSessionExpired = () {
-      debugPrint('⚠️ [MyApp] Session expired - redirecting to login');
+      debugPrint('⚠️ [PinPointApp] Session expired - redirecting to login');
 
       // Navigate to auth screen using GoRouter
       // We need to do this after the current frame to avoid navigation during build
@@ -759,12 +775,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _updateCheckCompleted = true;
 
     try {
-      debugPrint('🔄 [MyApp] Checking for app updates...');
+      debugPrint('🔄 [PinPointApp] Checking for app updates...');
       final updateService = AppUpdateService();
       final hasUpdate = await updateService.checkForUpdate();
 
       if (hasUpdate) {
-        debugPrint('⚠️ [MyApp] Update available - forcing immediate update');
+        debugPrint('⚠️ [PinPointApp] Update available - forcing immediate update');
 
         // Try immediate update first
         final updateStarted = await updateService.performImmediateUpdate();
@@ -772,15 +788,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         if (!updateStarted && mounted) {
           // If immediate update fails, show blocking update screen
           debugPrint(
-              '❌ [MyApp] Immediate update failed - showing update screen');
+              '❌ [PinPointApp] Immediate update failed - showing update screen');
           setState(() => _updateRequired = true);
         }
       } else {
-        debugPrint('✅ [MyApp] App is up to date');
+        debugPrint('✅ [PinPointApp] App is up to date');
       }
     } catch (e, stackTrace) {
-      debugPrint('⚠️ [MyApp] Update check failed: $e');
-      debugPrint('⚠️ [MyApp] Stack trace: $stackTrace');
+      debugPrint('⚠️ [PinPointApp] Update check failed: $e');
+      debugPrint('⚠️ [PinPointApp] Stack trace: $stackTrace');
       // Don't block the app if update check fails
     }
   }
@@ -857,8 +873,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             // Keeps the Android notification channels in the app's language.
             // Sits inside MaterialApp because it needs Localizations, which is
             // only available below this point in the tree.
-            builder: (context, child) => _LocalizedNotificationChannels(
-                child: child ?? const SizedBox.shrink()),
+            // AppBarTheme.systemOverlayStyle only reaches routes that HAVE an
+            // app bar. This annotation is the app-wide floor for the rest —
+            // the note grid, the editor, the paywall — and is overridden by
+            // any app bar painted above it. Brightness is read from the
+            // resolved theme, so it follows light/dark/system without this
+            // needing to know how the mode resolves.
+            builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+              value: PinpointTheme.systemOverlayStyle(
+                  Theme.of(context).brightness),
+              child: _LocalizedNotificationChannels(
+                  child: child ?? const SizedBox.shrink()),
+            ),
             themeMode: themeController.mode,
             theme: PinpointTheme.light(
               accentColor: themeController.accent,

@@ -68,12 +68,25 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            // Disable R8, ProGuard, and code shrinking
-            isMinifyEnabled = false
+
+            // R8 on. Play Console measures "DEX code optimization" and warns
+            // when obfuscation falls under 25% — with shrinking disabled it
+            // read 2%, which it flags as a risk to visibility and publishing.
+            //
+            // Everything R8 would otherwise break is kept explicitly in
+            // proguard-rules.pro: the GSON models flutter_local_notifications
+            // rehydrates after a reboot, the billing classes Play reflects
+            // over, and the plugin registrants Flutter resolves by name.
+            isMinifyEnabled = true
+
+            // Resource shrinking stays OFF, deliberately. It is a separate
+            // switch from DEX optimization and does nothing for the warning
+            // above, while it CAN strip a resource whose only reference is a
+            // runtime string — notification icons are named that way
+            // (`AndroidInitializationSettings('@mipmap/ic_launcher')`), as are
+            // the launch drawables. Not worth the risk for a few hundred KB.
             isShrinkResources = false
-            // Inert while minification is off, but the billing classes are
-            // reflected over at runtime and would be stripped the moment it is
-            // turned on. Kept wired so that switch stays a one-line change.
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

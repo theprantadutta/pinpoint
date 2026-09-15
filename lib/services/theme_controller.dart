@@ -6,7 +6,7 @@ import '../design_system/colors.dart';
 
 /// Central, reactive owner of app-wide appearance state.
 ///
-/// Replaces the old `_MyAppState` + `MyApp.of(context).changeTheme()` pattern
+/// Replaces the old `_PinPointAppState` + `PinPointApp.of(context).changeTheme()` pattern
 /// (which rebuilt the whole tree via `findAncestorStateOfType` and could only
 /// persist a 2-state dark/light bool). This is a [ChangeNotifier] provided at
 /// the top of the tree; `MaterialApp.router` watches it, so changes re-theme

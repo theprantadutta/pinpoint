@@ -13,6 +13,42 @@ class PinpointTheme {
   PinpointTheme._();
 
   // ============================================
+  // System chrome
+  // ============================================
+
+  /// The status- and navigation-bar treatment for an edge-to-edge app.
+  ///
+  /// Flutter's own [SystemUiOverlayStyle.light] / [SystemUiOverlayStyle.dark]
+  /// constants cannot be used here: both hard-code an OPAQUE BLACK
+  /// `systemNavigationBarColor`, which paints a black band over the bottom of
+  /// a layout that is supposed to run under the gesture bar. From Android 15
+  /// (targeting SDK 35+) the system draws every app edge-to-edge whether it
+  /// asks to or not, so that band is what a user would actually see.
+  ///
+  /// `systemNavigationBarContrastEnforced: false` matters for the same reason:
+  /// Android 15 removed the automatic scrim it used to paint behind the bars,
+  /// and leaving enforcement on reintroduces a translucent strip over content
+  /// that is already designed to show through.
+  ///
+  /// [brightness] is the brightness of the app's own surfaces, so the icons
+  /// are set to contrast with it: a dark UI gets light icons.
+  static SystemUiOverlayStyle systemOverlayStyle(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      // iOS reads the OPPOSITE field, and reads it as the brightness of what
+      // sits BEHIND the bar rather than of the icons.
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarIconBrightness:
+          isDark ? Brightness.light : Brightness.dark,
+      systemNavigationBarContrastEnforced: false,
+    );
+  }
+
+  // ============================================
   // Theme Data
   // ============================================
 
@@ -71,7 +107,7 @@ class PinpointTheme {
         centerTitle: false,
         backgroundColor: Colors.transparent,
         foregroundColor: colorScheme.onSurface,
-        systemOverlayStyle: SystemUiOverlayStyle.light,
+        systemOverlayStyle: systemOverlayStyle(Brightness.dark),
         titleTextStyle: PinpointTypography.createTextTheme(
           brightness: Brightness.dark,
           primaryFont: fontFamily,
@@ -242,7 +278,7 @@ class PinpointTheme {
         centerTitle: false,
         backgroundColor: Colors.transparent,
         foregroundColor: colorScheme.onSurface,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        systemOverlayStyle: systemOverlayStyle(Brightness.light),
         titleTextStyle: PinpointTypography.createTextTheme(
           brightness: Brightness.light,
           primaryFont: fontFamily,

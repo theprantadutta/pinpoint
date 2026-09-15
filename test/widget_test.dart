@@ -9,7 +9,7 @@ void main() {
     initServiceLocators();
 
     // The real .env is loaded by main(), which this test bypasses by pumping
-    // MyApp directly. ApiService reads its base URL in a static initialiser, so
+    // PinPointApp directly. ApiService reads its base URL in a static initialiser, so
     // the very first widget build throws NotInitializedError without this.
     // Values are dummies — nothing here performs a request.
     dotenv.loadFromString(
@@ -22,7 +22,7 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
   });
 
   testWidgets('App starts without crashing', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
-    expect(find.byType(MyApp), findsOneWidget);
+    await tester.pumpWidget(const PinPointApp());
+    expect(find.byType(PinPointApp), findsOneWidget);
   });
 }
