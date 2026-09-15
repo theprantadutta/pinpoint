@@ -1,4 +1,4 @@
-# Release notes — 3.3.0 (build 34)
+# Release notes — 3.4.0 (build 35)
 
 **Play Console caps release notes at 500 characters per language.** Every block
 is under it — counts are tabulated at the end.
@@ -26,6 +26,16 @@ Fixed:
 - Premium granted while the server could not reach the store could not be taken
   away again, so a cancellation or refund left it running until its invented
   expiry. Subscription state now follows the store.
+
+Also in this build, and also invisible: R8 is switched back on (Play Console
+flagged obfuscation at 2%, under its 25% threshold), and the system bars are
+now transparent with insets handled, which Android 15 forces on any app
+targeting SDK 35+. The second one is mildly visible — content runs under the
+status and gesture bars instead of sitting inside a black band — but it is not
+a feature anyone asked for, so it stays out of the copy.
+
+3.3.0 was never uploaded; these notes carried over to 3.4.0 unchanged because
+nothing user-facing was added in between.
 
 Deliberately not in the copy: the billing-library migration itself, and the fact
 that the entitlement fix *removes* access for anyone who was holding an
