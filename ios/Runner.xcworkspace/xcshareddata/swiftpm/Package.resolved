@@ -145,6 +145,15 @@
       }
     },
     {
+      "identity" : "openiap",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/hyodotdev/openiap.git",
+      "state" : {
+        "revision" : "59fb640faa2ba831ffa040dc877b0b2c172145f6",
+        "version" : "3.4.0"
+      }
+    },
+    {
       "identity" : "promises",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/google/promises.git",

@@ -280,6 +280,17 @@ Future<void> _initializeCoreServices() async {
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
     debugPrint('✅ [main.dart] Firebase core initialized');
+
+    // Open the analytics pipe here, against the only thing it actually needs:
+    // an initialised Firebase app.
+    //
+    // This used to run after FirebaseNotificationService.initialize(), which
+    // rethrows. AnalyticsFacade queues every event until this call and there is
+    // no other caller, so any failure in push setup — a token fetch, local
+    // notification setup, a device-info lookup — silently discarded analytics
+    // for the whole session. debugPrint is gagged in release, so it would have
+    // failed invisibly. Push and analytics have no reason to share a fate.
+    getIt<AnalyticsFacade>().onFirebaseReady();
   } catch (e, stackTrace) {
     debugPrint('⚠️ [main.dart] Firebase core init failed: $e');
     debugPrint('⚠️ [main.dart] Stack trace: $stackTrace');
