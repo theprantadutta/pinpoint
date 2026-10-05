@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../animations.dart';
 import '../../colors.dart';
+import '../../content_direction.dart';
 import '../../spacing.dart';
 import '../../typography.dart';
 import 'sketch_pressable.dart';
@@ -228,6 +229,7 @@ class ChecklistPreviewLine extends StatelessWidget {
         Expanded(
           child: Text(
             label,
+            textDirection: contentDirection(label),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: context.type.caption.copyWith(
