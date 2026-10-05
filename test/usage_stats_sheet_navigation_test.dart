@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:pinpoint/design_system/design_system.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:pinpoint/services/locale_controller.dart';
 import 'package:pinpoint/widgets/usage_stats_bottom_sheet.dart';
@@ -100,7 +101,7 @@ void main() {
     expect(find.byType(UsageStatsBottomSheet), findsOneWidget);
 
     final upgrade = find.widgetWithText(
-      FilledButton,
+      PillButton,
       AppL10n.of(tester.element(find.byType(UsageStatsBottomSheet)))
           .usageUpgradeToPremium,
     );
@@ -130,7 +131,7 @@ void main() {
     await tester.tap(find.text('open-sheet'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(
-      FilledButton,
+      PillButton,
       AppL10n.of(tester.element(find.byType(UsageStatsBottomSheet)))
           .usageUpgradeToPremium,
     ));

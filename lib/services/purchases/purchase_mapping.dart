@@ -148,6 +148,42 @@ String displayPriceFor(ProductCommon product) {
   return product.displayPrice;
 }
 
+/// The recurring price of [product] as a number in its own currency, or null
+/// when the store did not say.
+///
+/// The same phase [displayPriceFor] shows — the last PAID phase of the
+/// selected Android offer — so a leading free trial never reads as a price of
+/// zero. Falls back to `price` for one-time products and iOS.
+double? recurringPriceAmount(ProductCommon product) {
+  if (product is ProductSubscriptionAndroid) {
+    final offer = selectAndroidOffer(product.subscriptionOffers);
+    final phases = offer?.pricingPhasesAndroid?.pricingPhaseList;
+    if (phases != null) {
+      final paid = phases.where((p) => _micros(p.priceAmountMicros) > 0);
+      if (paid.isNotEmpty) return _micros(paid.last.priceAmountMicros) / 1e6;
+    }
+  }
+  final price = product.price;
+  return price == null || price <= 0 ? null : price;
+}
+
+/// How much cheaper a year of [yearly] is than twelve payments of [monthly],
+/// in whole percent, for the paywall's "SAVE x%" badge.
+///
+/// Computed only from the store's own prices. Null — so no badge at all —
+/// when either price is unknown, the currencies differ, or there is no
+/// saving: a badge must never claim a discount the store isn't giving.
+int? yearlySavingsPercent(ProductCommon monthly, ProductCommon yearly) {
+  if (monthly.currency != yearly.currency) return null;
+  final m = recurringPriceAmount(monthly);
+  final y = recurringPriceAmount(yearly);
+  if (m == null || y == null) return null;
+  final fullYear = m * 12;
+  if (fullYear <= 0 || y >= fullYear) return null;
+  final percent = ((fullYear - y) / fullYear * 100).floor();
+  return percent > 0 ? percent : null;
+}
+
 /// The free-trial length in days Google Play is offering on [product], or null
 /// when this user gets no trial.
 ///
