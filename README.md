@@ -112,6 +112,22 @@ difference; they are enforced in `lib/services/premium_service.dart` against
 |:-------:|:-------:|:--------:|:-------:|
 | ![Folders](screenshots/5_my_folders.jpg) | ![Search filters](screenshots/6_search_filters.jpg) | ![Settings](screenshots/7_settings_screen.jpg) | ![Premium](screenshots/8_premium_screen.jpg) |
 
+### Tablet
+
+| Home | Navigation | Folders | Note Editor |
+|:----:|:----------:|:-------:|:-----------:|
+| ![Tablet home](tablet_screenshots/1_home_screen.jpg) | ![Tablet navigation drawer](tablet_screenshots/2_navigation_drawer.jpg) | ![Tablet folders](tablet_screenshots/3_my_folders.jpg) | ![Tablet note editor](tablet_screenshots/4_note_editor.jpg) |
+
+| Todos | Settings | Premium |
+|:-----:|:--------:|:-------:|
+| ![Tablet todos](tablet_screenshots/5_todos.jpg) | ![Tablet settings](tablet_screenshots/6_settings_screen.jpg) | ![Tablet premium](tablet_screenshots/7_premium_screen.jpg) |
+
+In landscape, the list and the editor sit side by side:
+
+| Split view | Home | Navigation |
+|:----------:|:----:|:----------:|
+| ![Tablet split view](tablet_screenshots/8_split_view_landscape.jpg) | ![Tablet home, landscape](tablet_screenshots/9_home_landscape.jpg) | ![Tablet navigation drawer, landscape](tablet_screenshots/10_navigation_drawer_landscape.jpg) |
+
 ---
 
 ## 🛠️ Tech Stack
