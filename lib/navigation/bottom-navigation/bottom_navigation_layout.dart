@@ -63,14 +63,15 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
   }
 
   Future<bool> _onBackButtonPressed() async {
-    // Let pushed screens (editor, archive, etc.) handle their own back.
-    if (Navigator.of(context).canPop()) return false;
-
-    // Close the drawer first, like any other modal.
+    // Close the drawer first, like any other modal. Checked before
+    // canPop(): an open drawer is local history, so canPop() reports true.
     if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
       _scaffoldKey.currentState!.closeDrawer();
       return true;
     }
+
+    // Let pushed screens (editor, archive, etc.) handle their own back.
+    if (Navigator.of(context).canPop()) return false;
 
     // From another tab, back returns home before it offers to exit.
     if (widget.navigationShell.currentIndex != 0) {

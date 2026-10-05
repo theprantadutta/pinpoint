@@ -1,3 +1,4 @@
+import '../util/server_time.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
@@ -141,8 +142,8 @@ class FolderSyncService {
         try {
           final uuid = serverFolder['uuid'] as String;
           final title = serverFolder['title'] as String;
-          final createdAt = _parseServerTime(serverFolder['created_at']);
-          final updatedAt = _parseServerTime(serverFolder['updated_at']);
+          final createdAt = parseServerUtc(serverFolder['created_at'] as String);
+          final updatedAt = parseServerUtc(serverFolder['updated_at'] as String);
           // Absent on a server without the Sketchbook columns: keep local.
           final hasColor = serverFolder.containsKey('color');
           final hasOrder = serverFolder.containsKey('sort_order');
@@ -212,13 +213,5 @@ class FolderSyncService {
         message: 'Folder download failed: ${e.toString()}',
       );
     }
-  }
-
-  /// Server folder timestamps are UTC but sent without a 'Z'; Dart would
-  /// read them as local time and skew last-write-wins by the UTC offset.
-  static DateTime _parseServerTime(Object? raw) {
-    final s = raw as String;
-    final hasZone = s.endsWith('Z') || RegExp(r'[+-]\d\d:?\d\d$').hasMatch(s);
-    return DateTime.parse(hasZone ? s : '${s}Z').toLocal();
   }
 }
