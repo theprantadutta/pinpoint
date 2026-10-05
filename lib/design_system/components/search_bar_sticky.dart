@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../colors.dart';
+import '../spacing.dart';
 import 'tag_chip.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
@@ -74,7 +76,6 @@ class _SearchBarStickyState extends State<SearchBarSticky> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -87,13 +88,13 @@ class _SearchBarStickyState extends State<SearchBarSticky> {
             hintText: widget.hint ?? AppL10n.of(context).notesSearchHint,
             prefixIcon: Icon(
               Icons.search_rounded,
-              color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+              color: context.sketch.ink,
             ),
             suffixIcon: _controller.text.isNotEmpty
                 ? IconButton(
                     icon: const Icon(Icons.close_rounded),
                     iconSize: 20,
-                    color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                    color: context.sketch.ink,
                     onPressed: () {
                       _controller.clear();
                       if (widget.onSearch != null) {
@@ -104,26 +105,21 @@ class _SearchBarStickyState extends State<SearchBarSticky> {
                     tooltip: AppL10n.of(context).dsClear,
                   )
                 : null,
+            filled: true,
+            fillColor: context.sketch.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(999),
               borderSide: BorderSide(
-                color: cs.outline.withValues(alpha: 0.05),
-                width: 0.5,
-              ),
+                  color: context.sketch.outline, width: SketchStroke.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(999),
               borderSide: BorderSide(
-                color: cs.outline.withValues(alpha: 0.05),
-                width: 0.5,
-              ),
+                  color: context.sketch.outline, width: SketchStroke.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(999),
-              borderSide: BorderSide(
-                color: cs.outline.withValues(alpha: 0.05),
-                width: 0.5,
-              ),
+              borderSide: BorderSide(color: context.sketch.ink, width: 2),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

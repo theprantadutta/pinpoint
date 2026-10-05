@@ -1,9 +1,11 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../colors.dart';
+import '../spacing.dart';
 import '../theme.dart';
-import '../elevations.dart';
-import '../animations.dart';
+import '../typography.dart';
+import 'sketch/circle_icon_button.dart';
 
 /// GlassAppBar - Frosted toolbar with scroll-aware blur
 ///
@@ -91,26 +93,41 @@ class _GlassAppBarState extends State<GlassAppBar> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final s = context.sketch;
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
 
-    // Flat Keep aesthetic: a solid app bar that matches the scaffold canvas so
-    // it blends into the background. A subtle hairline only appears once
-    // content scrolls under the bar, to separate it from the scrolling list.
+    // Sketchbook header: paper background, a circle back button, and a hairline
+    // only once content scrolls under it.
     return AppBar(
-      systemOverlayStyle: theme.brightness == Brightness.dark
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark,
       elevation: 0,
       scrolledUnderElevation: 0,
-      backgroundColor: widget.backgroundColor ?? theme.scaffoldBackgroundColor,
+      toolbarHeight: 60,
+      leadingWidth: 64,
+      backgroundColor: widget.backgroundColor ?? s.bg,
       surfaceTintColor: Colors.transparent,
       shape: _scrolledUnder
-          ? Border(bottom: BorderSide(color: theme.dividerColor, width: 0.5))
+          ? Border(
+              bottom:
+                  BorderSide(color: s.hairline, width: SketchStroke.outline))
           : null,
       centerTitle: widget.centerTitle,
-      leading: widget.leading,
-      title: widget.title,
-      actions: widget.actions,
+      automaticallyImplyLeading: false,
+      leading: widget.leading ??
+          (canPop
+              ? Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 18),
+                  child: CircleIconButton.back(context),
+                )
+              : null),
+      titleSpacing: canPop || widget.leading != null ? 4 : 20,
+      title: widget.title == null
+          ? null
+          : DefaultTextStyle.merge(
+              style: context.type.sheetTitle.copyWith(fontSize: 24),
+              child: IconTheme.merge(
+                  data: IconThemeData(color: s.ink), child: widget.title!),
+            ),
+      actions: [...?widget.actions, const SizedBox(width: 12)],
       bottom: widget.bottom,
     );
   }
@@ -215,45 +232,18 @@ class GlassContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final glassSurface = theme.glassSurface;
-    final motionSettings = MotionSettings.fromMediaQuery(context);
-
-    final effectiveBlur = motionSettings.reduceMotion
-        ? 0.0
-        : (blurAmount ?? glassSurface.blurAmount);
-
+    final s = context.sketch;
+    // No glass: an opaque surface with the standard outline.
     return Container(
       margin: margin,
+      padding: padding,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius ?? 14),
-        boxShadow: PinpointElevations.md(theme.brightness),
+        color: backgroundColor ?? s.surface,
+        border: border ??
+            Border.all(color: s.outline, width: SketchStroke.outline),
+        borderRadius: BorderRadius.circular(borderRadius ?? SketchRadius.card),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius ?? 14),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: effectiveBlur,
-            sigmaY: effectiveBlur,
-          ),
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              color: backgroundColor ??
-                  glassSurface.overlayColor.withValues(
-                    alpha: glassSurface.opacity,
-                  ),
-              border: border ??
-                  Border.all(
-                    color: glassSurface.borderColor,
-                    width: 1,
-                  ),
-              borderRadius: BorderRadius.circular(borderRadius ?? 14),
-            ),
-            child: child,
-          ),
-        ),
-      ),
+      child: child,
     );
   }
 }

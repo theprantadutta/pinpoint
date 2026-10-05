@@ -3321,5 +3321,28 @@
   "displayUnknownRate": "Checking…",
   "@displayUnknownRate": {
     "description": "Shown in place of a refresh-rate number while the platform has not reported one yet."
+  },
+  "noteCardPinned": "Pinned",
+  "@noteCardPinned": {
+    "description": "Small outlined pill on a note card in the notes grid, marking the note as pinned to the top."
+  },
+  "noteCardVoice": "Voice · {duration}",
+  "@noteCardVoice": {
+    "description": "Caption under the waveform on a voice-note card in the notes grid. {duration} is the recording length, e.g. '0:42'.",
+    "placeholders": {
+      "duration": {
+        "type": "String",
+        "example": "0:42"
+      }
+    }
+  },
+  "noteCardMoreItems": "{count, plural, =1{+1 more item} other{+{count} more items}}",
+  "@noteCardMoreItems": {
+    "description": "Muted line at the bottom of a checklist note card in the notes grid, counting checklist items that did not fit in the preview.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

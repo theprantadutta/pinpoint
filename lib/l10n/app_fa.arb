@@ -738,5 +738,8 @@
       }
     }
   },
-  "displayUnknownRate": "در حال بررسی…"
+  "displayUnknownRate": "در حال بررسی…",
+  "noteCardPinned": "سنجاق‌شده",
+  "noteCardVoice": "صدا · {duration}",
+  "noteCardMoreItems": "{count, plural, other{+{count} مورد دیگر}}"
 }

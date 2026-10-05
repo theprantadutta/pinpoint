@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../colors.dart';
-import '../theme.dart';
+import '../spacing.dart';
 import '../typography.dart';
-import '../animations.dart';
+import 'sketch/sketch_chip.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// TagChip - Animated chip component for tags
@@ -39,197 +39,49 @@ class TagChip extends StatefulWidget {
   State<TagChip> createState() => _TagChipState();
 }
 
-class _TagChipState extends State<TagChip> with SingleTickerProviderStateMixin {
-  bool _isHovered = false;
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: PinpointAnimations.microInteraction.duration,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: PinpointAnimations.microInteraction.curve,
-      ),
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOut,
-      ),
-    );
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _animateRemove() async {
-    await _animationController.reverse();
-    if (widget.onClose != null) {
-      widget.onClose!();
-    }
-  }
-
+class _TagChipState extends State<TagChip> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final tagStyle = theme.tagStyle;
-    final motionSettings = MotionSettings.fromMediaQuery(context);
-
-    final tagColors = widget.color != null
-        ? _getColorsFromColor(widget.color!)
-        : TagColors.getPreset(0);
-
-    // Calculate padding based on size
-    final padding = _getPadding();
-    final fontSize = _getFontSize();
-    final iconSize = _getIconSize();
-
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() => _isHovered = false),
-          child: GestureDetector(
-            onTap: widget.onTap != null
-                ? () {
-                    PinpointHaptics.selection();
-                    widget.onTap!();
-                  }
-                : null,
-            child: Semantics(
-              label: AppL10n.of(context).a11yTagLabel(widget.label),
-              button: widget.onTap != null,
-              selected: widget.isSelected,
-              child: AnimatedContainer(
-                duration: motionSettings.getDuration(PinpointAnimations.fast),
-                curve: motionSettings.getCurve(PinpointAnimations.sharp),
-                padding: padding,
-                decoration: BoxDecoration(
-                  color: widget.isSelected
-                      ? tagColors.foreground.withValues(alpha: 0.15)
-                      : tagColors.background,
-                  border: Border.all(
-                    color: widget.isSelected || _isHovered
-                        ? tagColors.foreground
-                        : tagColors.border.withValues(alpha: 0.3),
-                    width: widget.isSelected ? 2 : 1,
-                  ),
-                  borderRadius: tagStyle.borderRadius,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Emoji or color dot
-                    if (widget.emoji != null)
-                      Padding(
-                        padding: const EdgeInsetsDirectional.only(end: 6),
-                        child: Text(
-                          widget.emoji!,
-                          style: TextStyle(fontSize: fontSize),
-                        ),
-                      )
-                    else
-                      Padding(
-                        padding: const EdgeInsetsDirectional.only(end: 6),
-                        child: Container(
-                          width: fontSize * 0.7,
-                          height: fontSize * 0.7,
-                          decoration: BoxDecoration(
-                            color: tagColors.foreground,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-
-                    // Label
-                    Text(
-                      widget.label,
-                      style: PinpointTypography.tagChip(
-                        brightness: theme.brightness,
-                        color: tagColors.foreground,
-                      ).copyWith(fontSize: fontSize),
-                    ),
-
-                    // Close button
-                    if (widget.showClose) ...[
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {
-                          PinpointHaptics.light();
-                          _animateRemove();
-                        },
-                        child: Icon(
-                          Icons.close_rounded,
-                          size: iconSize,
-                          color: tagColors.foreground,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+    final s = context.sketch;
+    final pad = switch (widget.size) {
+      TagChipSize.small =>
+        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      TagChipSize.medium => const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      TagChipSize.large =>
+        const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    };
+    return SketchChip(
+      label: widget.label,
+      selected: widget.isSelected,
+      // A coloured tag selects to its pastel; otherwise to the inverse pill.
+      pastel: widget.color == null ? null : _pastelFor(widget.color!),
+      onTap: widget.onTap,
+      padding: pad,
+      leading: widget.emoji == null ? null : Text(widget.emoji!),
+      trailing: widget.showClose
+          ? Semantics(
+              label: AppL10n.of(context).dsClear,
+              button: true,
+              child: GestureDetector(
+                onTap: widget.onClose,
+                child: Icon(Icons.close_rounded,
+                    size: 14,
+                    color: widget.isSelected ? null : s.muted),
               ),
-            ),
-          ),
-        ),
-      ),
+            )
+          : null,
     );
   }
 
-  EdgeInsets _getPadding() {
-    switch (widget.size) {
-      case TagChipSize.small:
-        return const EdgeInsets.symmetric(horizontal: 8, vertical: 4);
-      case TagChipSize.medium:
-        return const EdgeInsets.symmetric(horizontal: 12, vertical: 6);
-      case TagChipSize.large:
-        return const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
-    }
-  }
-
-  double _getFontSize() {
-    switch (widget.size) {
-      case TagChipSize.small:
-        return 10;
-      case TagChipSize.medium:
-        return 12;
-      case TagChipSize.large:
-        return 14;
-    }
-  }
-
-  double _getIconSize() {
-    switch (widget.size) {
-      case TagChipSize.small:
-        return 14;
-      case TagChipSize.medium:
-        return 16;
-      case TagChipSize.large:
-        return 18;
-    }
-  }
-
-  TagColors _getColorsFromColor(Color color) {
-    return TagColors(
-      background: color.withValues(alpha: 0.15),
-      foreground: color,
-      border: color,
-    );
+  /// Snap an arbitrary colour to the nearest Sketchbook pastel by hue.
+  static Color _pastelFor(Color c) {
+    if (SketchPastels.roundRobin.contains(c)) return c;
+    final h = HSLColor.fromColor(c).hue;
+    if (h < 25 || h >= 330) return SketchPastels.pink;
+    if (h < 75) return SketchPastels.yellow;
+    if (h < 170) return SketchPastels.mint;
+    if (h < 230) return SketchPastels.sky;
+    return SketchPastels.lavender;
   }
 }
 
@@ -277,18 +129,16 @@ class _TagInputFieldState extends State<TagInputField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final tagStyle = theme.tagStyle;
+    final s = context.sketch;
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: s.surface,
         border: Border.all(
-          color: _focusNode.hasFocus
-              ? theme.colorScheme.primary
-              : theme.colorScheme.outline,
-          width: _focusNode.hasFocus ? 2 : 1,
+          color: s.outline,
+          width: _focusNode.hasFocus ? 2 : SketchStroke.outline,
         ),
-        borderRadius: tagStyle.borderRadius,
+        borderRadius: BorderRadius.circular(999),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
@@ -305,13 +155,14 @@ class _TagInputFieldState extends State<TagInputField> {
               focusNode: _focusNode,
               decoration: InputDecoration(
                 hintText: widget.hint ?? AppL10n.of(context).dsAddTagHint,
+                filled: false,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
               ),
-              style: PinpointTypography.tagChip(
-                brightness: theme.brightness,
-              ),
+              style: context.type.chip,
               onSubmitted: (_) => _submit(),
             ),
           ),

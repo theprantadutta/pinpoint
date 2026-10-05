@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
-import '../theme.dart';
-import '../typography.dart';
-import '../animations.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
+
+import '../colors.dart';
+import '../spacing.dart';
+import '../typography.dart';
+import 'sketch/checklist_row.dart';
+import 'sketch/sketch_card.dart';
+import 'sketch/sketch_chip.dart';
+import 'sketch/sticker_tile.dart';
 
 /// A single checklist line shown in a note card preview.
 class NoteChecklistItem {
@@ -11,17 +16,20 @@ class NoteChecklistItem {
   const NoteChecklistItem({required this.label, this.isDone = false});
 }
 
-/// NoteCard — borderless, flat, Google-Keep-style note tile.
+/// The Sketchbook note card. Its look follows the note:
 ///
-/// Clean by design: no inline pin/star buttons, no type badges, no accent bars,
-/// no timestamps. Separation comes from surface contrast + spacing (dark) or a
-/// hairline outline (light). A note may show a body excerpt OR a checklist
-/// preview, optionally on a colored background.
-class NoteCard extends StatefulWidget {
+/// - **text**: outlined surface card, title 15/700, up to a few muted lines
+/// - **coloured**: the same on the note's pastel, ink text in both themes
+/// - **pinned + short leading token** ("221B"): the token as a 40/800 display
+///   number, the rest as a 12/500 line, and a "Pinned" pill
+/// - **checklist**: open items with 12px boxes, then done items in mint
+/// - **voice**: a mint card with a waveform and "Voice · 0:42"
+/// - **reminder**: a lavender chip with the time at the top
+class NoteCard extends StatelessWidget {
   final String title;
   final String? excerpt;
   final List<CardNoteTag>? tags;
-  final DateTime? lastModified; // kept for API compat; not rendered (Keep-style)
+  final DateTime? lastModified; // kept for API compat; not rendered
   final bool isPinned;
   final bool isStarred; // kept for API compat
   final bool isSelected;
@@ -34,19 +42,24 @@ class NoteCard extends StatefulWidget {
   /// Display hint: 'text', 'todo', 'voice', 'reminder'.
   final String? noteType;
 
-  /// Todo summary (kept for API compat / fallback).
+  /// Todo summary (fallback when [checklist] is absent).
   final int? totalTasks;
   final int? completedTasks;
 
-  /// Optional checklist preview (Keep-style). When provided, shows unchecked
-  /// items then a "+N checked items" summary.
+  /// Optional checklist preview.
   final List<NoteChecklistItem>? checklist;
 
   /// Voice note duration label (e.g. "0:42").
   final String? voiceDuration;
 
-  /// Optional note background color (resolved swatch). Null → theme card color.
+  /// The note's pastel (resolved swatch). Null → surface card.
   final Color? backgroundColor;
+
+  /// Localized reminder time ("Today, 6:00 PM"), shown as a lavender chip.
+  final String? reminderLabel;
+
+  /// Dim the card (archive / trash lists).
+  final bool muted;
 
   const NoteCard({
     super.key,
@@ -68,302 +81,332 @@ class NoteCard extends StatefulWidget {
     this.checklist,
     this.voiceDuration,
     this.backgroundColor,
+    this.reminderLabel,
+    this.muted = false,
   });
 
-  @override
-  State<NoteCard> createState() => _NoteCardState();
-}
+  /// A short leading token worth showing big: up to 6 characters, at least
+  /// one digit, on its own first line ("221B", "42", "9:30").
+  static ({String token, String rest})? displayToken(String? excerpt) {
+    if (excerpt == null) return null;
+    final lines = excerpt
+        .trim()
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+    if (lines.isEmpty) return null;
+    bool isToken(String w) => w.length <= 6 && w.contains(RegExp(r'\d'));
 
-class _NoteCardState extends State<NoteCard> {
-  bool _isPressed = false;
-  bool _isHovered = false;
+    final first = lines.first;
+    if (isToken(first)) return (token: first, rest: lines.skip(1).join(' '));
+    final words = first.split(RegExp(r'\s+'));
+    if (words.length > 1 && isToken(words.first)) {
+      return (
+        token: words.first,
+        rest: [words.skip(1).join(' '), ...lines.skip(1)].join(' '),
+      );
+    }
+    return null;
+  }
+
+  /// Turns markdown-ish bullets into "•" so a card preview reads cleanly.
+  static String previewText(String text) => text
+      .split('\n')
+      .map((l) {
+        final m = RegExp(r'^\s*(?:[-*+]|\d+\.)\s+(?:\[[ xX]\]\s*)?(.*)$')
+            .firstMatch(l);
+        if (m != null) return '• ${m.group(1)}';
+        return l.replaceFirst(RegExp(r'^#{1,6}\s+'), '');
+      })
+      .where((l) => l.trim().isNotEmpty)
+      .join('\n');
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final listItemStyle = theme.listItemStyle;
-    final motionSettings = MotionSettings.fromMediaQuery(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final s = context.sketch;
+    final l10n = AppL10n.of(context);
+    final isVoice = noteType == 'voice';
 
-    final baseColor = widget.backgroundColor ?? listItemStyle.backgroundColor;
+    // Voice notes default to mint; everything else to the surface.
+    final pastel = backgroundColor ?? (isVoice ? SketchPastels.mint : null);
+    final onPastel = pastel != null;
+    final hasTitle = title.trim().isNotEmpty;
+    final token = isPinned && onPastel ? displayToken(excerpt) : null;
 
-    // Resolve background per interaction state.
-    Color backgroundColor = baseColor;
-    if (_isPressed) {
-      backgroundColor = Color.alphaBlend(
-        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
-        baseColor,
-      );
-    } else if (_isHovered) {
-      backgroundColor = Color.alphaBlend(
-        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.03),
-        baseColor,
-      );
+    final children = <Widget>[];
+
+    if (reminderLabel != null) {
+      children.add(Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: SketchTag(
+          label: reminderLabel!,
+          pastel: SketchPastels.lavender,
+          icon: Icons.alarm_rounded,
+        ),
+      ));
     }
 
-    // Border: selection ring > colored-note hairline > light-mode hairline.
-    Color borderColor;
-    double borderWidth;
-    if (widget.isSelected) {
-      borderColor = cs.primary;
-      borderWidth = 2;
-    } else if (widget.backgroundColor != null) {
-      // Colored notes get a faint matching outline so they read as a tile.
-      borderColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06);
-      borderWidth = 1;
-    } else if (!isDark) {
-      borderColor = listItemStyle.borderColor; // hairline in light mode
-      borderWidth = 1;
+    if (thumbnail != null) {
+      children.add(ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: double.infinity,
+          height: 120,
+          child: FittedBox(
+              fit: BoxFit.cover, clipBehavior: Clip.hardEdge, child: thumbnail),
+        ),
+      ));
+    }
+
+    if (token != null) {
+      children.addAll(_featured(context, token, hasTitle));
     } else {
-      borderColor = Colors.transparent; // borderless in dark
-      borderWidth = 1;
+      if (hasTitle) children.add(_title(context, onPastel));
+      final body = _body(context, onPastel, hasTitle);
+      if (body != null) children.add(body);
+      if (isPinned) {
+        children.add(Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: SketchTag(label: l10n.noteCardPinned),
+        ));
+      }
     }
 
-    final hasTitle = widget.title.trim().isNotEmpty;
+    if (tags != null && tags!.isNotEmpty) {
+      children.add(Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          for (final tag in tags!.take(3)) SketchTag(label: tag.label),
+        ],
+      ));
+    }
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: () {
-          if (widget.onTap != null) {
-            PinpointHaptics.light();
-            widget.onTap!();
-          }
-        },
-        onLongPress: () {
-          if (widget.onLongPress != null) {
-            PinpointHaptics.medium();
-            widget.onLongPress!();
-          }
-        },
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
-        child: Semantics(
-          label: AppL10n.of(context).a11yNoteLabel(widget.title),
-          button: true,
-          selected: widget.isSelected,
-          child: AnimatedContainer(
-            duration: motionSettings.getDuration(PinpointAnimations.fast),
-            curve: motionSettings.getCurve(PinpointAnimations.sharp),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: borderColor, width: borderWidth),
-            ),
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Thumbnail (e.g. attached image) above content.
-                if (widget.thumbnail != null) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 120,
-                      child: FittedBox(
-                        fit: BoxFit.cover,
-                        clipBehavior: Clip.hardEdge,
-                        child: widget.thumbnail,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-
-                // Title + subtle pin indicator (no button).
-                if (hasTitle)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.title,
-                          style: PinpointTypography.noteCardTitle(
-                            brightness: theme.brightness,
-                          ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (widget.isPinned) ...[
-                        const SizedBox(width: 6),
-                        Icon(Icons.push_pin,
-                            size: 16, color: cs.onSurfaceVariant),
-                      ],
-                    ],
-                  ),
-
-                // Body / checklist / voice.
-                _buildBody(context, theme, cs, hasTitle),
-
-                // Label chips at the bottom (Keep-style).
-                if (widget.tags != null && widget.tags!.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: widget.tags!
-                        .take(3)
-                        .map((tag) => _LabelChip(label: tag.label))
-                        .toList(),
-                  ),
-                ],
-              ],
-            ),
-          ),
+    final card = SketchCard(
+      pastel: pastel,
+      padding: const EdgeInsets.all(SketchSpace.cardPad),
+      borderWidth: isSelected ? 3 : null,
+      onTap: onTap,
+      onLongPress: onLongPress,
+      selected: isSelected,
+      semanticLabel: l10n.a11yNoteLabel(hasTitle ? title : l10n.dsEmptyNote),
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0) const SizedBox(height: 8),
+              children[i],
+            ],
+          ],
         ),
       ),
     );
+
+    final sized = isSelected
+        ? Stack(
+            clipBehavior: Clip.none,
+            children: [
+              card,
+              PositionedDirectional(
+                top: -6,
+                end: -6,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: s.inverse,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.check_rounded, size: 16, color: s.onInverse),
+                ),
+              ),
+            ],
+          )
+        : card;
+
+    return muted ? Opacity(opacity: 0.7, child: sized) : sized;
   }
 
-  Widget _buildBody(
-      BuildContext context, ThemeData theme, ColorScheme cs, bool hasTitle) {
-    final topGap = hasTitle ? const SizedBox(height: 8) : const SizedBox.shrink();
+  Widget _title(BuildContext context, bool onPastel) {
+    return Text(
+      title,
+      style: context.type.cardTitle
+          .copyWith(color: onPastel ? SketchPastels.onPastel : null),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  List<Widget> _featured(BuildContext context,
+      ({String token, String rest}) token, bool hasTitle) {
+    final t = context.type;
+    const ink = SketchPastels.onPastel;
+    return [
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              hasTitle ? title : '',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: t.chip.copyWith(fontWeight: FontWeight.w700, color: ink),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 8,
+            height: 8,
+            decoration:
+                const BoxDecoration(color: ink, shape: BoxShape.circle),
+          ),
+        ],
+      ),
+      Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(token.token,
+              maxLines: 1, style: t.displayNumber.copyWith(color: ink)),
+        ),
+      ),
+      if (token.rest.isNotEmpty)
+        Text(token.rest,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: t.caption.copyWith(color: ink)),
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: SketchTag(label: AppL10n.of(context).noteCardPinned),
+      ),
+    ];
+  }
+
+  Widget? _body(BuildContext context, bool onPastel, bool hasTitle) {
+    final s = context.sketch;
+    final t = context.type;
+    final l10n = AppL10n.of(context);
+    final mutedColor = onPastel
+        ? SketchPastels.onPastel.withValues(alpha: 0.72)
+        : s.muted;
 
     // Checklist preview.
-    if (widget.checklist != null && widget.checklist!.isNotEmpty) {
-      final items = widget.checklist!;
-      final unchecked = items.where((i) => !i.isDone).toList();
-      final checkedCount = items.length - unchecked.length;
-      final shown = unchecked.take(7).toList();
-      final hiddenUnchecked = unchecked.length - shown.length;
-
+    final items = checklist;
+    if (items != null && items.isNotEmpty) {
+      final open = items.where((i) => !i.isDone).toList();
+      final done = items.where((i) => i.isDone).toList();
+      const maxShown = 4;
+      final shown = [...open, ...done].take(maxShown).toList();
+      final hidden = items.length - shown.length;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          topGap,
-          ...shown.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.check_box_outline_blank,
-                        size: 18, color: cs.onSurfaceVariant),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        item.label,
-                        style: PinpointTypography.noteCardExcerpt(
-                          brightness: theme.brightness,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-          if (hiddenUnchecked > 0)
-            _summaryLine(theme, cs, '+ $hiddenUnchecked more items'),
-          if (checkedCount > 0)
-            _summaryLine(theme, cs, '+ $checkedCount checked items'),
+          for (final item in shown)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: ChecklistPreviewLine(
+                label: item.label,
+                checked: item.isDone,
+                onPastel: onPastel,
+              ),
+            ),
+          if (hidden > 0)
+            Text(l10n.noteCardMoreItems(hidden),
+                style: t.caption.copyWith(color: mutedColor)),
         ],
       );
     }
 
-    // Voice note row.
-    if (widget.noteType == 'voice' && widget.voiceDuration != null) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.play_circle_outline, size: 20, color: cs.primary),
-            const SizedBox(width: 8),
-            Text(
-              widget.voiceDuration!,
-              style: TextStyle(
-                fontSize: 13,
+    if (noteType == 'voice' && voiceDuration != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Waveform(seed: title.hashCode),
+          const SizedBox(height: 10),
+          Text(
+            l10n.noteCardVoice(voiceDuration!),
+            style: t.caption.copyWith(
                 fontWeight: FontWeight.w600,
-                color: cs.onSurfaceVariant,
+                color: onPastel ? SketchPastels.onPastel : s.ink),
+          ),
+        ],
+      );
+    }
+
+    if (excerpt != null && excerpt!.trim().isNotEmpty) {
+      return Text(
+        previewText(excerpt!),
+        style: t.caption.copyWith(height: 1.5, color: mutedColor),
+        maxLines: hasTitle ? 6 : 10,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    if (!hasTitle) {
+      return Text(
+        l10n.dsEmptyNote,
+        style: t.caption
+            .copyWith(fontStyle: FontStyle.italic, color: mutedColor),
+      );
+    }
+    return null;
+  }
+}
+
+/// A decorative waveform: 3px bars, the "played" part in ink and the rest at
+/// 35%. Bar heights are derived from [seed] so a note always draws the same
+/// shape.
+class _Waveform extends StatelessWidget {
+  const _Waveform({required this.seed});
+
+  final int seed;
+
+  @override
+  Widget build(BuildContext context) {
+    const heights = <double>[10, 20, 14, 24, 9, 17, 12, 20, 15, 22, 11, 18];
+    final offset = seed.abs() % heights.length;
+    return SizedBox(
+      height: 24,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          for (var i = 0; i < 10; i++) ...[
+            if (i > 0) const SizedBox(width: 3),
+            Container(
+              width: 3,
+              height: heights[(i + offset) % heights.length],
+              decoration: BoxDecoration(
+                color: SketchPastels.onPastel
+                    .withValues(alpha: i < 5 ? 1 : 0.35),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
           ],
-        ),
-      );
-    }
-
-    // Plain body excerpt.
-    if (widget.excerpt != null && widget.excerpt!.trim().isNotEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          topGap,
-          Text(
-            widget.excerpt!,
-            style: PinpointTypography.noteCardExcerpt(
-              brightness: theme.brightness,
-            ),
-            maxLines: hasTitle ? 8 : 12,
-            overflow: TextOverflow.ellipsis,
-          ),
         ],
-      );
-    }
-
-    // Empty note (no title, no body).
-    if (!hasTitle) {
-      return Text(
-        AppL10n.of(context).dsEmptyNote,
-        style: PinpointTypography.noteCardExcerpt(
-          brightness: theme.brightness,
-        ).copyWith(
-          fontStyle: FontStyle.italic,
-          color: cs.onSurfaceVariant,
-        ),
-      );
-    }
-
-    return const SizedBox.shrink();
-  }
-
-  Widget _summaryLine(ThemeData theme, ColorScheme cs, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: cs.onSurfaceVariant,
-        ),
       ),
     );
   }
 }
 
-/// Small label/folder chip rendered at the bottom of a card.
-class _LabelChip extends StatelessWidget {
-  final String label;
-  const _LabelChip({required this.label});
+/// A small sticker shown on a card (26px, −8°).
+class NoteCardSticker extends StatelessWidget {
+  const NoteCardSticker({super.key, required this.glyph, this.color});
+
+  final String glyph;
+  final Color? color;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          color: cs.onSurfaceVariant,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => StickerTile(
+        color: color ?? context.sketch.highlight,
+        size: 26,
+        angle: -8,
+        glyph: glyph,
+        shadowOffset: 0,
+        radiusFactor: 0.31,
+      );
 }
 
 /// Note tag data model for card display.
