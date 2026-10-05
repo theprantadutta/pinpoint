@@ -8,6 +8,7 @@ import '../components/home_screen/home_screen_recent_notes.dart';
 import '../models/note_with_details.dart';
 import '../screen_arguments/create_note_screen_arguments.dart';
 import '../screens/create_note_screen_v2.dart';
+import '../dev/demo_seed.dart';
 import '../navigation/new_note.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
@@ -61,6 +62,9 @@ class _HomeScreenState extends State<HomeScreen>
   /// All operations run in parallel for maximum speed
   Future<void> _initializeAuthenticatedServices() async {
     debugPrint('🚀 [HomeScreen] Starting background initialization...');
+
+    // Debug-only demo content (needs --dart-define=PINPOINT_SEED_DEMO=true).
+    await DemoSeed.runOnceIfEnabled();
 
     // Run all background tasks in parallel for speed
     await Future.wait([
