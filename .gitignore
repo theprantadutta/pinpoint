@@ -75,3 +75,5 @@ firebase_admin_key.json
 # Per-developer Claude Code settings (tool permissions granted on this machine).
 # The shared .claude/settings.json, if one is ever added, stays tracked.
 .claude/settings.local.json
+# Agent git worktrees (local scratch checkouts, never part of the repo).
+.claude/worktrees/
