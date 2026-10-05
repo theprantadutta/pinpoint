@@ -52,31 +52,28 @@ class TodoListNoteService {
       final todoListNoteUuid = uuid.v4();
 
       // Create todo list note
-      final todoListNoteId =
-          await database.into(database.todoListNotesV2).insert(
-                TodoListNotesV2Companion(
-                  uuid: Value(todoListNoteUuid),
-                  title: Value(title),
-                  isPinned: Value(isPinned),
-                  isArchived: const Value(false),
-                  isDeleted: const Value(false),
-                  isSynced: const Value(false), // Needs cloud sync
-                  createdAt: Value(now),
-                  updatedAt: Value(now),
-                ),
-              );
+      final todoListNoteId = await database.into(database.todoListNotesV2).insert(
+        TodoListNotesV2Companion(
+          uuid: Value(todoListNoteUuid),
+          title: Value(title),
+          isPinned: Value(isPinned),
+          isArchived: const Value(false),
+          isDeleted: const Value(false),
+          isSynced: const Value(false), // Needs cloud sync
+          createdAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
 
       // Link to folders
       await _linkToFolders(todoListNoteId, folders);
 
       // Create initial items if provided
       if (initialItems != null && initialItems.isNotEmpty) {
-        await _createInitialItems(
-            todoListNoteId, todoListNoteUuid, initialItems);
+        await _createInitialItems(todoListNoteId, todoListNoteUuid, initialItems);
       }
 
-      debugPrint(
-          '✅ [TodoListNoteService] Created todo list note: $todoListNoteId with ${folders.length} folders and ${initialItems?.length ?? 0} items');
+      debugPrint('✅ [TodoListNoteService] Created todo list note: $todoListNoteId with ${folders.length} folders and ${initialItems?.length ?? 0} items');
 
       // Trigger background sync
       _triggerBackgroundSync();
@@ -148,8 +145,7 @@ class TodoListNoteService {
         ),
       );
 
-      debugPrint(
-          '✅ [TodoListNoteService] Soft deleted todo list note: $noteId');
+      debugPrint('✅ [TodoListNoteService] Soft deleted todo list note: $noteId');
 
       // Trigger background sync
       _triggerBackgroundSync();
@@ -181,8 +177,7 @@ class TodoListNoteService {
       // Trigger background sync
       _triggerBackgroundSync();
     } catch (e, st) {
-      debugPrint(
-          '❌ [TodoListNoteService] Failed to restore todo list note: $e');
+      debugPrint('❌ [TodoListNoteService] Failed to restore todo list note: $e');
       debugPrint('Stack trace: $st');
       rethrow;
     }
@@ -208,11 +203,9 @@ class TodoListNoteService {
             ..where((t) => t.id.equals(noteId)))
           .go();
 
-      debugPrint(
-          '✅ [TodoListNoteService] Permanently deleted todo list note: $noteId');
+      debugPrint('✅ [TodoListNoteService] Permanently deleted todo list note: $noteId');
     } catch (e, st) {
-      debugPrint(
-          '❌ [TodoListNoteService] Failed to permanently delete todo list note: $e');
+      debugPrint('❌ [TodoListNoteService] Failed to permanently delete todo list note: $e');
       debugPrint('Stack trace: $st');
       rethrow;
     }
@@ -238,40 +231,31 @@ class TodoListNoteService {
     return (database.select(database.todoListNotesV2)
           ..where((t) => t.isDeleted.equals(false))
           ..orderBy([
-            (t) =>
-                OrderingTerm(expression: t.isPinned, mode: OrderingMode.desc),
-            (t) =>
-                OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc),
+            (t) => OrderingTerm(expression: t.isPinned, mode: OrderingMode.desc),
+            (t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc),
           ]))
         .watch();
   }
 
   /// Watch todo list notes by folder
-  static Stream<List<TodoListNoteEntity>> watchTodoListNotesByFolder(
-      int folderId) {
+  static Stream<List<TodoListNoteEntity>> watchTodoListNotesByFolder(int folderId) {
     final database = getIt<AppDatabase>();
 
     // Join with folder relations to filter by folder
     final query = database.select(database.todoListNotesV2).join([
       innerJoin(
         database.todoListNoteFolderRelationsV2,
-        database.todoListNoteFolderRelationsV2.todoListNoteId
-            .equalsExp(database.todoListNotesV2.id),
+        database.todoListNoteFolderRelationsV2.todoListNoteId.equalsExp(database.todoListNotesV2.id),
       ),
     ])
       ..where(database.todoListNoteFolderRelationsV2.folderId.equals(folderId))
       ..where(database.todoListNotesV2.isDeleted.equals(false))
       ..orderBy([
-        OrderingTerm(
-            expression: database.todoListNotesV2.isPinned,
-            mode: OrderingMode.desc),
-        OrderingTerm(
-            expression: database.todoListNotesV2.updatedAt,
-            mode: OrderingMode.desc),
+        OrderingTerm(expression: database.todoListNotesV2.isPinned, mode: OrderingMode.desc),
+        OrderingTerm(expression: database.todoListNotesV2.updatedAt, mode: OrderingMode.desc),
       ]);
 
-    return query.watch().map((rows) =>
-        rows.map((row) => row.readTable(database.todoListNotesV2)).toList());
+    return query.watch().map((rows) => rows.map((row) => row.readTable(database.todoListNotesV2)).toList());
   }
 
   // ==================== TODO ITEM OPERATIONS ====================
@@ -296,24 +280,23 @@ class TodoListNoteService {
       final index = orderIndex ?? await _nextOrderIndex(todoListNoteId);
 
       final itemId = await database.into(database.todoItemsV2).insert(
-            TodoItemsV2Companion(
-              uuid: Value(uuid.v4()),
-              todoListNoteId: Value(todoListNoteId),
-              todoListNoteUuid: Value(todoListNoteUuid),
-              content: Value(content),
-              isCompleted: Value(isCompleted),
-              orderIndex: Value(index),
-              isSynced: const Value(false), // Needs cloud sync
-              createdAt: Value(now),
-              updatedAt: Value(now),
-            ),
-          );
+        TodoItemsV2Companion(
+          uuid: Value(uuid.v4()),
+          todoListNoteId: Value(todoListNoteId),
+          todoListNoteUuid: Value(todoListNoteUuid),
+          content: Value(content),
+          isCompleted: Value(isCompleted),
+          orderIndex: Value(index),
+          isSynced: const Value(false), // Needs cloud sync
+          createdAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
 
       // Mark parent todo list as needing sync
       await _markTodoListForSync(todoListNoteId);
 
-      debugPrint(
-          '✅ [TodoListNoteService] Added todo item: $itemId to list: $todoListNoteId');
+      debugPrint('✅ [TodoListNoteService] Added todo item: $itemId to list: $todoListNoteId');
       return itemId;
     } catch (e, st) {
       debugPrint('❌ [TodoListNoteService] Failed to add todo item: $e');
@@ -335,8 +318,7 @@ class TodoListNoteService {
       // Build update companion
       final companion = TodoItemsV2Companion(
         content: content != null ? Value(content) : const Value.absent(),
-        isCompleted:
-            isCompleted != null ? Value(isCompleted) : const Value.absent(),
+        isCompleted: isCompleted != null ? Value(isCompleted) : const Value.absent(),
         isSynced: const Value(false), // Mark for sync
         updatedAt: Value(now),
       );
@@ -391,8 +373,7 @@ class TodoListNoteService {
       // Mark parent todo list for sync
       await _markTodoListForSync(item.todoListNoteId);
 
-      debugPrint(
-          '✅ [TodoListNoteService] Toggled todo item completion: $itemId to ${!item.isCompleted}');
+      debugPrint('✅ [TodoListNoteService] Toggled todo item completion: $itemId to ${!item.isCompleted}');
     } catch (e, st) {
       debugPrint('❌ [TodoListNoteService] Failed to toggle todo item: $e');
       debugPrint('Stack trace: $st');
@@ -437,10 +418,8 @@ class TodoListNoteService {
     return (database.select(database.todoItemsV2)
           ..where((t) => t.todoListNoteId.equals(todoListNoteId))
           ..orderBy([
-            (t) =>
-                OrderingTerm(expression: t.orderIndex, mode: OrderingMode.asc),
-            (t) =>
-                OrderingTerm(expression: t.createdAt, mode: OrderingMode.asc),
+            (t) => OrderingTerm(expression: t.orderIndex, mode: OrderingMode.asc),
+            (t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.asc),
             (t) => OrderingTerm(expression: t.id, mode: OrderingMode.asc),
           ]))
         .watch();
@@ -491,8 +470,7 @@ class TodoListNoteService {
   // ==================== PRIVATE HELPER METHODS ====================
 
   /// Link todo list note to folders
-  static Future<void> _linkToFolders(
-      int todoListNoteId, List<NoteFolderDto> foldersRequested) async {
+  static Future<void> _linkToFolders(int todoListNoteId, List<NoteFolderDto> foldersRequested) async {
     final database = getIt<AppDatabase>();
     // A folder deleted since the picker was built would now fail the whole
     // save on a foreign key rather than quietly dropping the link.
@@ -514,8 +492,7 @@ class TodoListNoteService {
   }
 
   /// Update folder relations for a todo list note
-  static Future<void> _updateFolderRelations(
-      int todoListNoteId, List<NoteFolderDto> folders) async {
+  static Future<void> _updateFolderRelations(int todoListNoteId, List<NoteFolderDto> folders) async {
     final database = getIt<AppDatabase>();
 
     await database.transaction(() async {
@@ -530,8 +507,7 @@ class TodoListNoteService {
   }
 
   /// Create initial todo items
-  static Future<void> _createInitialItems(
-      int todoListNoteId, String todoListNoteUuid, List<String> items) async {
+  static Future<void> _createInitialItems(int todoListNoteId, String todoListNoteUuid, List<String> items) async {
     final database = getIt<AppDatabase>();
     final now = DateTime.now();
     const uuid = Uuid();
