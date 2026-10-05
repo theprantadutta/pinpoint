@@ -8,6 +8,9 @@ const kBiometricKey = 'biometric_key';
 const String kSelectedFontKey = 'selected-font-key';
 // Display → "Background doodles" (Sketchbook marker swooshes). Default on.
 const kDoodlesEnabledKey = 'doodles_enabled';
+// Last local change to the synced appearance prefs (UTC ms) — the
+// last-write-wins clock for /users/me/preferences.
+const kAppearanceUpdatedAtKey = 'appearance_updated_at';
 
 // language / locale key. Stores a BCP-47 tag ('es', 'pt_BR', ...) or is absent
 // to mean "follow the system locale".

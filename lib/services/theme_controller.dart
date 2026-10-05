@@ -23,6 +23,11 @@ class ThemeController extends ChangeNotifier {
   String _fontFamily = PinpointTypography.primaryFontFamily;
   bool _loaded = false;
 
+  /// When the synced appearance fields (mode, accent, font, doodles) last
+  /// changed on this device — the last-write-wins clock for preference sync.
+  DateTime? _appearanceUpdatedAt;
+  bool _applyingRemote = false;
+
   ThemeMode get mode => _mode;
   /// The accent; it only picks the highlight pastel (see [SketchAccent]).
   SketchAccent get accent => _accent;
@@ -33,6 +38,52 @@ class ThemeController extends ChangeNotifier {
   bool get doodlesEnabled => _doodlesEnabled;
   String get fontFamily => _fontFamily;
   bool get isLoaded => _loaded;
+
+  DateTime? get appearanceUpdatedAt => _appearanceUpdatedAt;
+
+  /// True while [applyRemote] is notifying, so a sync listener can tell a
+  /// change it caused from one the user made.
+  bool get isApplyingRemote => _applyingRemote;
+
+  Future<void> _touch(SharedPreferences prefs) async {
+    _appearanceUpdatedAt = DateTime.now().toUtc();
+    await prefs.setInt(kAppearanceUpdatedAtKey,
+        _appearanceUpdatedAt!.millisecondsSinceEpoch);
+  }
+
+  /// Applies preferences pulled from another device. Does not move the
+  /// local clock forward past [updatedAt], so it is not echoed back.
+  Future<void> applyRemote({
+    ThemeMode? mode,
+    SketchAccent? accent,
+    String? fontFamily,
+    bool? doodlesEnabled,
+    required DateTime updatedAt,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mode != null) {
+      _mode = mode;
+      await prefs.setString(kThemeModeKey, _modeToString(mode));
+    }
+    if (accent != null) {
+      _accent = accent;
+      await prefs.setInt(kAccentColorKey, accent.legacyColor.toARGB32());
+    }
+    if (fontFamily != null && fontFamily.isNotEmpty) {
+      _fontFamily = fontFamily;
+      await prefs.setString(kSelectedFontKey, fontFamily);
+    }
+    if (doodlesEnabled != null) {
+      _doodlesEnabled = doodlesEnabled;
+      await prefs.setBool(kDoodlesEnabledKey, doodlesEnabled);
+    }
+    _appearanceUpdatedAt = updatedAt.toUtc();
+    await prefs.setInt(kAppearanceUpdatedAtKey,
+        _appearanceUpdatedAt!.millisecondsSinceEpoch);
+    _applyingRemote = true;
+    notifyListeners();
+    _applyingRemote = false;
+  }
 
   /// Resolve the effective brightness for the current mode against the OS.
   Brightness effectiveBrightness(BuildContext context) {
@@ -70,6 +121,12 @@ class ThemeController extends ChangeNotifier {
     final doodles = prefs.getBool(kDoodlesEnabledKey);
     if (doodles != null) _doodlesEnabled = doodles;
 
+    final stamp = prefs.getInt(kAppearanceUpdatedAtKey);
+    if (stamp != null) {
+      _appearanceUpdatedAt =
+          DateTime.fromMillisecondsSinceEpoch(stamp, isUtc: true);
+    }
+
     final hc = prefs.getBool(kHighContrastKey);
     if (hc != null) _highContrast = hc;
 
@@ -86,6 +143,7 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(kThemeModeKey, _modeToString(mode));
+    await _touch(prefs);
     // Keep the legacy key roughly in sync for any old readers.
     if (mode != ThemeMode.system) {
       await prefs.setBool(kIsDarkModeKey, mode == ThemeMode.dark);
@@ -98,6 +156,7 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(kAccentColorKey, accent.legacyColor.toARGB32());
+    await _touch(prefs);
   }
 
   Future<void> setDoodlesEnabled(bool enabled) async {
@@ -106,6 +165,7 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(kDoodlesEnabledKey, enabled);
+    await _touch(prefs);
   }
 
   Future<void> setHighContrast(bool enabled) async {
@@ -122,6 +182,7 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(kSelectedFontKey, fontFamily);
+    await _touch(prefs);
   }
 
   /// Lowercase label for analytics (e.g. 'light' | 'dark' | 'system').
