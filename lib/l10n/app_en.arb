@@ -2465,9 +2465,9 @@
   "@obSkip": {
     "description": "Button that dismisses the onboarding."
   },
-  "obGetStarted": "Get Started",
+  "obGetStarted": "Get started",
   "@obGetStarted": {
-    "description": "Button on the final onboarding slide."
+    "description": "Primary button on the last onboarding page. Finishes onboarding and continues to the terms and sign-up."
   },
   "obNext": "Next",
   "@obNext": {
@@ -3593,5 +3593,161 @@
   "wtCreateBodyDock": "Tap the pen to start a note. Hold it to pick a checklist, voice note or reminder instead.",
   "@wtCreateBodyDock": {
     "description": "Walkthrough coach mark pointing at the pen button in the middle of the bottom dock."
+  },
+  "obSplashTagline": "Notes that stay yours.",
+  "@obSplashTagline": {
+    "description": "Tagline under the 'Pinpoint' brand name on the launch (splash) screen. 'Pinpoint' is the app name and is shown separately."
+  },
+  "obSplashUnlocking": "Unlocking your notes…",
+  "@obSplashUnlocking": {
+    "description": "Small caption on the launch (splash) screen, shown only when opening the encrypted notes takes longer than 1.5 seconds."
+  },
+  "obWriteTitle": "Write it down. [[Your way.]]",
+  "@obWriteTitle": {
+    "description": "Headline of onboarding page 1. The words inside [[ ]] get a yellow marker highlight: keep the [[ ]] around the 1–2 words that carry the emphasis in your language, and do not translate the brackets."
+  },
+  "obWriteBody": "Text, checklists, voice notes and reminders — all in one notebook.",
+  "@obWriteBody": {
+    "description": "Line under the headline of onboarding page 1, listing the kinds of notes the app supports."
+  },
+  "obOrganizedTitle": "Organized, [[without the effort.]]",
+  "@obOrganizedTitle": {
+    "description": "Headline of onboarding page 2. The words inside [[ ]] get a yellow marker highlight: keep the [[ ]] around the 1–3 emphasised words in your language, and do not translate the brackets."
+  },
+  "obOrganizedBody": "Pin what matters. Folders that hold a note in more than one place.",
+  "@obOrganizedBody": {
+    "description": "Line under the headline of onboarding page 2. A note can belong to several folders at once."
+  },
+  "obPrivateTitle": "Private [[by default.]]",
+  "@obPrivateTitle": {
+    "description": "Headline of onboarding page 3, about encryption. The words inside [[ ]] get a yellow marker highlight: keep the [[ ]] around the emphasised words in your language, and do not translate the brackets."
+  },
+  "obPrivateBody": "Encrypted on your device with AES-256. Turn on zero-knowledge mode and only your passphrase can unlock your notes.",
+  "@obPrivateBody": {
+    "description": "Line under the headline of onboarding page 3. Must stay accurate: notes are encrypted on the device; only the optional zero-knowledge mode keeps the key away from the server. 'AES-256' is a technical name, do not translate it. Use the same term for 'zero-knowledge mode' and 'passphrase' as the encryption settings screen."
+  },
+  "obPrivateFootnote": "Cloud voice recordings and reminder text are not end-to-end encrypted.",
+  "@obPrivateFootnote": {
+    "description": "Small honest caveat under the privacy text on onboarding page 3. Must stay accurate: voice recordings synced to the cloud and reminder text are readable by the server."
+  },
+  "obLogIn": "Log in",
+  "@obLogIn": {
+    "description": "Outline button on the last onboarding page for people who already have an account. Leads to the sign-in screen."
+  },
+  "obPageIndicator": "Page {current} of {total}",
+  "@obPageIndicator": {
+    "description": "Screen-reader label for the row of progress dots on the onboarding screens.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "1"
+      },
+      "total": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "obSampleFolder": "Ideas",
+  "@obSampleFolder": {
+    "description": "Sample folder name drawn in the onboarding illustration of a folder (decorative example, not real data)."
+  },
+  "obSampleNoteGroceries": "Groceries",
+  "@obSampleNoteGroceries": {
+    "description": "Sample note title drawn in the onboarding illustrations (decorative example, not real data)."
+  },
+  "obSampleNoteTrip": "Trip plan",
+  "@obSampleNoteTrip": {
+    "description": "Sample note title drawn in the onboarding folder illustration (decorative example, not real data)."
+  },
+  "obSampleNoteBooks": "Book list",
+  "@obSampleNoteBooks": {
+    "description": "Sample note title drawn in the onboarding folder illustration (decorative example, not real data)."
+  },
+  "obSampleNoteGifts": "Gift ideas",
+  "@obSampleNoteGifts": {
+    "description": "Sample note title drawn in the onboarding folder illustration (decorative example, not real data)."
+  },
+  "obWhatsNewTitle": "What's [[new]]",
+  "@obWhatsNewTitle": {
+    "description": "Title of the one-time 'What's new' sheet shown to existing users after the redesign. The words inside [[ ]] get a yellow marker highlight; keep the brackets around the emphasised word."
+  },
+  "obWhatsNewBody": "Pinpoint has a new look. Your notes are exactly where you left them.",
+  "@obWhatsNewBody": {
+    "description": "Line under the title of the one-time 'What's new' sheet. 'Pinpoint' is the app name, do not translate."
+  },
+  "obWhatsNewLookTitle": "Fresh new look",
+  "@obWhatsNewLookTitle": {
+    "description": "First row title in the one-time 'What's new' sheet: the app was redesigned."
+  },
+  "obWhatsNewLookBody": "Paper, ink outlines and pastel stickers.",
+  "@obWhatsNewLookBody": {
+    "description": "Subtitle of the 'Fresh new look' row in the 'What's new' sheet, describing the new visual style."
+  },
+  "obWhatsNewDarkTitle": "Dark mode that's actually dark",
+  "@obWhatsNewDarkTitle": {
+    "description": "Second row title in the 'What's new' sheet: the dark theme is now a true dark theme."
+  },
+  "obWhatsNewDarkBody": "A deep, warm black that's easy on your eyes at night.",
+  "@obWhatsNewDarkBody": {
+    "description": "Subtitle of the dark-mode row in the 'What's new' sheet."
+  },
+  "obWhatsNewFoldersTitle": "Color your folders",
+  "@obWhatsNewFoldersTitle": {
+    "description": "Third row title in the 'What's new' sheet: folders now each have a pastel color."
+  },
+  "obWhatsNewFoldersBody": "Every folder gets its own pastel, so you can spot it at a glance.",
+  "@obWhatsNewFoldersBody": {
+    "description": "Subtitle of the folder-colors row in the 'What's new' sheet."
+  },
+  "obWhatsNewCta": "Got it",
+  "@obWhatsNewCta": {
+    "description": "Button that closes the one-time 'What's new' sheet."
+  },
+  "auTermsTitle": "Before you [[start]]",
+  "@auTermsTitle": {
+    "description": "Headline of the terms-and-privacy acceptance screen shown once before sign-in. The word inside [[ ]] gets a yellow marker highlight; keep the brackets around the emphasised word."
+  },
+  "auTermsBody": "Please read how Pinpoint handles your notes and your data.",
+  "@auTermsBody": {
+    "description": "Line under the headline of the terms-and-privacy acceptance screen. 'Pinpoint' is the app name, do not translate."
+  },
+  "auTermsAgree": "I agree",
+  "@auTermsAgree": {
+    "description": "Primary button on the terms-and-privacy acceptance screen. Enabled once the agreement checkbox is ticked; accepts the terms and continues to sign-in."
+  },
+  "auReadyTitle": "Your notebook is [[ready]]",
+  "@auReadyTitle": {
+    "description": "Headline of the sign-in screen. The word inside [[ ]] gets a yellow marker highlight; keep the brackets around the emphasised word."
+  },
+  "auReadyBody": "Sign in to back up your notes and keep them in sync across your devices.",
+  "@auReadyBody": {
+    "description": "Line under the headline of the sign-in screen, above the Google / Apple / email sign-in options."
+  },
+  "auDecryptionErrorsBody": "{count, plural, =1{1 note could not be decrypted. This usually means the encryption key is incorrect or corrupted.} other{{count} notes could not be decrypted. This usually means the encryption key is incorrect or corrupted.}}",
+  "@auDecryptionErrorsBody": {
+    "description": "Warning in the summary shown after restoring notes from the cloud at sign-in, when some notes could not be decrypted.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "auShowPassword": "Show password",
+  "@auShowPassword": {
+    "description": "Screen-reader label for the eye button inside a password field that reveals the typed password."
+  },
+  "auHidePassword": "Hide password",
+  "@auHidePassword": {
+    "description": "Screen-reader label for the eye button inside a password field that hides the typed password again."
+  },
+  "auLinkAccountsCta": "Link accounts",
+  "@auLinkAccountsCta": {
+    "description": "Primary button on the account-linking screen: links the Google sign-in to the existing email account after the password is entered."
+  },
+  "ulUseRecoveryCode": "Use recovery code",
+  "@ulUseRecoveryCode": {
+    "description": "Text button on the unlock screen (zero-knowledge accounts) that switches from the passphrase to the recovery code."
   }
 }
