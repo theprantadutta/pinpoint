@@ -4202,5 +4202,13 @@
   "pwGateAttachBody": "Go Pro for unlimited attachments.",
   "@pwGateAttachBody": {
     "description": "One-line body of the premium limit sheet for the attachment limit."
+  },
+  "stShowPassword": "Show password",
+  "@stShowPassword": {
+    "description": "Screen-reader label and tooltip for the eye button that reveals a password or passphrase field."
+  },
+  "stHidePassword": "Hide password",
+  "@stHidePassword": {
+    "description": "Screen-reader label and tooltip for the eye button that hides a revealed password or passphrase field."
   }
 }

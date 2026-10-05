@@ -901,5 +901,7 @@
   "pwGateThemeTitle": "این رنگ تأکید مخصوص Pro است",
   "pwGateThemeBody": "Pro هر {total} رنگ تأکید را باز می‌کند.",
   "pwGateAttachTitle": "{max, plural, other{{max} پیوست از {max} را اضافه کرده‌ای}}",
-  "pwGateAttachBody": "برای پیوست‌های نامحدود Pro بگیر."
+  "pwGateAttachBody": "برای پیوست‌های نامحدود Pro بگیر.",
+  "stShowPassword": "نمایش گذرواژه",
+  "stHidePassword": "پنهان کردن گذرواژه"
 }

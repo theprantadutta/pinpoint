@@ -901,5 +901,7 @@
   "pwGateThemeTitle": "Cet accent fait partie de Pro",
   "pwGateThemeBody": "Pro débloque les {total} couleurs d’accent.",
   "pwGateAttachTitle": "{max, plural, =1{Vous avez ajouté 1 pièce jointe sur 1} other{Vous avez ajouté {max} pièces jointes sur {max}}}",
-  "pwGateAttachBody": "Passez à Pro pour des pièces jointes illimitées."
+  "pwGateAttachBody": "Passez à Pro pour des pièces jointes illimitées.",
+  "stShowPassword": "Afficher le mot de passe",
+  "stHidePassword": "Masquer le mot de passe"
 }

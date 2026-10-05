@@ -901,5 +901,7 @@
   "pwGateThemeTitle": "لون التمييز هذا ضمن Pro",
   "pwGateThemeBody": "Pro يفتح ألوان التمييز الـ{total} كلها.",
   "pwGateAttachTitle": "{max, plural, =1{أضفت مرفقًا واحدًا من أصل واحد} =2{أضفت مرفقين من أصل اثنين} few{أضفت {max} مرفقات من أصل {max}} many{أضفت {max} مرفقًا من أصل {max}} other{أضفت {max} مرفق من أصل {max}}}",
-  "pwGateAttachBody": "اشترك في Pro لمرفقات غير محدودة."
+  "pwGateAttachBody": "اشترك في Pro لمرفقات غير محدودة.",
+  "stShowPassword": "إظهار كلمة المرور",
+  "stHidePassword": "إخفاء كلمة المرور"
 }

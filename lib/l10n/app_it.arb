@@ -901,5 +901,7 @@
   "pwGateThemeTitle": "Questo accento fa parte di Pro",
   "pwGateThemeBody": "Pro sblocca tutti i {total} colori d’accento.",
   "pwGateAttachTitle": "{max, plural, =1{Hai aggiunto 1 allegato su 1} other{Hai aggiunto {max} allegati su {max}}}",
-  "pwGateAttachBody": "Passa a Pro per allegati illimitati."
+  "pwGateAttachBody": "Passa a Pro per allegati illimitati.",
+  "stShowPassword": "Mostra password",
+  "stHidePassword": "Nascondi password"
 }

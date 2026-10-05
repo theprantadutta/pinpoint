@@ -901,5 +901,7 @@
   "pwGateThemeTitle": "Este acento es de Pro",
   "pwGateThemeBody": "Pro desbloquea los {total} colores de acento.",
   "pwGateAttachTitle": "{max, plural, =1{Has añadido 1 de 1 adjunto} other{Has añadido {max} de {max} adjuntos}}",
-  "pwGateAttachBody": "Hazte Pro para tener adjuntos ilimitados."
+  "pwGateAttachBody": "Hazte Pro para tener adjuntos ilimitados.",
+  "stShowPassword": "Mostrar contraseña",
+  "stHidePassword": "Ocultar contraseña"
 }

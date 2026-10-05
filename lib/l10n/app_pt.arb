@@ -901,5 +901,7 @@
   "pwGateThemeTitle": "Esta cor de destaque é do Pro",
   "pwGateThemeBody": "O Pro libera as {total} cores de destaque.",
   "pwGateAttachTitle": "{max, plural, =1{Você adicionou 1 de 1 anexo} other{Você adicionou {max} de {max} anexos}}",
-  "pwGateAttachBody": "Assine o Pro para ter anexos ilimitados."
+  "pwGateAttachBody": "Assine o Pro para ter anexos ilimitados.",
+  "stShowPassword": "Mostrar senha",
+  "stHidePassword": "Ocultar senha"
 }

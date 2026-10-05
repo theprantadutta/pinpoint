@@ -901,5 +901,7 @@
   "pwGateThemeTitle": "สีเน้นนี้มีใน Pro",
   "pwGateThemeBody": "Pro ปลดล็อกสีเน้นทั้ง {total} สี",
   "pwGateAttachTitle": "{max, plural, other{คุณแนบไฟล์ไปแล้ว {max} จาก {max} ไฟล์}}",
-  "pwGateAttachBody": "อัปเกรดเป็น Pro เพื่อแนบไฟล์ได้ไม่จำกัด"
+  "pwGateAttachBody": "อัปเกรดเป็น Pro เพื่อแนบไฟล์ได้ไม่จำกัด",
+  "stShowPassword": "แสดงรหัสผ่าน",
+  "stHidePassword": "ซ่อนรหัสผ่าน"
 }
