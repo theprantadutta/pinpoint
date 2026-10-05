@@ -1,0 +1,30 @@
+# Launcher icons, regenerated from the Sketchbook masters in branding/:
+#   dart run flutter_launcher_icons
+# The masters are recolours of the existing pin mark (no new artwork).
+flutter_launcher_icons:
+  image_path: "branding/app-icon-light-1024.png"
+
+  android: "ic_launcher"
+  min_sdk_android: 21
+  adaptive_icon_background: "#F6E27A"
+  adaptive_icon_foreground: "branding/adaptive-foreground-ink-1024.png"
+  adaptive_icon_monochrome: "branding/adaptive-foreground-ink-1024.png"
+
+  ios: true
+  remove_alpha_ios: true
+  image_path_ios_dark_transparent: "branding/adaptive-foreground-yellow-1024.png"
+
+  web:
+    generate: true
+    image_path: "branding/app-icon-light-1024.png"
+    background_color: "#F5F3EC"
+    theme_color: "#F6E27A"
+
+  macos:
+    generate: true
+    image_path: "branding/app-icon-light-1024.png"
+
+  windows:
+    generate: true
+    image_path: "branding/app-icon-light-1024.png"
+    icon_size: 256

@@ -1,0 +1,20 @@
+# Native launch screens (Android incl. the 12+ SplashScreen API, iOS):
+#   dart run flutter_native_splash:create
+# Paper background with the ink pin; dark mode inverts to ink + yellow pin.
+flutter_native_splash:
+  color: "#F5F3EC"
+  image: "branding/adaptive-foreground-ink-1024.png"
+  color_dark: "#131312"
+  image_dark: "branding/adaptive-foreground-yellow-1024.png"
+
+  android_12:
+    color: "#F5F3EC"
+    image: "branding/adaptive-foreground-ink-1024.png"
+    icon_background_color: "#F6E27A"
+    color_dark: "#131312"
+    image_dark: "branding/adaptive-foreground-yellow-1024.png"
+    icon_background_color_dark: "#1D1D1B"
+
+  android: true
+  ios: true
+  web: false

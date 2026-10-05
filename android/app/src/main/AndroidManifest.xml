@@ -76,6 +76,16 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/default_notification_channel_id" />
+        <!-- Status-bar icon for FCM pushes: the pin as a white silhouette, as
+             Android requires (a colour launcher icon renders as a blank square).
+             Referencing it here also keeps it through resource shrinking, which
+             matters because flutter_local_notifications names it by string. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_pinpoint" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/ic_launcher_background" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
