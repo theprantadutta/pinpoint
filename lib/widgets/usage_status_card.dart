@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../constants/premium_limits.dart';
+import '../design_system/design_system.dart';
 import '../screens/subscription_screen.dart';
 import '../services/premium_service.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
@@ -25,224 +25,137 @@ class UsageStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final t = context.type;
+    final l10n = AppL10n.of(context);
 
-    if (isPremium) {
-      return _buildPremiumCard(context, theme, cs);
-    }
+    if (isPremium) return _buildPremiumCard(context);
 
-    return Container(
-      margin: const EdgeInsets.all(16),
+    return Padding(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: cs.outline.withValues(alpha: 0.1),
+      child: SketchCard(
+        radius: SketchRadius.group,
+        padding: const EdgeInsets.all(SketchSpace.cardPadLg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(l10n.usageThisMonth, style: t.cardTitleLarge),
+                ),
+                SketchTextAction(
+                  label: l10n.usageUpgrade,
+                  onTap: onUpgrade ??
+                      () => context.push(SubscriptionScreen.kRouteName),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _UsageBar(
+              label: l10n.stSyncedNotes,
+              current: syncedNotes,
+              max: PremiumLimits.maxSyncedNotesForFree,
+            ),
+            const SizedBox(height: 12),
+            _UsageBar(
+              label: l10n.stOcrScans,
+              current: ocrScansUsed,
+              max: PremiumLimits.maxOcrScansPerMonthForFree,
+            ),
+            const SizedBox(height: 12),
+            _UsageBar(
+              label: l10n.stExports,
+              current: exportsUsed,
+              max: PremiumLimits.maxExportsPerMonthForFree,
+            ),
+          ],
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Icon(
-                Symbols.monitoring,
-                color: cs.primary,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                AppL10n.of(context).usageThisMonth,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: onUpgrade ?? () => context.push(SubscriptionScreen.kRouteName),
-                icon: const Icon(Symbols.workspace_premium, size: 18),
-                label: Text(AppL10n.of(context).usageUpgrade),
-                style: TextButton.styleFrom(
-                  foregroundColor: cs.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Usage bars
-          _UsageBar(
-            icon: Symbols.cloud_sync,
-            label: AppL10n.of(context).usageSyncedNotes,
-            current: syncedNotes,
-            max: PremiumLimits.maxSyncedNotesForFree,
-            color: cs.primary,
-          ),
-
-          const SizedBox(height: 12),
-
-          _UsageBar(
-            icon: Symbols.document_scanner,
-            label: AppL10n.of(context).usageOcrScans,
-            current: ocrScansUsed,
-            max: PremiumLimits.maxOcrScansPerMonthForFree,
-            color: cs.secondary,
-          ),
-
-          const SizedBox(height: 12),
-
-          _UsageBar(
-            icon: Symbols.download,
-            label: AppL10n.of(context).usageExports,
-            current: exportsUsed,
-            max: PremiumLimits.maxExportsPerMonthForFree,
-            color: cs.tertiary,
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildPremiumCard(BuildContext context, ThemeData theme, ColorScheme cs) {
-    return Container(
-      margin: const EdgeInsets.all(16),
+  Widget _buildPremiumCard(BuildContext context) {
+    final t = context.type;
+    final l10n = AppL10n.of(context);
+    return Padding(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            cs.primary.withValues(alpha: 0.1),
-            cs.secondary.withValues(alpha: 0.1),
+      child: SketchCard(
+        pastel: SketchPastels.lavender,
+        radius: SketchRadius.group,
+        padding: const EdgeInsets.all(SketchSpace.cardPadLg),
+        child: Row(
+          children: [
+            const StickerTile(
+              color: SketchPastels.yellow,
+              size: 44,
+              angle: -8,
+              icon: Icons.workspace_premium_rounded,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.usagePremiumActive,
+                      style: t.cardTitleLarge
+                          .copyWith(color: SketchPastels.onPastel)),
+                  const SizedBox(height: 2),
+                  Text(l10n.usagePremiumBody,
+                      style:
+                          t.caption.copyWith(color: SketchPastels.onPastel)),
+                ],
+              ),
+            ),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: cs.primary.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Symbols.workspace_premium,
-              color: cs.primary,
-              size: 28,
-              fill: 1,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppL10n.of(context).usagePremiumActive,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: cs.primary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  AppL10n.of(context).usagePremiumBody,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Symbols.check_circle,
-            color: cs.primary,
-            size: 28,
-            fill: 1,
-          ),
-        ],
       ),
     );
   }
 }
 
 class _UsageBar extends StatelessWidget {
-  final IconData icon;
   final String label;
   final int current;
   final int max;
-  final Color color;
 
   const _UsageBar({
-    required this.icon,
     required this.label,
     required this.current,
     required this.max,
-    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final progress = (current / max).clamp(0.0, 1.0);
-    final isNearLimit = progress >= 0.8;
-    final isAtLimit = current >= max;
+    final t = context.type;
+    final s = context.sketch;
+    final l10n = AppL10n.of(context);
+    final atLimit = current >= max;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return Semantics(
+      label: l10n.stUsageSemantic(label, current, max),
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(icon, size: 18, color: cs.onSurfaceVariant),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                label,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
+            Row(
+              children: [
+                Expanded(child: Text(label, style: t.chip)),
+                Text(
+                  '$current ${l10n.stUsageLimitSuffix(max)}',
+                  style: t.chip.copyWith(
+                    color: atLimit ? SketchFunctional.error : s.ink,
+                  ),
                 ),
-              ),
+              ],
             ),
-            Text(
-              '$current / $max',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isAtLimit
-                    ? cs.error
-                    : isNearLimit
-                        ? cs.tertiary
-                        : cs.onSurface,
-              ),
+            const SizedBox(height: 6),
+            UsageBar(
+              fraction: max == 0 ? 0 : current / max,
+              fill: atLimit ? SketchFunctional.error : null,
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: cs.surfaceContainerHighest,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              isAtLimit
-                  ? cs.error
-                  : isNearLimit
-                      ? cs.tertiary
-                      : color,
-            ),
-            minHeight: 6,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
