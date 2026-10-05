@@ -820,5 +820,6 @@
   "lsUnarchive": "{note} আর্কাইভ থেকে বের করুন",
   "lsRestoreNote": "{note} পুনরুদ্ধার করুন",
   "lsDeleteNoteForever": "{note} চিরতরে মুছুন",
-  "dgCreate": "তৈরি করুন"
+  "dgCreate": "তৈরি করুন",
+  "lsNewChecklist": "নতুন চেকলিস্ট"
 }

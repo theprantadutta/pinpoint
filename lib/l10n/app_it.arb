@@ -820,5 +820,6 @@
   "lsUnarchive": "Ripristina dall’archivio {note}",
   "lsRestoreNote": "Ripristina {note}",
   "lsDeleteNoteForever": "Elimina {note} per sempre",
-  "dgCreate": "Crea"
+  "dgCreate": "Crea",
+  "lsNewChecklist": "Nuova checklist"
 }

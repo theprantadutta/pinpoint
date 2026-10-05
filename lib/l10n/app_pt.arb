@@ -820,5 +820,6 @@
   "lsUnarchive": "Desarquivar {note}",
   "lsRestoreNote": "Restaurar {note}",
   "lsDeleteNoteForever": "Excluir {note} para sempre",
-  "dgCreate": "Criar"
+  "dgCreate": "Criar",
+  "lsNewChecklist": "Nova lista de tarefas"
 }

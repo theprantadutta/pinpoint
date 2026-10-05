@@ -820,5 +820,6 @@
   "lsUnarchive": "خروج {note} از بایگانی",
   "lsRestoreNote": "بازیابی {note}",
   "lsDeleteNoteForever": "حذف همیشگی {note}",
-  "dgCreate": "ایجاد"
+  "dgCreate": "ایجاد",
+  "lsNewChecklist": "چک‌لیست جدید"
 }

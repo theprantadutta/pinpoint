@@ -3783,5 +3783,9 @@
   "dgCreate": "Create",
   "@dgCreate": {
     "description": "Primary button of the name sheet when creating a new folder."
+  },
+  "lsNewChecklist": "New checklist",
+  "@lsNewChecklist": {
+    "description": "Screen-reader label of the '+' button on the Todos tab; starts a new checklist note."
   }
 }

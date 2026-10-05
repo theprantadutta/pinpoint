@@ -820,5 +820,6 @@
   "lsUnarchive": "เลิกเก็บถาวร {note}",
   "lsRestoreNote": "กู้คืน {note}",
   "lsDeleteNoteForever": "ลบ {note} ถาวร",
-  "dgCreate": "สร้าง"
+  "dgCreate": "สร้าง",
+  "lsNewChecklist": "เช็กลิสต์ใหม่"
 }

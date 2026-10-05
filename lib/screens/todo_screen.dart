@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:pinpoint/util/note_utils.dart';
+
+import '../components/shared/note_grid.dart';
+import '../database/database.dart';
 import '../design_system/design_system.dart';
+import '../navigation/new_note.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
-import '../services/crash_breadcrumbs.dart';
+import '../services/todo_list_note_service.dart';
 import 'create_note_screen_v2.dart';
-import 'package:pinpoint/generated/l10n/app_localizations.dart';
-import 'package:pinpoint/widgets/pinpoint_popup_menu_button.dart';
 
+/// Dock tab 4: every checklist, grouped by note. Each group is a compact
+/// [ProgressCard] (tap to open the note) followed by its [ChecklistRow]s —
+/// open items first, then done — which toggle in place.
 class TodoScreen extends StatefulWidget {
   static const String kRouteName = '/todo';
 
@@ -25,6 +31,11 @@ class _TodoScreenState extends State<TodoScreen>
     with AutomaticKeepAliveClientMixin {
   String _filter = 'all'; // all, completed, pending
 
+  late final Stream<List<NoteWithDetails>> _stream =
+      DriftNoteService.watchNotesWithDetailsV2(
+    excludeNoteTypes: ['text', 'voice', 'reminder'], // Only todo notes
+  );
+
   // Cache for last loaded data to avoid loading flash
   List<NoteWithDetails>? _cachedTodos;
 
@@ -37,214 +48,124 @@ class _TodoScreenState extends State<TodoScreen>
     getIt<AnalyticsFacade>().trackScreenView(screenName: 'Todo');
   }
 
+  void _setFilter(String filter) {
+    if (filter == _filter) return;
+    PinpointHaptics.selection();
+    getIt<AnalyticsFacade>().trackTodoFilterChanged(filter: filter);
+    setState(() => _filter = filter);
+  }
+
+  void _open(NoteWithDetails note) {
+    PinpointHaptics.medium();
+    context.push(
+      CreateNoteScreenV2.kRouteName,
+      extra: CreateNoteScreenArguments(
+        noticeType: NewNote.checklist,
+        existingNote: note,
+      ),
+    );
+  }
+
+  Future<void> _toggle(NoteTodoItem item, bool done) async {
+    await TodoListNoteService.updateTodoItem(
+        itemId: item.id, isCompleted: done);
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final l10n = AppL10n.of(context);
+    final s = context.sketch;
 
-    return GradientScaffold(
-      appBar: GlassAppBar(
-        title: Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: cs.primary, size: 20),
-            const SizedBox(width: 8),
-            Text(AppL10n.of(context).todosTitle),
-          ],
-        ),
-        actions: [
-          PinpointPopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list_rounded),
-            tooltip: AppL10n.of(context).todosFilter,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            onOpened: () => CrashBreadcrumbs.popupMenuOpened('todos.filter'),
-            onCanceled: () => CrashBreadcrumbs.popupMenuClosed('todos.filter'),
-            onSelected: (String result) {
-              CrashBreadcrumbs.popupMenuClosed('todos.filter',
-                  selected: result);
-              PinpointHaptics.selection();
-              getIt<AnalyticsFacade>().trackTodoFilterChanged(filter: result);
-              setState(() {
-                _filter = result;
-              });
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              PopupMenuItem<String>(
-                value: 'all',
-                child: Text(AppL10n.of(context).todosAll),
-              ),
-              PopupMenuItem<String>(
-                value: 'pending',
-                child: Text(AppL10n.of(context).todosPending),
-              ),
-              PopupMenuItem<String>(
-                value: 'completed',
-                child: Text(AppL10n.of(context).todosCompleted),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Text(
-                  _filter == 'all'
-                      ? AppL10n.of(context).todosAll
-                      : _filter == 'pending'
-                          ? AppL10n.of(context).todosPending
-                          : AppL10n.of(context).todosCompleted,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                StreamBuilder<List<NoteWithDetails>>(
-                  stream: DriftNoteService.watchNotesWithDetailsV2(
-                    excludeNoteTypes: ['text', 'voice', 'reminder'],
-                  ),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const SizedBox();
-                    }
-                    final allNotes = snapshot.data ?? [];
-                    final filteredNotes = _filterTodoNotes(allNotes, _filter);
-                    return TagChip(
-                      label: '${filteredNotes.length}',
-                      color: cs.primary,
-                      size: TagChipSize.small,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          // Content
-          Expanded(
-            child: StreamBuilder<List<NoteWithDetails>>(
-              stream: DriftNoteService.watchNotesWithDetailsV2(
-                excludeNoteTypes: ['text', 'voice', 'reminder'], // Only show todo notes
-              ),
-              builder: (context, snapshot) {
-                // Use cached data while waiting to avoid loading flash
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  if (_cachedTodos != null) {
-                    final filteredNotes = _filterTodoNotes(_cachedTodos!, _filter);
-                    return _buildTodoList(filteredNotes);
-                  }
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  debugPrint('❌ [TodoScreen] Error loading todos: ${snapshot.error}');
-                  debugPrint('❌ [TodoScreen] Stack trace: ${snapshot.stackTrace}');
-                  return EmptyState(
-                    icon: Icons.error_outline_rounded,
-                    title: AppL10n.of(context).todosLoadError,
-                    message: AppL10n.of(context).commonTryAgainLater,
-                  );
-                }
-
-                final allNotes = snapshot.data ?? [];
-                // Cache the data for next time
-                _cachedTodos = allNotes;
-                final filteredNotes = _filterTodoNotes(allNotes, _filter);
-
-                if (filteredNotes.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.check_circle_outline_rounded,
-                    title: _filter == 'all'
-                        ? AppL10n.of(context).todosNoneYet
-                        : _filter == 'pending'
-                            ? AppL10n.of(context).todosNonePending
-                            : AppL10n.of(context).todosNoneCompleted,
-                    message: _filter == 'all'
-                        ? AppL10n.of(context).todosEmptyHint
-                        : '',
-                  );
-                }
-
-                return _buildTodoList(filteredNotes);
-              },
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80),
-        child: FloatingActionButton(
+    return SketchScaffold(
+      largeTitle: true,
+      title: l10n.todosTitle,
+      showBack: false,
+      doodleTop: DoodleBackground.todoTop,
+      actions: [
+        CircleIconButton(
+          icon: Icons.add_rounded,
+          iconSize: 24,
+          fill: s.inverse,
+          semanticLabel: l10n.lsNewChecklist,
           onPressed: () {
             PinpointHaptics.medium();
-            // Navigate to create note screen with Todo List pre-selected
-            context.push(
-              CreateNoteScreenV2.kRouteName,
-              extra: CreateNoteScreenArguments(
-                noticeType: 'Todo List',
-              ),
-            );
+            NewNote.open(context, NewNote.checklist);
           },
-          child: const Icon(Icons.add_rounded),
         ),
+      ],
+      body: StreamBuilder<List<NoteWithDetails>>(
+        stream: _stream,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) _cachedTodos = snapshot.data;
+          final all = snapshot.data ?? _cachedTodos;
+
+          final slivers = <Widget>[
+            SliverToBoxAdapter(
+              child: _FilterChips(selected: _filter, onSelected: _setFilter),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 18)),
+          ];
+
+          if (snapshot.hasError) {
+            debugPrint('[TodoScreen] Error loading todos: ${snapshot.error}');
+            slivers.add(SliverToBoxAdapter(
+              child: EmptyState(
+                icon: Icons.error_outline_rounded,
+                title: l10n.todosLoadError,
+                message: l10n.commonTryAgainLater,
+              ),
+            ));
+          } else if (all == null) {
+            slivers.add(const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(48),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ));
+          } else {
+            final notes = filterTodoNotes(all, _filter);
+            if (notes.isEmpty) {
+              slivers.add(SliverToBoxAdapter(
+                child: EmptyState(
+                  icon: Icons.check_rounded,
+                  title: switch (_filter) {
+                    'pending' => l10n.todosNonePending,
+                    'completed' => l10n.todosNoneCompleted,
+                    _ => l10n.lsTodoEmpty,
+                  },
+                ),
+              ));
+            } else {
+              slivers.add(SliverPadding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: SketchSpace.screenX),
+                sliver: SliverList.separated(
+                  itemCount: notes.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 22),
+                  itemBuilder: (context, i) => TodoGroup(
+                    key: ValueKey(notes[i].note.id),
+                    note: notes[i],
+                    onOpen: () => _open(notes[i]),
+                    onToggle: _toggle,
+                  ),
+                ),
+              ));
+            }
+          }
+
+          slivers.add(SliverToBoxAdapter(
+            child: SizedBox(height: dockAwareBottomPadding(context)),
+          ));
+          return CustomScrollView(slivers: slivers);
+        },
       ),
     );
   }
 
-  Widget _buildTodoList(List<NoteWithDetails> filteredNotes) {
-    return ListView.builder(
-      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 100),
-      itemCount: filteredNotes.length,
-      itemBuilder: (context, index) {
-        final note = filteredNotes[index];
-        final hasTitle = note.note.noteTitle != null && note.note.noteTitle!.trim().isNotEmpty;
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: NoteCard(
-            title: getNoteTitleOrPreview(note.note.noteTitle, note.textContent),
-            excerpt: hasTitle ? note.textContent : null,
-            lastModified: note.note.updatedAt,
-            isPinned: note.note.isPinned,
-            noteType: note.note.noteType,
-            totalTasks: note.todoItems.length,
-            completedTasks: note.todoItems.where((item) => item.isDone).length,
-            tags: [
-              ...note.folders.map(
-                (f) => CardNoteTag(
-                  label: f.title,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ],
-            onTap: () {
-              PinpointHaptics.medium();
-              context.push(
-                CreateNoteScreenV2.kRouteName,
-                extra: CreateNoteScreenArguments(
-                  noticeType: 'Todo List',
-                  existingNote: note,
-                ),
-              );
-            },
-            onPinToggle: () {
-              PinpointHaptics.light();
-              DriftNoteService.togglePinStatus(note.note.id, !note.note.isPinned);
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  List<NoteWithDetails> _filterTodoNotes(
+  /// Notes for the All / Pending / Completed chips.
+  @visibleForTesting
+  static List<NoteWithDetails> filterTodoNotes(
       List<NoteWithDetails> notes, String filter) {
     switch (filter) {
       case 'completed':
@@ -264,5 +185,89 @@ class _TodoScreenState extends State<TodoScreen>
         return notes;
     }
   }
+}
 
+class _FilterChips extends StatelessWidget {
+  const _FilterChips({required this.selected, required this.onSelected});
+
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final chips = {
+      'all': l10n.lsChipAll,
+      'pending': l10n.todosPending,
+      'completed': l10n.todosCompleted,
+    };
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          SketchSpace.screenX, 18, SketchSpace.screenX, 0),
+      child: Wrap(
+        spacing: SketchSpace.chip,
+        runSpacing: SketchSpace.chip,
+        children: [
+          for (final e in chips.entries)
+            SketchChip(
+              label: e.value,
+              selected: e.key == selected,
+              onTap: () => onSelected(e.key),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One checklist on the Todo tab: a compact progress card with the note's
+/// title, then its items (open first, then done).
+class TodoGroup extends StatelessWidget {
+  const TodoGroup({
+    super.key,
+    required this.note,
+    required this.onOpen,
+    required this.onToggle,
+  });
+
+  final NoteWithDetails note;
+  final VoidCallback onOpen;
+  final Future<void> Function(NoteTodoItem item, bool done) onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final items = note.todoItems;
+    final done = items.where((i) => i.isDone).length;
+    final ordered = [
+      ...items.where((i) => !i.isDone),
+      ...items.where((i) => i.isDone),
+    ];
+    final title = getNoteTitleOrPreview(note.note.noteTitle, note.textContent);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ProgressCard(
+          compact: true,
+          done: done,
+          total: items.length,
+          label: title.trim().isEmpty ? l10n.dsChecklist : title,
+          summary: l10n.lsTodoSummary(done, items.length),
+          pastel: NoteSwatch.resolve(note.color)?.color ?? SketchPastels.mint,
+          onTap: onOpen,
+        ),
+        for (final item in ordered) ...[
+          const SizedBox(height: 8),
+          ChecklistRow(
+            key: ValueKey(item.id),
+            label: item.todoTitle,
+            checked: item.isDone,
+            // SketchCheckbox gives the light haptic itself.
+            onChanged: (v) => onToggle(item, v),
+          ),
+        ],
+      ],
+    );
+  }
 }
