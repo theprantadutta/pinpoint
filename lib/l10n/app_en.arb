@@ -606,14 +606,6 @@
   "@setTestCrashSubtitle": {
     "description": "Secondary text under Test Crash. \"Crashlytics\" is a product name."
   },
-  "setAdminPanel": "Admin Panel",
-  "@setAdminPanel": {
-    "description": "Debug-only row opening the admin tools."
-  },
-  "setAdminPanelSubtitle": "Debug sync issues",
-  "@setAdminPanelSubtitle": {
-    "description": "Secondary text under the Admin Panel row."
-  },
   "setAboutApp": "About Pinpoint",
   "@setAboutApp": {
     "description": "Row opening the about dialog. \"Pinpoint\" is the app name."

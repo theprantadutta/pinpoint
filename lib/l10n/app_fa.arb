@@ -129,8 +129,6 @@
   "setTestNotificationSubtitle": "ارسال یک اعلان آزمایشی",
   "setTestCrash": "خرابی آزمایشی",
   "setTestCrashSubtitle": "ایجاد خرابی برای آزمایش Crashlytics",
-  "setAdminPanel": "پنل مدیریت",
-  "setAdminPanelSubtitle": "اشکال‌زدایی مشکلات همگام‌سازی",
   "setAboutApp": "درباره Pinpoint",
   "setAboutAppSubtitle": "اطلاعات برنامه، نسخه و توسعه‌دهنده",
   "setRateApp": "امتیاز به Pinpoint",

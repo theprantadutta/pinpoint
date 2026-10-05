@@ -47,7 +47,7 @@ Tablet: ![](docs/redesign/screenshots/tablet_dark_01-home.png)
 What's new for upgraders, via `onboardingVersion`), terms, auth, account linking, unlock, home,
 drawer, dock shell, notes, todos, folder, My folders, archive, trash, editor (text, checklist,
 voice, reminder), filters, settings and every sub-screen, paywall, premium gate, usage sheets,
-toasts, confirm sheets, popup menus, the forced-update screen, admin (tokens only).
+toasts, confirm sheets, popup menus, the forced-update screen, debug tools (tokens only).
 
 **Navigation** — the dock (Home · Notes · Create · Todos · Settings) now really switches the
 shell's branches. Create opens a text note; long-press picks Checklist, Voice or Reminder.

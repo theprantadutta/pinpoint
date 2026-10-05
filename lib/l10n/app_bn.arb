@@ -129,8 +129,6 @@
   "setTestNotificationSubtitle": "একটি পরীক্ষামূলক পুশ বিজ্ঞপ্তি পাঠান",
   "setTestCrash": "পরীক্ষামূলক ক্র্যাশ",
   "setTestCrashSubtitle": "Crashlytics পরীক্ষা করতে ক্র্যাশ ঘটান",
-  "setAdminPanel": "অ্যাডমিন প্যানেল",
-  "setAdminPanelSubtitle": "সিঙ্কের সমস্যা ডিবাগ করুন",
   "setAboutApp": "Pinpoint সম্পর্কে",
   "setAboutAppSubtitle": "অ্যাপের তথ্য, সংস্করণ ও ডেভেলপার",
   "setRateApp": "Pinpoint রেট করুন",

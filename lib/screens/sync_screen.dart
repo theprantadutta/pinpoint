@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
 import 'package:pinpoint/sync/sync_service.dart';
@@ -8,11 +7,9 @@ import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/widgets/premium_gate_dialog.dart';
 import '../components/settings/settings_format.dart';
-import '../components/settings/settings_more_groups.dart';
 import '../components/settings/settings_widgets.dart';
 import '../design_system/design_system.dart';
 import '../navigation/app_navigation.dart';
-import '../services/backend_auth_service.dart';
 import '../services/pending_changes_service.dart';
 import 'sync_debug_screen.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
@@ -228,9 +225,7 @@ class _SyncScreenState extends State<SyncScreen> {
         last == null ? l10n.syncStatusNotSynced : l10n.syncStatusSynced,
     };
 
-    final auth = context.read<BackendAuthService>();
-    final showDebug =
-        kDebugMode || auth.userEmail == kSettingsAdminEmail;
+    const showDebug = kDebugMode;
 
     return SketchScaffold(
       title: l10n.syncTitle,

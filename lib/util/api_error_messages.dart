@@ -110,10 +110,10 @@ String? _messageForCode(AppL10n l10n, String code) {
     case 'USAGE_EXPORT_INCREMENT_FAILED':
       return l10n.errUsageOperationFailed;
 
-    // Deliberately unmapped — these reach only admin/debug screens, which stay
+    // Deliberately unmapped — these reach only debug screens, which stay
     // in English, or are developer-facing bad-request diagnostics the user
     // cannot act on. They fall through to the server's English message.
-    //   INVALID_ADMIN_CREDENTIALS, DEBUG_ONLY_ENDPOINT, JOB_*,
+    //   DEBUG_ONLY_ENDPOINT,
     //   INVALID_VERIFICATION_TOKEN, INVALID_FILENAME,
     //   INVALID_ENCRYPTION_MODE, ENCRYPTION_KEY_REQUIRED,
     //   MISSING_ZERO_KNOWLEDGE_FIELDS

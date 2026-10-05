@@ -129,8 +129,6 @@
   "setTestNotificationSubtitle": "إرسال إشعار فوري تجريبي",
   "setTestCrash": "تعطّل تجريبي",
   "setTestCrashSubtitle": "فرض تعطّل لاختبار Crashlytics",
-  "setAdminPanel": "لوحة الإدارة",
-  "setAdminPanelSubtitle": "تصحيح مشكلات المزامنة",
   "setAboutApp": "حول Pinpoint",
   "setAboutAppSubtitle": "معلومات التطبيق والإصدار والمطوّر",
   "setRateApp": "قيّم Pinpoint",
