@@ -3201,10 +3201,6 @@
   "@updateRequiredBody": {
     "description": "Body of the blocking update screen. \"Pinpoint\" is the app name."
   },
-  "updateRequiredNote": "This update includes important improvements and bug fixes.",
-  "@updateRequiredNote": {
-    "description": "Secondary line on the blocking update screen."
-  },
   "updateNow": "Update Now",
   "@updateNow": {
     "description": "Button on the blocking update screen that opens the store."
@@ -4908,5 +4904,35 @@
   "edSaveReminder": "Save reminder",
   "@edSaveReminder": {
     "description": "Black pill button at the bottom of the reminder editor; saves the reminder and closes the editor."
+  },
+  "updateAvailableTitle": "A new version is ready",
+  "@updateAvailableTitle": {
+    "description": "iOS only. Title of the sheet that tells the user a newer version of the app is on the App Store. They can dismiss it."
+  },
+  "updateAvailableBody": "Pinpoint {version} is on the App Store, with fixes and improvements.",
+  "@updateAvailableBody": {
+    "description": "iOS only. Body of the optional update sheet. {version} is a version number like 4.1.0. 'Pinpoint' and 'App Store' are brand names: do not translate them.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "4.1.0"
+      }
+    }
+  },
+  "updateLater": "Later",
+  "@updateLater": {
+    "description": "Button on the optional update sheet. Dismisses it; the app asks again in a day."
+  },
+  "updateOpenStoreFailed": "Couldn't open the App Store. Open it yourself and update Pinpoint from there.",
+  "@updateOpenStoreFailed": {
+    "description": "Error toast when the update button could not open the App Store. 'App Store' is a brand name: do not translate it."
+  },
+  "updateReadyTitle": "Update downloaded",
+  "@updateReadyTitle": {
+    "description": "Android only. Small floating pill: an app update finished downloading in the background and needs a restart to install."
+  },
+  "updateReadyRestart": "Restart",
+  "@updateReadyRestart": {
+    "description": "Android only. Button on the 'Update downloaded' pill. Restarts the app to install the update. Keep it very short."
   }
 }

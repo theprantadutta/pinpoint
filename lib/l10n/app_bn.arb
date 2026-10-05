@@ -703,7 +703,6 @@
   "dsClear": "মুছুন",
   "updateRequiredTitle": "আপডেট প্রয়োজন",
   "updateRequiredBody": "Pinpoint-এর নতুন সংস্করণ এসেছে। অ্যাপ ব্যবহার চালিয়ে যেতে আপডেট করুন।",
-  "updateRequiredNote": "এই আপডেটে গুরুত্বপূর্ণ উন্নতি ও ত্রুটি সংশোধন রয়েছে।",
   "updateNow": "এখনই আপডেট করুন",
   "errNetworkTimeout": "সংযোগের সময় শেষ।",
   "errNetworkTimeoutHint": "আপনার ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।",
@@ -1037,5 +1036,11 @@
   "edRemInfoNotifications": "ডিভাইস সেটিংসে Pinpoint-এর নোটিফিকেশন চালু আছে কিনা দেখে নিন।",
   "edRemInfoRepeat": "পুনরাবৃত্ত রিমাইন্ডার প্রতিবারের জন্য একটি করে নোটিফিকেশন নির্ধারণ করে।",
   "edRemInfoEdit": "যেকোনো সময় রিমাইন্ডার বদলাতে বা মুছতে পারবেন।",
-  "edSaveReminder": "রিমাইন্ডার সংরক্ষণ"
+  "edSaveReminder": "রিমাইন্ডার সংরক্ষণ",
+  "updateAvailableTitle": "নতুন সংস্করণ এসেছে",
+  "updateAvailableBody": "Pinpoint {version} এখন App Store-এ আছে, সমাধান ও উন্নতিসহ।",
+  "updateLater": "পরে",
+  "updateOpenStoreFailed": "App Store খোলা যায়নি। নিজে খুলে সেখান থেকে Pinpoint আপডেট করুন।",
+  "updateReadyTitle": "আপডেট ডাউনলোড হয়েছে",
+  "updateReadyRestart": "রিস্টার্ট"
 }

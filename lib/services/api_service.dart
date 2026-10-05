@@ -636,6 +636,24 @@ class ApiService {
     }
   }
 
+  /// What the store offers for [platform] ('ios'), for the update dialog.
+  /// Anonymous on the server. Short timeouts: this runs at launch and must
+  /// never hold anything up.
+  Future<Map<String, dynamic>> getAppRelease(String platform) async {
+    try {
+      final response = await _dio.get(
+        '/app-release/$platform',
+        options: Options(
+          sendTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ),
+      );
+      return Map<String, dynamic>.from(response.data as Map);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   /// Verify purchase with device ID (no authentication required)
   ///
   /// Optionally pass [userId] to sync the subscription with the user's account
