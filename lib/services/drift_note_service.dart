@@ -32,14 +32,31 @@ class DriftNoteService {
       // Try to parse as JSON Delta format
       final jsonData = jsonDecode(content);
       if (jsonData is List) {
-        // Extract text from Delta operations
-        final buffer = StringBuffer();
+        // Rebuild the text line by line. In a delta, a line's block style
+        // (list, checklist) rides on its newline, so list items get a "• "
+        // and card previews keep their bullets. Embeds are skipped rather
+        // than printed as a map.
+        final out = StringBuffer();
+        final line = StringBuffer();
         for (final op in jsonData) {
-          if (op is Map && op.containsKey('insert')) {
-            buffer.write(op['insert']);
+          if (op is! Map) continue;
+          final insert = op['insert'];
+          if (insert is! String) continue;
+          final attrs = op['attributes'];
+          final block = attrs is Map ? attrs['block'] : null;
+          final parts = insert.split('\n');
+          for (var i = 0; i < parts.length; i++) {
+            line.write(parts[i]);
+            if (i < parts.length - 1) {
+              final bulleted = block == 'ul' || block == 'ol' || block == 'cl';
+              if (bulleted && line.isNotEmpty) out.write('• ');
+              out.writeln(line.toString());
+              line.clear();
+            }
           }
         }
-        return buffer.toString();
+        out.write(line.toString());
+        return out.toString().trimRight();
       }
     } catch (e) {
       // Not JSON, return as plain text (backward compatibility)
