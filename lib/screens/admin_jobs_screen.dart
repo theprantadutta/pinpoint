@@ -81,7 +81,8 @@ class _AdminJobsScreenState extends State<AdminJobsScreen> {
         showSketchToast(
           context: context,
           message: response['message'] ?? 'Job triggered',
-          tone: response['success'] == true ? ToastTone.success : ToastTone.error,
+          tone:
+              response['success'] == true ? ToastTone.success : ToastTone.error,
         );
         _loadJobs(); // Refresh the list
       }
@@ -106,7 +107,8 @@ class _AdminJobsScreenState extends State<AdminJobsScreen> {
         showSketchToast(
           context: context,
           message: response['message'] ?? 'Action completed',
-          tone: response['success'] == true ? ToastTone.success : ToastTone.error,
+          tone:
+              response['success'] == true ? ToastTone.success : ToastTone.error,
         );
         _loadJobs(); // Refresh the list
       }
@@ -342,8 +344,8 @@ class _JobCard extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     onPressed: onTogglePause,
-                    icon:
-                        Icon(isPaused ? Icons.play_arrow : Icons.pause, size: 18),
+                    icon: Icon(isPaused ? Icons.play_arrow : Icons.pause,
+                        size: 18),
                     label: Text(isPaused ? 'Resume' : 'Pause'),
                   ),
                   const SizedBox(width: 8),

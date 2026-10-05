@@ -111,8 +111,7 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen>
                 _OverviewTab(
                     userDetails: _userDetails!, onCopy: _copyToClipboard),
                 _NotesTab(userId: widget.userId),
-                _EncryptionTab(
-                    userId: widget.userId, onCopy: _copyToClipboard),
+                _EncryptionTab(userId: widget.userId, onCopy: _copyToClipboard),
                 _SyncTab(userId: widget.userId),
                 _SubscriptionTab(userId: widget.userId),
               ],
@@ -481,7 +480,9 @@ class _SyncTabState extends State<_SyncTab> {
           child: ListTile(
             leading: Icon(
               event['status'] == 'success' ? Icons.check_circle : Icons.error,
-              color: event['status'] == 'success' ? SketchFunctional.success : SketchFunctional.error,
+              color: event['status'] == 'success'
+                  ? SketchFunctional.success
+                  : SketchFunctional.error,
             ),
             title: Text('Device: ${event['device_id']}'),
             subtitle: Text(

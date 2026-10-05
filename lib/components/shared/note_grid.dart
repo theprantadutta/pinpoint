@@ -119,8 +119,8 @@ class SketchSearchField extends StatelessWidget {
         ),
         enabledBorder: border,
         border: border,
-        focusedBorder: border.copyWith(
-            borderSide: BorderSide(color: s.ink, width: 2)),
+        focusedBorder:
+            border.copyWith(borderSide: BorderSide(color: s.ink, width: 2)),
       ),
     );
   }

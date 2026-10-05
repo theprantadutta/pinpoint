@@ -172,6 +172,9 @@ class _TrashScreenState extends State<TrashScreen> {
 
     return SketchScaffold(
       title: l10n.trashTitle,
+      // Swooshes behind the header only: they would show through the
+      // dimmed cards.
+      doodleTop: -60,
       actions: [
         CircleIconButton(
           icon: _isSearchActive ? Icons.close_rounded : Icons.search_rounded,
@@ -196,10 +199,10 @@ class _TrashScreenState extends State<TrashScreen> {
                   message: l10n.lsTrashKeep,
                   actionLabel: l10n.lsEmptyTrash,
                   busy: _emptying,
-                  onAction: (notes == null || notes.isEmpty) &&
-                          _searchQuery.isEmpty
-                      ? null
-                      : _emptyTrash,
+                  onAction:
+                      (notes == null || notes.isEmpty) && _searchQuery.isEmpty
+                          ? null
+                          : _emptyTrash,
                 ),
               ),
             ),
@@ -274,8 +277,7 @@ class _TrashScreenState extends State<TrashScreen> {
           }
 
           slivers.add(SliverToBoxAdapter(
-            child:
-                SizedBox(height: 24 + MediaQuery.paddingOf(context).bottom),
+            child: SizedBox(height: 24 + MediaQuery.paddingOf(context).bottom),
           ));
           return CustomScrollView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -309,44 +311,53 @@ class TrashBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.sketch;
     final t = context.type;
+    final Widget? action = busy
+        ? SizedBox(
+            height: SketchSpace.minTap,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2, color: s.ink),
+              ),
+            ),
+          )
+        : onAction == null
+            ? null
+            : SketchTextAction(
+                label: actionLabel,
+                color: SketchFunctional.error,
+                style: t.chip.copyWith(fontWeight: FontWeight.w700),
+                onTap: onAction,
+              );
+
     return Container(
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 6, 10, 6),
+      padding:
+          EdgeInsetsDirectional.fromSTEB(16, 14, 16, action == null ? 14 : 0),
       decoration: BoxDecoration(
         color: s.soft,
         borderRadius: BorderRadius.circular(SketchRadius.group),
         border: Border.all(color: s.outline, width: SketchStroke.outline),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, size: 18, color: s.ink),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(Icons.info_outline_rounded, size: 18, color: s.ink),
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(message,
-                  style: t.bodyRegular.copyWith(fontSize: 13, height: 1.35)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(message,
+                    style: t.bodyRegular.copyWith(fontSize: 13, height: 1.4)),
+                if (action != null) action,
+              ],
             ),
           ),
-          if (busy)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child:
-                    CircularProgressIndicator(strokeWidth: 2, color: s.ink),
-              ),
-            )
-          else if (onAction != null) ...[
-            const SizedBox(width: 8),
-            SketchTextAction(
-              label: actionLabel,
-              color: SketchFunctional.error,
-              underline: false,
-              style: t.chip.copyWith(fontWeight: FontWeight.w700),
-              onTap: onAction,
-            ),
-          ],
         ],
       ),
     );

@@ -153,8 +153,11 @@ class _SyncDebugScreenState extends State<SyncDebugScreen> {
           : _debugInfo.isEmpty
               ? const Center(child: Text('No debug info available'))
               : ListView(
-                  padding: EdgeInsets.fromLTRB(SketchSpace.screenX, 18,
-                      SketchSpace.screenX, 32 + MediaQuery.paddingOf(context).bottom),
+                  padding: EdgeInsets.fromLTRB(
+                      SketchSpace.screenX,
+                      18,
+                      SketchSpace.screenX,
+                      32 + MediaQuery.paddingOf(context).bottom),
                   children: [
                     ..._debugInfo.entries.map(
                       (section) => _buildSection(section.key, section.value),

@@ -162,28 +162,27 @@ class _TodoScreenState extends State<TodoScreen>
       ),
     );
   }
+}
 
-  /// Notes for the All / Pending / Completed chips.
-  @visibleForTesting
-  static List<NoteWithDetails> filterTodoNotes(
-      List<NoteWithDetails> notes, String filter) {
-    switch (filter) {
-      case 'completed':
-        // Show notes where ALL tasks are completed
-        return notes.where((note) {
-          if (note.todoItems.isEmpty) return false;
-          return note.todoItems.every((item) => item.isDone);
-        }).toList();
-      case 'pending':
-        // Show notes that have at least one pending task
-        return notes.where((note) {
-          if (note.todoItems.isEmpty) return true;
-          return note.todoItems.any((item) => !item.isDone);
-        }).toList();
-      case 'all':
-      default:
-        return notes;
-    }
+/// Notes for the Todo tab's All / Pending / Completed chips.
+List<NoteWithDetails> filterTodoNotes(
+    List<NoteWithDetails> notes, String filter) {
+  switch (filter) {
+    case 'completed':
+      // Show notes where ALL tasks are completed
+      return notes.where((note) {
+        if (note.todoItems.isEmpty) return false;
+        return note.todoItems.every((item) => item.isDone);
+      }).toList();
+    case 'pending':
+      // Show notes that have at least one pending task
+      return notes.where((note) {
+        if (note.todoItems.isEmpty) return true;
+        return note.todoItems.any((item) => !item.isDone);
+      }).toList();
+    case 'all':
+    default:
+      return notes;
   }
 }
 

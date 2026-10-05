@@ -207,8 +207,8 @@ class _FolderScreenState extends State<FolderScreen> {
               }
 
               slivers.add(SliverToBoxAdapter(
-                child: SizedBox(
-                    height: 24 + MediaQuery.paddingOf(context).bottom),
+                child:
+                    SizedBox(height: 24 + MediaQuery.paddingOf(context).bottom),
               ));
 
               return CustomScrollView(
@@ -258,8 +258,7 @@ class _Hero extends StatelessWidget {
             : PinpointPopupMenuButton<String>(
                 tooltip: l10n.flMenuLabel(title),
                 icon: Icon(Icons.more_horiz_rounded, color: s.muted),
-                onOpened: () =>
-                    CrashBreadcrumbs.popupMenuOpened('folder.hero'),
+                onOpened: () => CrashBreadcrumbs.popupMenuOpened('folder.hero'),
                 onCanceled: () =>
                     CrashBreadcrumbs.popupMenuClosed('folder.hero'),
                 onSelected: (value) async {

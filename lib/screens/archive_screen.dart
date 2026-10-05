@@ -105,6 +105,9 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
 
     return SketchScaffold(
       title: l10n.archiveTitle,
+      // Swooshes behind the header only: they would show through the
+      // dimmed cards.
+      doodleTop: -60,
       actions: [
         CircleIconButton(
           icon: _isSearchActive ? Icons.close_rounded : Icons.search_rounded,
@@ -190,8 +193,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
           }
 
           slivers.add(SliverToBoxAdapter(
-            child:
-                SizedBox(height: 24 + MediaQuery.paddingOf(context).bottom),
+            child: SizedBox(height: 24 + MediaQuery.paddingOf(context).bottom),
           ));
           return CustomScrollView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,

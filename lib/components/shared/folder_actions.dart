@@ -174,8 +174,7 @@ class FolderColourSheet extends StatelessWidget {
               color: SketchPastels.roundRobin[i],
               label: label(l10n, SketchPastels.names[i]),
               selected: SketchPastels.roundRobin[i] == current,
-              onTap: () =>
-                  Navigator.of(context).pop(SketchPastels.names[i]),
+              onTap: () => Navigator.of(context).pop(SketchPastels.names[i]),
             ),
         ],
       ),

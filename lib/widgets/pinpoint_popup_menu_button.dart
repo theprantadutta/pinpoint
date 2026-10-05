@@ -125,7 +125,7 @@ class PinpointPopupMenuButton<T> extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: context.type.body.copyWith(color: fg),
+              style: context.type.body.copyWith(color: fg, height: 1.2),
             ),
           ),
         ],
@@ -136,8 +136,7 @@ class PinpointPopupMenuButton<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.sketch;
-    final label =
-        tooltip ?? MaterialLocalizations.of(context).showMenuTooltip;
+    final label = tooltip ?? MaterialLocalizations.of(context).showMenuTooltip;
     return SketchPressable(
       onTap: () => _open(context),
       semanticLabel: label,
@@ -182,9 +181,8 @@ class PinpointPopupMenuButton<T> extends StatelessWidget {
       surfaceTintColor: Colors.transparent,
       menuPadding: const EdgeInsets.symmetric(vertical: 4),
       clipBehavior: Clip.antiAlias,
-      popUpAnimationStyle: SketchMotion.enabled(context)
-          ? null
-          : AnimationStyle.noAnimation,
+      popUpAnimationStyle:
+          SketchMotion.enabled(context) ? null : AnimationStyle.noAnimation,
     );
 
     if (selected == null) {
@@ -218,8 +216,8 @@ class PinpointPopupMenuButton<T> extends StatelessWidget {
   RelativeRect? _anchorOf(BuildContext context) {
     try {
       final button = context.findRenderObject() as RenderBox?;
-      final overlay =
-          Navigator.of(context).overlay?.context.findRenderObject() as RenderBox?;
+      final overlay = Navigator.of(context).overlay?.context.findRenderObject()
+          as RenderBox?;
 
       if (button == null ||
           overlay == null ||

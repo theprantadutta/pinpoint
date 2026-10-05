@@ -86,8 +86,8 @@ class _DrawingScreenState extends State<DrawingScreen> {
             border: Border.all(color: s.outline, width: SketchStroke.outline),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(
-                SketchRadius.card - SketchStroke.outline),
+            borderRadius:
+                BorderRadius.circular(SketchRadius.card - SketchStroke.outline),
             child: Painter(_controller),
           ),
         ),

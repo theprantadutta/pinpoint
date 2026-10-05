@@ -125,7 +125,8 @@ class _AdminJobHistoryScreenState extends State<AdminJobHistoryScreen> {
         showSketchToast(
           context: context,
           message: response['message'] ?? 'Job triggered',
-          tone: response['success'] == true ? ToastTone.success : ToastTone.error,
+          tone:
+              response['success'] == true ? ToastTone.success : ToastTone.error,
         );
         _loadData(); // Refresh data
       }
@@ -306,9 +307,7 @@ class _JobInfoCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: isPaused
-                        ? SketchPastels.yellow
-                        : SketchPastels.mint,
+                    color: isPaused ? SketchPastels.yellow : SketchPastels.mint,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
