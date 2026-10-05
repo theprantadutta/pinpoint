@@ -161,3 +161,111 @@ class NoteFilterButton extends StatelessWidget {
     );
   }
 }
+
+/// One small action under a managed note (restore, delete forever…).
+class NoteAction {
+  const NoteAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.destructive = false,
+  });
+
+  final IconData icon;
+
+  /// Screen-reader label.
+  final String label;
+  final Future<void> Function() onTap;
+  final bool destructive;
+}
+
+/// An archive / trash grid item: the note card dimmed to 70%, then a row
+/// with an optional muted [caption] and small circle [actions]. Actions
+/// show a spinner and ignore taps while one is running.
+class ManagedNoteItem extends StatefulWidget {
+  const ManagedNoteItem({
+    super.key,
+    required this.note,
+    required this.actions,
+    this.caption,
+    this.isTrashView = false,
+  });
+
+  final NoteWithDetails note;
+  final List<NoteAction> actions;
+  final String? caption;
+  final bool isTrashView;
+
+  @override
+  State<ManagedNoteItem> createState() => _ManagedNoteItemState();
+}
+
+class _ManagedNoteItemState extends State<ManagedNoteItem> {
+  bool _busy = false;
+
+  Future<void> _run(NoteAction a) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await a.onTap();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.sketch;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        NoteListItem(
+          note: widget.note,
+          isArchivedView: !widget.isTrashView,
+          isTrashView: widget.isTrashView,
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Expanded(
+              child: widget.caption == null
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 4),
+                      child: Text(
+                        widget.caption!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.type.caption,
+                      ),
+                    ),
+            ),
+            if (_busy)
+              SizedBox(
+                width: SketchSpace.minTap,
+                height: SketchSpace.minTap,
+                child: Center(
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child:
+                        CircularProgressIndicator(strokeWidth: 2, color: s.ink),
+                  ),
+                ),
+              )
+            else
+              for (final a in widget.actions)
+                CircleIconButton(
+                  icon: a.icon,
+                  size: 34,
+                  iconSize: 18,
+                  iconColor: a.destructive ? SketchFunctional.error : null,
+                  semanticLabel: a.label,
+                  onPressed: () => _run(a),
+                ),
+          ],
+        ),
+      ],
+    );
+  }
+}
