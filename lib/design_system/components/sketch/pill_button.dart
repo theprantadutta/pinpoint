@@ -95,8 +95,11 @@ class PillButton extends StatelessWidget {
               : BorderSide(color: stroke, width: SketchStroke.outline),
         ),
       ),
-      alignment: Alignment.center,
-      child: loading
+      // Center with widthFactor 1: a plain alignment would make the
+      // container fill its parent even when [expand] is false.
+      child: Center(
+        widthFactor: expand ? null : 1,
+        child: loading
           ? SizedBox(
               width: 20,
               height: 20,
@@ -122,6 +125,7 @@ class PillButton extends StatelessWidget {
                 ),
               ],
             ),
+      ),
     );
 
     return SketchPressable(
