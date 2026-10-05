@@ -33,14 +33,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.2"
-  animate_do:
-    dependency: "direct main"
-    description:
-      name: animate_do
-      sha256: ddc9bde27df897088e02553f0aec44c614595de01fe357ffb257ecaf7d40c8fa
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.1.0"
   ansicolor:
     dependency: transitive
     description:
@@ -249,14 +241,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.4"
-  choice:
-    dependency: "direct main"
-    description:
-      name: choice
-      sha256: "52d07065e8056beba5b26cff7786134cbfa24927b1f5bf60a05d50058597b2d9"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.3.2"
   cli_util:
     dependency: transitive
     description:
@@ -361,14 +345,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.13"
-  db_viewer:
-    dependency: transitive
-    description:
-      name: db_viewer
-      sha256: "5f7e3cfcde9663321797d8f6f0c876f7c13f0825a2e77ec1ef065656797144d9"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
   dbus:
     dependency: transitive
     description:
@@ -377,14 +353,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.15"
-  delightful_toast:
-    dependency: "direct main"
-    description:
-      name: delightful_toast
-      sha256: "93d0b9e89a65947e42daa8aafe552596487dbedc15f68d0480654e789e94bc5b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
   device_info_plus:
     dependency: "direct main"
     description:
@@ -433,14 +401,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.34.3"
-  drift_db_viewer:
-    dependency: "direct main"
-    description:
-      name: drift_db_viewer
-      sha256: "5ea77858c52b55460a1e8f34ab5f88324621d486717d876fd745765fbc227f3f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
   drift_dev:
     dependency: "direct dev"
     description:
@@ -710,14 +670,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_animate:
-    dependency: "direct main"
-    description:
-      name: flutter_animate
-      sha256: "7befe2d3252728afb77aecaaea1dec88a89d35b9b1d2eea6d04479e8af9117b5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.5.2"
   flutter_dotenv:
     dependency: "direct main"
     description:
@@ -867,14 +819,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.2.2"
-  flutter_shaders:
-    dependency: transitive
-    description:
-      name: flutter_shaders
-      sha256: "34794acadd8275d971e02df03afee3dee0f98dbfb8c4837082ad0034f612a3e2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.3"
   flutter_staggered_grid_view:
     dependency: "direct main"
     description:
@@ -1845,14 +1789,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
-  skeletonizer:
-    dependency: "direct main"
-    description:
-      name: skeletonizer
-      sha256: "9f38f9b47ec3cf2235a6a4f154a88a95432bc55ba98b3e2eb6ced5c1974bc122"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.3"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -1962,14 +1898,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
-  stylish_bottom_bar:
-    dependency: "direct main"
-    description:
-      name: stylish_bottom_bar
-      sha256: "8bd394d51e3c1d93a3013fd35e7f77ca29f820df204d0f8580f4773fc660e750"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.1"
   synchronized:
     dependency: transitive
     description:
