@@ -118,7 +118,8 @@ class FolderTile extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
-  /// Usually a [PinpointPopupMenuButton] showing "⋯".
+  /// Usually a [PinpointPopupMenuButton] showing "⋯". Laid out in a 44px
+  /// square at the top end of the body.
   final Widget? menu;
   final double height;
 
@@ -181,12 +182,9 @@ class FolderTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (menu != null)
-                          SizedBox(
-                            width: 32,
-                            height: 28,
-                            child: Center(child: menu),
-                          ),
+                        // The menu itself sits on top of the tile (below),
+                        // so its 44px target is not clipped by this row.
+                        if (menu != null) const SizedBox(width: 30),
                       ],
                     ),
                     Text(
@@ -201,6 +199,14 @@ class FolderTile extends StatelessWidget {
                 ),
               ),
             ),
+            if (menu != null)
+              PositionedDirectional(
+                top: _bodyTop + 2,
+                end: 2,
+                width: SketchSpace.minTap,
+                height: SketchSpace.minTap,
+                child: Center(child: menu),
+              ),
           ],
         ),
       ),

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../design_system/components/empty_state.dart' as sketch;
+
+/// Legacy empty state. Delegates to the Sketchbook [sketch.EmptyState]
+/// (sticker cluster, 22/800 title, muted line); new code should use that
+/// directly.
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -13,44 +18,6 @@ class EmptyState extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.textTheme.bodySmall?.color?.withAlpha(128);
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 80,
-              color: color,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            if (message != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                message!,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: color,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      sketch.EmptyState(icon: icon, title: title, message: message);
 }

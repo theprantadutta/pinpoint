@@ -191,7 +191,10 @@ class AppNavigation {
                 name: "Notes",
                 pageBuilder: (context, state) => reusableTransitionPage(
                   state: state,
-                  child: const NotesScreen(),
+                  // `?type=voice|reminder` from the drawer narrows the list.
+                  child: NotesScreen(
+                    type: state.uri.queryParameters['type'],
+                  ),
                 ),
               ),
             ],

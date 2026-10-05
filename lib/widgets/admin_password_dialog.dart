@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pinpoint/design_system/design_system.dart';
 import 'package:pinpoint/services/admin_api_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:provider/provider.dart';
@@ -64,13 +65,15 @@ class _AdminPasswordDialogState extends State<AdminPasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final s = context.sketch;
+    final t = context.type;
 
+    // Admin tooling: deliberately left in English. The dialog itself takes
+    // the Sketchbook dialog theme (surface, 1.5px outline).
     return AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.admin_panel_settings, color: cs.primary),
+          Icon(Icons.admin_panel_settings_outlined, color: s.ink),
           const SizedBox(width: 12),
           const Text('Admin Access'),
         ],
@@ -81,9 +84,7 @@ class _AdminPasswordDialogState extends State<AdminPasswordDialog> {
         children: [
           Text(
             'This panel contains sensitive user data. Enter admin password to continue.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: cs.onSurfaceVariant,
-            ),
+            style: t.bodyRegular.copyWith(fontSize: 14, color: s.muted),
           ),
           const SizedBox(height: 20),
           TextFormField(
@@ -107,7 +108,7 @@ class _AdminPasswordDialogState extends State<AdminPasswordDialog> {
                 },
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(SketchRadius.card),
               ),
               errorText: _errorMessage,
               errorMaxLines: 3,
