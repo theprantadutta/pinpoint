@@ -44,7 +44,8 @@ void selectAccent(BuildContext context, SketchAccent accent) {
   }
   PinpointHaptics.medium();
   context.read<ThemeController>().setAccent(accent);
-  getIt<AnalyticsFacade>().trackAccentColorChanged(colorName: accent.premiumName);
+  getIt<AnalyticsFacade>()
+      .trackAccentColorChanged(colorName: accent.premiumName);
 }
 
 /// The five accent dots: the selected one ringed in ink, Pro-only ones at
@@ -152,7 +153,8 @@ class ProTag extends StatelessWidget {
 /// Light / Dark / Auto, persisted through [ThemeController] with the existing
 /// `theme_changed` event.
 class ThemeModeSwitch extends StatelessWidget {
-  const ThemeModeSwitch({super.key, required this.mode, required this.onChanged});
+  const ThemeModeSwitch(
+      {super.key, required this.mode, required this.onChanged});
 
   final ThemeMode mode;
   final ValueChanged<ThemeMode> onChanged;

@@ -239,8 +239,8 @@ class GlassContainer extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: backgroundColor ?? s.surface,
-        border: border ??
-            Border.all(color: s.outline, width: SketchStroke.outline),
+        border:
+            border ?? Border.all(color: s.outline, width: SketchStroke.outline),
         borderRadius: BorderRadius.circular(borderRadius ?? SketchRadius.card),
       ),
       child: child,

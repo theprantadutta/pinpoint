@@ -46,7 +46,8 @@ class _TagChipState extends State<TagChip> {
     final pad = switch (widget.size) {
       TagChipSize.small =>
         const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      TagChipSize.medium => const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      TagChipSize.medium =>
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       TagChipSize.large =>
         const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     };
@@ -65,8 +66,7 @@ class _TagChipState extends State<TagChip> {
               child: GestureDetector(
                 onTap: widget.onClose,
                 child: Icon(Icons.close_rounded,
-                    size: 14,
-                    color: widget.isSelected ? null : s.muted),
+                    size: 14, color: widget.isSelected ? null : s.muted),
               ),
             )
           : null,

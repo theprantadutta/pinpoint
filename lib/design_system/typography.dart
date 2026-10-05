@@ -320,8 +320,7 @@ class PinpointTypography {
     required Brightness brightness,
     Color? color,
   }) {
-    final textColor = color ??
-        _ink(brightness);
+    final textColor = color ?? _ink(brightness);
 
     return _font(
       primaryFontFamily,
@@ -339,8 +338,7 @@ class PinpointTypography {
     ButtonSize size = ButtonSize.medium,
     Color? color,
   }) {
-    final textColor = color ??
-        _ink(brightness);
+    final textColor = color ?? _ink(brightness);
 
     double fontSize;
     FontWeight fontWeight;

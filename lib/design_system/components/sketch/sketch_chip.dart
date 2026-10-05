@@ -131,7 +131,11 @@ class SketchTag extends StatelessWidget {
     this.icon,
     this.dense = true,
     this.textColor,
+    this.onPastel = false,
   });
+
+  /// Sits on a pastel surface: ink text and outline in both themes.
+  final bool onPastel;
 
   final String label;
   final Color? pastel;
@@ -149,7 +153,7 @@ class SketchTag extends StatelessWidget {
     final Color fg = textColor ??
         (inverse
             ? (pastel ?? s.onInverse)
-            : pastel != null
+            : pastel != null || onPastel
                 ? SketchPastels.onPastel
                 : s.ink);
     final Color fill = inverse ? s.inverse : (pastel ?? Colors.transparent);
@@ -177,7 +181,10 @@ class SketchTag extends StatelessWidget {
             Icon(icon, size: dense ? 12 : 14, color: fg),
             const SizedBox(width: 5),
           ],
-          Text(label, style: style),
+          Flexible(
+            child: Text(label,
+                style: style, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
         ],
       ),
     );

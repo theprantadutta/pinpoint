@@ -26,7 +26,13 @@ class SketchPastels {
   static const List<Color> roundRobin = [yellow, lavender, mint, sky, pink];
 
   /// Stable names, matching [roundRobin] and the persisted folder colour.
-  static const List<String> names = ['yellow', 'lavender', 'mint', 'sky', 'pink'];
+  static const List<String> names = [
+    'yellow',
+    'lavender',
+    'mint',
+    'sky',
+    'pink'
+  ];
 
   static Color? byName(String? name) {
     final i = name == null ? -1 : names.indexOf(name);
@@ -439,7 +445,8 @@ class PinpointColors {
   // Cool, subtly indigo-tinted neutrals (hue ~222, very low saturation) so
   // surfaces feel related to the indigo-blue accent instead of flat gray.
   static const Color keepDarkCanvas = Color(0xFF131312); // scaffold bg
-  static const Color keepDarkCard = Color(0xFF1D1D1B); // note card / default note
+  static const Color keepDarkCard =
+      Color(0xFF1D1D1B); // note card / default note
   static const Color keepDarkBar = Color(0xFF1D1D1B); // top bar / drawer
   static const Color keepDarkPill = Color(0xFF2A2926); // search pill / chips
   static const Color keepDarkTextPrimary = Color(0xFFF2F0E9);
@@ -451,8 +458,10 @@ class PinpointColors {
   // White cards on a faint cool canvas; borders/pills carry a light indigo
   // tint to harmonize with the accent.
   static const Color keepLightCanvas = Color(0xFFF5F3EC); // scaffold bg
-  static const Color keepLightCard = Color(0xFFFFFDF8); // note card / default note
-  static const Color keepLightCardBorder = Color(0xFFE2DED3); // hairline outline
+  static const Color keepLightCard =
+      Color(0xFFFFFDF8); // note card / default note
+  static const Color keepLightCardBorder =
+      Color(0xFFE2DED3); // hairline outline
   static const Color keepLightBar = Color(0xFFFFFDF8); // top bar / drawer
   static const Color keepLightPill = Color(0xFFECE9E0); // search pill / chips
   static const Color keepLightTextPrimary = Color(0xFF141414);
@@ -490,7 +499,8 @@ class NoteSwatch {
   /// The five Sketchbook pastels, in round-robin order.
   static const List<NoteSwatch> colored = [
     NoteSwatch(name: 'yellow', label: 'Yellow', color: SketchPastels.yellow),
-    NoteSwatch(name: 'lavender', label: 'Lavender', color: SketchPastels.lavender),
+    NoteSwatch(
+        name: 'lavender', label: 'Lavender', color: SketchPastels.lavender),
     NoteSwatch(name: 'mint', label: 'Mint', color: SketchPastels.mint),
     NoteSwatch(name: 'sky', label: 'Sky', color: SketchPastels.sky),
     NoteSwatch(name: 'pink', label: 'Pink', color: SketchPastels.pink),
@@ -536,8 +546,7 @@ class NoteSwatch {
   }
 
   /// The swatch the picker should show as selected for a stored [name].
-  static NoteSwatch selectedFor(String? name) =>
-      resolve(name) ?? defaultSwatch;
+  static NoteSwatch selectedFor(String? name) => resolve(name) ?? defaultSwatch;
 }
 
 /// Material 3 Color Scheme Extensions

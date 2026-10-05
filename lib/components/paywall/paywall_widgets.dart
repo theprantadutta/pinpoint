@@ -31,8 +31,7 @@ class _PaywallStickerCollageState extends State<PaywallStickerCollage>
 
   late final AnimationController _drop = AnimationController(
     vsync: this,
-    duration: const Duration(
-        milliseconds: _eachMs + _staggerMs * (_count - 1)),
+    duration: const Duration(milliseconds: _eachMs + _staggerMs * (_count - 1)),
   );
   bool _started = false;
 
@@ -251,7 +250,8 @@ class PaywallLimitsTable extends StatelessWidget {
     for (var i = 0; i < rows.length; i++) {
       final r = rows[i];
       if (i > 0) {
-        children.add(Container(height: SketchStroke.outline, color: s.hairline));
+        children
+            .add(Container(height: SketchStroke.outline, color: s.hairline));
       }
       children.add(Semantics(
         container: true,

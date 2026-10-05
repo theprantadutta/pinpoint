@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../design_system/design_system.dart';
 import '../../navigation/app_shell_scope.dart';
+import '../../navigation/new_note.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/user_profile.dart';
 import '../../sync/sync_manager.dart';
@@ -142,7 +143,18 @@ class _HomeHeaderState extends State<HomeHeader> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              if (!(shell?.showsDock ?? true) &&
+                  !(shell?.hasPermanentDrawer ?? false)) ...[
+                const SizedBox(width: 4),
+                CircleIconButton(
+                  icon: Icons.edit_rounded,
+                  fill: s.inverse,
+                  semanticLabel: l10n.dockNewNote,
+                  onPressed: () => NewNote.open(context),
+                  onLongPress: () => NewNote.showChooser(context),
+                ),
+              ],
+              const SizedBox(width: 4),
               CircleIconButton(
                 key: WalkthroughKeys.searchKey,
                 icon: Icons.search_rounded,

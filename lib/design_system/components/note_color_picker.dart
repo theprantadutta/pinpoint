@@ -76,9 +76,8 @@ class _SwatchDot extends StatelessWidget {
             color: color,
             shape: BoxShape.circle,
             border: Border.all(
-              color: isSelected
-                  ? cs.primary
-                  : cs.onSurface.withValues(alpha: 0.2),
+              color:
+                  isSelected ? cs.primary : cs.onSurface.withValues(alpha: 0.2),
               width: isSelected ? 2.5 : 1,
             ),
           ),

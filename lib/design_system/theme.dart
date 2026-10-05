@@ -231,8 +231,7 @@ class PinpointTheme {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SketchRadius.card),
-          borderSide:
-              const BorderSide(color: SketchFunctional.error, width: 2),
+          borderSide: const BorderSide(color: SketchFunctional.error, width: 2),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -321,8 +320,8 @@ class PinpointTheme {
             s.contains(WidgetState.selected) ? SketchPastels.mint : c.ink),
         trackColor: WidgetStateProperty.resolveWith((s) =>
             s.contains(WidgetState.selected) ? c.inverse : Colors.transparent),
-        trackOutlineColor: WidgetStateProperty.resolveWith((s) =>
-            s.contains(WidgetState.selected) ? c.inverse : c.outline),
+        trackOutlineColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected) ? c.inverse : c.outline),
         trackOutlineWidth: both(SketchStroke.outline),
       ),
       checkboxTheme: CheckboxThemeData(
@@ -336,8 +335,7 @@ class PinpointTheme {
                 ? SketchPastels.onPastel
                 : c.ink,
             width: SketchStroke.checkbox)),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
       radioTheme: RadioThemeData(fillColor: both(c.ink)),
       sliderTheme: SliderThemeData(
@@ -481,7 +479,6 @@ class PinpointTheme {
       ],
     );
   }
-
 }
 
 // ============================================
