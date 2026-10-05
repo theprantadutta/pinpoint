@@ -66,10 +66,12 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(AppL10n.of(context).todoConfirmDelete),
-        content: Text(AppL10n.of(context).todoDeleteConfirmBody(todo.todoTitle)),
+        content:
+            Text(AppL10n.of(context).todoDeleteConfirmBody(todo.todoTitle)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context), child: Text(AppL10n.of(context).commonCancel)),
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppL10n.of(context).commonCancel)),
           TextButton(
             onPressed: () async {
               widget.onTodoChanged(
@@ -221,10 +223,12 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                                   ),
                                 ),
                                 trailing: PinpointPopupMenuButton<String>(
-                                  onOpened: () => CrashBreadcrumbs
-                                      .popupMenuOpened('editor.todoItem'),
-                                  onCanceled: () => CrashBreadcrumbs
-                                      .popupMenuClosed('editor.todoItem'),
+                                  onOpened: () =>
+                                      CrashBreadcrumbs.popupMenuOpened(
+                                          'editor.todoItem'),
+                                  onCanceled: () =>
+                                      CrashBreadcrumbs.popupMenuClosed(
+                                          'editor.todoItem'),
                                   onSelected: (value) {
                                     CrashBreadcrumbs.popupMenuClosed(
                                         'editor.todoItem',
@@ -258,7 +262,8 @@ class _TodoListTypeContentState extends State<TodoListTypeContent> {
                                           Icon(Icons.delete_rounded,
                                               size: 20, color: cs.error),
                                           const SizedBox(width: 12),
-                                          Text(AppL10n.of(context).commonDelete),
+                                          Text(
+                                              AppL10n.of(context).commonDelete),
                                         ],
                                       ),
                                     ),

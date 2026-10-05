@@ -32,14 +32,31 @@ class DriftNoteService {
       // Try to parse as JSON Delta format
       final jsonData = jsonDecode(content);
       if (jsonData is List) {
-        // Extract text from Delta operations
-        final buffer = StringBuffer();
+        // Rebuild the text line by line. In a delta, a line's block style
+        // (list, checklist) rides on its newline, so list items get a "• "
+        // and card previews keep their bullets. Embeds are skipped rather
+        // than printed as a map.
+        final out = StringBuffer();
+        final line = StringBuffer();
         for (final op in jsonData) {
-          if (op is Map && op.containsKey('insert')) {
-            buffer.write(op['insert']);
+          if (op is! Map) continue;
+          final insert = op['insert'];
+          if (insert is! String) continue;
+          final attrs = op['attributes'];
+          final block = attrs is Map ? attrs['block'] : null;
+          final parts = insert.split('\n');
+          for (var i = 0; i < parts.length; i++) {
+            line.write(parts[i]);
+            if (i < parts.length - 1) {
+              final bulleted = block == 'ul' || block == 'ol' || block == 'cl';
+              if (bulleted && line.isNotEmpty) out.write('• ');
+              out.writeln(line.toString());
+              line.clear();
+            }
           }
         }
-        return buffer.toString();
+        out.write(line.toString());
+        return out.toString().trimRight();
       }
     } catch (e) {
       // Not JSON, return as plain text (backward compatibility)
@@ -1571,26 +1588,37 @@ class DriftNoteService {
     }
   }
 
+  /// Emits once immediately, then once per committed write to any table.
+  ///
+  /// The V2 list streams below used to poll every 100ms — re-running every
+  /// query and emitting a fresh list ten times a second, which rebuilt the
+  /// whole notes grid continuously even when nothing had changed. Drift
+  /// already reports writes (batched per transaction), so recompute on those.
+  ///
+  /// It listens to all tables rather than a hand-picked list because the
+  /// lists also join folders, folder relations and todo items; a missed table
+  /// would show stale data, while an extra recompute only costs a query.
+  static Stream<void> _databaseChanges(AppDatabase database) async* {
+    yield null;
+    yield* database.tableUpdates().map((_) {});
+  }
+
   static Stream<List<NoteWithDetails>> watchNotesWithDetailsV2({
     String searchQuery = '',
     String sortType = 'updatedAt',
     String sortDirection = 'desc',
     List<String>? excludeNoteTypes, // Exclude specific note types (e.g., ['todo', 'reminder'])
+    bool includeArchived = false, // Filters → "Include archived"
   }) async* {
     final database = getIt<AppDatabase>();
 
-    // Watch all note type tables
-    final textNotesStream = database.select(database.textNotesV2).watch();
-    final voiceNotesStream = database.select(database.voiceNotesV2).watch();
-    final todoNotesStream = database.select(database.todoListNotesV2).watch();
-    final reminderNotesStream = database.select(database.reminderNotesV2).watch();
-
-    // Combine all streams
-    await for (final _ in Stream.periodic(const Duration(milliseconds: 100))) {
-      final textNotes = await textNotesStream.first;
-      final voiceNotes = await voiceNotesStream.first;
-      final todoNotes = await todoNotesStream.first;
-      final reminderNotes = await reminderNotesStream.first;
+    // Recompute once now, then once per write to the database.
+    await for (final _ in _databaseChanges(database)) {
+      final textNotes = await database.select(database.textNotesV2).get();
+      final voiceNotes = await database.select(database.voiceNotesV2).get();
+      final todoNotes = await database.select(database.todoListNotesV2).get();
+      final reminderNotes =
+          await database.select(database.reminderNotesV2).get();
 
       List<NoteWithDetails> allNotes = [];
 
@@ -1603,7 +1631,7 @@ class DriftNoteService {
       // Convert text notes (skip if excluded)
       if (!shouldExcludeText) {
         for (final textNote in textNotes) {
-          if (textNote.isArchived || textNote.isDeleted) continue;
+          if ((textNote.isArchived && !includeArchived) || textNote.isDeleted) continue;
 
         // Apply search filter
         if (searchQuery.isNotEmpty) {
@@ -1659,7 +1687,7 @@ class DriftNoteService {
       // Convert voice notes (skip if excluded)
       if (!shouldExcludeVoice) {
         for (final voiceNote in voiceNotes) {
-          if (voiceNote.isArchived || voiceNote.isDeleted) continue;
+          if ((voiceNote.isArchived && !includeArchived) || voiceNote.isDeleted) continue;
 
         // Apply search filter
         if (searchQuery.isNotEmpty) {
@@ -1721,6 +1749,7 @@ class DriftNoteService {
           todoItems: [],
           textContent: voicePreview,
           color: voiceNote.color,
+          voiceDurationSeconds: voiceNote.durationSeconds,
         ));
         }
       }
@@ -1728,7 +1757,7 @@ class DriftNoteService {
       // Convert todo notes (skip if excluded)
       if (!shouldExcludeTodo) {
         for (final todoNote in todoNotes) {
-          if (todoNote.isArchived || todoNote.isDeleted) continue;
+          if ((todoNote.isArchived && !includeArchived) || todoNote.isDeleted) continue;
 
         // Apply search filter
         if (searchQuery.isNotEmpty) {
@@ -1811,7 +1840,7 @@ class DriftNoteService {
       // Convert reminder notes (skip if excluded)
       if (!shouldExcludeReminder) {
         for (final reminderNote in reminderNotes) {
-          if (reminderNote.isArchived || reminderNote.isDeleted) continue;
+          if ((reminderNote.isArchived && !includeArchived) || reminderNote.isDeleted) continue;
 
         // Apply search filter
         if (searchQuery.isNotEmpty) {
@@ -1859,6 +1888,7 @@ class DriftNoteService {
           todoItems: [],
           textContent: reminderNote.description,
           color: reminderNote.color,
+          reminderAt: reminderNote.reminderTime,
         ));
         }
       }
@@ -1887,18 +1917,13 @@ class DriftNoteService {
   }) async* {
     final database = getIt<AppDatabase>();
 
-    // Watch all note type tables
-    final textNotesStream = database.select(database.textNotesV2).watch();
-    final voiceNotesStream = database.select(database.voiceNotesV2).watch();
-    final todoNotesStream = database.select(database.todoListNotesV2).watch();
-    final reminderNotesStream = database.select(database.reminderNotesV2).watch();
-
-    // Combine all streams
-    await for (final _ in Stream.periodic(const Duration(milliseconds: 100))) {
-      final textNotes = await textNotesStream.first;
-      final voiceNotes = await voiceNotesStream.first;
-      final todoNotes = await todoNotesStream.first;
-      final reminderNotes = await reminderNotesStream.first;
+    // Recompute once now, then once per write to the database.
+    await for (final _ in _databaseChanges(database)) {
+      final textNotes = await database.select(database.textNotesV2).get();
+      final voiceNotes = await database.select(database.voiceNotesV2).get();
+      final todoNotes = await database.select(database.todoListNotesV2).get();
+      final reminderNotes =
+          await database.select(database.reminderNotesV2).get();
 
       List<NoteWithDetails> allNotes = [];
 
@@ -2029,6 +2054,7 @@ class DriftNoteService {
           todoItems: [],
           textContent: voicePreview,
           color: voiceNote.color,
+          voiceDurationSeconds: voiceNote.durationSeconds,
         ));
         }
       }
@@ -2167,6 +2193,7 @@ class DriftNoteService {
           todoItems: [],
           textContent: reminderNote.description,
           color: reminderNote.color,
+          reminderAt: reminderNote.reminderTime,
         ));
         }
       }
@@ -2195,18 +2222,13 @@ class DriftNoteService {
   }) async* {
     final database = getIt<AppDatabase>();
 
-    // Watch all note type tables
-    final textNotesStream = database.select(database.textNotesV2).watch();
-    final voiceNotesStream = database.select(database.voiceNotesV2).watch();
-    final todoNotesStream = database.select(database.todoListNotesV2).watch();
-    final reminderNotesStream = database.select(database.reminderNotesV2).watch();
-
-    // Combine all streams
-    await for (final _ in Stream.periodic(const Duration(milliseconds: 100))) {
-      final textNotes = await textNotesStream.first;
-      final voiceNotes = await voiceNotesStream.first;
-      final todoNotes = await todoNotesStream.first;
-      final reminderNotes = await reminderNotesStream.first;
+    // Recompute once now, then once per write to the database.
+    await for (final _ in _databaseChanges(database)) {
+      final textNotes = await database.select(database.textNotesV2).get();
+      final voiceNotes = await database.select(database.voiceNotesV2).get();
+      final todoNotes = await database.select(database.todoListNotesV2).get();
+      final reminderNotes =
+          await database.select(database.reminderNotesV2).get();
 
       List<NoteWithDetails> allNotes = [];
 
@@ -2337,6 +2359,7 @@ class DriftNoteService {
           todoItems: [],
           textContent: voicePreview,
           color: voiceNote.color,
+          voiceDurationSeconds: voiceNote.durationSeconds,
         ));
         }
       }
@@ -2475,6 +2498,7 @@ class DriftNoteService {
           todoItems: [],
           textContent: reminderNote.description,
           color: reminderNote.color,
+          reminderAt: reminderNote.reminderTime,
         ));
         }
       }
@@ -2504,18 +2528,13 @@ class DriftNoteService {
   }) async* {
     final database = getIt<AppDatabase>();
 
-    // Watch all note type tables
-    final textNotesStream = database.select(database.textNotesV2).watch();
-    final voiceNotesStream = database.select(database.voiceNotesV2).watch();
-    final todoNotesStream = database.select(database.todoListNotesV2).watch();
-    final reminderNotesStream = database.select(database.reminderNotesV2).watch();
-
-    // Combine all streams
-    await for (final _ in Stream.periodic(const Duration(milliseconds: 100))) {
-      final textNotes = await textNotesStream.first;
-      final voiceNotes = await voiceNotesStream.first;
-      final todoNotes = await todoNotesStream.first;
-      final reminderNotes = await reminderNotesStream.first;
+    // Recompute once now, then once per write to the database.
+    await for (final _ in _databaseChanges(database)) {
+      final textNotes = await database.select(database.textNotesV2).get();
+      final voiceNotes = await database.select(database.voiceNotesV2).get();
+      final todoNotes = await database.select(database.todoListNotesV2).get();
+      final reminderNotes =
+          await database.select(database.reminderNotesV2).get();
 
       List<NoteWithDetails> allNotes = [];
 
@@ -2652,6 +2671,7 @@ class DriftNoteService {
           todoItems: [],
           textContent: voicePreview,
           color: voiceNote.color,
+          voiceDurationSeconds: voiceNote.durationSeconds,
         ));
         }
       }
@@ -2796,6 +2816,7 @@ class DriftNoteService {
           todoItems: [],
           textContent: reminderNote.description,
           color: reminderNote.color,
+          reminderAt: reminderNote.reminderTime,
         ));
         }
       }

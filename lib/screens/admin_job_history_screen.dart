@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pinpoint/services/admin_api_service.dart';
 import 'package:pinpoint/design_system/design_system.dart';
+import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 
@@ -121,22 +122,20 @@ class _AdminJobHistoryScreenState extends State<AdminJobHistoryScreen> {
     try {
       final response = await _adminApi.triggerJob(widget.jobId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Job triggered'),
-            backgroundColor:
-                response['success'] == true ? Colors.green : Colors.red,
-          ),
+        showSketchToast(
+          context: context,
+          message: response['message'] ?? 'Job triggered',
+          tone:
+              response['success'] == true ? ToastTone.success : ToastTone.error,
         );
         _loadData(); // Refresh data
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to trigger job: $e'),
-            backgroundColor: Colors.red,
-          ),
+        showSketchToast(
+          context: context,
+          message: 'Failed to trigger job: $e',
+          tone: ToastTone.error,
         );
       }
     }
@@ -145,24 +144,24 @@ class _AdminJobHistoryScreenState extends State<AdminJobHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final sk = context.sketch;
 
-    return GradientScaffold(
-      appBar: GlassAppBar(
-        title: Text(_jobDetails?['name'] ?? widget.jobId),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-            tooltip: 'Refresh',
-          ),
-          IconButton(
-            icon: const Icon(Icons.play_circle),
-            onPressed: _triggerJob,
-            tooltip: 'Run Now',
-          ),
-        ],
-      ),
+    return SketchScaffold(
+      title: _jobDetails?['name'] ?? widget.jobId,
+      actions: [
+        CircleIconButton(
+          icon: Icons.refresh_rounded,
+          onPressed: _loadData,
+          semanticLabel: 'Refresh',
+        ),
+        const SizedBox(width: 6),
+        CircleIconButton(
+          icon: Icons.play_arrow_rounded,
+          fill: context.sketch.inverse,
+          onPressed: _triggerJob,
+          semanticLabel: 'Run Now',
+        ),
+      ],
       body: _isLoadingDetails
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -205,12 +204,12 @@ class _AdminJobHistoryScreenState extends State<AdminJobHistoryScreen> {
                         padding: const EdgeInsets.all(32),
                         child: Column(
                           children: [
-                            Icon(Icons.history, size: 48, color: cs.outline),
+                            Icon(Icons.history, size: 48, color: sk.muted),
                             const SizedBox(height: 16),
                             Text(
                               'No runs yet',
                               style: theme.textTheme.bodyLarge?.copyWith(
-                                color: cs.outline,
+                                color: sk.muted,
                               ),
                             ),
                           ],
@@ -270,7 +269,7 @@ class _JobInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final sk = context.sketch;
     final isPaused = job['is_paused'] ?? false;
 
     return Card(
@@ -295,7 +294,7 @@ class _JobInfoCard extends StatelessWidget {
                       Text(
                         job['job_id'],
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: cs.outline,
+                          color: sk.muted,
                           fontFamily: 'monospace',
                         ),
                       ),
@@ -308,9 +307,7 @@ class _JobInfoCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: isPaused
-                        ? Colors.orange.withValues(alpha: 0.1)
-                        : Colors.green.withValues(alpha: 0.1),
+                    color: isPaused ? SketchPastels.yellow : SketchPastels.mint,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -319,13 +316,13 @@ class _JobInfoCard extends StatelessWidget {
                       Icon(
                         isPaused ? Icons.pause : Icons.play_arrow,
                         size: 16,
-                        color: isPaused ? Colors.orange : Colors.green,
+                        color: SketchPastels.onPastel,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         isPaused ? 'Paused' : 'Active',
-                        style: TextStyle(
-                          color: isPaused ? Colors.orange : Colors.green,
+                        style: const TextStyle(
+                          color: SketchPastels.onPastel,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -338,14 +335,14 @@ class _JobInfoCard extends StatelessWidget {
             Text(
               job['description'] ?? 'No description',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: cs.onSurfaceVariant,
+                color: sk.muted,
               ),
             ),
             if (job['next_run_time'] != null && !isPaused) ...[
               const Divider(height: 24),
               Row(
                 children: [
-                  Icon(Icons.schedule, size: 16, color: cs.primary),
+                  Icon(Icons.schedule, size: 16, color: sk.ink),
                   const SizedBox(width: 8),
                   Text(
                     'Next run: ',
@@ -355,7 +352,7 @@ class _JobInfoCard extends StatelessWidget {
                     _formatDateTime(job['next_run_time']),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: cs.primary,
+                      color: sk.ink,
                     ),
                   ),
                 ],
@@ -387,7 +384,7 @@ class _StatisticsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final sk = context.sketch;
 
     if (statistics == null) {
       return const SizedBox.shrink();
@@ -419,7 +416,7 @@ class _StatisticsCard extends StatelessWidget {
                     icon: Icons.numbers,
                     label: 'Total Runs',
                     value: totalRuns.toString(),
-                    color: cs.primary,
+                    color: sk.ink,
                   ),
                 ),
                 Expanded(
@@ -427,7 +424,7 @@ class _StatisticsCard extends StatelessWidget {
                     icon: Icons.check_circle,
                     label: 'Success',
                     value: successRuns.toString(),
-                    color: Colors.green,
+                    color: SketchFunctional.success,
                   ),
                 ),
                 Expanded(
@@ -435,7 +432,7 @@ class _StatisticsCard extends StatelessWidget {
                     icon: Icons.error,
                     label: 'Failed',
                     value: failedRuns.toString(),
-                    color: Colors.red,
+                    color: SketchFunctional.error,
                   ),
                 ),
               ],
@@ -449,10 +446,10 @@ class _StatisticsCard extends StatelessWidget {
                     label: 'Success Rate',
                     value: '${successRate.toStringAsFixed(1)}%',
                     color: successRate >= 90
-                        ? Colors.green
+                        ? SketchFunctional.success
                         : successRate >= 70
-                            ? Colors.orange
-                            : Colors.red,
+                            ? sk.muted
+                            : SketchFunctional.error,
                   ),
                 ),
                 Expanded(
@@ -462,7 +459,7 @@ class _StatisticsCard extends StatelessWidget {
                     value: avgDuration != null
                         ? '${avgDuration.toStringAsFixed(2)}s'
                         : '--',
-                    color: cs.secondary,
+                    color: sk.ink,
                   ),
                 ),
                 const Expanded(child: SizedBox()),
@@ -491,7 +488,7 @@ class _StatItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final sk = context.sketch;
 
     return Column(
       children: [
@@ -513,7 +510,7 @@ class _StatItem extends StatelessWidget {
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: cs.outline,
+            color: sk.muted,
           ),
         ),
       ],
@@ -529,7 +526,7 @@ class _RunCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final sk = context.sketch;
     final status = run['status'];
     final triggerType = run['trigger_type'];
     final triggeredBy = run['triggered_by'];
@@ -538,13 +535,13 @@ class _RunCard extends StatelessWidget {
     IconData statusIcon;
 
     if (status == 'success') {
-      statusColor = Colors.green;
+      statusColor = SketchFunctional.success;
       statusIcon = Icons.check_circle;
     } else if (status == 'failed') {
-      statusColor = Colors.red;
+      statusColor = SketchFunctional.error;
       statusIcon = Icons.error;
     } else {
-      statusColor = Colors.blue;
+      statusColor = sk.pen;
       statusIcon = Icons.hourglass_empty;
     }
 
@@ -572,7 +569,7 @@ class _RunCard extends StatelessWidget {
               Text(
                 _formatDuration(run['duration_seconds']),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: cs.outline,
+                  color: sk.muted,
                 ),
               ),
           ],
@@ -582,7 +579,7 @@ class _RunCard extends StatelessWidget {
             Icon(
               triggerType == 'manual' ? Icons.person : Icons.schedule,
               size: 14,
-              color: cs.outline,
+              color: sk.muted,
             ),
             const SizedBox(width: 4),
             Text(
@@ -590,7 +587,7 @@ class _RunCard extends StatelessWidget {
                   ? 'Manual${triggeredBy != null ? ' by $triggeredBy' : ''}'
                   : 'Scheduled',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: cs.outline,
+                color: sk.muted,
               ),
             ),
           ],
@@ -613,7 +610,7 @@ class _RunCard extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest,
+                      color: sk.soft,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: SelectableText(
@@ -631,7 +628,7 @@ class _RunCard extends StatelessWidget {
                     'Error',
                     style: theme.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.red,
+                      color: SketchFunctional.error,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -639,10 +636,10 @@ class _RunCard extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.1),
+                      color: SketchFunctional.errorFill,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Colors.red.withValues(alpha: 0.3),
+                        color: SketchFunctional.error,
                       ),
                     ),
                     child: SelectableText(
@@ -650,7 +647,7 @@ class _RunCard extends StatelessWidget {
                       style: const TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 12,
-                        color: Colors.red,
+                        color: SketchFunctional.error,
                       ),
                     ),
                   ),
@@ -661,7 +658,7 @@ class _RunCard extends StatelessWidget {
                     child: Text(
                       'No additional details',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: cs.outline,
+                        color: sk.muted,
                       ),
                     ),
                   ),

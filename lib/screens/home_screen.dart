@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../design_system/design_system.dart';
-import '../components/home_screen/home_screen_my_folders.dart';
+import '../components/home_screen/home_folders_section.dart';
+import '../components/home_screen/home_header.dart';
 import '../components/home_screen/home_screen_recent_notes.dart';
 import '../models/note_with_details.dart';
 import '../screen_arguments/create_note_screen_arguments.dart';
 import '../screens/create_note_screen_v2.dart';
-import '../components/home_screen/home_screen_top_bar.dart';
-import '../design_system/components/keep_fab.dart';
-import '../navigation/keep_drawer.dart';
+import 'package:provider/provider.dart';
+
+import '../dev/demo_seed.dart';
+import '../services/theme_controller.dart';
+import '../sync/preferences_sync_service.dart';
+import '../navigation/app_shell_scope.dart';
+import '../navigation/new_note.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/api_service.dart';
 import '../services/encryption_service.dart';
-import '../services/notification_service.dart';
 import '../services/subscription_service.dart';
 import '../services/premium_service.dart';
 import '../services/firebase_notification_service.dart';
@@ -40,9 +43,6 @@ class _HomeScreenState extends State<HomeScreen>
   // Master–detail (expanded/tablet only): the note open in the detail pane.
   NoteWithDetails? _selectedNote;
 
-  // Whether the notes list has scrolled under the top bar (drives the hairline).
-  bool _scrolledUnder = false;
-
   // Static flag to prevent re-initialization across widget rebuilds
   static bool _servicesInitialized = false;
 
@@ -52,7 +52,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
     getIt<AnalyticsFacade>().trackScreenView(screenName: 'Home');
     // Initialize authenticated services only once per app session
     if (!_servicesInitialized) {
@@ -67,11 +66,16 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> _initializeAuthenticatedServices() async {
     debugPrint('🚀 [HomeScreen] Starting background initialization...');
 
+    // Debug-only demo content (needs --dart-define=PINPOINT_SEED_DEMO=true).
+    await DemoSeed.runOnceIfEnabled();
+
+    // Appearance follows the account across devices (offline-safe).
+    if (mounted) {
+      PreferencesSyncService.instance.start(context.read<ThemeController>());
+    }
+
     // Run all background tasks in parallel for speed
     await Future.wait([
-      // 1. Request notification permission (only once)
-      _requestNotificationPermissionIfNeeded(),
-
       // 2. Initialize Subscription and Premium Services
       _initializeSubscriptionServices(),
 
@@ -222,176 +226,99 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  void _onScroll() {
-    final scrolledUnder =
-        _scrollController.hasClients && _scrollController.offset > 0;
-    if (scrolledUnder != _scrolledUnder) {
-      setState(() => _scrolledUnder = scrolledUnder);
-    }
-  }
-
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
-  }
-
-  /// Request basic notification permission on first app launch after login
-  Future<void> _requestNotificationPermissionIfNeeded() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final hasAskedBefore =
-          prefs.getBool('notification_permission_requested') ?? false;
-
-      if (!hasAskedBefore && mounted) {
-        // Small delay to let the home screen render first
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        if (!mounted) return;
-
-        // Show explanation dialog
-        final shouldRequest = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: Text(AppL10n.of(context).homeEnableNotifTitle),
-            content: Text(
-              AppL10n.of(context).homeEnableNotifBody,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(AppL10n.of(context).homeNotNow),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(AppL10n.of(context).homeEnable),
-              ),
-            ],
-          ),
-        );
-
-        // Mark as asked regardless of user choice
-        await prefs.setBool('notification_permission_requested', true);
-
-        // Request permission if user agreed
-        if (shouldRequest == true) {
-          await NotificationService.requestBasicNotificationPermission();
-          getIt<AnalyticsFacade>()
-              .trackNotificationPermissionResult(granted: true);
-        } else {
-          getIt<AnalyticsFacade>()
-              .trackNotificationPermissionResult(granted: false);
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ Error requesting notification permission: $e');
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
-    final theme = Theme.of(context);
-    // Match the app-bar surface to the home canvas so it blends in.
-    final barColor = theme.scaffoldBackgroundColor;
+    final s = context.sketch;
 
-    final sizeClass = context.windowSizeClass;
-
-    // Expanded (landscape tablets/iPads): the search bar + folders span the
-    // FULL width across the top; only the note list is a narrow pane, with the
-    // editor filling the rest (note list | editor). The navigation drawer is
-    // reached via the hamburger (Apple Notes-style collapsed sidebar).
-    if (sizeClass == WindowSizeClass.expanded) {
+    // Landscape tablets: the note list is a narrow pane and the editor fills
+    // the rest (list | editor). The shell pins the drawer beside both.
+    if (context.windowSizeClass == WindowSizeClass.expanded) {
       return Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        drawer: const KeepDrawer(),
-        floatingActionButton: const KeepFab(),
-        body: Column(
+        backgroundColor: s.bg,
+        body: Row(
           children: [
-            // Full-width header: search + folders.
-            _buildTopBar(theme, barColor),
-            const HomeScreenMyFolders(),
-            SizedBox(height: PinpointSpacing.lg),
-
-            // Below the header: narrow note list | editor pane.
-            Expanded(
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 380,
-                    child: _buildNotesList(masterDetail: true),
-                  ),
-                  VerticalDivider(
-                    width: 0.5,
-                    thickness: 0.5,
-                    color: theme.dividerColor,
-                  ),
-                  Expanded(child: _buildDetailPane(theme)),
-                ],
-              ),
-            ),
+            SizedBox(width: 400, child: _buildFeed(masterDetail: true)),
+            VerticalDivider(
+                width: SketchStroke.outline,
+                thickness: SketchStroke.outline,
+                color: s.hairline),
+            Expanded(child: _buildDetailPane()),
           ],
         ),
       );
     }
 
-    // Medium (portrait tablets/iPads): pin the navigation drawer open beside
-    // the content (there's no editor pane here, so it's just drawer + list).
-    // Compact (phones): the classic modal drawer + hamburger.
-    final isMedium = sizeClass == WindowSizeClass.medium;
-
-    // Flat, Keep-style home: a solid app-bar surface (with breathing room
-    // beneath the search field) over a flat canvas — no gradient/glass.
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      drawer: isMedium ? null : const KeepDrawer(),
-      floatingActionButton: const KeepFab(),
-      body: isMedium
-          ? Row(
-              children: [
-                const KeepDrawer(permanent: true),
-                Expanded(child: _buildHomeBody(theme, barColor)),
-              ],
-            )
-          : _buildHomeBody(theme, barColor),
+      backgroundColor: s.bg,
+      body: _buildFeed(),
+    );
+  }
+
+  /// Header, folders and the notes grid, scrolling as one.
+  Widget _buildFeed({bool masterDetail = false}) {
+    final showsDock = AppShellScope.maybeOf(context)?.showsDock ?? true;
+    final bottomPad = masterDetail || !showsDock
+        ? 32.0
+        : SketchSpace.dockClearance + MediaQuery.paddingOf(context).bottom;
+
+    return DoodleBackground(
+      top: DoodleBackground.homeTop,
+      squiggle: true,
+      child: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverToBoxAdapter(
+              child: HomeHeader(
+                onSearchChanged: (query) {
+                  setState(() => _searchQuery = query);
+                  final length = query.trim().runes.length;
+                  if (length > 0) {
+                    getIt<AnalyticsFacade>()
+                        .trackSearchPerformed(queryLength: length);
+                  }
+                },
+              ),
+            ),
+            if (_searchQuery.isEmpty)
+              const SliverToBoxAdapter(child: HomeFoldersSection()),
+            const SliverToBoxAdapter(child: RecentNotesHeader()),
+            const SliverToBoxAdapter(
+                child: SizedBox(height: SketchSpace.titleToContent - 6)),
+            RecentNotesSliver(
+              searchQuery: _searchQuery,
+              onNoteSelected: masterDetail
+                  ? (note) => setState(() => _selectedNote = note)
+                  : null,
+              selectedNoteId: masterDetail ? _selectedNote?.note.id : null,
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: bottomPad)),
+          ],
+        ),
+      ),
     );
   }
 
   /// The editor pane for master–detail. Shows a placeholder until a note is
   /// selected, then the note editor embedded (no route push/pop).
-  Widget _buildDetailPane(ThemeData theme) {
+  Widget _buildDetailPane() {
     final note = _selectedNote;
     if (note == null) {
+      final l10n = AppL10n.of(context);
       return SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.sticky_note_2_outlined,
-                size: 64,
-                color:
-                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-              ),
-              const SizedBox(height: PinpointSpacing.md),
-              Text(
-                AppL10n.of(context).homeSelectNote,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: PinpointSpacing.xs),
-              Text(
-                'or tap + to create a new one',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color:
-                      theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                ),
-              ),
-            ],
-          ),
+        child: EmptyState(
+          icon: Icons.sticky_note_2_outlined,
+          title: l10n.homeSelectNote,
+          actionLabel: l10n.dockNewNote,
+          onAction: () => NewNote.open(context),
         ),
       );
     }
@@ -406,63 +333,6 @@ class _HomeScreenState extends State<HomeScreen>
         noticeType: note.note.noteType,
         existingNote: note,
       ),
-    );
-  }
-
-  Widget _buildHomeBody(ThemeData theme, Color barColor,
-      {bool masterDetail = false}) {
-    return Column(
-      children: [
-        _buildTopBar(theme, barColor),
-
-        // Folders Section (Compact)
-        const HomeScreenMyFolders(),
-
-        SizedBox(height: PinpointSpacing.lg),
-
-        // Recent Notes Section
-        Expanded(child: _buildNotesList(masterDetail: masterDetail)),
-      ],
-    );
-  }
-
-  /// Top bar surface (search + hamburger/filter) with a hairline once scrolled.
-  Widget _buildTopBar(ThemeData theme, Color barColor) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: barColor,
-        border: Border(
-          bottom: BorderSide(
-            color: _scrolledUnder ? theme.dividerColor : Colors.transparent,
-            width: 0.5,
-          ),
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: PinpointSpacing.sm),
-          child: HomeScreenTopBar(
-            onSearchChanged: (query) {
-              setState(() {
-                _searchQuery = query;
-              });
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// The scrollable notes list. In [masterDetail] mode, taps select into the
-  /// detail pane instead of pushing the full-screen editor.
-  Widget _buildNotesList({bool masterDetail = false}) {
-    return HomeScreenRecentNotes(
-      searchQuery: _searchQuery,
-      scrollController: _scrollController,
-      onNoteSelected:
-          masterDetail ? (note) => setState(() => _selectedNote = note) : null,
-      selectedNoteId: masterDetail ? _selectedNote?.note.id : null,
     );
   }
 }

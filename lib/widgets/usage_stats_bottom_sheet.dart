@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../constants/premium_limits.dart';
 import '../design_system/design_system.dart';
 import '../services/premium_service.dart';
+import '../util/show_a_toast.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
-/// Bottom sheet displaying comprehensive usage statistics
+/// The usage sheet: synced notes, OCR scans and exports against the free
+/// limits, or "Unlimited" for Pro. Refresh pulls the counts from the server;
+/// a long press reconciles the synced-note count.
 class UsageStatsBottomSheet extends StatefulWidget {
   const UsageStatsBottomSheet({super.key});
+
+  /// Presents the sheet as a Sketchbook bottom sheet.
+  static Future<void> show(BuildContext context) => showSketchSheet<void>(
+        context: context,
+        builder: (_) => const UsageStatsBottomSheet(),
+      );
 
   @override
   State<UsageStatsBottomSheet> createState() => _UsageStatsBottomSheetState();
@@ -49,6 +58,7 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
 
   Future<void> _reconcileUsageStats(BuildContext context) async {
     setState(() => _isRefreshing = true);
+    final l10n = AppL10n.of(context);
     try {
       final result = await _premiumService.reconcileUsageWithBackend();
 
@@ -58,28 +68,25 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
         final newCount = result['new_count'] as int;
 
         if (reconciled) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  '✅ Reconciled: Updated from $oldCount to $newCount notes'),
-              backgroundColor: Colors.green,
-            ),
+          showSuccessToast(
+            context: context,
+            title: l10n.stUsageTitle,
+            description: l10n.stUsageReconciled(oldCount, newCount),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('✓ Already in sync: $newCount notes'),
-            ),
+          showInfoToast(
+            context: context,
+            title: l10n.stUsageTitle,
+            description: l10n.stUsageInSync(newCount),
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppL10n.of(context).usageReconcileFailed(e.toString())),
-            backgroundColor: Colors.red,
-          ),
+        showErrorToast(
+          context: context,
+          title: l10n.setErrorTitle,
+          description: l10n.usageReconcileFailed(e.toString()),
         );
       }
     } finally {
@@ -91,226 +98,111 @@ class _UsageStatsBottomSheetState extends State<UsageStatsBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppL10n.of(context);
+    final t = context.type;
+    final s = context.sketch;
     final isPremium = _premiumService.isPremium;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: isDark
-            ? PinpointGradients.crescentInk
-            : PinpointGradients.oceanQuartz,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: cs.primary.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Icon(
-                      Icons.analytics_outlined,
-                      color: cs.primary,
-                      size: 24,
-                    ),
-                  )
-                      .animate()
-                      .scale(
-                        duration: 500.ms,
-                        curve: Curves.elasticOut,
-                      )
-                      .shimmer(
-                          duration: 1500.ms,
-                          color: cs.primary.withValues(alpha: 0.3)),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppL10n.of(context).usageStatsTitle,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: isDark
-                                ? PinpointColors.darkTextPrimary
-                                : PinpointColors.lightTextPrimary,
-                          ),
-                        ),
-                        Text(
-                          _premiumService.getSubscriptionStatusText(),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: isPremium
-                                ? cs.primary
-                                : (isDark
-                                    ? PinpointColors.darkTextSecondary
-                                    : PinpointColors.lightTextSecondary),
-                            fontWeight: isPremium ? FontWeight.w600 : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Refresh button (long-press to reconcile)
-                  Tooltip(
-                    message: AppL10n.of(context).usageRefreshHint,
-                    child: InkWell(
-                      onTap: _isRefreshing ? null : _refreshUsageStats,
-                      onLongPress: _isRefreshing
-                          ? null
-                          : () => _reconcileUsageStats(context),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: _isRefreshing
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: cs.primary,
-                                ),
-                              )
-                            : Icon(
-                                Icons.refresh,
-                                color: cs.primary,
-                              ),
-                      ),
-                    ),
-                  ),
-                ],
+    final refresh = Tooltip(
+      message: l10n.usageRefreshHint,
+      child: CircleIconButton(
+        icon: Icons.refresh_rounded,
+        semanticLabel: l10n.usageRefreshHint,
+        onPressed: _isRefreshing ? null : _refreshUsageStats,
+        onLongPress:
+            _isRefreshing ? null : () => _reconcileUsageStats(context),
+        child: _isRefreshing
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2, color: s.ink),
               )
-                  .animate(delay: 100.ms)
-                  .fadeIn(duration: 400.ms)
-                  .slideY(begin: 0.2, end: 0),
-
-              const SizedBox(height: 32),
-
-              // Usage Cards
-              if (isPremium)
-                _PremiumUnlimitedCard()
-                    .animate(delay: 200.ms)
-                    .fadeIn(duration: 400.ms)
-                    .slideY(begin: 0.2, end: 0)
-              else ...[
-                // Synced Notes
-                _UsageCard(
-                  icon: Icons.cloud_sync,
-                  title: AppL10n.of(context).usageSyncedNotes,
-                  current: _premiumService.getSyncedNotesCount(),
-                  limit: 50,
-                  color: cs.primary,
-                )
-                    .animate(delay: 200.ms)
-                    .fadeIn(duration: 400.ms)
-                    .slideY(begin: 0.2, end: 0),
-
-                const SizedBox(height: 16),
-
-                // OCR Scans
-                _UsageCard(
-                  icon: Icons.document_scanner,
-                  title: AppL10n.of(context).usageOcrScans,
-                  current: _premiumService.getOcrScansThisMonth(),
-                  limit: 20,
-                  color: cs.secondary,
-                  resetsMonthly: true,
-                )
-                    .animate(delay: 300.ms)
-                    .fadeIn(duration: 400.ms)
-                    .slideY(begin: 0.2, end: 0),
-
-                const SizedBox(height: 16),
-
-                // Exports
-                _UsageCard(
-                  icon: Icons.download,
-                  title: AppL10n.of(context).usageExports,
-                  current: _premiumService.getExportsThisMonth(),
-                  limit: 10,
-                  color: cs.tertiary,
-                  resetsMonthly: true,
-                )
-                    .animate(delay: 400.ms)
-                    .fadeIn(duration: 400.ms)
-                    .slideY(begin: 0.2, end: 0),
-
-                const SizedBox(height: 24),
-
-                // Upgrade CTA
-                _UpgradeButton()
-                    .animate(delay: 500.ms)
-                    .fadeIn(duration: 400.ms)
-                    .slideY(begin: 0.2, end: 0),
-              ],
-            ],
-          ),
-        ),
+            : null,
       ),
+    );
+
+    return SketchSheet(
+      titleWidget: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(l10n.stUsageTitle, style: t.sheetTitle),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            isPremium ? l10n.drawerProPlan : l10n.drawerFreePlan,
+            style: t.bodySmall,
+          ),
+        ],
+      ),
+      action: refresh,
+      footer: isPremium ? null : const _UpgradeButton(),
+      child: isPremium
+          ? const _PremiumUnlimitedCard()
+          : SketchGroup(
+              margin: EdgeInsets.zero,
+              children: [
+                _UsageRow(
+                  title: l10n.stSyncedNotes,
+                  current: _premiumService.getSyncedNotesCount(),
+                  limit: PremiumLimits.maxSyncedNotesForFree,
+                ),
+                _UsageRow(
+                  title: l10n.stOcrScans,
+                  current: _premiumService.getOcrScansThisMonth(),
+                  limit: PremiumLimits.maxOcrScansPerMonthForFree,
+                  resetsMonthly: true,
+                ),
+                _UsageRow(
+                  title: l10n.stExports,
+                  current: _premiumService.getExportsThisMonth(),
+                  limit: PremiumLimits.maxExportsPerMonthForFree,
+                  resetsMonthly: true,
+                ),
+              ],
+            ),
     );
   }
 }
 
 /// Premium unlimited card
 class _PremiumUnlimitedCard extends StatelessWidget {
+  const _PremiumUnlimitedCard();
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            cs.primary.withValues(alpha: 0.2),
-            cs.primary.withValues(alpha: 0.1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: cs.primary.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
+    final t = context.type;
+    final l10n = AppL10n.of(context);
+    return SketchCard(
+      pastel: SketchPastels.lavender,
+      radius: SketchRadius.group,
+      padding: const EdgeInsets.all(20),
+      child: Row(
         children: [
-          Icon(
-            Icons.all_inclusive,
-            size: 48,
-            color: cs.primary,
+          const StickerTile(
+            color: SketchPastels.yellow,
+            size: 52,
+            angle: -8,
+            icon: Icons.all_inclusive_rounded,
           ),
-          const SizedBox(height: 16),
-          Text(
-            AppL10n.of(context).usageUnlimitedEverything,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: isDark
-                  ? PinpointColors.darkTextPrimary
-                  : PinpointColors.lightTextPrimary,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.usageUnlimitedEverything,
+                  style: t.cardTitleLarge
+                      .copyWith(color: SketchPastels.onPastel),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.usageUnlimitedBody,
+                  style: t.caption.copyWith(color: SketchPastels.onPastel),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            AppL10n.of(context).usageUnlimitedBody,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: isDark
-                  ? PinpointColors.darkTextSecondary
-                  : PinpointColors.lightTextSecondary,
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -318,140 +210,79 @@ class _PremiumUnlimitedCard extends StatelessWidget {
   }
 }
 
-/// Individual usage card
-class _UsageCard extends StatelessWidget {
-  final IconData icon;
+/// One usage row: label, "used / limit", a bar and what is left.
+class _UsageRow extends StatelessWidget {
   final String title;
   final int current;
   final int limit;
-  final Color color;
   final bool resetsMonthly;
 
-  const _UsageCard({
-    required this.icon,
+  const _UsageRow({
     required this.title,
     required this.current,
     required this.limit,
-    required this.color,
     this.resetsMonthly = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final t = context.type;
+    final s = context.sketch;
+    final l10n = AppL10n.of(context);
     final progress = limit > 0 ? (current / limit).clamp(0.0, 1.0) : 0.0;
     final remaining = limit - current;
-    final isWarning = remaining <= 5 && remaining > 0;
     final isExceeded = remaining <= 0;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.black.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isExceeded
-              ? Colors.red.withValues(alpha: 0.3)
-              : (isWarning
-                  ? Colors.orange.withValues(alpha: 0.3)
-                  : color.withValues(alpha: 0.1)),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    final status = isExceeded
+        ? l10n.usageLimitReached
+        : resetsMonthly
+            ? '${l10n.stRemaining(remaining)} · ${l10n.usageResetsMonthly}'
+            : l10n.stRemaining(remaining);
+
+    return Semantics(
+      container: true,
+      label: '${l10n.stUsageSemantic(title, current, limit)}. $status',
+      child: ExcludeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? PinpointColors.darkTextPrimary
-                            : PinpointColors.lightTextPrimary,
+              Row(
+                children: [
+                  Expanded(child: Text(title, style: t.body)),
+                  Text.rich(TextSpan(children: [
+                    TextSpan(
+                      text: '$current',
+                      style: t.cardTitle.copyWith(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: isExceeded ? SketchFunctional.error : s.ink,
                       ),
                     ),
-                    if (resetsMonthly)
-                      Text(
-                        AppL10n.of(context).usageResetsMonthly,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isDark
-                              ? PinpointColors.darkTextTertiary
-                              : PinpointColors.lightTextTertiary,
-                          fontSize: 11,
-                        ),
-                      ),
-                  ],
-                ),
+                    TextSpan(
+                      text: ' ${l10n.stUsageLimitSuffix(limit)}',
+                      style: t.chip.copyWith(color: s.muted),
+                    ),
+                  ])),
+                ],
               ),
+              const SizedBox(height: 10),
+              UsageBar(
+                fraction: progress,
+                fill: isExceeded ? SketchFunctional.error : null,
+              ),
+              const SizedBox(height: 8),
               Text(
-                '$current / $limit',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isExceeded
-                      ? Colors.red
-                      : (isWarning
-                          ? Colors.orange
-                          : (isDark
-                              ? PinpointColors.darkTextPrimary
-                              : PinpointColors.lightTextPrimary)),
+                status,
+                style: t.caption.copyWith(
+                  color: isExceeded ? SketchFunctional.error : s.muted,
+                  fontWeight: isExceeded ? FontWeight.w600 : null,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // Progress bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              backgroundColor: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.1),
-              valueColor: AlwaysStoppedAnimation(
-                isExceeded ? Colors.red : (isWarning ? Colors.orange : color),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Status text
-          Text(
-            isExceeded
-                ? AppL10n.of(context).usageLimitReached
-                : (isWarning
-                    ? '$remaining remaining - Running low'
-                    : '$remaining remaining'),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: isExceeded
-                  ? Colors.red
-                  : (isWarning
-                      ? Colors.orange
-                      : (isDark
-                          ? PinpointColors.darkTextSecondary
-                          : PinpointColors.lightTextSecondary)),
-              fontWeight: isExceeded || isWarning ? FontWeight.w600 : null,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -459,40 +290,28 @@ class _UsageCard extends StatelessWidget {
 
 /// Upgrade button
 class _UpgradeButton extends StatelessWidget {
+  const _UpgradeButton();
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton.icon(
-        onPressed: () {
-          // This sheet is presented with showModalBottomSheet, so it is a
-          // Navigator route — not a GoRouter one. context.pop() asks GoRouter
-          // to pop its OWN stack instead: with StatefulShellRoute.indexedStack
-          // in the tree that walks into ShellRouteMatch and dereferences
-          // `walker.navigatorKey.currentState!` on a branch navigator that is
-          // not currently mounted, throwing "Null check operator used on a
-          // null value" (go_router delegate.dart:126).
-          //
-          // Resolve the router BEFORE popping: afterwards this element is
-          // deactivated and looking anything up from its context is unsafe.
-          final router = GoRouter.of(context);
-          Navigator.of(context).pop();
-          router.push('/subscription');
-        },
-        icon: const Icon(Icons.workspace_premium),
-        label: Text(AppL10n.of(context).usageUpgradeToPremium),
-        style: FilledButton.styleFrom(
-          backgroundColor: cs.primary,
-          foregroundColor: cs.onPrimary,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
+    return PillButton(
+      label: AppL10n.of(context).usageUpgradeToPremium,
+      icon: Icons.workspace_premium_rounded,
+      onPressed: () {
+        // This sheet is presented with showModalBottomSheet, so it is a
+        // Navigator route — not a GoRouter one. context.pop() asks GoRouter
+        // to pop its OWN stack instead: with StatefulShellRoute.indexedStack
+        // in the tree that walks into ShellRouteMatch and dereferences
+        // `walker.navigatorKey.currentState!` on a branch navigator that is
+        // not currently mounted, throwing "Null check operator used on a
+        // null value" (go_router delegate.dart:126).
+        //
+        // Resolve the router BEFORE popping: afterwards this element is
+        // deactivated and looking anything up from its context is unsafe.
+        final router = GoRouter.of(context);
+        Navigator.of(context).pop();
+        router.push('/subscription');
+      },
     );
   }
 }

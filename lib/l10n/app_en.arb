@@ -2465,9 +2465,9 @@
   "@obSkip": {
     "description": "Button that dismisses the onboarding."
   },
-  "obGetStarted": "Get Started",
+  "obGetStarted": "Get started",
   "@obGetStarted": {
-    "description": "Button on the final onboarding slide."
+    "description": "Primary button on the last onboarding page. Finishes onboarding and continues to the terms and sign-up."
   },
   "obNext": "Next",
   "@obNext": {
@@ -3321,5 +3321,1600 @@
   "displayUnknownRate": "Checking…",
   "@displayUnknownRate": {
     "description": "Shown in place of a refresh-rate number while the platform has not reported one yet."
+  },
+  "noteCardPinned": "Pinned",
+  "@noteCardPinned": {
+    "description": "Small outlined pill on a note card in the notes grid, marking the note as pinned to the top."
+  },
+  "noteCardVoice": "Voice · {duration}",
+  "@noteCardVoice": {
+    "description": "Caption under the waveform on a voice-note card in the notes grid. {duration} is the recording length, e.g. '0:42'.",
+    "placeholders": {
+      "duration": {
+        "type": "String",
+        "example": "0:42"
+      }
+    }
+  },
+  "noteCardMoreItems": "{count, plural, =1{+1 more item} other{+{count} more items}}",
+  "@noteCardMoreItems": {
+    "description": "Muted line at the bottom of a checklist note card in the notes grid, counting checklist items that did not fit in the preview.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dateToday": "Today",
+  "@dateToday": {
+    "description": "Relative day name used in a reminder time label such as 'Today, 6:00 PM'."
+  },
+  "dateTomorrow": "Tomorrow",
+  "@dateTomorrow": {
+    "description": "Relative day name used in a reminder time label such as 'Tomorrow, 9:00 AM'."
+  },
+  "dateYesterday": "Yesterday",
+  "@dateYesterday": {
+    "description": "Relative day name used in a reminder time label such as 'Yesterday, 9:00 AM'."
+  },
+  "dateDayAtTime": "{day}, {time}",
+  "@dateDayAtTime": {
+    "description": "Joins a day ('Today', 'Mar 14') and a time ('6:00 PM') into a reminder label. Reorder if your language puts the time first.",
+    "placeholders": {
+      "day": {
+        "type": "String",
+        "example": "Today"
+      },
+      "time": {
+        "type": "String",
+        "example": "6:00 PM"
+      }
+    }
+  },
+  "homeGreeting": "Hello, {name}. What's on your mind?",
+  "@homeGreeting": {
+    "description": "Greeting under the 'Pinpoint' brand name at the top of the home screen. {name} is the user's first name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Pranta"
+      }
+    }
+  },
+  "homeGreetingNoName": "Hello! What's on your mind?",
+  "@homeGreetingNoName": {
+    "description": "Greeting at the top of the home screen when the user's name is unknown."
+  },
+  "homeRecentNotes": "Recent notes",
+  "@homeRecentNotes": {
+    "description": "Section title above the notes grid on the home screen."
+  },
+  "homeFolderChip": "{name} ({count})",
+  "@homeFolderChip": {
+    "description": "A folder chip on the home screen: the folder name and how many notes it holds.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Random"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderNoteCount": "{count, plural, =0{No notes} =1{1 note} other{{count} notes}}",
+  "@folderNoteCount": {
+    "description": "How many notes a folder holds, on folder cards and tiles.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderVoiceCount": "{count, plural, =1{1 voice} other{{count} voice}}",
+  "@folderVoiceCount": {
+    "description": "Appended to a folder's note count when it holds voice notes, e.g. '2 notes · 1 voice'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderSummarySeparator": "{notes} · {voice}",
+  "@folderSummarySeparator": {
+    "description": "Joins a folder's note count and voice count, e.g. '2 notes · 1 voice'.",
+    "placeholders": {
+      "notes": {
+        "type": "String"
+      },
+      "voice": {
+        "type": "String"
+      }
+    }
+  },
+  "folderPreviewEmpty": "Nothing in here yet.",
+  "@folderPreviewEmpty": {
+    "description": "Shown inside the home folder preview card when the selected folder has no notes."
+  },
+  "homeEmptyTitle": "Your notebook is empty",
+  "@homeEmptyTitle": {
+    "description": "Empty-state title on the home screen when the user has no notes."
+  },
+  "homeEmptyAction": "Write your first note",
+  "@homeEmptyAction": {
+    "description": "Button on the empty home screen that opens the editor."
+  },
+  "homeNoMatches": "No matches for “{query}”",
+  "@homeNoMatches": {
+    "description": "Empty state when a search finds nothing. {query} is the text the user searched for.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNoFilterMatches": "No notes match these filters",
+  "@homeNoFilterMatches": {
+    "description": "Empty state on the home screen when active filters hide every note."
+  },
+  "homeClearFilters": "Clear filters",
+  "@homeClearFilters": {
+    "description": "Button under the no-matching-notes empty state that removes all filters."
+  },
+  "sortLastEdited": "Last edited",
+  "@sortLastEdited": {
+    "description": "Sort option (and the label shown beside 'Recent notes'): newest edits first."
+  },
+  "sortDateCreated": "Date created",
+  "@sortDateCreated": {
+    "description": "Sort option: newest notes first by creation date."
+  },
+  "sortTitleAz": "Title A–Z",
+  "@sortTitleAz": {
+    "description": "Sort option: alphabetical by title."
+  },
+  "a11yOpenMenu": "Open menu",
+  "@a11yOpenMenu": {
+    "description": "Screen-reader label for the brand logo on the home screen, which opens the navigation drawer."
+  },
+  "dockNewNote": "New note",
+  "@dockNewNote": {
+    "description": "Screen-reader label for the pen button in the middle of the bottom dock; also the New note button in the tablet sidebar."
+  },
+  "newNoteChooserTitle": "What are you writing?",
+  "@newNoteChooserTitle": {
+    "description": "Title of the sheet that opens when the user long-presses the New note button, offering Text, Checklist, Voice and Reminder."
+  },
+  "noteTypeText": "Text",
+  "@noteTypeText": {
+    "description": "Note type: a text note. Used in the new-note chooser and the Filters sheet."
+  },
+  "noteTypeChecklist": "Checklist",
+  "@noteTypeChecklist": {
+    "description": "Note type: a checklist. Used in the new-note chooser and the Filters sheet."
+  },
+  "noteTypeVoice": "Voice",
+  "@noteTypeVoice": {
+    "description": "Note type: a voice recording. Used in the new-note chooser and the Filters sheet."
+  },
+  "noteTypeReminder": "Reminder",
+  "@noteTypeReminder": {
+    "description": "Note type: a reminder. Used in the new-note chooser and the Filters sheet."
+  },
+  "drawerAllNotes": "All notes",
+  "@drawerAllNotes": {
+    "description": "Navigation drawer row that shows every note."
+  },
+  "drawerVoiceNotes": "Voice notes",
+  "@drawerVoiceNotes": {
+    "description": "Navigation drawer row that shows only voice notes."
+  },
+  "drawerReminders": "Reminders",
+  "@drawerReminders": {
+    "description": "Navigation drawer row that shows only reminders."
+  },
+  "drawerFoldersOverline": "Folders",
+  "@drawerFoldersOverline": {
+    "description": "Small uppercase heading above the folder list in the navigation drawer (the app uppercases it)."
+  },
+  "drawerFreePlan": "Free plan",
+  "@drawerFreePlan": {
+    "description": "Title of the plan card in the navigation drawer for users without a subscription."
+  },
+  "drawerProPlan": "Pinpoint Pro",
+  "@drawerProPlan": {
+    "description": "Title of the plan card in the navigation drawer for subscribers. 'Pinpoint Pro' is the product name; do not translate."
+  },
+  "drawerProBadge": "Pro",
+  "@drawerProBadge": {
+    "description": "Small badge on the drawer plan card for subscribers. Short product tier name; usually left untranslated."
+  },
+  "drawerProBody": "No limits on notes, folders or scans.",
+  "@drawerProBody": {
+    "description": "Line on the drawer plan card for subscribers."
+  },
+  "drawerSyncedNotes": "{used} of {limit} synced notes",
+  "@drawerSyncedNotes": {
+    "description": "Usage line on the drawer plan card for free users, under a progress bar.",
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "signedInWithGoogle": "Signed in with Google",
+  "@signedInWithGoogle": {
+    "description": "Under the user's name in the drawer and settings. 'Google' is a brand name; do not translate."
+  },
+  "signedInWithApple": "Signed in with Apple",
+  "@signedInWithApple": {
+    "description": "Under the user's name in the drawer and settings. 'Apple' is a brand name; do not translate."
+  },
+  "notSignedIn": "Not signed in",
+  "@notSignedIn": {
+    "description": "Under the profile in the drawer when no account is signed in."
+  },
+  "filtersSortBy": "Sort by",
+  "@filtersSortBy": {
+    "description": "Heading above the sort chips in the Filters sheet."
+  },
+  "filtersNoteType": "Note type",
+  "@filtersNoteType": {
+    "description": "Heading above the note-type chips (Text, Checklist, Voice, Reminder) in the Filters sheet."
+  },
+  "filtersReset": "Reset",
+  "@filtersReset": {
+    "description": "Underlined action at the top of the Filters sheet that clears every filter."
+  },
+  "filtersPinnedOnly": "Pinned only",
+  "@filtersPinnedOnly": {
+    "description": "Toggle in the Filters sheet: show only pinned notes."
+  },
+  "filtersIncludeArchived": "Include archived",
+  "@filtersIncludeArchived": {
+    "description": "Toggle in the Filters sheet: also show archived notes."
+  },
+  "filtersShowNotes": "{count, plural, =1{Show 1 note} other{Show {count} notes}}",
+  "@filtersShowNotes": {
+    "description": "Button at the bottom of the Filters sheet; the count updates live as filters change.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filtersNoMatch": "No notes match",
+  "@filtersNoMatch": {
+    "description": "Disabled button text at the bottom of the Filters sheet when the filters match nothing."
+  },
+  "wtCreateBodyDock": "Tap the pen to start a note. Hold it to pick a checklist, voice note or reminder instead.",
+  "@wtCreateBodyDock": {
+    "description": "Walkthrough coach mark pointing at the pen button in the middle of the bottom dock."
+  },
+  "obSplashTagline": "Notes that stay yours.",
+  "@obSplashTagline": {
+    "description": "Tagline under the 'Pinpoint' brand name on the launch (splash) screen. 'Pinpoint' is the app name and is shown separately."
+  },
+  "obSplashUnlocking": "Unlocking your notes…",
+  "@obSplashUnlocking": {
+    "description": "Small caption on the launch (splash) screen, shown only when opening the encrypted notes takes longer than 1.5 seconds."
+  },
+  "obWriteTitle": "Write it down. [[Your way.]]",
+  "@obWriteTitle": {
+    "description": "Headline of onboarding page 1. The words inside [[ ]] get a yellow marker highlight: keep the [[ ]] around the 1–2 words that carry the emphasis in your language, and do not translate the brackets."
+  },
+  "obWriteBody": "Text, checklists, voice notes and reminders — all in one notebook.",
+  "@obWriteBody": {
+    "description": "Line under the headline of onboarding page 1, listing the kinds of notes the app supports."
+  },
+  "obOrganizedTitle": "Organized, [[without the effort.]]",
+  "@obOrganizedTitle": {
+    "description": "Headline of onboarding page 2. The words inside [[ ]] get a yellow marker highlight: keep the [[ ]] around the 1–3 emphasised words in your language, and do not translate the brackets."
+  },
+  "obOrganizedBody": "Pin what matters. Folders that hold a note in more than one place.",
+  "@obOrganizedBody": {
+    "description": "Line under the headline of onboarding page 2. A note can belong to several folders at once."
+  },
+  "obPrivateTitle": "Private [[by default.]]",
+  "@obPrivateTitle": {
+    "description": "Headline of onboarding page 3, about encryption. The words inside [[ ]] get a yellow marker highlight: keep the [[ ]] around the emphasised words in your language, and do not translate the brackets."
+  },
+  "obPrivateBody": "Encrypted on your device with AES-256. Turn on zero-knowledge mode and only your passphrase can unlock your notes.",
+  "@obPrivateBody": {
+    "description": "Line under the headline of onboarding page 3. Must stay accurate: notes are encrypted on the device; only the optional zero-knowledge mode keeps the key away from the server. 'AES-256' is a technical name, do not translate it. Use the same term for 'zero-knowledge mode' and 'passphrase' as the encryption settings screen."
+  },
+  "obPrivateFootnote": "Cloud voice recordings and reminder text are not end-to-end encrypted.",
+  "@obPrivateFootnote": {
+    "description": "Small honest caveat under the privacy text on onboarding page 3. Must stay accurate: voice recordings synced to the cloud and reminder text are readable by the server."
+  },
+  "obLogIn": "Log in",
+  "@obLogIn": {
+    "description": "Outline button on the last onboarding page for people who already have an account. Leads to the sign-in screen."
+  },
+  "obPageIndicator": "Page {current} of {total}",
+  "@obPageIndicator": {
+    "description": "Screen-reader label for the row of progress dots on the onboarding screens.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "1"
+      },
+      "total": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "obSampleFolder": "Ideas",
+  "@obSampleFolder": {
+    "description": "Sample folder name drawn in the onboarding illustration of a folder (decorative example, not real data)."
+  },
+  "obSampleNoteGroceries": "Groceries",
+  "@obSampleNoteGroceries": {
+    "description": "Sample note title drawn in the onboarding illustrations (decorative example, not real data)."
+  },
+  "obSampleNoteTrip": "Trip plan",
+  "@obSampleNoteTrip": {
+    "description": "Sample note title drawn in the onboarding folder illustration (decorative example, not real data)."
+  },
+  "obSampleNoteBooks": "Book list",
+  "@obSampleNoteBooks": {
+    "description": "Sample note title drawn in the onboarding folder illustration (decorative example, not real data)."
+  },
+  "obSampleNoteGifts": "Gift ideas",
+  "@obSampleNoteGifts": {
+    "description": "Sample note title drawn in the onboarding folder illustration (decorative example, not real data)."
+  },
+  "obWhatsNewTitle": "What's [[new]]",
+  "@obWhatsNewTitle": {
+    "description": "Title of the one-time 'What's new' sheet shown to existing users after the redesign. The words inside [[ ]] get a yellow marker highlight; keep the brackets around the emphasised word."
+  },
+  "obWhatsNewBody": "Pinpoint has a new look. Your notes are exactly where you left them.",
+  "@obWhatsNewBody": {
+    "description": "Line under the title of the one-time 'What's new' sheet. 'Pinpoint' is the app name, do not translate."
+  },
+  "obWhatsNewLookTitle": "Fresh new look",
+  "@obWhatsNewLookTitle": {
+    "description": "First row title in the one-time 'What's new' sheet: the app was redesigned."
+  },
+  "obWhatsNewLookBody": "Paper, ink outlines and pastel stickers.",
+  "@obWhatsNewLookBody": {
+    "description": "Subtitle of the 'Fresh new look' row in the 'What's new' sheet, describing the new visual style."
+  },
+  "obWhatsNewDarkTitle": "Dark mode that's actually dark",
+  "@obWhatsNewDarkTitle": {
+    "description": "Second row title in the 'What's new' sheet: the dark theme is now a true dark theme."
+  },
+  "obWhatsNewDarkBody": "A deep, warm black that's easy on your eyes at night.",
+  "@obWhatsNewDarkBody": {
+    "description": "Subtitle of the dark-mode row in the 'What's new' sheet."
+  },
+  "obWhatsNewFoldersTitle": "Color your folders",
+  "@obWhatsNewFoldersTitle": {
+    "description": "Third row title in the 'What's new' sheet: folders now each have a pastel color."
+  },
+  "obWhatsNewFoldersBody": "Every folder gets its own pastel, so you can spot it at a glance.",
+  "@obWhatsNewFoldersBody": {
+    "description": "Subtitle of the folder-colors row in the 'What's new' sheet."
+  },
+  "obWhatsNewCta": "Got it",
+  "@obWhatsNewCta": {
+    "description": "Button that closes the one-time 'What's new' sheet."
+  },
+  "auTermsTitle": "Before you [[start]]",
+  "@auTermsTitle": {
+    "description": "Headline of the terms-and-privacy acceptance screen shown once before sign-in. The word inside [[ ]] gets a yellow marker highlight; keep the brackets around the emphasised word."
+  },
+  "auTermsBody": "Please read how Pinpoint handles your notes and your data.",
+  "@auTermsBody": {
+    "description": "Line under the headline of the terms-and-privacy acceptance screen. 'Pinpoint' is the app name, do not translate."
+  },
+  "auTermsAgree": "I agree",
+  "@auTermsAgree": {
+    "description": "Primary button on the terms-and-privacy acceptance screen. Enabled once the agreement checkbox is ticked; accepts the terms and continues to sign-in."
+  },
+  "auReadyTitle": "Your notebook is [[ready]]",
+  "@auReadyTitle": {
+    "description": "Headline of the sign-in screen. The word inside [[ ]] gets a yellow marker highlight; keep the brackets around the emphasised word."
+  },
+  "auReadyBody": "Sign in to back up your notes and keep them in sync across your devices.",
+  "@auReadyBody": {
+    "description": "Line under the headline of the sign-in screen, above the Google / Apple / email sign-in options."
+  },
+  "auDecryptionErrorsBody": "{count, plural, =1{1 note could not be decrypted. This usually means the encryption key is incorrect or corrupted.} other{{count} notes could not be decrypted. This usually means the encryption key is incorrect or corrupted.}}",
+  "@auDecryptionErrorsBody": {
+    "description": "Warning in the summary shown after restoring notes from the cloud at sign-in, when some notes could not be decrypted.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "auShowPassword": "Show password",
+  "@auShowPassword": {
+    "description": "Screen-reader label for the eye button inside a password field that reveals the typed password."
+  },
+  "auHidePassword": "Hide password",
+  "@auHidePassword": {
+    "description": "Screen-reader label for the eye button inside a password field that hides the typed password again."
+  },
+  "auLinkAccountsCta": "Link accounts",
+  "@auLinkAccountsCta": {
+    "description": "Primary button on the account-linking screen: links the Google sign-in to the existing email account after the password is entered."
+  },
+  "ulUseRecoveryCode": "Use recovery code",
+  "@ulUseRecoveryCode": {
+    "description": "Text button on the unlock screen (zero-knowledge accounts) that switches from the passphrase to the recovery code."
+  },
+  "stSyncNow": "Sync now",
+  "@stSyncNow": {
+    "description": "Small dark pill button on the Settings account card, and the main button on the Sync screen. Starts a sync immediately."
+  },
+  "stSyncing": "Syncing…",
+  "@stSyncing": {
+    "description": "Shown on the Settings account card's sync button and status line while a sync is running."
+  },
+  "stSyncingChanges": "{count, plural, =1{Syncing 1 change…} other{Syncing {count} changes…}}",
+  "@stSyncingChanges": {
+    "description": "Status line on the Settings account card while a sync is running and some local changes are waiting to upload.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stSyncedAgo": "All notes synced · {when}",
+  "@stSyncedAgo": {
+    "description": "Status line on the Settings account card after a successful sync. {when} is a relative time such as '2 min ago' or 'just now'.",
+    "placeholders": {
+      "when": {
+        "type": "String",
+        "example": "2 min ago"
+      }
+    }
+  },
+  "stNotSyncedYet": "Not synced yet",
+  "@stNotSyncedYet": {
+    "description": "Status line on the Settings account card and Sync screen when this device has never completed a sync."
+  },
+  "stSyncFailedRetry": "Sync failed · Retry",
+  "@stSyncFailedRetry": {
+    "description": "Status line on the Settings account card when the last sync failed. Tapping it retries the sync."
+  },
+  "stJustNow": "just now",
+  "@stJustNow": {
+    "description": "Relative time for something that happened less than a minute ago, used inside 'All notes synced · just now'."
+  },
+  "stMinutesAgo": "{count, plural, =1{1 min ago} other{{count} min ago}}",
+  "@stMinutesAgo": {
+    "description": "Relative time in minutes, used inside 'All notes synced · 2 min ago'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stHoursAgo": "{count, plural, =1{1 h ago} other{{count} h ago}}",
+  "@stHoursAgo": {
+    "description": "Relative time in hours, used inside 'All notes synced · 3 h ago'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stSyncedItems": "{count, plural, =0{Everything is already up to date.} =1{1 item synced.} other{{count} items synced.}}",
+  "@stSyncedItems": {
+    "description": "Toast body after a manual sync from Settings: how many notes, folders and reminders were synced in total.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stSignInTitle": "Sign in to sync",
+  "@stSignInTitle": {
+    "description": "Title of the lavender card at the top of Settings when the user is not signed in."
+  },
+  "stSignInBody": "Back up your notes and use them on all your devices.",
+  "@stSignInBody": {
+    "description": "Body of the sign-in card at the top of Settings when the user is not signed in."
+  },
+  "stSignInAction": "Sign in",
+  "@stSignInAction": {
+    "description": "Dark pill button on the Settings sign-in card; opens the sign-in screen."
+  },
+  "stThemeAuto": "Auto",
+  "@stThemeAuto": {
+    "description": "Third option of the Light / Dark / Auto theme switch in Settings: follow the device setting."
+  },
+  "stAccent": "Accent",
+  "@stAccent": {
+    "description": "Settings row label for the accent colour swatches."
+  },
+  "stFont": "Font",
+  "@stFont": {
+    "description": "Settings row label showing the current font; opens the font list. Also the overline above the font list on the Theme screen."
+  },
+  "stProTag": "PRO",
+  "@stProTag": {
+    "description": "Tiny yellow tag beside the accent swatches in Settings, marking colours that need Pinpoint Pro. Keep it very short."
+  },
+  "stAccentSemantic": "{name} accent",
+  "@stAccentSemantic": {
+    "description": "Screen-reader label for an accent colour swatch in Settings. {name} is the colour's name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Neon Mint"
+      }
+    }
+  },
+  "stAccentLockedSemantic": "{name} accent, Pro only",
+  "@stAccentLockedSemantic": {
+    "description": "Screen-reader label for an accent colour swatch that needs Pinpoint Pro. {name} is the colour's name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Pink Bliss"
+      }
+    }
+  },
+  "stSectionPrivacy": "Privacy & security",
+  "@stSectionPrivacy": {
+    "description": "Settings group overline above biometric lock, zero-knowledge mode and encryption. Rendered in capitals."
+  },
+  "stBiometricLock": "Biometric lock",
+  "@stBiometricLock": {
+    "description": "Settings toggle: require fingerprint or face unlock to open the app."
+  },
+  "stZeroKnowledge": "Zero-knowledge mode",
+  "@stZeroKnowledge": {
+    "description": "Settings row and Encryption screen card: the opt-in mode where the encryption key is locked with the user's passphrase so the server cannot read notes."
+  },
+  "stZeroKnowledgeSubtitle": "Only your passphrase unlocks notes",
+  "@stZeroKnowledgeSubtitle": {
+    "description": "Subtitle under 'Zero-knowledge mode' in Settings."
+  },
+  "stOn": "On",
+  "@stOn": {
+    "description": "Value shown at the end of a Settings row when the setting is enabled (e.g. 'Zero-knowledge mode … On ›')."
+  },
+  "stOff": "Off",
+  "@stOff": {
+    "description": "Value shown at the end of a Settings row when the setting is disabled (e.g. 'Zero-knowledge mode … Off ›')."
+  },
+  "stEncryptionPill": "AES-256 on device",
+  "@stEncryptionPill": {
+    "description": "Small mint pill on the Settings 'Encryption' row: notes are encrypted with AES-256 on the phone. Keep 'AES-256' as is."
+  },
+  "stSyncedNotes": "Synced notes",
+  "@stSyncedNotes": {
+    "description": "Usage card label in Settings and the usage sheet, and a row of the paywall limits table: how many notes are synced to the cloud."
+  },
+  "stOcrScans": "OCR scans",
+  "@stOcrScans": {
+    "description": "Usage card label in Settings and the usage sheet, and a row of the paywall limits table: text scans from images this month. Keep 'OCR'."
+  },
+  "stExports": "Exports",
+  "@stExports": {
+    "description": "Usage row in the usage sheet: PDF and Markdown exports this month."
+  },
+  "stUsageLimitSuffix": "/ {limit}",
+  "@stUsageLimitSuffix": {
+    "description": "Shown after the big usage number on a usage card, e.g. '38' followed by '/ 50'.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "stUsageSemantic": "{label}: {used} of {limit}",
+  "@stUsageSemantic": {
+    "description": "Screen-reader label for a usage card, e.g. 'Synced notes: 38 of 50'.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "stUnlimited": "Unlimited",
+  "@stUnlimited": {
+    "description": "Shown on usage cards and in the paywall table for Pinpoint Pro users, instead of a count."
+  },
+  "stFreePlanBody": "Go Pro to remove every limit.",
+  "@stFreePlanBody": {
+    "description": "Line on the yellow plan banner in Settings for free users, under 'Free plan'."
+  },
+  "stManageSubscription": "Manage subscription",
+  "@stManageSubscription": {
+    "description": "Settings row for Pro users; opens the App Store or Google Play subscription page."
+  },
+  "stSectionPlan": "Plan",
+  "@stSectionPlan": {
+    "description": "Settings group overline above the current subscription plan. Rendered in capitals."
+  },
+  "stSectionGeneral": "General",
+  "@stSectionGeneral": {
+    "description": "Settings group overline above Language, Display and Notifications. Rendered in capitals."
+  },
+  "stNotifications": "Notifications",
+  "@stNotifications": {
+    "description": "Settings row showing whether notifications are allowed; opens the system notification settings for the app."
+  },
+  "stSectionNotes": "Notes",
+  "@stSectionNotes": {
+    "description": "Settings group overline above My folders, Archive, Trash, Sync and Import. Rendered in capitals."
+  },
+  "stMyFolders": "My folders",
+  "@stMyFolders": {
+    "description": "Settings row that opens the My folders screen."
+  },
+  "stImportNote": "Import a note",
+  "@stImportNote": {
+    "description": "Settings row that imports a single .pinpoint-note file."
+  },
+  "stSectionHelp": "Help & legal",
+  "@stSectionHelp": {
+    "description": "Settings group overline above tutorial, rating, terms and about. Rendered in capitals."
+  },
+  "stReplayTutorial": "Replay tutorial",
+  "@stReplayTutorial": {
+    "description": "Settings row that shows the app walkthrough again."
+  },
+  "stTermsPrivacy": "Terms & privacy",
+  "@stTermsPrivacy": {
+    "description": "Settings row that opens the terms of service and privacy policy."
+  },
+  "stVersionShort": "v{version}",
+  "@stVersionShort": {
+    "description": "App version shown at the end of the 'About Pinpoint' row in Settings, e.g. 'v3.4.0'.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "3.4.0"
+      }
+    }
+  },
+  "stSectionAccount": "Account",
+  "@stSectionAccount": {
+    "description": "Settings group overline above the linked sign-in methods. Rendered in capitals."
+  },
+  "stLink": "Link",
+  "@stLink": {
+    "description": "Value on the Google row in Settings when Google is not yet linked; tapping links it."
+  },
+  "stSignOut": "Sign out",
+  "@stSignOut": {
+    "description": "Outlined row at the bottom of Settings (red text), and the confirm button of the sign-out sheet."
+  },
+  "stDangerZone": "Danger zone",
+  "@stDangerZone": {
+    "description": "Title of the card at the very bottom of Settings that holds Delete account."
+  },
+  "stDeleteAccount": "Delete account",
+  "@stDeleteAccount": {
+    "description": "Row inside the Danger zone card in Settings, and the confirm button of the delete-account sheet."
+  },
+  "stSectionDeveloper": "Developer",
+  "@stSectionDeveloper": {
+    "description": "Settings group overline for debug and admin tools; only developers and the admin see it. Rendered in capitals."
+  },
+  "stBackgroundDoodles": "Background doodles",
+  "@stBackgroundDoodles": {
+    "description": "Toggle on the Display screen: show the soft marker swooshes drawn behind screens."
+  },
+  "stBackgroundDoodlesSubtitle": "Soft marker swooshes behind your screens",
+  "@stBackgroundDoodlesSubtitle": {
+    "description": "Subtitle under the 'Background doodles' toggle on the Display screen."
+  },
+  "stSectionLooks": "Looks",
+  "@stSectionLooks": {
+    "description": "Overline on the Display screen above the Background doodles toggle. Rendered in capitals."
+  },
+  "stSectionMotion": "Motion",
+  "@stSectionMotion": {
+    "description": "Overline on the Display screen above the refresh-rate settings. Rendered in capitals."
+  },
+  "stModeOverline": "Mode",
+  "@stModeOverline": {
+    "description": "Overline on the Theme screen above the Light / Dark / System default choices. Rendered in capitals."
+  },
+  "stAccentOverline": "Accent colour",
+  "@stAccentOverline": {
+    "description": "Overline on the Theme screen above the five accent colours. Rendered in capitals."
+  },
+  "stLangEnglish": "English",
+  "@stLangEnglish": {
+    "description": "Name of the English language, shown in the current app language under the native name on the Language screen."
+  },
+  "stLangSpanish": "Spanish",
+  "@stLangSpanish": {
+    "description": "Name of the Spanish language, shown under 'Español' on the Language screen."
+  },
+  "stLangPortuguese": "Portuguese (Brazil)",
+  "@stLangPortuguese": {
+    "description": "Name of Brazilian Portuguese, shown under 'Português' on the Language screen."
+  },
+  "stLangItalian": "Italian",
+  "@stLangItalian": {
+    "description": "Name of the Italian language, shown under 'Italiano' on the Language screen."
+  },
+  "stLangFrench": "French",
+  "@stLangFrench": {
+    "description": "Name of the French language, shown under 'Français' on the Language screen."
+  },
+  "stLangThai": "Thai",
+  "@stLangThai": {
+    "description": "Name of the Thai language, shown under 'ไทย' on the Language screen."
+  },
+  "stLangBengali": "Bengali",
+  "@stLangBengali": {
+    "description": "Name of the Bengali language, shown under 'বাংলা' on the Language screen."
+  },
+  "stLangArabic": "Arabic",
+  "@stLangArabic": {
+    "description": "Name of the Arabic language, shown under 'العربية' on the Language screen."
+  },
+  "stLangPersian": "Persian",
+  "@stLangPersian": {
+    "description": "Name of the Persian language, shown under 'فارسی' on the Language screen."
+  },
+  "stPendingChanges": "{count, plural, =0{No changes waiting} =1{1 change waiting to sync} other{{count} changes waiting to sync}}",
+  "@stPendingChanges": {
+    "description": "Line on the Sync screen: how many local notes have changes not yet uploaded.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stSyncHowTitle": "How sync works",
+  "@stSyncHowTitle": {
+    "description": "Overline on the Sync screen above a short list explaining sync. Rendered in capitals."
+  },
+  "stSyncHowEncrypt": "Notes are encrypted on this device before they upload.",
+  "@stSyncHowEncrypt": {
+    "description": "Bullet on the Sync screen explaining sync."
+  },
+  "stSyncHowDevices": "Changes from your other devices download automatically.",
+  "@stSyncHowDevices": {
+    "description": "Bullet on the Sync screen explaining sync."
+  },
+  "stSyncHowOffline": "Works offline — your changes sync when you're back online.",
+  "@stSyncHowOffline": {
+    "description": "Bullet on the Sync screen explaining sync."
+  },
+  "stSyncHowConflicts": "Conflicts between devices are resolved automatically.",
+  "@stSyncHowConflicts": {
+    "description": "Bullet on the Sync screen explaining sync."
+  },
+  "stEncIntro": "Your notes are encrypted on this device with AES-256 before they sync. Choose who can recover the key.",
+  "@stEncIntro": {
+    "description": "Intro paragraph at the top of the Encryption screen. Keep 'AES-256'."
+  },
+  "stEncStdPoint1": "A recovery copy of your key is kept on our server, so a new device unlocks your notes automatically.",
+  "@stEncStdPoint1": {
+    "description": "First trade-off bullet on the Standard encryption card."
+  },
+  "stEncStdPoint2": "You can't get locked out, but it also means we could technically read your notes.",
+  "@stEncStdPoint2": {
+    "description": "Second trade-off bullet on the Standard encryption card. Must stay honest: the server holds a usable key."
+  },
+  "stEncNotE2ee": "Cloud voice recordings and reminder text are not end-to-end encrypted in either mode.",
+  "@stEncNotE2ee": {
+    "description": "Trade-off bullet shown on both encryption cards. Must stay honest: voice recordings and reminder text are readable by the server."
+  },
+  "stEncZkPoint1": "Your key is locked with a passphrase only you know, so we can't read your notes.",
+  "@stEncZkPoint1": {
+    "description": "First trade-off bullet on the Zero-knowledge encryption card."
+  },
+  "stEncZkPoint2": "Lose both the passphrase and the recovery code and your notes are gone for good.",
+  "@stEncZkPoint2": {
+    "description": "Second trade-off bullet on the Zero-knowledge encryption card."
+  },
+  "stEncTurnOn": "Turn on zero-knowledge",
+  "@stEncTurnOn": {
+    "description": "Primary button on the Encryption screen that starts setting a passphrase."
+  },
+  "stEncCurrent": "Current",
+  "@stEncCurrent": {
+    "description": "Small tag on the selected (active) encryption mode card."
+  },
+  "stUsageTitle": "Your usage",
+  "@stUsageTitle": {
+    "description": "Title of the usage sheet that lists synced notes, OCR scans and exports."
+  },
+  "stRemaining": "{count, plural, =1{1 left} other{{count} left}}",
+  "@stRemaining": {
+    "description": "Under a usage bar in the usage sheet: how many uses remain before the free limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stUsageReconciled": "Usage corrected: {oldCount} → {newCount} synced notes",
+  "@stUsageReconciled": {
+    "description": "Toast after long-pressing refresh in the usage sheet, when the synced-note count was corrected against the server.",
+    "placeholders": {
+      "oldCount": {
+        "type": "int"
+      },
+      "newCount": {
+        "type": "int"
+      }
+    }
+  },
+  "stUsageInSync": "Already in sync: {count} synced notes",
+  "@stUsageInSync": {
+    "description": "Toast after long-pressing refresh in the usage sheet, when the count already matched the server.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pwHeadline": "[[Go unlimited]]\nwith Pinpoint Pro",
+  "@pwHeadline": {
+    "description": "Paywall headline. The part inside [[ ]] sits on a yellow marker highlight; keep the brackets around the words you want highlighted, and keep the line break if it reads well. 'Pinpoint Pro' is a brand name: do not translate."
+  },
+  "pwSubtitle": "Every note type stays free. Pro just removes the limits.",
+  "@pwSubtitle": {
+    "description": "Paywall line under the headline."
+  },
+  "pwRowFolders": "Folders",
+  "@pwRowFolders": {
+    "description": "Row of the paywall limits table."
+  },
+  "pwRowExports": "PDF & Markdown exports",
+  "@pwRowExports": {
+    "description": "Row of the paywall limits table. Keep 'PDF' and 'Markdown'."
+  },
+  "pwRowVoice": "Voice recording",
+  "@pwRowVoice": {
+    "description": "Row of the paywall limits table: how long one voice recording can be."
+  },
+  "pwRowAccents": "Accent colours",
+  "@pwRowAccents": {
+    "description": "Row of the paywall limits table: how many accent colours can be chosen."
+  },
+  "pwPerMonth": "{count}/mo",
+  "@pwPerMonth": {
+    "description": "A monthly allowance in the paywall table, e.g. '20/mo'. Keep it short.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pwMinutes": "{count, plural, =1{1 min} other{{count} min}}",
+  "@pwMinutes": {
+    "description": "A recording length in the paywall table, e.g. '2 min'. Keep it short.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pwAll": "All {count}",
+  "@pwAll": {
+    "description": "The Pro value in the 'Accent colours' row of the paywall table, e.g. 'All 5'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pwRowSemantic": "{feature}: {free} on the free plan, {pro} with Pro",
+  "@pwRowSemantic": {
+    "description": "Screen-reader label for a row of the paywall limits table, e.g. 'Folders: 5 on the free plan, Unlimited with Pro'.",
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      },
+      "free": {
+        "type": "String"
+      },
+      "pro": {
+        "type": "String"
+      }
+    }
+  },
+  "pwSave": "SAVE {percent}%",
+  "@pwSave": {
+    "description": "Badge on the yearly plan card: how much cheaper a year is than twelve monthly payments, computed from store prices.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "pwPlanSemantic": "{plan}, {price}",
+  "@pwPlanSemantic": {
+    "description": "Screen-reader label for a plan card on the paywall, e.g. 'Yearly, $19.99'.",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "pwContinue": "Continue",
+  "@pwContinue": {
+    "description": "Main paywall button that starts the purchase of the selected plan (when no free trial applies)."
+  },
+  "pwCancelAnytime": "Cancel anytime in your store account.",
+  "@pwCancelAnytime": {
+    "description": "Small print under the paywall button."
+  },
+  "pwSeePro": "See Pro",
+  "@pwSeePro": {
+    "description": "Main button of the premium limit sheet; opens the paywall. 'Pro' is the plan name."
+  },
+  "pwNotNow": "Not now",
+  "@pwNotNow": {
+    "description": "Secondary button of the premium limit sheet; closes it."
+  },
+  "pwGateSyncTitle": "{limit, plural, =1{You've synced 1 of 1 note} other{You've synced {limit} of {limit} notes}}",
+  "@pwGateSyncTitle": {
+    "description": "Title of the premium limit sheet when a free user reaches the synced-note limit.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateSyncBody": "Pro syncs every note, with no cap.",
+  "@pwGateSyncBody": {
+    "description": "One-line body of the premium limit sheet for the synced-note limit."
+  },
+  "pwGateFolderTitle": "{limit, plural, =1{You've used 1 of 1 folder} other{You've used {limit} of {limit} folders}}",
+  "@pwGateFolderTitle": {
+    "description": "Title of the premium limit sheet when a free user reaches the folder limit.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateFolderBody": "Go Pro for unlimited folders.",
+  "@pwGateFolderBody": {
+    "description": "One-line body of the premium limit sheet for the folder limit."
+  },
+  "pwGateOcrTitle": "{limit, plural, =1{You've used 1 of 1 scan this month} other{You've used {limit} of {limit} scans this month}}",
+  "@pwGateOcrTitle": {
+    "description": "Title of the premium limit sheet when a free user reaches the monthly OCR scan limit.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateOcrBody": "Scans reset next month, or go Pro for unlimited.",
+  "@pwGateOcrBody": {
+    "description": "One-line body of the premium limit sheet for the OCR scan limit."
+  },
+  "pwGateExportTitle": "{limit, plural, =1{You've used 1 of 1 export this month} other{You've used {limit} of {limit} exports this month}}",
+  "@pwGateExportTitle": {
+    "description": "Title of the premium limit sheet when a free user reaches the monthly export limit.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateExportBody": "Exports reset next month, or go Pro for unlimited.",
+  "@pwGateExportBody": {
+    "description": "One-line body of the premium limit sheet for the export limit."
+  },
+  "pwGateVoiceTitle": "{minutes, plural, =1{Free recordings stop at 1 min} other{Free recordings stop at {minutes} min}}",
+  "@pwGateVoiceTitle": {
+    "description": "Title of the premium limit sheet when a free user's voice recording hits the length limit.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateVoiceBody": "Go Pro to record for as long as you like.",
+  "@pwGateVoiceBody": {
+    "description": "One-line body of the premium limit sheet for the recording-length limit."
+  },
+  "pwGateThemeTitle": "This accent is part of Pro",
+  "@pwGateThemeTitle": {
+    "description": "Title of the premium limit sheet when a free user taps a locked accent colour."
+  },
+  "pwGateThemeBody": "Pro unlocks all {total} accent colours.",
+  "@pwGateThemeBody": {
+    "description": "One-line body of the premium limit sheet for a locked accent colour. {total} is the number of accent colours.",
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateAttachTitle": "{max, plural, =1{You've added 1 of 1 attachment} other{You've added {max} of {max} attachments}}",
+  "@pwGateAttachTitle": {
+    "description": "Title of the premium limit sheet when a free user reaches the attachments-per-note limit.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateAttachBody": "Go Pro for unlimited attachments.",
+  "@pwGateAttachBody": {
+    "description": "One-line body of the premium limit sheet for the attachment limit."
+  },
+  "stShowPassword": "Show password",
+  "@stShowPassword": {
+    "description": "Screen-reader label and tooltip for the eye button that reveals a password or passphrase field."
+  },
+  "stHidePassword": "Hide password",
+  "@stHidePassword": {
+    "description": "Screen-reader label and tooltip for the eye button that hides a revealed password or passphrase field."
+  },
+  "flSubtitle": "A note can live in more than one folder.",
+  "@flSubtitle": {
+    "description": "Subtitle under the 'My folders' title on the My folders screen. Explains that one note can be added to several folders at once."
+  },
+  "flNewFolder": "New folder",
+  "@flNewFolder": {
+    "description": "Label of the dashed tile at the end of the My folders grid, and title of the sheet that asks for a new folder's name."
+  },
+  "flFreeLimitTitle": "{limit, plural, =1{{used} of 1 free folder used} other{{used} of {limit} free folders used}}",
+  "@flFreeLimitTitle": {
+    "description": "Title of the yellow banner at the bottom of My folders, shown to free users who are at or near the folder limit. {used} is how many folders they have, {limit} the free-plan maximum.",
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "example": "4"
+      },
+      "limit": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "flFreeLimitBody": "Go Pro for unlimited folders.",
+  "@flFreeLimitBody": {
+    "description": "Second line of the free-folder-limit banner on My folders. 'Pro' refers to the paid plan Pinpoint Pro."
+  },
+  "flMenuLabel": "Options for {folder}",
+  "@flMenuLabel": {
+    "description": "Screen-reader label of the '⋯' button on a folder tile, which opens rename / change colour / delete. {folder} is the folder name.",
+    "placeholders": {
+      "folder": {
+        "type": "String",
+        "example": "Work"
+      }
+    }
+  },
+  "flChangeColour": "Change colour",
+  "@flChangeColour": {
+    "description": "Menu item on a folder tile that opens the folder colour picker."
+  },
+  "flColourSheetTitle": "Folder colour",
+  "@flColourSheetTitle": {
+    "description": "Title of the sheet where the user picks one of five pastel colours for a folder."
+  },
+  "flColorYellow": "Yellow",
+  "@flColorYellow": {
+    "description": "Name of the yellow pastel in the folder colour picker (read by screen readers)."
+  },
+  "flColorLavender": "Lavender",
+  "@flColorLavender": {
+    "description": "Name of the lavender (light purple) pastel in the folder colour picker."
+  },
+  "flColorMint": "Mint",
+  "@flColorMint": {
+    "description": "Name of the mint (light green) pastel in the folder colour picker."
+  },
+  "flColorSky": "Sky",
+  "@flColorSky": {
+    "description": "Name of the sky (light blue) pastel in the folder colour picker."
+  },
+  "flColorPink": "Pink",
+  "@flColorPink": {
+    "description": "Name of the pink pastel in the folder colour picker."
+  },
+  "flReorderHint": "Drag folders to reorder them.",
+  "@flReorderHint": {
+    "description": "Hint shown at the top of My folders while reorder mode is on (entered by long-pressing a folder)."
+  },
+  "flMoveEarlier": "Move earlier",
+  "@flMoveEarlier": {
+    "description": "Screen-reader action on a folder tile in reorder mode: moves the folder one place towards the start of the list."
+  },
+  "flMoveLater": "Move later",
+  "@flMoveLater": {
+    "description": "Screen-reader action on a folder tile in reorder mode: moves the folder one place towards the end of the list."
+  },
+  "flDeletedBody": "“{folder}” removed",
+  "@flDeletedBody": {
+    "description": "Toast text after a folder is deleted. {folder} is the folder name. Notes in it are kept.",
+    "placeholders": {
+      "folder": {
+        "type": "String",
+        "example": "Work"
+      }
+    }
+  },
+  "flEmptyTitle": "Nothing in {folder} yet",
+  "@flEmptyTitle": {
+    "description": "Empty-state title on a folder's screen when it has no notes. {folder} is the folder name.",
+    "placeholders": {
+      "folder": {
+        "type": "String",
+        "example": "Work"
+      }
+    }
+  },
+  "flEmptyAction": "Add a note",
+  "@flEmptyAction": {
+    "description": "Button on an empty folder's screen; creates a new note."
+  },
+  "lsChipAll": "All",
+  "@lsChipAll": {
+    "description": "First chip in the folder chip row on the All notes and Todos screens; shows everything (no folder or status filter)."
+  },
+  "lsShowAllNotes": "Show all notes",
+  "@lsShowAllNotes": {
+    "description": "Screen-reader label of the back button on the Voice notes / Reminders list; returns to All notes."
+  },
+  "lsEmptyVoice": "No voice notes yet",
+  "@lsEmptyVoice": {
+    "description": "Empty-state title of the Voice notes list (opened from the drawer)."
+  },
+  "lsEmptyReminders": "No reminders yet",
+  "@lsEmptyReminders": {
+    "description": "Empty-state title of the Reminders list (opened from the drawer)."
+  },
+  "lsTodoEmpty": "No tasks. Enjoy it.",
+  "@lsTodoEmpty": {
+    "description": "Empty-state title of the Todos tab when there are no checklist items at all."
+  },
+  "lsTodoSummary": "{total, plural, =1{{done} of 1 done} other{{done} of {total} done}}",
+  "@lsTodoSummary": {
+    "description": "Progress line in the header of each checklist group on the Todos tab, e.g. '2 of 4 done'.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "example": "2"
+      },
+      "total": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "lsTrashKeep": "Notes stay in trash until you empty it.",
+  "@lsTrashKeep": {
+    "description": "Banner at the top of the Trash screen. Pinpoint does not delete trashed notes automatically."
+  },
+  "lsEmptyTrash": "Empty trash",
+  "@lsEmptyTrash": {
+    "description": "Text action on the Trash banner and confirm button; permanently deletes every note in the trash."
+  },
+  "lsEmptyTrashTitle": "Empty trash?",
+  "@lsEmptyTrashTitle": {
+    "description": "Title of the confirm sheet before every note in the trash is permanently deleted."
+  },
+  "lsEmptyTrashBody": "{count, plural, =1{1 note will be deleted forever. This can't be undone.} other{{count} notes will be deleted forever. This can't be undone.}}",
+  "@lsEmptyTrashBody": {
+    "description": "Body of the Empty trash confirm sheet. {count} is the number of notes in the trash.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "lsUnarchive": "Unarchive {note}",
+  "@lsUnarchive": {
+    "description": "Screen-reader label of the unarchive button under a note card on the Archive screen. {note} is the note title.",
+    "placeholders": {
+      "note": {
+        "type": "String",
+        "example": "Groceries"
+      }
+    }
+  },
+  "lsRestoreNote": "Restore {note}",
+  "@lsRestoreNote": {
+    "description": "Screen-reader label of the restore button under a note card on the Trash screen. {note} is the note title.",
+    "placeholders": {
+      "note": {
+        "type": "String",
+        "example": "Groceries"
+      }
+    }
+  },
+  "lsDeleteNoteForever": "Delete {note} forever",
+  "@lsDeleteNoteForever": {
+    "description": "Screen-reader label of the delete-forever button under a note card on the Archive and Trash screens. {note} is the note title.",
+    "placeholders": {
+      "note": {
+        "type": "String",
+        "example": "Groceries"
+      }
+    }
+  },
+  "lsNewChecklist": "New checklist",
+  "@lsNewChecklist": {
+    "description": "Screen-reader label of the '+' button on the Todos tab; starts a new checklist note."
+  },
+  "dgUndo": "Undo",
+  "@dgUndo": {
+    "description": "Screen-reader label of the undo button on the drawing canvas; removes the last stroke."
+  },
+  "dgCreate": "Create",
+  "@dgCreate": {
+    "description": "Primary button of the name sheet when creating a new folder."
+  },
+  "edMoreOptions": "More options",
+  "@edMoreOptions": {
+    "description": "Screen-reader label of the round '⋯' button in the note editor's top bar that opens the note menu (archive, colour, export, share, delete)."
+  },
+  "edFolderChipMore": "{folder} +{count}",
+  "@edFolderChipMore": {
+    "description": "Folder chip in the note editor's top bar when a note is in several folders: the first folder's name plus how many more, e.g. 'Random +2'.",
+    "placeholders": {
+      "folder": {
+        "type": "String",
+        "example": "Random"
+      },
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edFolderChipSemantic": "Folders: {folders}. Change folders",
+  "@edFolderChipSemantic": {
+    "description": "Screen-reader label of the folder chip in the note editor's top bar. {folders} is a comma-separated list of the note's folder names. Tapping opens the folder picker.",
+    "placeholders": {
+      "folders": {
+        "type": "String",
+        "example": "Random, Work"
+      }
+    }
+  },
+  "edFoldersSheetHint": "A note can live in more than one folder.",
+  "@edFoldersSheetHint": {
+    "description": "Subtitle in the folder picker sheet opened from the note editor, explaining that several folders can be selected at once."
+  },
+  "edNewFolder": "New folder",
+  "@edNewFolder": {
+    "description": "Dashed chip at the end of the folder picker sheet in the note editor; creates a folder and selects it."
+  },
+  "edEditedOn": "Edited {date}",
+  "@edEditedOn": {
+    "description": "Small muted line under the note title in the editor saying when the note was last changed, e.g. 'Edited Oct 2, 2026'.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Oct 2, 2026"
+      }
+    }
+  },
+  "edEncrypted": "Encrypted",
+  "@edEncrypted": {
+    "description": "Label next to a small green dot under the note title in the editor. Tapping it explains how the note is protected."
+  },
+  "edEncryptedSemantic": "Encrypted. How is this note protected?",
+  "@edEncryptedSemantic": {
+    "description": "Screen-reader label of the 'Encrypted' label under the note title; tapping opens an explanation sheet."
+  },
+  "edEncSheetTitle": "How this note is protected",
+  "@edEncSheetTitle": {
+    "description": "Title of the sheet that opens when the user taps 'Encrypted' in the note editor."
+  },
+  "edEncStandardBody": "This note is encrypted on your device before it syncs. You are in Standard mode: we keep a recovery copy of your key so you never get locked out, which means we could technically decrypt your notes.",
+  "@edEncStandardBody": {
+    "description": "Body of the encryption sheet in the note editor when the account uses Standard mode. Must stay honest: the server holds a recovery copy of the key."
+  },
+  "edEncZkBody": "This note is encrypted on your device before it syncs. Maximum Privacy is on: only your passphrase unlocks the key, so we cannot read your notes.",
+  "@edEncZkBody": {
+    "description": "Body of the encryption sheet in the note editor when zero-knowledge ('Maximum Privacy') mode is on."
+  },
+  "edEncExceptions": "Reminders and cloud voice recordings are the exceptions: our server reads a reminder's title, text and time to deliver it, and voice recordings are not end-to-end encrypted.",
+  "@edEncExceptions": {
+    "description": "Second paragraph of the encryption sheet in the note editor. Honest list of what is NOT end-to-end encrypted. Keep the meaning exact."
+  },
+  "edEncManage": "Encryption settings",
+  "@edEncManage": {
+    "description": "Button at the bottom of the encryption sheet in the note editor; opens the Encryption settings screen."
+  },
+  "edFormatting": "Formatting",
+  "@edFormatting": {
+    "description": "Screen-reader label for the black formatting toolbar at the bottom of the note editor."
+  },
+  "edHighlight": "Highlight",
+  "@edHighlight": {
+    "description": "Formatting toolbar button that puts a yellow marker highlight behind the selected text."
+  },
+  "edColorDefault": "No colour",
+  "@edColorDefault": {
+    "description": "Note colour picker: the option that removes the note's colour."
+  },
+  "edColorYellow": "Yellow",
+  "@edColorYellow": {
+    "description": "Note colour picker: pastel yellow."
+  },
+  "edColorLavender": "Lavender",
+  "@edColorLavender": {
+    "description": "Note colour picker: pastel lavender."
+  },
+  "edColorMint": "Mint",
+  "@edColorMint": {
+    "description": "Note colour picker: pastel mint green."
+  },
+  "edColorSky": "Sky",
+  "@edColorSky": {
+    "description": "Note colour picker: pastel sky blue."
+  },
+  "edColorPink": "Pink",
+  "@edColorPink": {
+    "description": "Note colour picker: pastel pink."
+  },
+  "edOcrImage": "Image to scan",
+  "@edOcrImage": {
+    "description": "Screen-reader label for the picked image shown in the scan card in the note editor, before its text is extracted."
+  },
+  "edOcrCaption": "Only the text is kept",
+  "@edOcrCaption": {
+    "description": "Small caption on the scan card in the note editor: the picked image is not saved with the note, only the text extracted from it."
+  },
+  "edExtractText": "Extract text",
+  "@edExtractText": {
+    "description": "Small sky-blue pill on the scan card in the note editor; reads the text in the picked image and adds it to the note."
+  },
+  "edExtractTextQuota": "Extract text · {used}/{total}",
+  "@edExtractTextQuota": {
+    "description": "The 'Extract text' pill when a free user is close to the monthly text-scan limit, e.g. 'Extract text · 18/20'.",
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "example": "18"
+      },
+      "total": {
+        "type": "int",
+        "example": "20"
+      }
+    }
+  },
+  "edExtracting": "Reading…",
+  "@edExtracting": {
+    "description": "The 'Extract text' pill while the text in the image is being recognised."
+  },
+  "edOcrDiscard": "Discard image",
+  "@edOcrDiscard": {
+    "description": "Screen-reader label of the small close button on the scan card in the note editor."
+  },
+  "edNewVoiceNote": "New voice note",
+  "@edNewVoiceNote": {
+    "description": "Screen-reader label of the round microphone button in the text note editor; opens a new voice note and starts recording."
+  },
+  "edVoiceEmpty": "Tap the mic to record",
+  "@edVoiceEmpty": {
+    "description": "Dashed card in an empty voice note; tapping it (or the round mic button) starts recording."
+  },
+  "edVoiceFreeCap": "Free recordings stop at {duration}",
+  "@edVoiceFreeCap": {
+    "description": "Muted line under the empty voice-note card for free users, stating the recording length limit, e.g. 'Free recordings stop at 2:00'.",
+    "placeholders": {
+      "duration": {
+        "type": "String",
+        "example": "2:00"
+      }
+    }
+  },
+  "edVoicePlay": "Play",
+  "@edVoicePlay": {
+    "description": "Screen-reader label of the play button on a voice note's player card."
+  },
+  "edVoicePause": "Pause",
+  "@edVoicePause": {
+    "description": "Screen-reader label of the pause button on a voice note's player card."
+  },
+  "edVoiceStop": "Stop",
+  "@edVoiceStop": {
+    "description": "Screen-reader label of the stop button on a voice note's player card."
+  },
+  "edVoicePosition": "Playback position",
+  "@edVoicePosition": {
+    "description": "Screen-reader label of the waveform on a voice note's player card; drag or tap it to seek."
+  },
+  "edChecklistProgress": "Progress",
+  "@edChecklistProgress": {
+    "description": "Small label on the mint progress card at the top of a checklist note."
+  },
+  "edChecklistDoneOf": "{total, plural, =1{{done} of 1 done} other{{done} of {total} done}}",
+  "@edChecklistDoneOf": {
+    "description": "Bold line on a checklist note's progress card: how many tasks are ticked off out of the total, e.g. '2 of 4 done'.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "example": "2"
+      },
+      "total": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "edAutoSaved": "Auto-saved",
+  "@edAutoSaved": {
+    "description": "Small outlined chip under a checklist note's title confirming changes are saved automatically."
+  },
+  "edSaving": "Saving…",
+  "@edSaving": {
+    "description": "The 'Auto-saved' chip on a checklist note while a change is being written."
+  },
+  "edAddTaskHint": "Add a task…",
+  "@edAddTaskHint": {
+    "description": "Placeholder in the black add bar at the bottom of a checklist note. Pressing Enter adds the task and keeps the keyboard open."
+  },
+  "edAddTask": "Add task",
+  "@edAddTask": {
+    "description": "Screen-reader label of the round mint '+' button in a checklist note's add bar."
+  },
+  "edTaskDeleted": "Task deleted",
+  "@edTaskDeleted": {
+    "description": "Toast after swiping a checklist task away; offers Undo."
+  },
+  "edUndo": "Undo",
+  "@edUndo": {
+    "description": "Action on a toast that reverses what was just done (e.g. restores a deleted checklist task)."
+  },
+  "edChecklistEmpty": "No tasks yet. Add your first one below.",
+  "@edChecklistEmpty": {
+    "description": "Muted line in an empty checklist note, pointing at the add bar at the bottom of the screen."
+  },
+  "edDragToReorder": "Drag to reorder",
+  "@edDragToReorder": {
+    "description": "Screen-reader label of the drag handle that appears on a checklist task while it is being moved (long-press a task to move it)."
+  },
+  "edAllDone": "All done!",
+  "@edAllDone": {
+    "description": "Announced to screen readers when every task in a checklist note is ticked off (small celebration stickers appear)."
+  },
+  "edEditTask": "Edit task",
+  "@edEditTask": {
+    "description": "Placeholder of the text field while a checklist task's text is being edited."
+  },
+  "edReminderChipSemantic": "Reminder {when}. Change reminder time",
+  "@edReminderChipSemantic": {
+    "description": "Screen-reader label of the lavender reminder chip in the reminder editor, e.g. 'Reminder Today, 6:00 PM. Change reminder time'.",
+    "placeholders": {
+      "when": {
+        "type": "String",
+        "example": "Today, 6:00 PM"
+      }
+    }
+  },
+  "edRemPickTime": "Pick a date and time",
+  "@edRemPickTime": {
+    "description": "Outlined chip in the reminder editor before a time is chosen; opens the date and time picker."
+  },
+  "edRemTitleLabel": "Notification title",
+  "@edRemTitleLabel": {
+    "description": "Label above the text field for the title shown in the reminder's push notification."
+  },
+  "edRemTitleHint": "e.g. Take medication",
+  "@edRemTitleHint": {
+    "description": "Example placeholder in the reminder notification title field."
+  },
+  "edRemBodyLabel": "Notification text (optional)",
+  "@edRemBodyLabel": {
+    "description": "Label above the optional text field for the body of the reminder's push notification."
+  },
+  "edRemBodyHint": "Anything else to include",
+  "@edRemBodyHint": {
+    "description": "Placeholder in the optional reminder notification text field."
+  },
+  "edRemWhen": "When",
+  "@edRemWhen": {
+    "description": "Section title in the reminder editor above the date-and-time chip."
+  },
+  "edRemRepeat": "Repeat",
+  "@edRemRepeat": {
+    "description": "Section title in the reminder editor above the repeat options (Once, Hourly, Daily…)."
+  },
+  "edRemEnds": "Ends",
+  "@edRemEnds": {
+    "description": "Section title in the reminder editor above the options for when a repeating reminder stops."
+  },
+  "edRemEveryHours": "{count, plural, =1{Every hour} other{Every {count} hours}}",
+  "@edRemEveryHours": {
+    "description": "Repeat interval in the reminder editor for an hourly reminder, shown between − and + buttons.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edRemEveryDays": "{count, plural, =1{Every day} other{Every {count} days}}",
+  "@edRemEveryDays": {
+    "description": "Repeat interval in the reminder editor for a daily reminder, shown between − and + buttons.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edRemEveryWeeks": "{count, plural, =1{Every week} other{Every {count} weeks}}",
+  "@edRemEveryWeeks": {
+    "description": "Repeat interval in the reminder editor for a weekly reminder, shown between − and + buttons.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edRemEveryMonths": "{count, plural, =1{Every month} other{Every {count} months}}",
+  "@edRemEveryMonths": {
+    "description": "Repeat interval in the reminder editor for a monthly reminder, shown between − and + buttons.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edRemEveryYears": "{count, plural, =1{Every year} other{Every {count} years}}",
+  "@edRemEveryYears": {
+    "description": "Repeat interval in the reminder editor for a yearly reminder, shown between − and + buttons.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edRemLessOften": "Repeat less often",
+  "@edRemLessOften": {
+    "description": "Screen-reader label of the '+' button next to a reminder's repeat interval (raises the interval, e.g. every 2 days → every 3 days)."
+  },
+  "edRemMoreOften": "Repeat more often",
+  "@edRemMoreOften": {
+    "description": "Screen-reader label of the '−' button next to a reminder's repeat interval (lowers the interval)."
+  },
+  "edRemInfoServer": "Your reminder's title, text and time are sent to our server so it can deliver the notification. They are not end-to-end encrypted.",
+  "@edRemInfoServer": {
+    "description": "Honest privacy note in the reminder editor's info card. Keep the meaning exact: reminder details are readable by the server."
+  },
+  "edRemInfoNotifications": "Make sure notifications are allowed for Pinpoint in your device settings.",
+  "@edRemInfoNotifications": {
+    "description": "Tip in the reminder editor's info card. 'Pinpoint' is the app name; do not translate it."
+  },
+  "edRemInfoRepeat": "A repeating reminder schedules one notification for each occurrence.",
+  "@edRemInfoRepeat": {
+    "description": "Tip in the reminder editor's info card about repeating reminders."
+  },
+  "edRemInfoEdit": "You can change or delete a reminder at any time.",
+  "@edRemInfoEdit": {
+    "description": "Tip in the reminder editor's info card."
+  },
+  "edSaveReminder": "Save reminder",
+  "@edSaveReminder": {
+    "description": "Black pill button at the bottom of the reminder editor; saves the reminder and closes the editor."
   }
 }

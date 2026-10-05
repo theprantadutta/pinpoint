@@ -139,7 +139,7 @@ class FirebaseNotificationService {
   /// Initialize local notifications for showing notifications
   Future<void> _initializeLocalNotifications() async {
     const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@drawable/ic_stat_pinpoint');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -300,7 +300,7 @@ class FirebaseNotificationService {
       importance: Importance.high,
       priority: Priority.high,
       showWhen: true,
-      icon: '@mipmap/ic_launcher',
+      icon: '@drawable/ic_stat_pinpoint',
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -401,7 +401,7 @@ class FirebaseNotificationService {
       channelDescription: 'Test notification channel',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      icon: '@drawable/ic_stat_pinpoint',
     );
 
     const iosDetails = DarwinNotificationDetails(

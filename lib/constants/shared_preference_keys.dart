@@ -6,6 +6,11 @@ const kHighContrastKey = 'high_contrast';
 const kFlexSchemeKey = 'is_flex_scheme_key';
 const kBiometricKey = 'biometric_key';
 const String kSelectedFontKey = 'selected-font-key';
+// Display → "Background doodles" (Sketchbook marker swooshes). Default on.
+const kDoodlesEnabledKey = 'doodles_enabled';
+// Last local change to the synced appearance prefs (UTC ms) — the
+// last-write-wins clock for /users/me/preferences.
+const kAppearanceUpdatedAtKey = 'appearance_updated_at';
 
 // language / locale key. Stores a BCP-47 tag ('es', 'pt_BR', ...) or is absent
 // to mean "follow the system locale".
@@ -24,6 +29,14 @@ const kDidPopulatedNoteFolder = 'did-populate-note-folder';
 
 // onboarding key
 const kHasCompletedOnboardingKey = 'has_completed_onboarding';
+
+// Existing users who finished an older onboarding get a one-time "What's new"
+// sheet instead of the full flow. See services/onboarding_version.dart.
+const kOnboardingVersionKey = 'onboarding_version'; // int, the onboarding/What's-new version the user has seen
+
+// The current onboarding generation. 2 = the Sketchbook redesign. Bump it
+// when onboarding / What's-new content is worth showing again.
+const int kCurrentOnboardingVersion = 2;
 
 // walkthrough/tutorial key
 const kHasCompletedWalkthroughKey = 'has_completed_walkthrough';

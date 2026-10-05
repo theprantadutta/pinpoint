@@ -125,8 +125,7 @@ class RetryHelper {
 
         // Check if we should retry this error
         if (config.shouldRetry != null && !config.shouldRetry!(e)) {
-          debugPrint(
-              '⚠️ [Retry] Error not retryable, failing immediately: $e');
+          debugPrint('⚠️ [Retry] Error not retryable, failing immediately: $e');
           rethrow;
         }
 
@@ -241,7 +240,8 @@ class RetryHelper {
         pow(config.backoffMultiplier, attempt - 1);
 
     // Cap at max delay
-    final cappedDelayMs = min(baseDelayMs.toInt(), config.maxDelay.inMilliseconds);
+    final cappedDelayMs =
+        min(baseDelayMs.toInt(), config.maxDelay.inMilliseconds);
 
     // Add jitter if enabled (0-25% random variation)
     if (config.useJitter) {

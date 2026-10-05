@@ -249,6 +249,73 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
       expect(prefs.getString(pendingKey), isNull);
     });
   });
+
+  group('account-level entitlement', () {
+    test('a signed-in Pro account is premium on a device with no purchase',
+        () async {
+      api.signedIn = true;
+      api.accountStatusResponse = {
+        'is_premium': true,
+        'tier': 'premium',
+        'expires_at': '2099-01-01T00:00:00',
+      };
+
+      await SubscriptionManager().checkSubscriptionStatus(forceRefresh: true);
+
+      expect(SubscriptionManager().isPremium, isTrue);
+      expect(api.accountStatusCalls, 1);
+    });
+
+    test('the account is only consulted when the device is not premium',
+        () async {
+      api.signedIn = true;
+      api.statusResponse = {
+        'is_premium': true,
+        'tier': 'premium',
+        'expires_at': '2099-01-01T00:00:00',
+      };
+
+      await SubscriptionManager().checkSubscriptionStatus(forceRefresh: true);
+
+      expect(SubscriptionManager().isPremium, isTrue);
+      expect(api.accountStatusCalls, 0);
+    });
+
+    test('signed out, the account is never asked', () async {
+      api.signedIn = false;
+      await SubscriptionManager().checkSubscriptionStatus(forceRefresh: true);
+
+      expect(SubscriptionManager().isPremium, isFalse);
+      expect(api.accountStatusCalls, 0);
+    });
+
+    test('an unreachable account check keeps and caches the device answer',
+        () async {
+      api.signedIn = true;
+      api.accountStatusThrows = true;
+
+      await SubscriptionManager().checkSubscriptionStatus(forceRefresh: true);
+
+      expect(SubscriptionManager().isPremium, isFalse);
+      expect(SubscriptionManager().hasFreshData, isTrue,
+          reason: 'the device status must still be saved');
+    });
+
+    test('account Pro survives a restart with no network', () async {
+      api.signedIn = true;
+      api.accountStatusResponse = {
+        'is_premium': true,
+        'tier': 'premium',
+        'expires_at': '2099-01-01T00:00:00',
+      };
+      await SubscriptionManager().checkSubscriptionStatus(forceRefresh: true);
+
+      // What an offline relaunch reads back: the persisted entitlement.
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('is_premium'), isTrue,
+          reason: 'account Pro must be cached for offline launches');
+    });
+  });
 }
 
 /// Stands in for the [ApiService] singleton, whose private constructor rules
@@ -257,8 +324,22 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
 class FakeApiService implements ApiService {
   Map<String, dynamic> verifyResponse = {'success': true};
   Map<String, dynamic> statusResponse = {'is_premium': false, 'tier': 'free'};
+  Map<String, dynamic> accountStatusResponse = {'is_premium': false, 'tier': 'free'};
+  bool signedIn = false;
+  bool accountStatusThrows = false;
   int verifyCalls = 0;
   int statusCalls = 0;
+  int accountStatusCalls = 0;
+
+  @override
+  Future<bool> hasToken() async => signedIn;
+
+  @override
+  Future<Map<String, dynamic>> getSubscriptionStatus() async {
+    accountStatusCalls++;
+    if (accountStatusThrows) throw Exception('offline');
+    return jsonDecode(jsonEncode(accountStatusResponse)) as Map<String, dynamic>;
+  }
 
   /// The last payload sent, so a test can assert the receipt round-trips.
   Map<String, dynamic>? lastVerifyPayload;

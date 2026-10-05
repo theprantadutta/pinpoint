@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'colors.dart';
+
 /// Pinpoint Design System - Typography
 /// Writing-focused type system optimized for note-taking
 class PinpointTypography {
@@ -11,17 +13,20 @@ class PinpointTypography {
   // Font Families
   // ============================================
 
-  /// Primary font for UI and reading
-  static String get primaryFontFamily => 'Inter';
+  /// Primary font for UI and reading. The user's font picker overrides it.
+  static const String primaryFontFamily = 'Plus Jakarta Sans';
 
-  /// Secondary font for headings and emphasis
-  static String get headingFontFamily => 'Montserrat';
+  /// Headings use the same family as the UI in Sketchbook.
+  static const String headingFontFamily = 'Plus Jakarta Sans';
 
   /// Monospace font for code blocks
-  static String get monospaceFontFamily => 'JetBrains Mono';
+  static const String monospaceFontFamily = 'JetBrains Mono';
 
-  /// Writing font for editor (optimized for long-form writing)
-  static String get writingFontFamily => 'Source Sans 3';
+  /// Editor body. Follows the UI family.
+  static const String writingFontFamily = 'Plus Jakarta Sans';
+
+  /// Handwritten accents only — never UI labels.
+  static const String handwritingFontFamily = 'Caveat';
 
   // ============================================
   // Script fallbacks
@@ -69,6 +74,29 @@ class PinpointTypography {
     ).copyWith(fontFamilyFallback: scriptFallbacks);
   }
 
+  /// The UI fonts a user can pick in Settings → Theme, by google_fonts family
+  /// name (which is what [ThemeController] persists). Every one is bundled.
+  static const List<String> selectableFonts = <String>[
+    'Plus Jakarta Sans',
+    'Inter',
+    'Roboto',
+    'Open Sans',
+    'Lato',
+    'Montserrat',
+    'Poppins',
+    'Source Sans 3',
+    'Noto Sans',
+  ];
+
+  /// A sample of [family] for the font picker, with the script fallbacks.
+  static TextStyle fontPreview(
+    String family, {
+    double fontSize = 15,
+    FontWeight fontWeight = FontWeight.w600,
+    Color? color,
+  }) =>
+      _font(family, fontSize: fontSize, fontWeight: fontWeight, color: color);
+
   /// Monospace equivalent of [_font]. JetBrains Mono is Latin-only too, and
   /// code blocks can legitimately contain non-Latin text in comments.
   static TextStyle _mono({
@@ -91,151 +119,109 @@ class PinpointTypography {
   // Text Themes
   // ============================================
 
-  /// Create a complete text theme for the app
+  /// Ink and muted for [brightness] (Sketchbook roles).
+  static Color _ink(Brightness b) =>
+      b == Brightness.dark ? SketchColors.dark.ink : SketchColors.light.ink;
+  static Color _muted(Brightness b) =>
+      b == Brightness.dark ? SketchColors.dark.muted : SketchColors.light.muted;
+
+  /// The Sketchbook type scale mapped onto Material's roles, so widgets that
+  /// read `Theme.of(context).textTheme` land on the new scale.
+  ///
+  /// | Role           | Sketchbook     | Size/weight |
+  /// |----------------|----------------|-------------|
+  /// | displayLarge   | displayNumber  | 40 / 800    |
+  /// | displayMedium  | paywall title  | 32 / 800    |
+  /// | displaySmall   | screenTitle    | 30 / 800    |
+  /// | headlineLarge  | pageTitle      | 28 / 800    |
+  /// | headlineMedium | sheetTitle     | 26 / 800    |
+  /// | headlineSmall  | empty / dialog | 22 / 800    |
+  /// | titleLarge     | brand          | 20 / 800    |
+  /// | titleMedium    | sectionTitle   | 18 / 700    |
+  /// | titleSmall     | cardTitle      | 15 / 700    |
+  /// | bodyLarge      | editor body    | 16 / 400    |
+  /// | bodyMedium     | body           | 15 / 500    |
+  /// | bodySmall      | bodySmall      | 13 / 500    |
+  /// | labelLarge     | button         | 16 / 700    |
+  /// | labelMedium    | chip           | 13 / 600    |
+  /// | labelSmall     | caption        | 12 / 600    |
   static TextTheme createTextTheme({
     required Brightness brightness,
     String? primaryFont,
     String? headingFont,
     String? monoFont,
   }) {
-    final primary = primaryFont ?? primaryFontFamily;
-    final heading = headingFont ?? headingFontFamily;
-    // final mono = monoFont ?? monospaceFontFamily;
+    final f = primaryFont ?? primaryFontFamily;
+    final ink = _ink(brightness);
+    final muted = _muted(brightness);
 
-    final baseTextColor = brightness == Brightness.dark
-        ? const Color(0xFFF9FAFB)
-        : const Color(0xFF111827);
+    TextStyle s(double size, FontWeight w, double h,
+            {double trackingEm = 0, Color? color}) =>
+        _font(f,
+            fontSize: size,
+            fontWeight: w,
+            height: h,
+            letterSpacing: size * trackingEm,
+            color: color ?? ink);
 
     return TextTheme(
-      // Display styles - for hero headers and onboarding (BOLD)
-      displayLarge: _font(
-        heading,
-        fontSize: 60, // Slightly larger
-        fontWeight: FontWeight.w900, // BOLD: Increased from w700
-        letterSpacing: -2.0, // Tighter for modern feel
-        height: 1.1, // Tighter line height
-        color: baseTextColor,
-      ),
-      displayMedium: _font(
-        heading,
-        fontSize: 48, // Slightly larger
-        fontWeight: FontWeight.w800, // BOLD: Increased from w600
-        letterSpacing: -1.0, // Tighter
-        height: 1.15,
-        color: baseTextColor,
-      ),
-      displaySmall: _font(
-        heading,
-        fontSize: 38, // Slightly larger
-        fontWeight: FontWeight.w800, // BOLD: Increased from w600
-        letterSpacing: -0.5, // Tighter
-        height: 1.2,
-        color: baseTextColor,
-      ),
+      displayLarge: s(40, FontWeight.w800, 1.0, trackingEm: -0.04),
+      displayMedium: s(32, FontWeight.w800, 1.15, trackingEm: -0.03),
+      displaySmall: s(30, FontWeight.w800, 1.1, trackingEm: -0.03),
+      headlineLarge: s(28, FontWeight.w800, 1.15, trackingEm: -0.025),
+      headlineMedium: s(26, FontWeight.w800, 1.1, trackingEm: -0.02),
+      headlineSmall: s(22, FontWeight.w800, 1.2, trackingEm: -0.02),
+      titleLarge: s(20, FontWeight.w800, 1.2, trackingEm: -0.02),
+      titleMedium: s(18, FontWeight.w700, 1.3),
+      titleSmall: s(15, FontWeight.w700, 1.25),
+      bodyLarge: s(16, FontWeight.w400, 1.65),
+      bodyMedium: s(15, FontWeight.w500, 1.5),
+      bodySmall: s(13, FontWeight.w500, 1.45, color: muted),
+      labelLarge: s(16, FontWeight.w700, 1.25),
+      labelMedium: s(13, FontWeight.w600, 1.3),
+      labelSmall: s(12, FontWeight.w600, 1.4, color: muted),
+    );
+  }
 
-      // Headline styles - for section headers (BOLD)
-      headlineLarge: _font(
-        heading,
-        fontSize: 34, // Slightly larger
-        fontWeight: FontWeight.w800, // BOLD: Increased from w600
-        letterSpacing: -0.5, // Tighter
-        height: 1.25,
-        color: baseTextColor,
-      ),
-      headlineMedium: _font(
-        heading,
-        fontSize: 30, // Slightly larger
-        fontWeight: FontWeight.w700, // BOLD: Increased from w500
-        letterSpacing: -0.3,
-        height: 1.3,
-        color: baseTextColor,
-      ),
-      headlineSmall: _font(
-        primary,
-        fontSize: 26, // Slightly larger
-        fontWeight: FontWeight.w700, // BOLD: Increased from w500
-        letterSpacing: -0.2,
-        height: 1.35,
-        color: baseTextColor,
-      ),
+  /// The named Sketchbook styles, registered as a [ThemeExtension].
+  static SketchText createSketchText({
+    required Brightness brightness,
+    String? primaryFont,
+  }) {
+    final f = primaryFont ?? primaryFontFamily;
+    final ink = _ink(brightness);
+    final muted = _muted(brightness);
 
-      // Title styles - for cards and list items (BOLD)
-      titleLarge: _font(
-        primary,
-        fontSize: 22,
-        fontWeight: FontWeight.w700, // BOLD: Increased from w600
-        letterSpacing: -0.1, // Tighter
-        height: 1.4,
-        color: baseTextColor,
-      ),
-      titleMedium: _font(
-        primary,
-        fontSize: 18,
-        fontWeight: FontWeight.w600, // BOLD: Increased from w500
-        letterSpacing: 0,
-        height: 1.45,
-        color: baseTextColor,
-      ),
-      titleSmall: _font(
-        primary,
-        fontSize: 14,
-        fontWeight: FontWeight.w600, // BOLD: Increased from w500
-        letterSpacing: 0,
-        height: 1.5,
-        color: baseTextColor,
-      ),
+    TextStyle s(double size, FontWeight w, double h,
+            {double trackingEm = 0, Color? color}) =>
+        _font(f,
+            fontSize: size,
+            fontWeight: w,
+            height: h,
+            letterSpacing: size * trackingEm,
+            color: color ?? ink);
 
-      // Body styles - for content
-      bodyLarge: _font(
-        primary,
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.5,
-        height: 1.6,
-        color: baseTextColor,
-      ),
-      bodyMedium: _font(
-        primary,
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.25,
-        height: 1.5,
-        color: baseTextColor,
-      ),
-      bodySmall: _font(
-        primary,
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0.4,
-        height: 1.5,
-        color: baseTextColor.withValues(alpha: 0.8),
-      ),
-
-      // Label styles - for buttons and chips (BOLD)
-      labelLarge: _font(
-        primary,
-        fontSize: 14,
-        fontWeight: FontWeight.w700, // BOLD: Increased from w600
-        letterSpacing: 0.3, // Slightly tighter
-        height: 1.4,
-        color: baseTextColor,
-      ),
-      labelMedium: _font(
-        primary,
-        fontSize: 12,
-        fontWeight: FontWeight.w600, // BOLD: Increased from w500
-        letterSpacing: 0.4,
-        height: 1.4,
-        color: baseTextColor,
-      ),
-      labelSmall: _font(
-        primary,
-        fontSize: 11,
-        fontWeight: FontWeight.w600, // BOLD: Increased from w500
-        letterSpacing: 0.4,
-        height: 1.4,
-        color: baseTextColor.withValues(alpha: 0.8),
-      ),
+    return SketchText(
+      displayNumber: s(40, FontWeight.w800, 1.0, trackingEm: -0.04),
+      heroTitle: s(32, FontWeight.w800, 1.15, trackingEm: -0.03),
+      screenTitle: s(30, FontWeight.w800, 1.1, trackingEm: -0.03),
+      pageTitle: s(28, FontWeight.w800, 1.15, trackingEm: -0.025),
+      sheetTitle: s(26, FontWeight.w800, 1.1, trackingEm: -0.02),
+      emptyTitle: s(22, FontWeight.w800, 1.2, trackingEm: -0.02),
+      brand: s(20, FontWeight.w800, 1.2, trackingEm: -0.02),
+      sectionTitle: s(18, FontWeight.w700, 1.3),
+      cardTitleLarge: s(17, FontWeight.w700, 1.25),
+      cardTitle: s(15, FontWeight.w700, 1.25),
+      bodyLarge: s(16, FontWeight.w400, 1.65),
+      body: s(15, FontWeight.w600, 1.5),
+      bodyRegular: s(15, FontWeight.w500, 1.5),
+      bodySmall: s(13, FontWeight.w500, 1.45, color: muted),
+      chip: s(13, FontWeight.w600, 1.3),
+      caption: s(12, FontWeight.w500, 1.4, color: muted),
+      overline: s(11, FontWeight.w700, 1.2, trackingEm: 0.10, color: muted),
+      button: s(16, FontWeight.w700, 1.25),
+      handwriting: _font(handwritingFontFamily,
+          fontSize: 40, fontWeight: FontWeight.w600, height: 1.0),
     );
   }
 
@@ -245,9 +231,7 @@ class PinpointTypography {
 
   /// Editor title style - large, prominent for note titles (BOLD)
   static TextStyle editorTitle({required Brightness brightness}) {
-    final color = brightness == Brightness.dark
-        ? const Color(0xFFF9FAFB)
-        : const Color(0xFF111827);
+    final color = _ink(brightness);
 
     return _font(
       headingFontFamily,
@@ -264,9 +248,7 @@ class PinpointTypography {
     required Brightness brightness,
     bool focusMode = false,
   }) {
-    final color = brightness == Brightness.dark
-        ? const Color(0xFFF9FAFB)
-        : const Color(0xFF111827);
+    final color = _ink(brightness);
 
     return _font(
       writingFontFamily,
@@ -280,9 +262,7 @@ class PinpointTypography {
 
   /// Code block style - monospace for code
   static TextStyle codeBlock({required Brightness brightness}) {
-    final color = brightness == Brightness.dark
-        ? const Color(0xFF10B981) // Mint for dark mode
-        : const Color(0xFF059669); // Darker mint for light mode
+    final color = _ink(brightness);
 
     return _mono(
       fontSize: 14,
@@ -295,9 +275,7 @@ class PinpointTypography {
 
   /// Note card title (BOLD)
   static TextStyle noteCardTitle({required Brightness brightness}) {
-    final color = brightness == Brightness.dark
-        ? const Color(0xFFF9FAFB)
-        : const Color(0xFF111827);
+    final color = _ink(brightness);
 
     return _font(
       primaryFontFamily,
@@ -311,9 +289,7 @@ class PinpointTypography {
 
   /// Note card excerpt
   static TextStyle noteCardExcerpt({required Brightness brightness}) {
-    final color = brightness == Brightness.dark
-        ? const Color(0xFF9CA3AF)
-        : const Color(0xFF6B7280);
+    final color = _muted(brightness);
 
     return _font(
       primaryFontFamily,
@@ -327,9 +303,7 @@ class PinpointTypography {
 
   /// Metadata text (timestamps, counts, etc.)
   static TextStyle metadata({required Brightness brightness}) {
-    final color = brightness == Brightness.dark
-        ? const Color(0xFF6B7280)
-        : const Color(0xFF9CA3AF);
+    final color = _muted(brightness);
 
     return _font(
       primaryFontFamily,
@@ -346,10 +320,7 @@ class PinpointTypography {
     required Brightness brightness,
     Color? color,
   }) {
-    final textColor = color ??
-        (brightness == Brightness.dark
-            ? const Color(0xFFF9FAFB)
-            : const Color(0xFF111827));
+    final textColor = color ?? _ink(brightness);
 
     return _font(
       primaryFontFamily,
@@ -367,10 +338,7 @@ class PinpointTypography {
     ButtonSize size = ButtonSize.medium,
     Color? color,
   }) {
-    final textColor = color ??
-        (brightness == Brightness.dark
-            ? const Color(0xFFF9FAFB)
-            : const Color(0xFF111827));
+    final textColor = color ?? _ink(brightness);
 
     double fontSize;
     FontWeight fontWeight;
@@ -405,9 +373,7 @@ class PinpointTypography {
     required Brightness brightness,
     bool isTitle = false,
   }) {
-    final color = brightness == Brightness.dark
-        ? const Color(0xFF9CA3AF)
-        : const Color(0xFF6B7280);
+    final color = _muted(brightness);
 
     if (isTitle) {
       return _font(
@@ -432,9 +398,7 @@ class PinpointTypography {
 
   /// Keyboard shortcut hint text
   static TextStyle keyboardHint({required Brightness brightness}) {
-    final color = brightness == Brightness.dark
-        ? const Color(0xFF6B7280)
-        : const Color(0xFF9CA3AF);
+    final color = _muted(brightness);
 
     return _mono(
       fontSize: 11,
@@ -484,4 +448,168 @@ class TextStyleUtils {
 
     return scaledSize;
   }
+}
+
+/// The named Sketchbook text styles (`context.type`). Colours are ink, or
+/// muted where the role is secondary; override with `copyWith(color:)`.
+@immutable
+class SketchText extends ThemeExtension<SketchText> {
+  const SketchText({
+    required this.displayNumber,
+    required this.heroTitle,
+    required this.screenTitle,
+    required this.pageTitle,
+    required this.sheetTitle,
+    required this.emptyTitle,
+    required this.brand,
+    required this.sectionTitle,
+    required this.cardTitleLarge,
+    required this.cardTitle,
+    required this.bodyLarge,
+    required this.body,
+    required this.bodyRegular,
+    required this.bodySmall,
+    required this.chip,
+    required this.caption,
+    required this.overline,
+    required this.button,
+    required this.handwriting,
+  });
+
+  /// 40/800 — "221B", "50%".
+  final TextStyle displayNumber;
+
+  /// 32/800 — the paywall headline.
+  final TextStyle heroTitle;
+
+  /// 30/800 — "My folders".
+  final TextStyle screenTitle;
+
+  /// 28/800 — "Settings", the note title.
+  final TextStyle pageTitle;
+
+  /// 26/800 — "Filters".
+  final TextStyle sheetTitle;
+
+  /// 22/800 — empty states, confirm sheets.
+  final TextStyle emptyTitle;
+
+  /// 20/800 — "Pinpoint" header.
+  final TextStyle brand;
+
+  /// 18/700 — "My folders", "Recent notes".
+  final TextStyle sectionTitle;
+
+  /// 17/700 — folder tile and drawer profile titles.
+  final TextStyle cardTitleLarge;
+
+  /// 15/700 — note card titles.
+  final TextStyle cardTitle;
+
+  /// 16/400, 1.65 — editor body.
+  final TextStyle bodyLarge;
+
+  /// 15/600 — list, settings and menu rows.
+  final TextStyle body;
+
+  /// 15/500 — body copy.
+  final TextStyle bodyRegular;
+
+  /// 13/500 muted — subtitles.
+  final TextStyle bodySmall;
+
+  /// 13/600 — chip labels.
+  final TextStyle chip;
+
+  /// 12/500 muted — card snippets, counts.
+  final TextStyle caption;
+
+  /// 11/700 +0.1em muted — render UPPERCASE ("FOLDERS").
+  final TextStyle overline;
+
+  /// 16/700 — pill buttons.
+  final TextStyle button;
+
+  /// Caveat 40/600 — handwritten accents only.
+  final TextStyle handwriting;
+
+  @override
+  SketchText copyWith({
+    TextStyle? displayNumber,
+    TextStyle? heroTitle,
+    TextStyle? screenTitle,
+    TextStyle? pageTitle,
+    TextStyle? sheetTitle,
+    TextStyle? emptyTitle,
+    TextStyle? brand,
+    TextStyle? sectionTitle,
+    TextStyle? cardTitleLarge,
+    TextStyle? cardTitle,
+    TextStyle? bodyLarge,
+    TextStyle? body,
+    TextStyle? bodyRegular,
+    TextStyle? bodySmall,
+    TextStyle? chip,
+    TextStyle? caption,
+    TextStyle? overline,
+    TextStyle? button,
+    TextStyle? handwriting,
+  }) {
+    return SketchText(
+      displayNumber: displayNumber ?? this.displayNumber,
+      heroTitle: heroTitle ?? this.heroTitle,
+      screenTitle: screenTitle ?? this.screenTitle,
+      pageTitle: pageTitle ?? this.pageTitle,
+      sheetTitle: sheetTitle ?? this.sheetTitle,
+      emptyTitle: emptyTitle ?? this.emptyTitle,
+      brand: brand ?? this.brand,
+      sectionTitle: sectionTitle ?? this.sectionTitle,
+      cardTitleLarge: cardTitleLarge ?? this.cardTitleLarge,
+      cardTitle: cardTitle ?? this.cardTitle,
+      bodyLarge: bodyLarge ?? this.bodyLarge,
+      body: body ?? this.body,
+      bodyRegular: bodyRegular ?? this.bodyRegular,
+      bodySmall: bodySmall ?? this.bodySmall,
+      chip: chip ?? this.chip,
+      caption: caption ?? this.caption,
+      overline: overline ?? this.overline,
+      button: button ?? this.button,
+      handwriting: handwriting ?? this.handwriting,
+    );
+  }
+
+  @override
+  SketchText lerp(ThemeExtension<SketchText>? other, double t) {
+    if (other is! SketchText) return this;
+    TextStyle l(TextStyle a, TextStyle b) => TextStyle.lerp(a, b, t)!;
+    return SketchText(
+      displayNumber: l(displayNumber, other.displayNumber),
+      heroTitle: l(heroTitle, other.heroTitle),
+      screenTitle: l(screenTitle, other.screenTitle),
+      pageTitle: l(pageTitle, other.pageTitle),
+      sheetTitle: l(sheetTitle, other.sheetTitle),
+      emptyTitle: l(emptyTitle, other.emptyTitle),
+      brand: l(brand, other.brand),
+      sectionTitle: l(sectionTitle, other.sectionTitle),
+      cardTitleLarge: l(cardTitleLarge, other.cardTitleLarge),
+      cardTitle: l(cardTitle, other.cardTitle),
+      bodyLarge: l(bodyLarge, other.bodyLarge),
+      body: l(body, other.body),
+      bodyRegular: l(bodyRegular, other.bodyRegular),
+      bodySmall: l(bodySmall, other.bodySmall),
+      chip: l(chip, other.chip),
+      caption: l(caption, other.caption),
+      overline: l(overline, other.overline),
+      button: l(button, other.button),
+      handwriting: l(handwriting, other.handwriting),
+    );
+  }
+}
+
+/// `context.type` — the current [SketchText].
+extension SketchTextContext on BuildContext {
+  SketchText get type =>
+      Theme.of(this).extension<SketchText>() ??
+      PinpointTypography.createSketchText(
+          brightness: Theme.of(this).brightness);
 }

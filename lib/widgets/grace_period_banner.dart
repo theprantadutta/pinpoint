@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:provider/provider.dart';
+import '../design_system/design_system.dart';
 import '../screens/subscription_screen.dart';
 import '../services/subscription_manager.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
@@ -18,7 +18,7 @@ class GracePeriodBanner extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        return _GracePeriodBannerContent(
+        return GracePeriodBannerContent(
           daysRemaining: subscriptionManager.gracePeriodDaysRemaining,
         );
       },
@@ -26,103 +26,67 @@ class GracePeriodBanner extends StatelessWidget {
   }
 }
 
-class _GracePeriodBannerContent extends StatelessWidget {
+/// The banner itself: a yellow pastel card, pink once three days or fewer
+/// remain. Tapping it opens the paywall to renew.
+class GracePeriodBannerContent extends StatelessWidget {
   final int daysRemaining;
+  final VoidCallback? onTap;
 
-  const _GracePeriodBannerContent({
+  const GracePeriodBannerContent({
+    super.key,
     required this.daysRemaining,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final t = context.type;
     final isUrgent = daysRemaining <= 3;
+    final l10n = AppL10n.of(context);
+    final title = isUrgent ? l10n.graceExpiringSoon : l10n.graceperiod;
+    final message = _getMessage(context, daysRemaining);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isUrgent
-              ? [
-                  cs.error.withValues(alpha: 0.9),
-                  cs.error.withValues(alpha: 0.7),
-                ]
-              : [
-                  cs.tertiary.withValues(alpha: 0.9),
-                  cs.tertiary.withValues(alpha: 0.7),
-                ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: (isUrgent ? cs.error : cs.tertiary).withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => context.push(SubscriptionScreen.kRouteName),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Icon
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    isUrgent ? Symbols.warning : Symbols.schedule,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                // Text content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        isUrgent
-                            ? AppL10n.of(context).graceExpiringSoon
-                            : AppL10n.of(context).graceperiod,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: SketchSpace.screenX),
+      child: SketchCard(
+        pastel: isUrgent ? SketchPastels.pink : SketchPastels.yellow,
+        radius: SketchRadius.group,
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 10, 14),
+        semanticLabel: '$title. $message',
+        onTap: onTap ?? () => context.push(SubscriptionScreen.kRouteName),
+        child: ExcludeSemantics(
+          child: Row(
+            children: [
+              Icon(
+                isUrgent
+                    ? Icons.warning_amber_rounded
+                    : Icons.schedule_rounded,
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: t.body.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: SketchPastels.onPastel,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _getMessage(context, daysRemaining),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      message,
+                      style: t.caption.copyWith(color: SketchPastels.onPastel),
+                    ),
+                  ],
                 ),
-
-                // Arrow
-                Icon(
-                  Symbols.arrow_forward,
-                  color: Colors.white.withValues(alpha: 0.8),
-                  size: 20,
-                ),
-              ],
-            ),
+              ),
+              const SketchChevron(color: SketchPastels.onPastel),
+            ],
           ),
         ),
       ),

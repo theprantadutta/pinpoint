@@ -3,7 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../design_system/design_system.dart';
 import '../../../services/notification_service.dart';
+import '../../../util/show_a_toast.dart';
 import 'package:pinpoint/util/localized_dates.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
@@ -42,16 +44,19 @@ class ReminderTypeContent extends StatefulWidget {
 }
 
 class _ReminderTypeContentState extends State<ReminderTypeContent> {
-  final TextEditingController _endOccurrencesController = TextEditingController();
+  final TextEditingController _endOccurrencesController =
+      TextEditingController();
   DateTime? _endDate;
   List<DateTime> _previewOccurrences = [];
 
   @override
   void initState() {
     super.initState();
-    if (widget.recurrenceEndType == 'after_occurrences' && widget.recurrenceEndValue != null) {
+    if (widget.recurrenceEndType == 'after_occurrences' &&
+        widget.recurrenceEndValue != null) {
       _endOccurrencesController.text = widget.recurrenceEndValue!;
-    } else if (widget.recurrenceEndType == 'on_date' && widget.recurrenceEndValue != null) {
+    } else if (widget.recurrenceEndType == 'on_date' &&
+        widget.recurrenceEndValue != null) {
       try {
         _endDate = DateTime.parse(widget.recurrenceEndValue!);
       } catch (e) {
@@ -111,7 +116,8 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
     int maxCount = maxOccurrences;
     DateTime? endDate;
 
-    if (recurrenceEndType == 'after_occurrences' && recurrenceEndValue != null) {
+    if (recurrenceEndType == 'after_occurrences' &&
+        recurrenceEndValue != null) {
       try {
         maxCount = int.parse(recurrenceEndValue);
         if (maxCount > maxOccurrences) maxCount = maxOccurrences;
@@ -172,26 +178,38 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
   Future<void> _pickDateTime() async {
     // Check if exact alarm permission is needed (Android only)
     final prefs = await SharedPreferences.getInstance();
-    final hasAskedExactAlarm = prefs.getBool('exact_alarm_permission_requested') ?? false;
+    final hasAskedExactAlarm =
+        prefs.getBool('exact_alarm_permission_requested') ?? false;
 
     if (!hasAskedExactAlarm && mounted) {
-      // Show explanation dialog for exact alarm permission
-      final shouldRequest = await showDialog<bool>(
+      // Explain the exact alarm permission before the system screen.
+      final shouldRequest = await showSketchSheet<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text(AppL10n.of(context).remPreciseTitle),
-          content: Text(AppL10n.of(context).remPreciseBody),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(AppL10n.of(context).remSkip),
+        builder: (ctx) {
+          final l10n = AppL10n.of(ctx);
+          return SketchSheet(
+            title: l10n.remPreciseTitle,
+            scrollable: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(l10n.remPreciseBody,
+                    style: ctx.type.bodyRegular
+                        .copyWith(fontSize: 14, color: ctx.sketch.muted)),
+                const SizedBox(height: 20),
+                PillButton(
+                  label: l10n.remEnable,
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                ),
+                const SizedBox(height: 10),
+                PillButton.secondary(
+                  label: l10n.remSkip,
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                ),
+              ],
             ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(AppL10n.of(context).remEnable),
-            ),
-          ],
-        ),
+          );
+        },
       );
 
       await prefs.setBool('exact_alarm_permission_requested', true);
@@ -201,19 +219,23 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
       }
     }
 
+    if (!mounted) return;
+
     // Continue with date/time picker - ONLY FUTURE DATES
     DateTime now = DateTime.now();
+    final current = widget.selectedDateTime;
     DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: now,
+      initialDate: current != null && current.isAfter(now) ? current : now,
       firstDate: now, // Can only pick today or future
       lastDate: DateTime(2100),
     );
 
-    if (pickedDate != null) {
+    if (pickedDate != null && mounted) {
       TimeOfDay? pickedTime = await showTimePicker(
         context: context,
-        initialTime: TimeOfDay.now(),
+        initialTime:
+            current != null ? TimeOfDay.fromDateTime(current) : TimeOfDay.now(),
       );
 
       if (pickedTime != null) {
@@ -228,15 +250,12 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
         // Validate it's in the future
         if (selectedDateTime.isAfter(DateTime.now())) {
           widget.onReminderDateTimeChanged(selectedDateTime);
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(AppL10n.of(context).remMustBeFuture),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
+        } else if (mounted) {
+          showSketchToast(
+            context: context,
+            message: AppL10n.of(context).remMustBeFuture,
+            tone: ToastTone.warning,
+          );
         }
       }
     }
@@ -259,559 +278,284 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
     }
   }
 
+  String _intervalLabel(AppL10n l10n, int n) => switch (widget.recurrenceType) {
+        'hourly' => l10n.edRemEveryHours(n),
+        'daily' => l10n.edRemEveryDays(n),
+        'weekly' => l10n.edRemEveryWeeks(n),
+        'monthly' => l10n.edRemEveryMonths(n),
+        'yearly' => l10n.edRemEveryYears(n),
+        _ => '',
+      };
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppL10n.of(context);
+    final s = context.sketch;
+    final t = context.type;
+    final when = widget.selectedDateTime;
+
+    Widget label(String text) => Padding(
+          padding: const EdgeInsets.only(top: SketchSpace.section, bottom: 10),
+          child: Semantics(header: true, child: Text(text, style: t.body)),
+        );
+
+    final repeatOptions = <(String, String)>[
+      ('once', l10n.remOnce),
+      ('hourly', l10n.remHourly),
+      ('daily', l10n.remDaily),
+      ('weekly', l10n.remWeekly),
+      ('monthly', l10n.remMonthly),
+      ('yearly', l10n.remYearly),
+    ];
+    final endOptions = <(String, String)>[
+      ('never', l10n.remNeverEnds),
+      ('after_occurrences', l10n.remAfterOccurrences),
+      ('on_date', l10n.remOnDate),
+    ];
 
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Container(
-          constraints: BoxConstraints(
-            minHeight: MediaQuery.sizeOf(context).height * 0.5,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Notification Title Field
-              Text(
-                "Notification Title",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: widget.notificationTitleController,
-                maxLines: 1,
-                decoration: InputDecoration(
-                  hintText: "e.g., Take medication",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: cs.outline.withValues(alpha: 0.2),
-                      width: 1,
+        padding: const EdgeInsets.fromLTRB(
+            SketchSpace.editorX, 4, SketchSpace.editorX, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // When
+            label(l10n.edRemWhen),
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 10,
+              runSpacing: 2,
+              children: [
+                ReminderChip(when: when, onTap: _pickDateTime),
+                if (when != null)
+                  Text(LocalizedDates.fullDate(context, when),
+                      style: t.bodySmall.copyWith(color: s.muted)),
+              ],
+            ),
+
+            // Notification title
+            label(l10n.edRemTitleLabel),
+            TextField(
+              controller: widget.notificationTitleController,
+              maxLines: 1,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(hintText: l10n.edRemTitleHint),
+              style: t.bodyRegular.copyWith(color: s.ink),
+            ),
+
+            // Notification content
+            label(l10n.edRemBodyLabel),
+            TextField(
+              controller: widget.notificationContentController,
+              minLines: 2,
+              maxLines: 4,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(hintText: l10n.edRemBodyHint),
+              style: t.bodyRegular.copyWith(color: s.ink),
+            ),
+
+            // Repeat
+            label(l10n.edRemRepeat),
+            Wrap(
+              spacing: SketchSpace.chip,
+              runSpacing: SketchSpace.chip,
+              children: [
+                for (final (value, text) in repeatOptions)
+                  SketchChip(
+                    label: text,
+                    selected: widget.recurrenceType == value,
+                    onTap: () => widget.onRecurrenceTypeChanged(value),
+                  ),
+              ],
+            ),
+
+            if (widget.recurrenceType != 'once') ...[
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  CircleIconButton(
+                    icon: Icons.remove_rounded,
+                    semanticLabel: l10n.edRemMoreOften,
+                    onPressed: widget.recurrenceInterval > 1
+                        ? () => widget.onRecurrenceIntervalChanged(
+                            widget.recurrenceInterval - 1)
+                        : null,
+                  ),
+                  Expanded(
+                    child: Text(
+                      _intervalLabel(l10n, widget.recurrenceInterval),
+                      textAlign: TextAlign.center,
+                      style: t.cardTitle,
                     ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: cs.outline.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
+                  CircleIconButton(
+                    icon: Icons.add_rounded,
+                    semanticLabel: l10n.edRemLessOften,
+                    onPressed: widget.recurrenceInterval < 100
+                        ? () => widget.onRecurrenceIntervalChanged(
+                            widget.recurrenceInterval + 1)
+                        : null,
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: cs.primary,
-                      width: 2,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: isDark
-                      ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  contentPadding: const EdgeInsets.all(16),
-                ),
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.5,
-                ),
+                ],
               ),
 
-              const SizedBox(height: 20),
-
-              // Notification Content Field
-              Text(
-                "Notification Content (Optional)",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: widget.notificationContentController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: "Additional details about the reminder...",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: cs.outline.withValues(alpha: 0.2),
-                      width: 1,
+              // Ends
+              label(l10n.edRemEnds),
+              Wrap(
+                spacing: SketchSpace.chip,
+                runSpacing: SketchSpace.chip,
+                children: [
+                  for (final (value, text) in endOptions)
+                    SketchChip(
+                      label: text,
+                      selected: widget.recurrenceEndType == value,
+                      onTap: () {
+                        widget.onRecurrenceEndTypeChanged(value);
+                        if (value == 'never') {
+                          widget.onRecurrenceEndValueChanged(null);
+                        }
+                      },
                     ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: cs.outline.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: cs.primary,
-                      width: 2,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: isDark
-                      ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  contentPadding: const EdgeInsets.all(16),
-                ),
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.5,
-                ),
+                ],
               ),
 
-              const SizedBox(height: 24),
-
-              // Reminder Time
-              Text(
-                "Reminder Time",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface,
+              if (widget.recurrenceEndType == 'after_occurrences') ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _endOccurrencesController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration:
+                      InputDecoration(labelText: l10n.remOccurrenceCount),
+                  style: t.bodyRegular.copyWith(color: s.ink),
+                  onChanged: (value) {
+                    widget.onRecurrenceEndValueChanged(
+                        value.isEmpty ? null : value);
+                  },
                 ),
-              ),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: _pickDateTime,
-                child: Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        cs.primary.withValues(alpha: isDark ? 0.2 : 0.15),
-                        cs.primary.withValues(alpha: isDark ? 0.1 : 0.08),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: cs.primary.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
+              ] else if (widget.recurrenceEndType == 'on_date') ...[
+                const SizedBox(height: 12),
+                SketchChip(
+                  label: _endDate == null
+                      ? l10n.remSelectEndDate
+                      : LocalizedDates.fullDate(context, _endDate!),
+                  leading: const Icon(Icons.event_rounded),
+                  onTap: _pickEndDate,
+                ),
+              ],
+
+              // Preview of occurrences
+              if (_previewOccurrences.isNotEmpty && when != null) ...[
+                const SizedBox(height: SketchSpace.section),
+                SketchCard(
+                  radius: SketchRadius.group,
+                  padding: const EdgeInsets.all(SketchSpace.cardPadLg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: cs.primary.withValues(alpha: isDark ? 0.3 : 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.calendar_today_rounded,
-                          color: cs.primary,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      Text(l10n.remPreview(_previewOccurrences.length),
+                          style: t.cardTitle),
+                      const SizedBox(height: 12),
+                      for (final (i, occurrence)
+                          in _previewOccurrences.indexed) ...[
+                        if (i > 0) const SizedBox(height: 8),
+                        Row(
                           children: [
-                            Text(
-                              widget.selectedDateTime == null
-                                  ? "Select Date & Time"
-                                  : LocalizedDates.fullDate(context, widget.selectedDateTime!),
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: cs.onSurface,
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: SketchPastels.lavender,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: SketchPastels.onPastel,
+                                    width: SketchStroke.pastel),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '${i + 1}',
+                                style: t.caption.copyWith(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: SketchPastels.onPastel),
                               ),
                             ),
-                            if (widget.selectedDateTime != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                LocalizedDates.time(context, widget.selectedDateTime!),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: cs.onSurface.withValues(alpha: 0.6),
-                                ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                LocalizedDates.dateTime(context, occurrence),
+                                style: t.bodySmall.copyWith(color: s.ink),
                               ),
-                            ],
+                            ),
                           ],
                         ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: cs.onSurface.withValues(alpha: 0.4),
-                      ),
+                      ],
                     ],
                   ),
                 ),
-              ),
+              ],
+            ],
 
-              const SizedBox(height: 24),
-
-              // Recurrence Section
-              Text(
-                "Recurrence",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Recurrence Type Dropdown
-              DropdownButtonFormField<String>(
-                initialValue: widget.recurrenceType,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.repeat_rounded),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: cs.outline.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: cs.outline.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: cs.primary,
-                      width: 2,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: isDark
-                      ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                items: [
-                  DropdownMenuItem(value: 'once', child: Text(AppL10n.of(context).remOnce)),
-                  DropdownMenuItem(value: 'hourly', child: Text(AppL10n.of(context).remHourly)),
-                  DropdownMenuItem(value: 'daily', child: Text(AppL10n.of(context).remDaily)),
-                  DropdownMenuItem(value: 'weekly', child: Text(AppL10n.of(context).remWeekly)),
-                  DropdownMenuItem(value: 'monthly', child: Text(AppL10n.of(context).remMonthly)),
-                  DropdownMenuItem(value: 'yearly', child: Text(AppL10n.of(context).remYearly)),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    widget.onRecurrenceTypeChanged(value);
-                  }
-                },
-              ),
-
-              // Interval Input (only show if not 'once')
-              if (widget.recurrenceType != 'once') ...[
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        decoration: InputDecoration(
-                          labelText: AppL10n.of(context).remEvery,
-                          suffixText: _getIntervalUnit(widget.recurrenceType),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          filled: true,
-                          fillColor: isDark
-                              ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                              : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                        ),
-                        controller: TextEditingController(text: widget.recurrenceInterval.toString())
-                          ..selection = TextSelection.fromPosition(
-                            TextPosition(offset: widget.recurrenceInterval.toString().length),
-                          ),
-                        onChanged: (value) {
-                          final interval = int.tryParse(value) ?? 1;
-                          if (interval > 0 && interval <= 100) {
-                            widget.onRecurrenceIntervalChanged(interval);
-                          }
-                        },
+            // What happens to a reminder (honest about the server).
+            const SizedBox(height: SketchSpace.section),
+            SketchCard(
+              pastel: SketchPastels.sky,
+              radius: SketchRadius.group,
+              padding: const EdgeInsets.all(SketchSpace.cardPadLg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(l10n.remDetails,
+                            style: t.cardTitle
+                                .copyWith(color: SketchPastels.onPastel)),
                       ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // End Condition
-                Text(
-                  "End Condition",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurface,
+                    ],
                   ),
-                ),
-                const SizedBox(height: 12),
-
-                DropdownButtonFormField<String>(
-                  initialValue: widget.recurrenceEndType,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.event_repeat_rounded),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(
-                        color: cs.outline.withValues(alpha: 0.2),
-                        width: 1,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(
-                        color: cs.outline.withValues(alpha: 0.2),
-                        width: 1,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(
-                        color: cs.primary,
-                        width: 2,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: isDark
-                        ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                        : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  items: [
-                    DropdownMenuItem(value: 'never', child: Text(AppL10n.of(context).remNeverEnds)),
-                    DropdownMenuItem(value: 'after_occurrences', child: Text(AppL10n.of(context).remAfterOccurrences)),
-                    DropdownMenuItem(value: 'on_date', child: Text(AppL10n.of(context).remOnDate)),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      widget.onRecurrenceEndTypeChanged(value);
-                      if (value == 'never') {
-                        widget.onRecurrenceEndValueChanged(null);
-                      }
-                    }
-                  },
-                ),
-
-                // End value input
-                if (widget.recurrenceEndType == 'after_occurrences') ...[
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _endOccurrencesController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    decoration: InputDecoration(
-                      labelText: AppL10n.of(context).remOccurrenceCount,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      filled: true,
-                      fillColor: isDark
-                          ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                          : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                    ),
-                    onChanged: (value) {
-                      widget.onRecurrenceEndValueChanged(value.isEmpty ? null : value);
-                    },
-                  ),
-                ] else if (widget.recurrenceEndType == 'on_date') ...[
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: _pickEndDate,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
-                        borderRadius: BorderRadius.circular(16),
-                        color: isDark
-                            ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                            : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                      ),
+                  const SizedBox(height: 10),
+                  for (final line in [
+                    l10n.edRemInfoServer,
+                    l10n.edRemInfoNotifications,
+                    l10n.edRemInfoRepeat,
+                    l10n.edRemInfoEdit,
+                  ])
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.calendar_today, color: cs.primary),
-                          const SizedBox(width: 12),
-                          Text(
-                            _endDate == null
-                                ? AppL10n.of(context).remSelectEndDate
-                                : LocalizedDates.fullDate(context, _endDate!),
-                            style: TextStyle(fontSize: 15, color: cs.onSurface),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Container(
+                              width: 5,
+                              height: 5,
+                              decoration: const BoxDecoration(
+                                color: SketchPastels.onPastel,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              line,
+                              style: t.bodySmall
+                                  .copyWith(color: SketchPastels.onPastel),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
                 ],
-
-                const SizedBox(height: 20),
-
-                // Preview of Occurrences
-                if (_previewOccurrences.isNotEmpty && widget.selectedDateTime != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: cs.primary.withValues(alpha: 0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.preview_rounded, size: 20, color: cs.primary),
-                            const SizedBox(width: 8),
-                            Text(
-                              AppL10n.of(context).remPreview(_previewOccurrences.length),
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: cs.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        ..._previewOccurrences.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final occurrence = entry.value;
-                          return Padding(
-                            padding: EdgeInsets.only(top: index == 0 ? 0 : 8),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: cs.primary.withValues(alpha: 0.2),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      '${index + 1}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: cs.primary,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  LocalizedDates.dateTime(context, occurrence),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: cs.onSurface.withValues(alpha: 0.8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ],
-
-              const SizedBox(height: 16),
-
-              // Info Card
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: cs.outline.withValues(alpha: 0.1),
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          size: 20,
-                          color: cs.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppL10n.of(context).remDetails,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: cs.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildInfoItem('• Notification title and content will appear in push notifications', cs),
-                    const SizedBox(height: 6),
-                    _buildInfoItem('• Ensure notifications are enabled in settings', cs),
-                    const SizedBox(height: 6),
-                    _buildInfoItem('• Recurring reminders create multiple scheduled notifications', cs),
-                    const SizedBox(height: 6),
-                    _buildInfoItem('• You can edit or delete reminders anytime', cs),
-                  ],
-                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  String _getIntervalUnit(String recurrenceType) {
-    switch (recurrenceType) {
-      case 'hourly':
-        return 'hour(s)';
-      case 'daily':
-        return 'day(s)';
-      case 'weekly':
-        return 'week(s)';
-      case 'monthly':
-        return 'month(s)';
-      case 'yearly':
-        return 'year(s)';
-      default:
-        return '';
-    }
-  }
-
-  Widget _buildInfoItem(String text, ColorScheme cs) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 14,
-        height: 1.5,
-        color: cs.onSurface.withValues(alpha: 0.7),
       ),
     );
   }
@@ -820,5 +564,67 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
   void dispose() {
     _endOccurrencesController.dispose();
     super.dispose();
+  }
+}
+
+/// The lavender reminder chip ("Today, 6:00 PM", 12/700, clock icon) that
+/// opens the reminder picker; an outline "Pick a date and time" chip before a
+/// time is set.
+class ReminderChip extends StatelessWidget {
+  const ReminderChip({super.key, required this.when, required this.onTap});
+
+  final DateTime? when;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final s = context.sketch;
+    final t = context.type;
+    final set = when != null;
+    final text = set
+        ? LocalizedDates.relativeDayTime(context, when!)
+        : l10n.edRemPickTime;
+    final fg = set ? SketchPastels.onPastel : s.ink;
+
+    return SketchPressable(
+      onTap: onTap,
+      semanticLabel: set ? l10n.edReminderChipSemantic(text) : text,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: SketchSpace.minTap),
+        child: Align(
+          widthFactor: 1,
+          heightFactor: 1,
+          child: Container(
+            height: 30,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: ShapeDecoration(
+              color: set ? SketchPastels.lavender : Colors.transparent,
+              shape: StadiumBorder(
+                side: BorderSide(
+                  color: set ? SketchPastels.onPastel : s.outline,
+                  width: SketchStroke.pastel,
+                ),
+              ),
+            ),
+            child: ExcludeSemantics(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(set ? Icons.schedule_rounded : Icons.event_rounded,
+                      size: 15, color: fg),
+                  const SizedBox(width: 7),
+                  Text(text,
+                      style: t.chip.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: fg)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

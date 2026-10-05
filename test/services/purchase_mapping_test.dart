@@ -362,6 +362,59 @@ void main() {
     });
   });
 
+  group('paywall savings badge', () {
+    ProductSubscriptionAndroid priced(String id, String micros, String shown,
+            {List<PricingPhaseAndroid> lead = const []}) =>
+        fakeSubscriptionProduct(id, displayPrice: shown, offers: [
+          fakeOffer(id: 'base', basePlanId: 'base', phases: [
+            ...lead,
+            fakePricingPhase(formattedPrice: shown, priceAmountMicros: micros),
+          ]),
+        ]);
+
+    test('the recurring amount skips a leading free trial', () {
+      final p = priced('m', '2990000', r'$2.99', lead: [fakeTrialPhase()]);
+      expect(recurringPriceAmount(p), closeTo(2.99, 1e-9));
+    });
+
+    test('is computed from the store prices: 2.99/mo vs 19.99/yr is 44%', () {
+      final monthly = priced('m', '2990000', r'$2.99');
+      final yearly = priced('y', '19990000', r'$19.99');
+      expect(yearlySavingsPercent(monthly, yearly), 44);
+    });
+
+    test('a trial on the yearly plan does not inflate the saving', () {
+      final monthly = priced('m', '2990000', r'$2.99');
+      final yearly =
+          priced('y', '19990000', r'$19.99', lead: [fakeTrialPhase()]);
+      expect(yearlySavingsPercent(monthly, yearly), 44);
+    });
+
+    test('no badge when a year costs as much as twelve months', () {
+      final monthly = priced('m', '1000000', r'$1.00');
+      final yearly = priced('y', '12000000', r'$12.00');
+      expect(yearlySavingsPercent(monthly, yearly), isNull);
+    });
+
+    test('no badge when a price is unknown', () {
+      final monthly = priced('m', '0', 'Free');
+      final yearly = priced('y', '19990000', r'$19.99');
+      // The fixture's `price` field is 4.99, so the fallback still answers;
+      // strip both signals to prove a missing price yields no claim.
+      expect(recurringPriceAmount(monthly), closeTo(4.99, 1e-9));
+      final unknown = ProductSubscriptionAndroid(
+        currency: 'USD',
+        description: '',
+        displayPrice: '',
+        id: 'm',
+        nameAndroid: '',
+        title: '',
+        subscriptionOffers: const [],
+      );
+      expect(yearlySavingsPercent(unknown, yearly), isNull);
+    });
+  });
+
   group('analytics reason codes', () {
     test('reduce a store error to its enum name', () {
       expect(reasonCodeFor(ErrorCode.UserCancelled), 'usercancelled');

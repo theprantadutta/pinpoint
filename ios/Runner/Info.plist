@@ -1,132 +1,129 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict>
-	<key>CFBundleLocalizations</key>
-	<!-- Languages this bundle ships. Without this the App Store lists the app
+	<dict>
+		<key>CFBundleLocalizations</key>
+		<!-- Languages this bundle ships. Without this the App Store lists the app
 	     as English-only and iOS will not pick up the *.lproj/InfoPlist.strings
 	     permission prompts. Keep in sync with LocaleController.supportedLocales. -->
-	<array>
-		<string>en</string>
-		<string>es</string>
-		<string>pt</string>
-		<string>it</string>
-		<string>fr</string>
-		<string>th</string>
-		<string>bn</string>
-		<string>ar</string>
-		<string>fa</string>
-	</array>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
-	<key>CFBundleDisplayName</key>
-	<string>PinPoint</string>
-	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>PinPoint</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
-	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
-	<key>UIApplicationSceneManifest</key>
-	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
-		<key>UISceneConfigurations</key>
+		<array>
+			<string>en</string>
+			<string>es</string>
+			<string>pt</string>
+			<string>it</string>
+			<string>fr</string>
+			<string>th</string>
+			<string>bn</string>
+			<string>ar</string>
+			<string>fa</string>
+		</array>
+		<key>CFBundleDevelopmentRegion</key>
+		<string>$(DEVELOPMENT_LANGUAGE)</string>
+		<key>CFBundleDisplayName</key>
+		<string>PinPoint</string>
+		<key>CFBundleExecutable</key>
+		<string>$(EXECUTABLE_NAME)</string>
+		<key>CFBundleIdentifier</key>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+		<key>CFBundleInfoDictionaryVersion</key>
+		<string>6.0</string>
+		<key>CFBundleName</key>
+		<string>PinPoint</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleShortVersionString</key>
+		<string>$(FLUTTER_BUILD_NAME)</string>
+		<key>CFBundleSignature</key>
+		<string>????</string>
+		<key>CFBundleVersion</key>
+		<string>$(FLUTTER_BUILD_NUMBER)</string>
+		<key>LSRequiresIPhoneOS</key>
+		<true/>
+		<key>UILaunchStoryboardName</key>
+		<string>LaunchScreen</string>
+		<key>UIMainStoryboardFile</key>
+		<string>Main</string>
+		<key>UIApplicationSceneManifest</key>
 		<dict>
-			<key>UIWindowSceneSessionRoleApplication</key>
-			<array>
-				<dict>
-					<key>UISceneClassName</key>
-					<string>UIWindowScene</string>
-					<key>UISceneDelegateClassName</key>
-					<string>FlutterSceneDelegate</string>
-					<key>UISceneConfigurationName</key>
-					<string>flutter</string>
-					<key>UISceneStoryboardFile</key>
-					<string>Main</string>
-				</dict>
-			</array>
+			<key>UIApplicationSupportsMultipleScenes</key>
+			<false/>
+			<key>UISceneConfigurations</key>
+			<dict>
+				<key>UIWindowSceneSessionRoleApplication</key>
+				<array>
+					<dict>
+						<key>UISceneClassName</key>
+						<string>UIWindowScene</string>
+						<key>UISceneDelegateClassName</key>
+						<string>FlutterSceneDelegate</string>
+						<key>UISceneConfigurationName</key>
+						<string>flutter</string>
+						<key>UISceneStoryboardFile</key>
+						<string>Main</string>
+					</dict>
+				</array>
+			</dict>
 		</dict>
-	</dict>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<!-- Local Auth -->
-	<key>NSFaceIDUsageDescription</key>
-	<string>Pinpoint uses Face ID to unlock the app and protect your notes.</string>
-	<key>NSTouchIDUsageDescription</key>
-	<string>Pinpoint uses Touch ID to unlock the app and protect your notes.</string>
-
-	<!-- Microphone & Speech (audio notes / voice-to-text) -->
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Pinpoint uses the microphone to record audio notes and to transcribe speech into text.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Pinpoint uses speech recognition to convert your voice into text notes.</string>
-
-	<!-- Camera & Photo Library (attach images to notes / OCR) -->
-	<key>NSCameraUsageDescription</key>
-	<string>Pinpoint uses the camera to capture photos to attach to your notes and to scan text.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Pinpoint accesses your photo library so you can attach images to your notes.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Pinpoint saves exported notes and images to your photo library.</string>
-
-	<!-- Push notifications (reminders) -->
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
-
-	<!-- Encryption export compliance: the app's encryption (AES + HTTPS) qualifies
+		<key>UISupportedInterfaceOrientations</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>UISupportedInterfaceOrientations~ipad</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationPortraitUpsideDown</string>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>CADisableMinimumFrameDurationOnPhone</key>
+		<true/>
+		<key>UIApplicationSupportsIndirectInputEvents</key>
+		<true/>
+		<!-- Local Auth -->
+		<key>NSFaceIDUsageDescription</key>
+		<string>Pinpoint uses Face ID to unlock the app and protect your notes.</string>
+		<key>NSTouchIDUsageDescription</key>
+		<string>Pinpoint uses Touch ID to unlock the app and protect your notes.</string>
+		<!-- Microphone & Speech (audio notes / voice-to-text) -->
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Pinpoint uses the microphone to record audio notes and to transcribe speech into text.</string>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>Pinpoint uses speech recognition to convert your voice into text notes.</string>
+		<!-- Camera & Photo Library (attach images to notes / OCR) -->
+		<key>NSCameraUsageDescription</key>
+		<string>Pinpoint uses the camera to capture photos to attach to your notes and to scan text.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Pinpoint accesses your photo library so you can attach images to your notes.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>Pinpoint saves exported notes and images to your photo library.</string>
+		<!-- Push notifications (reminders) -->
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>remote-notification</string>
+		</array>
+		<!-- Encryption export compliance: the app's encryption (AES + HTTPS) qualifies
 	     for the mass-market exemption (EAR §740.17(b)(1)), so it is EXEMPT and needs
 	     no compliance documentation/code uploaded to Apple. Declared false = "does
 	     not use NON-exempt encryption". (File the annual BIS self-classification
 	     report separately to satisfy the exemption.) -->
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-
-	<!-- Google Sign-In URL Schemes -->
-	<!-- Value is the REVERSED_CLIENT_ID from ios/Runner/GoogleService-Info.plist -->
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.627112690345-57s4pqp5tnmvls7qlrotj37ou0i3dabr</string>
-			</array>
-		</dict>
-	</array>
-</dict>
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
+		<!-- Google Sign-In URL Schemes -->
+		<!-- Value is the REVERSED_CLIENT_ID from ios/Runner/GoogleService-Info.plist -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.627112690345-57s4pqp5tnmvls7qlrotj37ou0i3dabr</string>
+				</array>
+			</dict>
+		</array>
+		<key>UIStatusBarHidden</key>
+		<false/>
+	</dict>
 </plist>

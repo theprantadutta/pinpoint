@@ -1,0 +1,38 @@
+# Launcher icons, regenerated from the Sketchbook masters in branding/:
+#   dart run flutter_launcher_icons
+#   python branding/build_icons.py
+# Run both, in that order: the script draws what this tool cannot (the macOS
+# and Android 7 sticker masters it reads below, the round and status-bar icons,
+# a multi-size Windows .ico, a legible favicon) and replaces its 16px favicon.
+flutter_launcher_icons:
+  image_path: "branding/app-icon-light-1024.png"
+
+  android: "ic_launcher"
+  # Android 7 launchers show the PNG as-is, so it carries its own shape.
+  image_path_android: "branding/app-icon-legacy-1024.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#F6E27A"
+  adaptive_icon_foreground: "branding/adaptive-foreground-ink-1024.png"
+  # The foreground master is already drawn inside the safe zone.
+  adaptive_icon_foreground_inset: 0
+  adaptive_icon_monochrome: "branding/adaptive-foreground-ink-1024.png"
+
+  ios: true
+  remove_alpha_ios: true
+  image_path_ios_dark_transparent: "branding/adaptive-foreground-yellow-1024.png"
+
+  web:
+    generate: true
+    image_path: "branding/app-icon-light-1024.png"
+    background_color: "#F5F3EC"
+    theme_color: "#F6E27A"
+
+  # macOS does not mask icons: the sticker sits on Apple's 824px grid.
+  macos:
+    generate: true
+    image_path: "branding/app-icon-sticker-1024.png"
+
+  # Windows is drawn by branding/build_icons.py: this tool writes one 256px
+  # frame, which Windows squashes for every smaller size.
+  windows:
+    generate: false

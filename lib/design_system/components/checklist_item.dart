@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
-import '../animations.dart';
-import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
-/// ChecklistItem - Animated checkbox with reorder handle
+import '../colors.dart';
+import '../typography.dart';
+import 'sketch/checklist_row.dart';
+
+/// An editable checklist task: a [ChecklistRow] whose label turns into a text
+/// field when tapped. The checkbox toggles; the text commits on Enter or when
+/// the field loses focus (an emptied field reverts instead of committing —
+/// deleting is a swipe).
 ///
-/// Features:
-/// - Animated checkbox
-/// - Strikethrough on completion
-/// - Reorder drag handle
-/// - Haptic feedback
-/// - Accessibility support
+/// [showDragHandle] adds the leading handle shown while the task is being
+/// reordered.
 class ChecklistItem extends StatefulWidget {
   final String text;
   final bool isChecked;
   final ValueChanged<bool>? onChanged;
+
+  /// Called with the new text when an edit is committed.
   final ValueChanged<String>? onTextChanged;
-  final VoidCallback? onDelete;
   final bool showDragHandle;
+  final String? dragHandleLabel;
+  final String? editHint;
   final bool readOnly;
 
   const ChecklistItem({
@@ -25,8 +29,9 @@ class ChecklistItem extends StatefulWidget {
     this.isChecked = false,
     this.onChanged,
     this.onTextChanged,
-    this.onDelete,
     this.showDragHandle = false,
+    this.dragHandleLabel,
+    this.editHint,
     this.readOnly = false,
   });
 
@@ -34,189 +39,95 @@ class ChecklistItem extends StatefulWidget {
   State<ChecklistItem> createState() => _ChecklistItemState();
 }
 
-class _ChecklistItemState extends State<ChecklistItem>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _checkAnimationController;
-  late Animation<double> _checkAnimation;
-  late TextEditingController _textController;
+class _ChecklistItemState extends State<ChecklistItem> {
   final FocusNode _focusNode = FocusNode();
+  TextEditingController? _controller;
+  bool _editing = false;
+
+  bool get _canEdit => !widget.readOnly && widget.onTextChanged != null;
 
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController(text: widget.text);
-
-    _checkAnimationController = AnimationController(
-      vsync: this,
-      duration: PinpointAnimations.normal,
-    );
-
-    _checkAnimation = CurvedAnimation(
-      parent: _checkAnimationController,
-      curve: PinpointAnimations.emphasizedDecelerate,
-    );
-
-    if (widget.isChecked) {
-      _checkAnimationController.value = 1.0;
-    }
-  }
-
-  @override
-  void didUpdateWidget(ChecklistItem oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.isChecked != widget.isChecked) {
-      if (widget.isChecked) {
-        _checkAnimationController.forward();
-      } else {
-        _checkAnimationController.reverse();
-      }
-    }
-    if (oldWidget.text != widget.text) {
-      _textController.text = widget.text;
-    }
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus && _editing) _commit();
+    });
   }
 
   @override
   void dispose() {
-    _checkAnimationController.dispose();
-    _textController.dispose();
     _focusNode.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
-  void _toggleCheck() {
-    if (widget.onChanged != null) {
-      PinpointHaptics.selection();
-      widget.onChanged!(!widget.isChecked);
+  void _startEdit() {
+    _controller ??= TextEditingController();
+    _controller!
+      ..text = widget.text
+      ..selection = TextSelection.collapsed(offset: widget.text.length);
+    setState(() => _editing = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
+
+  void _commit() {
+    final value = _controller?.text.trim() ?? '';
+    setState(() => _editing = false);
+    if (value.isNotEmpty && value != widget.text) {
+      widget.onTextChanged?.call(value);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final motionSettings = MotionSettings.fromMediaQuery(context);
+    final s = context.sketch;
+    final t = context.type;
 
-    return Semantics(
-      label:
-          '${widget.isChecked ? "Completed" : "Incomplete"} task: ${widget.text}',
-      checked: widget.isChecked,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Drag handle
-            if (widget.showDragHandle)
-              Padding(
-                padding: const EdgeInsetsDirectional.only(top: 12, end: 8),
-                child: Icon(
-                  Icons.drag_indicator_rounded,
-                  size: 20,
-                  color:
-                      theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                ),
-              ),
-
-            // Checkbox
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: GestureDetector(
-                onTap: _toggleCheck,
-                child: AnimatedBuilder(
-                  animation: _checkAnimation,
-                  builder: (context, child) {
-                    return Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: _checkAnimation.value > 0
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                        border: Border.all(
-                          color: _checkAnimation.value > 0
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.outline,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Transform.scale(
-                        scale: _checkAnimation.value,
-                        child: Icon(
-                          Icons.check_rounded,
-                          size: 18,
-                          color: theme.colorScheme.onPrimary,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            const SizedBox(width: 12),
-
-            // Text field
-            Expanded(
-              child: widget.readOnly
-                  ? Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: AnimatedDefaultTextStyle(
-                        duration: motionSettings
-                            .getDuration(PinpointAnimations.normal),
-                        curve: motionSettings
-                            .getCurve(PinpointAnimations.standard),
-                        style: theme.textTheme.bodyMedium!.copyWith(
-                          decoration: widget.isChecked
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
-                          color: widget.isChecked
-                              ? theme.colorScheme.onSurfaceVariant
-                              : theme.colorScheme.onSurface,
-                        ),
-                        child: Text(widget.text),
-                      ),
-                    )
-                  : TextField(
-                      controller: _textController,
-                      focusNode: _focusNode,
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      style: theme.textTheme.bodyMedium!.copyWith(
-                        decoration: widget.isChecked
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                        color: widget.isChecked
-                            ? theme.colorScheme.onSurfaceVariant
-                            : theme.colorScheme.onSurface,
-                      ),
-                      onChanged: widget.onTextChanged,
-                      maxLines: null,
-                    ),
-            ),
-
-            // Delete button
-            if (widget.onDelete != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  iconSize: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                  onPressed: () {
-                    PinpointHaptics.light();
-                    widget.onDelete!();
-                  },
-                  tooltip: AppL10n.of(context).dsDeleteTask,
-                ),
-              ),
-          ],
+    Widget? field;
+    if (_editing) {
+      field = TextField(
+        controller: _controller,
+        focusNode: _focusNode,
+        maxLines: null,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _focusNode.unfocus(),
+        style: t.bodyLarge.copyWith(
+          fontWeight: FontWeight.w600,
+          height: 1.35,
+          color: s.ink,
         ),
-      ),
+        decoration: InputDecoration.collapsed(
+          hintText: widget.editHint,
+          hintStyle: t.bodyLarge.copyWith(color: s.muted, height: 1.35),
+        ).copyWith(
+          filled: false,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+        ),
+      );
+    }
+
+    final handle = widget.showDragHandle
+        ? Semantics(
+            label: widget.dragHandleLabel,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(start: 6),
+              child:
+                  Icon(Icons.drag_indicator_rounded, size: 20, color: s.muted),
+            ),
+          )
+        : null;
+
+    return ChecklistRow(
+      label: widget.text,
+      checked: widget.isChecked,
+      onChanged: widget.readOnly ? null : widget.onChanged,
+      leading: handle,
+      onTap: _canEdit && !_editing ? _startEdit : null,
+      child: field,
     );
   }
 }

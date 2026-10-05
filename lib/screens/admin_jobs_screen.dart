@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pinpoint/services/admin_api_service.dart';
 import 'package:pinpoint/design_system/design_system.dart';
+import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:go_router/go_router.dart';
@@ -77,22 +78,20 @@ class _AdminJobsScreenState extends State<AdminJobsScreen> {
     try {
       final response = await _adminApi.triggerJob(jobId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Job triggered'),
-            backgroundColor:
-                response['success'] == true ? Colors.green : Colors.red,
-          ),
+        showSketchToast(
+          context: context,
+          message: response['message'] ?? 'Job triggered',
+          tone:
+              response['success'] == true ? ToastTone.success : ToastTone.error,
         );
         _loadJobs(); // Refresh the list
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to trigger job: $e'),
-            backgroundColor: Colors.red,
-          ),
+        showSketchToast(
+          context: context,
+          message: 'Failed to trigger job: $e',
+          tone: ToastTone.error,
         );
       }
     }
@@ -105,22 +104,20 @@ class _AdminJobsScreenState extends State<AdminJobsScreen> {
           : await _adminApi.pauseJob(jobId);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Action completed'),
-            backgroundColor:
-                response['success'] == true ? Colors.green : Colors.red,
-          ),
+        showSketchToast(
+          context: context,
+          message: response['message'] ?? 'Action completed',
+          tone:
+              response['success'] == true ? ToastTone.success : ToastTone.error,
         );
         _loadJobs(); // Refresh the list
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to ${isPaused ? 'resume' : 'pause'} job: $e'),
-            backgroundColor: Colors.red,
-          ),
+        showSketchToast(
+          context: context,
+          message: 'Failed to ${isPaused ? 'resume' : 'pause'} job: $e',
+          tone: ToastTone.error,
         );
       }
     }
@@ -129,25 +126,17 @@ class _AdminJobsScreenState extends State<AdminJobsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final sk = context.sketch;
 
-    return GradientScaffold(
-      appBar: GlassAppBar(
-        title: Row(
-          children: [
-            Icon(Icons.schedule, color: cs.primary, size: 20),
-            const SizedBox(width: 8),
-            const Text('Scheduled Jobs'),
-          ],
+    return SketchScaffold(
+      title: 'Scheduled Jobs',
+      actions: [
+        CircleIconButton(
+          icon: Icons.refresh_rounded,
+          onPressed: _loadJobs,
+          semanticLabel: 'Refresh',
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadJobs,
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
+      ],
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _jobs.isEmpty
@@ -155,7 +144,7 @@ class _AdminJobsScreenState extends State<AdminJobsScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.work_off, size: 64, color: cs.outline),
+                      Icon(Icons.work_off, size: 64, color: sk.muted),
                       const SizedBox(height: 16),
                       Text(
                         'No jobs registered',
@@ -206,7 +195,7 @@ class _JobCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final sk = context.sketch;
     final isPaused = job['is_paused'] ?? false;
     final lastRun = job['last_run'];
     final lastStatus = lastRun?['status'];
@@ -215,19 +204,19 @@ class _JobCard extends StatelessWidget {
     IconData statusIcon;
 
     if (isPaused) {
-      statusColor = Colors.orange;
+      statusColor = sk.muted;
       statusIcon = Icons.pause_circle;
     } else if (lastStatus == 'success') {
-      statusColor = Colors.green;
+      statusColor = SketchFunctional.success;
       statusIcon = Icons.check_circle;
     } else if (lastStatus == 'failed') {
-      statusColor = Colors.red;
+      statusColor = SketchFunctional.error;
       statusIcon = Icons.error;
     } else if (lastStatus == 'running') {
-      statusColor = Colors.blue;
+      statusColor = sk.pen;
       statusIcon = Icons.play_circle;
     } else {
-      statusColor = cs.outline;
+      statusColor = sk.muted;
       statusIcon = Icons.help_outline;
     }
 
@@ -266,7 +255,7 @@ class _JobCard extends StatelessWidget {
                         Text(
                           job['job_id'],
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: cs.outline,
+                            color: sk.muted,
                             fontFamily: 'monospace',
                           ),
                         ),
@@ -280,13 +269,13 @@ class _JobCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.1),
+                        color: SketchPastels.yellow,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text(
                         'PAUSED',
                         style: TextStyle(
-                          color: Colors.orange,
+                          color: SketchPastels.onPastel,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -301,7 +290,7 @@ class _JobCard extends StatelessWidget {
               Text(
                 job['description'] ?? 'No description',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
+                  color: sk.muted,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -339,9 +328,9 @@ class _JobCard extends StatelessWidget {
                       label:
                           '${_formatDuration(lastRun['duration_seconds'])} ago',
                       color: lastStatus == 'success'
-                          ? Colors.green
+                          ? SketchFunctional.success
                           : lastStatus == 'failed'
-                              ? Colors.red
+                              ? SketchFunctional.error
                               : null,
                     ),
                 ],
@@ -355,8 +344,8 @@ class _JobCard extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     onPressed: onTogglePause,
-                    icon:
-                        Icon(isPaused ? Icons.play_arrow : Icons.pause, size: 18),
+                    icon: Icon(isPaused ? Icons.play_arrow : Icons.pause,
+                        size: 18),
                     label: Text(isPaused ? 'Resume' : 'Pause'),
                   ),
                   const SizedBox(width: 8),
@@ -416,8 +405,8 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final effectiveColor = color ?? cs.outline;
+    final sk = context.sketch;
+    final effectiveColor = color ?? sk.muted;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

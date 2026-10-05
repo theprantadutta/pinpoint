@@ -6,7 +6,7 @@ library;
 
 // Tokens
 export 'colors.dart';
-export 'gradients.dart';
+export 'content_direction.dart';
 export 'typography.dart';
 export 'elevations.dart';
 export 'animations.dart';

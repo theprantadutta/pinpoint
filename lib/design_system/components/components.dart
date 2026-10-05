@@ -4,9 +4,10 @@
 /// Import this file to access all components at once.
 library;
 
+// Sketchbook
+export 'sketch/sketch.dart';
+
 // Core components
-export 'gradient_scaffold.dart';
-export 'glass_app_bar.dart';
 export 'note_card.dart';
 export 'tag_chip.dart';
 export 'editor_toolbar.dart';
@@ -16,8 +17,3 @@ export 'empty_state.dart';
 export 'confirm_sheet.dart';
 export 'animated_list_stagger.dart';
 
-// Brutalist components - Bold, modern atomic design
-export 'brutalist_button.dart';
-export 'brutalist_card.dart';
-export 'brutalist_input.dart';
-export 'brutalist_badge.dart';

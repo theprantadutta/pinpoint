@@ -1,5 +1,6 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Locale-aware date and time formatting.
 ///
@@ -41,5 +42,33 @@ class LocalizedDates {
     final locale = _localeOf(context);
     return '${DateFormat.yMMMEd(locale).format(date)} '
         '${DateFormat.jm(locale).format(date)}';
+  }
+
+  /// "Today, 6:00 PM", "Tomorrow, 9:00 AM" or "Mar 14, 6:00 PM" — the
+  /// reminder chip on note cards and in the editor.
+  static String relativeDayTime(BuildContext context, DateTime date,
+      {DateTime? now}) {
+    // Reminder times can arrive in UTC (they are scheduled server-side);
+    // always show them in the device's zone.
+    date = date.toLocal();
+    final l10n = AppL10n.of(context);
+    final today = DateUtils.dateOnly(now ?? DateTime.now());
+    final day = DateUtils.dateOnly(date);
+    final diff = day.difference(today).inDays;
+    final dayLabel = switch (diff) {
+      0 => l10n.dateToday,
+      1 => l10n.dateTomorrow,
+      -1 => l10n.dateYesterday,
+      _ => monthDay(context, date),
+    };
+    return l10n.dateDayAtTime(dayLabel, time(context, date));
+  }
+
+  /// A recording length as m:ss ("0:42"), in the locale's digits.
+  static String duration(BuildContext context, int seconds) {
+    final locale = _localeOf(context);
+    final m = NumberFormat.decimalPattern(locale).format(seconds ~/ 60);
+    final s = NumberFormat('00', locale).format(seconds % 60);
+    return '$m:$s';
   }
 }

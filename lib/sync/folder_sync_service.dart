@@ -1,3 +1,4 @@
+import '../util/server_time.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
@@ -79,15 +80,25 @@ class FolderSyncService {
         return {
           'uuid': folder.uuid,
           'title': folder.noteFolderTitle,
-          'created_at': folder.createdAt.toIso8601String(),
-          'updated_at': folder.updatedAt.toIso8601String(),
+          // UTC with a 'Z': the server compares these for last-write-wins,
+          // and a bare local timestamp is read there as UTC.
+          'created_at': folder.createdAt.toUtc().toIso8601String(),
+          'updated_at': folder.updatedAt.toUtc().toIso8601String(),
+          // Sketchbook (schema v12). Folders are organisational and already
+          // plaintext server-side, so these travel beside the title. A server
+          // without the columns ignores them.
+          'color': folder.color,
+          'sort_order': folder.sortOrder,
         };
       }).toList();
 
       // Upload to backend
       final response = await _apiService.syncFolders(folders: foldersData);
 
-      final syncedCount = response['synced_count'] ?? 0;
+      // The response carries the folders it now holds; there is no
+      // 'synced_count' field (reading it always gave 0).
+      final syncedCount = (response['folders'] as List?)?.length ??
+          foldersData.length;
       debugPrint('✅ [FolderSync] Uploaded $syncedCount folders successfully');
 
       return SyncResult(
@@ -131,8 +142,13 @@ class FolderSyncService {
         try {
           final uuid = serverFolder['uuid'] as String;
           final title = serverFolder['title'] as String;
-          final createdAt = DateTime.parse(serverFolder['created_at']);
-          final updatedAt = DateTime.parse(serverFolder['updated_at']);
+          final createdAt = parseServerUtc(serverFolder['created_at'] as String);
+          final updatedAt = parseServerUtc(serverFolder['updated_at'] as String);
+          // Absent on a server without the Sketchbook columns: keep local.
+          final hasColor = serverFolder.containsKey('color');
+          final hasOrder = serverFolder.containsKey('sort_order');
+          final color = serverFolder['color'] as String?;
+          final sortOrder = (serverFolder['sort_order'] as num?)?.toInt();
 
           debugPrint('🔽 [FolderSync] Processing folder: $uuid ($title)');
 
@@ -151,6 +167,9 @@ class FolderSyncService {
                 NoteFoldersCompanion(
                   noteFolderTitle: Value(title),
                   updatedAt: Value(updatedAt),
+                  color: hasColor ? Value(color) : const Value.absent(),
+                  sortOrder:
+                      hasOrder ? Value(sortOrder) : const Value.absent(),
                 ),
               );
               upsertedCount++;
@@ -166,6 +185,8 @@ class FolderSyncService {
                     noteFolderTitle: Value(title),
                     createdAt: Value(createdAt),
                     updatedAt: Value(updatedAt),
+                    color: Value(color),
+                    sortOrder: Value(sortOrder),
                   ),
                   mode: InsertMode.insertOrIgnore,
                 );

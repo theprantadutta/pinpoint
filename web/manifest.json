@@ -1,11 +1,11 @@
 {
-    "name": "pinpoint",
-    "short_name": "pinpoint",
+    "name": "Pinpoint",
+    "short_name": "Pinpoint",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F5F3EC",
+    "theme_color": "#F6E27A",
+    "description": "Notes, checklists, voice notes and reminders, encrypted on your device.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

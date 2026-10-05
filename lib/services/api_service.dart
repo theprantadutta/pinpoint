@@ -575,6 +575,34 @@ class ApiService {
   }
 
   // ============================================================================
+  // Appearance preferences (Sketchbook)
+  // ============================================================================
+
+  /// The account's stored appearance preferences, or null when none are stored
+  /// yet (the server answers 404 `PREFERENCES_NOT_FOUND`). Body is camelCase.
+  Future<Map<String, dynamic>?> getAppearancePreferences() async {
+    try {
+      final response = await _dio.get('/users/me/preferences');
+      return Map<String, dynamic>.from(response.data as Map);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      throw _handleError(e);
+    }
+  }
+
+  /// Last-write-wins on `updatedAt`: an older body changes nothing. Either way
+  /// the response is the state the server now holds.
+  Future<Map<String, dynamic>> putAppearancePreferences(
+      Map<String, dynamic> body) async {
+    try {
+      final response = await _dio.put('/users/me/preferences', data: body);
+      return Map<String, dynamic>.from(response.data as Map);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ============================================================================
   // Subscription Endpoints
   // ============================================================================
 

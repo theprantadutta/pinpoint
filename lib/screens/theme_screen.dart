@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/services/premium_service.dart';
-import 'package:pinpoint/widgets/premium_gate_dialog.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../components/settings/settings_appearance_group.dart';
+import '../components/settings/settings_widgets.dart';
 import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/theme_controller.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
+/// Theme: mode, accent colour and the UI font, as grouped cards.
 class ThemeScreen extends StatefulWidget {
   static const String kRouteName = '/theme';
   const ThemeScreen({super.key});
@@ -20,409 +19,91 @@ class ThemeScreen extends StatefulWidget {
 }
 
 class _ThemeScreenState extends State<ThemeScreen> {
-  String _selectedFont = 'Inter';
-  SharedPreferences? _preferences;
-
   @override
   void initState() {
     super.initState();
     getIt<AnalyticsFacade>().trackScreenView(screenName: 'Theme');
-    _loadFontPreference();
   }
 
-  Future<void> _loadFontPreference() async {
-    _preferences = await SharedPreferences.getInstance();
-    setState(() {
-      _selectedFont = _preferences?.getString(kSelectedFontKey) ?? 'Inter';
-    });
-  }
-
-  Future<void> _saveFontPreference(String font) async {
-    await _preferences?.setString(kSelectedFontKey, font);
-    setState(() {
-      _selectedFont = font;
-    });
+  void _selectFont(String family) {
+    PinpointHaptics.medium();
+    // ThemeController persists the choice (kSelectedFontKey) and re-themes.
+    context.read<ThemeController>().setFontFamily(family);
+    getIt<AnalyticsFacade>().trackFontChanged(fontFamily: family);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    final accentColors = [
-      {'name': 'Neon Mint', 'color': PinpointColors.mint},
-      {'name': 'Purple Dream', 'color': PinpointColors.purple},
-      {'name': 'Pink Bliss', 'color': PinpointColors.pink},
-      {'name': 'Orange Sunset', 'color': PinpointColors.orange},
-      {'name': 'Blue Ocean', 'color': PinpointColors.blue},
-    ];
-
-    return GradientScaffold(
-      appBar: GlassAppBar(
-        title: Row(
-          children: [
-            Icon(Icons.palette_rounded, color: cs.primary, size: 20),
-            const SizedBox(width: 8),
-            Text(AppL10n.of(context).themeTitle),
-          ],
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Theme Mode Section
-          Text(
-            AppL10n.of(context).themeModeHeading,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.1,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _buildThemeModeOption(
-            context,
-            AppL10n.of(context).themeLight,
-            Icons.light_mode_rounded,
-            ThemeMode.light,
-          ),
-          const SizedBox(height: 8),
-          _buildThemeModeOption(
-            context,
-            AppL10n.of(context).themeDark,
-            Icons.dark_mode_rounded,
-            ThemeMode.dark,
-          ),
-          const SizedBox(height: 8),
-          _buildThemeModeOption(
-            context,
-            AppL10n.of(context).themeSystemDefault,
-            Icons.brightness_auto_rounded,
-            ThemeMode.system,
-          ),
-
-          const SizedBox(height: 32),
-
-          // Accent Colors Section
-          Text(
-            AppL10n.of(context).themeAccentColors,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.1,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...accentColors.map((accent) {
-            final isSelected = cs.primary == accent['color'];
-            final colorName = accent['name'] as String;
-            final premiumService = PremiumService();
-            final isAvailable = premiumService.isThemeColorAvailable(colorName);
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: theme.brightness == Brightness.dark
-                      ? cs.surface.withValues(alpha: 0.7)
-                      : cs.surface.withValues(alpha: 0.95),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected
-                        ? (accent['color'] as Color).withValues(alpha: 0.5)
-                        : cs.outline.withValues(alpha: 0.1),
-                    width: isSelected ? 2 : 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                          alpha:
-                              theme.brightness == Brightness.dark ? 0.2 : 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      // Check if color is available for free users
-                      if (!isAvailable) {
-                        PinpointHaptics.error();
-                        PremiumGateDialog.showThemeLimit(context);
-                        return;
-                      }
-
-                      PinpointHaptics.medium();
-                      context
-                          .read<ThemeController>()
-                          .setAccent(accent['color'] as Color);
-                      getIt<AnalyticsFacade>().trackAccentColorChanged(
-                          colorName: colorName);
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: accent['color'] as Color,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: (accent['color'] as Color)
-                                      .withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    _accentDisplayName(context, colorName),
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                if (!isAvailable)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: cs.primary.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.stars_rounded,
-                                          size: 14,
-                                          color: cs.primary,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          AppL10n.of(context).themePremiumBadge,
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                            color: cs.primary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          if (isSelected)
-                            Icon(Icons.check_circle_rounded,
-                                color: accent['color'] as Color),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-
-          const SizedBox(height: 32),
-
-          // Fonts Section
-          Text(
-            AppL10n.of(context).themeFonts,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.1,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _buildFontOption('Inter', GoogleFonts.inter().fontFamily),
-          _buildFontOption('Roboto', GoogleFonts.roboto().fontFamily),
-          _buildFontOption('Open Sans', GoogleFonts.openSans().fontFamily),
-          _buildFontOption('Lato', GoogleFonts.lato().fontFamily),
-          _buildFontOption('Montserrat', GoogleFonts.montserrat().fontFamily),
-          _buildFontOption('Poppins', GoogleFonts.poppins().fontFamily),
-          _buildFontOption(
-              'Source Sans Pro', GoogleFonts.sourceSans3().fontFamily),
-          _buildFontOption('Noto Sans', GoogleFonts.notoSans().fontFamily),
-        ],
-      ),
-    );
-  }
-
-  /// Localized label for an accent colour.
-  ///
-  /// The colour's English name stays the stable identifier — PremiumService and
-  /// the analytics event both key off it — so only what the user reads is
-  /// translated. An unknown name falls through to the identifier rather than
-  /// rendering blank.
-  String _accentDisplayName(BuildContext context, String name) {
     final l10n = AppL10n.of(context);
-    switch (name) {
-      case 'Neon Mint':
-        return l10n.themeAccentNeonMint;
-      case 'Purple Dream':
-        return l10n.themeAccentPurpleDream;
-      case 'Pink Bliss':
-        return l10n.themeAccentPinkBliss;
-      case 'Orange Sunset':
-        return l10n.themeAccentOrangeSunset;
-      case 'Blue Ocean':
-        return l10n.themeAccentBlueOcean;
-      default:
-        return name;
-    }
-  }
+    final s = context.sketch;
+    final controller = context.watch<ThemeController>();
+    final premium = PremiumService();
+    final bottom = MediaQuery.paddingOf(context).bottom;
 
-  Widget _buildThemeModeOption(
-      BuildContext context, String label, IconData icon, ThemeMode mode) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final themeController = context.watch<ThemeController>();
-    final isSelected = themeController.mode == mode;
+    Widget modeRow(ThemeMode mode, String label, IconData icon) =>
+        SketchChoiceRow(
+          label: label,
+          selected: controller.mode == mode,
+          leading: Icon(icon, size: 20, color: s.ink),
+          onTap: () => setThemeMode(context, mode),
+        );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? cs.surface.withValues(alpha: 0.7)
-            : cs.surface.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isSelected
-              ? cs.primary.withValues(alpha: 0.5)
-              : cs.outline.withValues(alpha: 0.1),
-          width: isSelected ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-                alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            PinpointHaptics.medium();
-            themeController.setMode(mode);
-            getIt<AnalyticsFacade>().trackThemeChanged(
-                theme: ThemeController.modeAnalyticsLabel(mode));
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+    return SketchScaffold(
+      title: l10n.themeTitle,
+      doodleTop: DoodleBackground.settingsTop,
+      body: ListenableBuilder(
+        listenable: premium,
+        builder: (context, _) => ListView(
+          padding: EdgeInsets.only(top: 6, bottom: 40 + bottom),
+          children: [
+            SketchOverline(l10n.stModeOverline),
+            SketchGroup(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: cs.primary.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(icon, color: cs.primary, size: 20),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                if (isSelected)
-                  Icon(Icons.check_circle_rounded, color: cs.primary),
+                modeRow(ThemeMode.light, l10n.themeLight,
+                    Icons.light_mode_outlined),
+                modeRow(
+                    ThemeMode.dark, l10n.themeDark, Icons.dark_mode_outlined),
+                modeRow(ThemeMode.system, l10n.themeSystemDefault,
+                    Icons.brightness_auto_outlined),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFontOption(String fontName, String? fontFamily) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isSelected = _selectedFont == fontName;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.brightness == Brightness.dark
-              ? cs.surface.withValues(alpha: 0.7)
-              : cs.surface.withValues(alpha: 0.95),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? cs.primary.withValues(alpha: 0.5)
-                : cs.outline.withValues(alpha: 0.1),
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(
-                  alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              PinpointHaptics.medium();
-              _saveFontPreference(fontName);
-              // Apply font change to theme
-              context.read<ThemeController>().setFontFamily(fontName);
-              getIt<AnalyticsFacade>().trackFontChanged(fontFamily: fontName);
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      fontName,
-                      style: TextStyle(
-                        fontFamily: fontFamily,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+            SketchOverline(l10n.stAccentOverline),
+            SketchGroup(
+              children: [
+                for (final accent in kAccentDisplayOrder)
+                  SketchChoiceRow(
+                    label: accentDisplayName(context, accent),
+                    selected: controller.accent == accent,
+                    leading: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: accent.legacyColor,
+                        shape: BoxShape.circle,
                       ),
                     ),
+                    trailing:
+                        premium.isThemeColorAvailable(accent.premiumName)
+                            ? null
+                            : const ProTag(),
+                    onTap: () => selectAccent(context, accent),
                   ),
-                  if (isSelected)
-                    Icon(Icons.check_circle_rounded, color: cs.primary),
-                ],
-              ),
+              ],
             ),
-          ),
+            SketchOverline(l10n.stFont),
+            SketchGroup(
+              children: [
+                for (final family in PinpointTypography.selectableFonts)
+                  SketchChoiceRow(
+                    label: family,
+                    labelStyle:
+                        PinpointTypography.fontPreview(family, color: s.ink),
+                    selected: controller.fontFamily == family,
+                    onTap: () => _selectFont(family),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     );

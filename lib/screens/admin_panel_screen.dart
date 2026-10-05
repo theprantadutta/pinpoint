@@ -80,35 +80,27 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
 
-    return GradientScaffold(
-      appBar: GlassAppBar(
-        title: Row(
-          children: [
-            Icon(Icons.admin_panel_settings, color: cs.primary, size: 20),
-            const SizedBox(width: 8),
-            const Text('Admin Panel'),
-          ],
+    return SketchScaffold(
+      title: 'Admin Panel',
+      actions: [
+        CircleIconButton(
+          icon: Icons.schedule_rounded,
+          onPressed: () {
+            context.push('/admin-panel/jobs');
+          },
+          semanticLabel: 'Scheduled Jobs',
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.schedule),
-            onPressed: () {
-              context.push('/admin-panel/jobs');
-            },
-            tooltip: 'Scheduled Jobs',
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              _adminApi.logout();
-              context.pop();
-            },
-            tooltip: 'Logout',
-          ),
-        ],
-      ),
+        const SizedBox(width: 6),
+        CircleIconButton(
+          icon: Icons.logout_rounded,
+          onPressed: () {
+            _adminApi.logout();
+            context.pop();
+          },
+          semanticLabel: 'Logout',
+        ),
+      ],
       body: Column(
         children: [
           // Header with total count
@@ -210,18 +202,17 @@ class _UserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final s = context.sketch;
     final isPremium = user['is_premium'] ?? false;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor:
-              isPremium ? PinpointColors.mint : cs.primaryContainer,
+          backgroundColor: isPremium ? SketchPastels.mint : s.soft,
           child: Icon(
             isPremium ? Icons.workspace_premium : Icons.person,
-            color: isPremium ? Colors.white : cs.onPrimaryContainer,
+            color: isPremium ? SketchPastels.onPastel : s.ink,
           ),
         ),
         title: Text(

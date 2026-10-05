@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../design_system/design_system.dart';
+import '../util/show_a_toast.dart';
 import '../sync/sync_manager.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/encryption_service.dart';
@@ -119,44 +122,47 @@ class _SyncDebugScreenState extends State<SyncDebugScreen> {
     Clipboard.setData(ClipboardData(text: buffer.toString()));
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debug info copied to clipboard'),
-          duration: Duration(seconds: 2),
-        ),
+      showSketchToast(
+        context: context,
+        message: 'Debug info copied to clipboard',
+        tone: ToastTone.success,
       );
     }
   }
 
+  // Admin / debug tooling: deliberately left in English.
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sync Debug Info'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadDebugInfo,
-            tooltip: 'Refresh',
-          ),
-          IconButton(
-            icon: const Icon(Icons.copy),
-            onPressed: _copyDebugInfo,
-            tooltip: 'Copy to clipboard',
-          ),
-        ],
-      ),
+    return SketchScaffold(
+      title: 'Sync Debug Info',
+      actions: [
+        CircleIconButton(
+          icon: Icons.refresh_rounded,
+          onPressed: _loadDebugInfo,
+          semanticLabel: 'Refresh',
+        ),
+        const SizedBox(width: 6),
+        CircleIconButton(
+          icon: Icons.copy_rounded,
+          onPressed: _copyDebugInfo,
+          semanticLabel: 'Copy to clipboard',
+        ),
+      ],
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _debugInfo.isEmpty
               ? const Center(child: Text('No debug info available'))
               : ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(
+                      SketchSpace.screenX,
+                      18,
+                      SketchSpace.screenX,
+                      32 + MediaQuery.paddingOf(context).bottom),
                   children: [
                     ..._debugInfo.entries.map(
                       (section) => _buildSection(section.key, section.value),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 16),
                     _buildActionButtons(),
                   ],
                 ),
@@ -164,21 +170,19 @@ class _SyncDebugScreenState extends State<SyncDebugScreen> {
   }
 
   Widget _buildSection(String title, dynamic data) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    final t = context.type;
+    final s = context.sketch;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: SketchCard(
+        radius: SketchRadius.group,
+        padding: const EdgeInsets.all(SketchSpace.cardPadLg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Divider(),
+            Text(title, style: t.sectionTitle),
+            const SizedBox(height: 8),
+            Container(height: SketchStroke.outline, color: s.hairline),
             const SizedBox(height: 8),
             if (data is Map)
               ...data.entries.map(
@@ -189,16 +193,14 @@ class _SyncDebugScreenState extends State<SyncDebugScreen> {
                     children: [
                       SizedBox(
                         width: 140,
-                        child: Text(
-                          '${entry.key}:',
-                          style: const TextStyle(fontWeight: FontWeight.w500),
-                        ),
+                        child: Text('${entry.key}:', style: t.chip),
                       ),
                       Expanded(
                         child: Text(
                           entry.value.toString(),
-                          style: TextStyle(
-                            color: _getValueColor(entry.value),
+                          style: t.bodyRegular.copyWith(
+                            fontSize: 14,
+                            color: _getValueColor(entry.value) ?? s.ink,
                           ),
                         ),
                       ),
@@ -207,7 +209,7 @@ class _SyncDebugScreenState extends State<SyncDebugScreen> {
                 ),
               )
             else
-              Text(data.toString()),
+              Text(data.toString(), style: t.bodyRegular),
           ],
         ),
       ),
@@ -217,45 +219,41 @@ class _SyncDebugScreenState extends State<SyncDebugScreen> {
   Color? _getValueColor(dynamic value) {
     final str = value.toString().toLowerCase();
     if (str == 'yes' || str == 'true' || str == 'none') {
-      return Colors.green;
+      return SketchFunctional.success;
     } else if (str == 'no' || str == 'false') {
-      return Colors.orange;
+      return context.sketch.muted;
     } else if (str.contains('error') || str.contains('failed')) {
-      return Colors.red;
+      return SketchFunctional.error;
     }
     return null;
   }
 
   Widget _buildActionButtons() {
+    final t = context.type;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'Troubleshooting Actions',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        ElevatedButton.icon(
+        Text('Troubleshooting Actions', style: t.sectionTitle),
+        const SizedBox(height: 14),
+        PillButton(
           onPressed: () async {
             final syncManager = getIt<SyncManager>();
             final result = await syncManager.sync();
 
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result.message),
-                  backgroundColor:
-                      result.success ? Colors.green : Colors.red,
-                ),
+              showSketchToast(
+                context: context,
+                message: result.message,
+                tone: result.success ? ToastTone.success : ToastTone.error,
               );
               _loadDebugInfo(); // Refresh after sync
             }
           },
-          icon: const Icon(Icons.sync),
-          label: const Text('Force Sync Now'),
+          icon: Icons.sync_rounded,
+          label: 'Force Sync Now',
         ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
+        const SizedBox(height: 10),
+        PillButton.secondary(
           onPressed: () async {
             final apiService = ApiService();
             try {
@@ -263,46 +261,39 @@ class _SyncDebugScreenState extends State<SyncDebugScreen> {
                   await SecureEncryptionService.syncKeyFromCloud(apiService);
 
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(success
-                        ? 'Encryption key synced successfully'
-                        : 'Failed to sync encryption key'),
-                    backgroundColor: success ? Colors.green : Colors.orange,
-                  ),
+                showSketchToast(
+                  context: context,
+                  message: success
+                      ? 'Encryption key synced successfully'
+                      : 'Failed to sync encryption key',
+                  tone: success ? ToastTone.success : ToastTone.warning,
                 );
                 _loadDebugInfo(); // Refresh after key sync
               }
             } catch (e) {
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: $e'),
-                    backgroundColor: Colors.red,
-                  ),
+                showSketchToast(
+                  context: context,
+                  message: 'Error: $e',
+                  tone: ToastTone.error,
                 );
               }
             }
           },
-          icon: const Icon(Icons.key),
-          label: const Text('Re-sync Encryption Key'),
+          icon: Icons.key_rounded,
+          label: 'Re-sync Encryption Key',
         ),
-        const SizedBox(height: 16),
-        const Divider(),
+        const SizedBox(height: 22),
+        Text('Need Help?', style: t.body),
         const SizedBox(height: 8),
-        const Text(
-          'Need Help?',
-          style: TextStyle(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        const Text(
+        Text(
           'If you\'re experiencing sync issues:\n'
           '1. Check that you have internet connection\n'
           '2. Try "Force Sync Now" button above\n'
           '3. If notes are missing, they may have failed to decrypt (wrong encryption key)\n'
           '4. Try "Re-sync Encryption Key" to fix decryption issues\n'
           '5. Copy debug info and contact support if issues persist',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+          style: t.caption,
         ),
       ],
     );

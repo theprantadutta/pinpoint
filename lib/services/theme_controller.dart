@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/shared_preference_keys.dart';
 import '../design_system/colors.dart';
+import '../design_system/typography.dart';
 
 /// Central, reactive owner of app-wide appearance state.
 ///
@@ -16,16 +17,73 @@ import '../design_system/colors.dart';
 /// string. The legacy `kIsDarkModeKey` bool is migrated on first load.
 class ThemeController extends ChangeNotifier {
   ThemeMode _mode = ThemeMode.system;
-  Color _accent = PinpointColors.accentRefined;
+  SketchAccent _accent = SketchAccent.fallback;
   bool _highContrast = false;
-  String _fontFamily = 'Inter';
+  bool _doodlesEnabled = true;
+  String _fontFamily = PinpointTypography.primaryFontFamily;
   bool _loaded = false;
 
+  /// When the synced appearance fields (mode, accent, font, doodles) last
+  /// changed on this device — the last-write-wins clock for preference sync.
+  DateTime? _appearanceUpdatedAt;
+  bool _applyingRemote = false;
+
   ThemeMode get mode => _mode;
-  Color get accent => _accent;
+  /// The accent; it only picks the highlight pastel (see [SketchAccent]).
+  SketchAccent get accent => _accent;
   bool get highContrast => _highContrast;
+
+  /// The "Background doodles" Display setting. The doodle painter also stays
+  /// off under high contrast and when the OS asks for reduced motion.
+  bool get doodlesEnabled => _doodlesEnabled;
   String get fontFamily => _fontFamily;
   bool get isLoaded => _loaded;
+
+  DateTime? get appearanceUpdatedAt => _appearanceUpdatedAt;
+
+  /// True while [applyRemote] is notifying, so a sync listener can tell a
+  /// change it caused from one the user made.
+  bool get isApplyingRemote => _applyingRemote;
+
+  Future<void> _touch(SharedPreferences prefs) async {
+    _appearanceUpdatedAt = DateTime.now().toUtc();
+    await prefs.setInt(kAppearanceUpdatedAtKey,
+        _appearanceUpdatedAt!.millisecondsSinceEpoch);
+  }
+
+  /// Applies preferences pulled from another device. Does not move the
+  /// local clock forward past [updatedAt], so it is not echoed back.
+  Future<void> applyRemote({
+    ThemeMode? mode,
+    SketchAccent? accent,
+    String? fontFamily,
+    bool? doodlesEnabled,
+    required DateTime updatedAt,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mode != null) {
+      _mode = mode;
+      await prefs.setString(kThemeModeKey, _modeToString(mode));
+    }
+    if (accent != null) {
+      _accent = accent;
+      await prefs.setInt(kAccentColorKey, accent.legacyColor.toARGB32());
+    }
+    if (fontFamily != null && fontFamily.isNotEmpty) {
+      _fontFamily = fontFamily;
+      await prefs.setString(kSelectedFontKey, fontFamily);
+    }
+    if (doodlesEnabled != null) {
+      _doodlesEnabled = doodlesEnabled;
+      await prefs.setBool(kDoodlesEnabledKey, doodlesEnabled);
+    }
+    _appearanceUpdatedAt = updatedAt.toUtc();
+    await prefs.setInt(kAppearanceUpdatedAtKey,
+        _appearanceUpdatedAt!.millisecondsSinceEpoch);
+    _applyingRemote = true;
+    notifyListeners();
+    _applyingRemote = false;
+  }
 
   /// Resolve the effective brightness for the current mode against the OS.
   Brightness effectiveBrightness(BuildContext context) {
@@ -55,14 +113,25 @@ class ThemeController extends ChangeNotifier {
       }
     }
 
-    final accentValue = prefs.getInt(kAccentColorKey);
-    if (accentValue != null) _accent = Color(accentValue);
+    // Persisted as the pre-Sketchbook accent hex so the value still means
+    // something to an older build; unknown values (the old indigo default)
+    // resolve to the Sketchbook default.
+    _accent = SketchAccent.fromStored(prefs.getInt(kAccentColorKey));
+
+    final doodles = prefs.getBool(kDoodlesEnabledKey);
+    if (doodles != null) _doodlesEnabled = doodles;
+
+    final stamp = prefs.getInt(kAppearanceUpdatedAtKey);
+    if (stamp != null) {
+      _appearanceUpdatedAt =
+          DateTime.fromMillisecondsSinceEpoch(stamp, isUtc: true);
+    }
 
     final hc = prefs.getBool(kHighContrastKey);
     if (hc != null) _highContrast = hc;
 
     final font = prefs.getString(kSelectedFontKey);
-    if (font != null) _fontFamily = font;
+    if (font != null) _fontFamily = normalizeFontFamily(font);
 
     _loaded = true;
     notifyListeners();
@@ -74,18 +143,29 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(kThemeModeKey, _modeToString(mode));
+    await _touch(prefs);
     // Keep the legacy key roughly in sync for any old readers.
     if (mode != ThemeMode.system) {
       await prefs.setBool(kIsDarkModeKey, mode == ThemeMode.dark);
     }
   }
 
-  Future<void> setAccent(Color color) async {
-    if (_accent == color) return;
-    _accent = color;
+  Future<void> setAccent(SketchAccent accent) async {
+    if (_accent == accent) return;
+    _accent = accent;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(kAccentColorKey, color.toARGB32());
+    await prefs.setInt(kAccentColorKey, accent.legacyColor.toARGB32());
+    await _touch(prefs);
+  }
+
+  Future<void> setDoodlesEnabled(bool enabled) async {
+    if (_doodlesEnabled == enabled) return;
+    _doodlesEnabled = enabled;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kDoodlesEnabledKey, enabled);
+    await _touch(prefs);
   }
 
   Future<void> setHighContrast(bool enabled) async {
@@ -102,6 +182,20 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(kSelectedFontKey, fontFamily);
+    await _touch(prefs);
+  }
+
+  /// Maps a persisted font name onto a family google_fonts knows.
+  ///
+  /// The old picker saved "Source Sans Pro", which google_fonts 8 no longer
+  /// has ("Source Sans 3" replaced it); `GoogleFonts.getFont` throws on an
+  /// unknown family, so building the theme with it would crash. Anything else
+  /// unknown falls back to the default rather than taking the app down.
+  static String normalizeFontFamily(String family) {
+    if (family == 'Source Sans Pro') return 'Source Sans 3';
+    return PinpointTypography.selectableFonts.contains(family)
+        ? family
+        : PinpointTypography.primaryFontFamily;
   }
 
   /// Lowercase label for analytics (e.g. 'light' | 'dark' | 'system').

@@ -3,10 +3,13 @@ import 'dart:convert';
 /// Model for managing note search and filter options
 class FilterOptions {
   final List<int> folderIds;
-  final List<String> noteTypes; // ['text', 'audio', 'todo', 'reminder']
+  final List<String> noteTypes; // ['text', 'voice', 'todo', 'reminder'] ('audio' = legacy 'voice')
   final DateTime? dateRangeStart;
   final DateTime? dateRangeEnd;
   final bool pinsOnly;
+
+  /// Show archived notes alongside the rest (Filters → "Include archived").
+  final bool includeArchived;
 
   const FilterOptions({
     this.folderIds = const [],
@@ -14,6 +17,7 @@ class FilterOptions {
     this.dateRangeStart,
     this.dateRangeEnd,
     this.pinsOnly = false,
+    this.includeArchived = false,
   });
 
   /// Default filter options (no filters applied)
@@ -25,7 +29,8 @@ class FilterOptions {
         noteTypes.isNotEmpty ||
         dateRangeStart != null ||
         dateRangeEnd != null ||
-        pinsOnly;
+        pinsOnly ||
+        includeArchived;
   }
 
   /// Count of active filters (for badge display)
@@ -35,6 +40,7 @@ class FilterOptions {
     if (noteTypes.isNotEmpty) count++;
     if (dateRangeStart != null || dateRangeEnd != null) count++;
     if (pinsOnly) count++;
+    if (includeArchived) count++;
     return count;
   }
 
@@ -45,6 +51,7 @@ class FilterOptions {
     DateTime? dateRangeStart,
     DateTime? dateRangeEnd,
     bool? pinsOnly,
+    bool? includeArchived,
     bool clearDateRange = false,
   }) {
     return FilterOptions(
@@ -54,6 +61,7 @@ class FilterOptions {
           clearDateRange ? null : (dateRangeStart ?? this.dateRangeStart),
       dateRangeEnd: clearDateRange ? null : (dateRangeEnd ?? this.dateRangeEnd),
       pinsOnly: pinsOnly ?? this.pinsOnly,
+      includeArchived: includeArchived ?? this.includeArchived,
     );
   }
 
@@ -70,6 +78,7 @@ class FilterOptions {
       'dateRangeStart': dateRangeStart?.toIso8601String(),
       'dateRangeEnd': dateRangeEnd?.toIso8601String(),
       'pinsOnly': pinsOnly,
+      'includeArchived': includeArchived,
     };
   }
 
@@ -85,6 +94,7 @@ class FilterOptions {
           ? DateTime.parse(json['dateRangeEnd'] as String)
           : null,
       pinsOnly: json['pinsOnly'] as bool? ?? false,
+      includeArchived: json['includeArchived'] as bool? ?? false,
     );
   }
 
@@ -118,7 +128,8 @@ class FilterOptions {
         _listEquals(other.noteTypes, noteTypes) &&
         other.dateRangeStart == dateRangeStart &&
         other.dateRangeEnd == dateRangeEnd &&
-        other.pinsOnly == pinsOnly;
+        other.pinsOnly == pinsOnly &&
+        other.includeArchived == includeArchived;
   }
 
   @override
@@ -129,6 +140,7 @@ class FilterOptions {
       dateRangeStart,
       dateRangeEnd,
       pinsOnly,
+      includeArchived,
     );
   }
 

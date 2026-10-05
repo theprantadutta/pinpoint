@@ -21,6 +21,7 @@ void main() {
   /// Every subscription/search call, invoked identically on both clients.
   final calls = <String, Future<void> Function(AnalyticsClient)>{
     'search_performed': (c) => c.trackSearchPerformed(queryLength: 7),
+    'premium_gate_shown': (c) => c.trackPremiumGateShown(feature: 'folders'),
     'subscription_screen_viewed': (c) => c.trackSubscriptionScreenViewed(),
     'checkout_started': (c) => c.trackCheckoutStarted(productId: 'p'),
     'checkout_launch_succeeded': (c) =>

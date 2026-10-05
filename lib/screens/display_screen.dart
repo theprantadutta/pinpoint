@@ -4,15 +4,16 @@ import 'package:provider/provider.dart';
 import '../design_system/design_system.dart';
 import '../generated/l10n/app_localizations.dart';
 import '../services/refresh_rate_controller.dart';
+import '../services/theme_controller.dart';
 
-/// Display settings — how smoothly Pinpoint moves, and what the panel is
-/// actually doing about it.
+/// Display settings — the background doodles, how smoothly Pinpoint moves,
+/// and what the panel is actually doing about it.
 ///
-/// The live readout is the point of the screen. "Smooth motion" is a promise
-/// the app cannot keep on its own: the OS throttles the refresh rate in battery
-/// saver and when the device is warm, whatever we request. Showing the real
-/// current rate, plus a plain-language reason when it is being held down, is
-/// what stops the toggle looking broken.
+/// The live readout is the point of the motion section. "Smooth motion" is a
+/// promise the app cannot keep on its own: the OS throttles the refresh rate
+/// in battery saver and when the device is warm, whatever we request. Showing
+/// the real current rate, plus a plain-language reason when it is being held
+/// down, is what stops the toggle looking broken.
 class DisplayScreen extends StatefulWidget {
   static const String kRouteName = '/display';
 
@@ -36,40 +37,72 @@ class _DisplayScreenState extends State<DisplayScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
     final l10n = AppL10n.of(context);
+    final t = context.type;
     final controller = context.watch<RefreshRateController>();
+    final theme = context.watch<ThemeController>();
     final info = controller.info;
+    final bottom = MediaQuery.paddingOf(context).bottom;
 
-    return GradientScaffold(
-      appBar: GlassAppBar(
-        title: Row(
-          children: [
-            Icon(Icons.monitor_rounded, color: cs.primary, size: 20),
-            const SizedBox(width: 8),
-            Text(l10n.displayTitle),
-          ],
-        ),
-      ),
+    return SketchScaffold(
+      title: l10n.displayTitle,
+      doodleTop: DoodleBackground.settingsTop,
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(top: 6, bottom: 40 + bottom),
         children: [
-          _RateCard(controller: controller),
-          const SizedBox(height: 16),
+          SketchOverline(l10n.stSectionLooks),
+          SketchGroup(
+            children: [
+              SketchRow(
+                label: l10n.stBackgroundDoodles,
+                subtitle: l10n.stBackgroundDoodlesSubtitle,
+                onTap: () => context
+                    .read<ThemeController>()
+                    .setDoodlesEnabled(!theme.doodlesEnabled),
+                trailing: SketchToggle(
+                  value: theme.doodlesEnabled,
+                  semanticLabel: l10n.stBackgroundDoodles,
+                  onChanged: (v) =>
+                      context.read<ThemeController>().setDoodlesEnabled(v),
+                ),
+              ),
+            ],
+          ),
+          SketchOverline(l10n.stSectionMotion),
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: SketchSpace.screenX),
+            child: _RateCard(controller: controller),
+          ),
+          const SizedBox(height: 12),
 
           // Only offered when the hardware has more than one rate to pick
           // from — a single-rate panel has nothing to unlock.
           if (controller.deviceSupportsHighRate)
-            _SmoothMotionTile(
-              value: controller.isEnabled,
-              onChanged: (v) =>
-                  context.read<RefreshRateController>().setEnabled(v),
+            SketchGroup(
+              children: [
+                SketchRow(
+                  label: l10n.displaySmoothMotion,
+                  subtitle: l10n.displaySmoothMotionSubtitle,
+                  onTap: () {
+                    PinpointHaptics.light();
+                    context
+                        .read<RefreshRateController>()
+                        .setEnabled(!controller.isEnabled);
+                  },
+                  trailing: SketchToggle(
+                    value: controller.isEnabled,
+                    semanticLabel: l10n.displaySmoothMotion,
+                    onChanged: (v) =>
+                        context.read<RefreshRateController>().setEnabled(v),
+                  ),
+                ),
+              ],
             )
           else if (controller.isLoaded && info != null)
             _Note(
               icon: Icons.info_outline_rounded,
-              color: cs.primary,
+              pastel: SketchPastels.sky,
               text: l10n.displaySingleRateNote,
             ),
 
@@ -77,7 +110,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
             const SizedBox(height: 12),
             _Note(
               icon: Icons.battery_saver_rounded,
-              color: PinpointColors.warning,
+              pastel: SketchPastels.yellow,
               text: l10n.displayBatterySaverNote,
             ),
           ],
@@ -85,35 +118,27 @@ class _DisplayScreenState extends State<DisplayScreen> {
             const SizedBox(height: 12),
             _Note(
               icon: Icons.thermostat_rounded,
-              color: PinpointColors.warning,
+              pastel: SketchPastels.yellow,
               text: l10n.displayThermalNote,
             ),
           ],
 
           if (info != null && info.supportedRates.length > 1) ...[
-            const SizedBox(height: 28),
-            Text(
-              l10n.displaySupportedRates.toUpperCase(),
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: cs.onSurfaceVariant,
-                letterSpacing: 0.6,
-                fontWeight: FontWeight.w700,
+            SketchOverline(l10n.displaySupportedRates),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: SketchSpace.screenX),
+              child: _SupportedRates(
+                rates: info.supportedRates,
+                currentRate: info.currentRate,
               ),
-            ),
-            const SizedBox(height: 12),
-            _SupportedRates(
-              rates: info.supportedRates,
-              currentRate: info.currentRate,
             ),
           ],
 
-          const SizedBox(height: 24),
-          Text(
-            l10n.displayFooterNote,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: cs.onSurfaceVariant,
-              height: 1.5,
-            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                SketchSpace.screenX + 4, 20, SketchSpace.screenX + 4, 0),
+            child: Text(l10n.displayFooterNote, style: t.caption),
           ),
         ],
       ),
@@ -140,25 +165,14 @@ class _RateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final t = context.type;
     final l10n = AppL10n.of(context);
     final info = controller.info;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            cs.primary.withValues(alpha: 0.14),
-            cs.primary.withValues(alpha: 0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cs.primary.withValues(alpha: 0.22)),
-      ),
+    return SketchCard(
+      pastel: SketchPastels.mint,
+      radius: SketchRadius.group,
+      padding: const EdgeInsets.all(SketchSpace.cardPadLg),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -168,22 +182,16 @@ class _RateCard extends StatelessWidget {
               children: [
                 Text(
                   l10n.displayCurrentRate.toUpperCase(),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: cs.primary,
-                    letterSpacing: 0.8,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style:
+                      t.overline.copyWith(color: SketchPastels.onPastel),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   info == null
                       ? l10n.displayUnknownRate
                       : _formatRate(context, info.currentRate),
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: cs.onSurface,
-                    height: 1.1,
-                  ),
+                  style: t.displayNumber
+                      .copyWith(fontSize: 34, color: SketchPastels.onPastel),
                 ),
               ],
             ),
@@ -192,105 +200,17 @@ class _RateCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  l10n.displayMaxRate,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 4),
+                Text(l10n.displayMaxRate,
+                    style: t.caption.copyWith(color: SketchPastels.onPastel)),
+                const SizedBox(height: 2),
                 Text(
                   _formatRate(context, info.maxRate),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurfaceVariant,
-                  ),
+                  style: t.sectionTitle
+                      .copyWith(color: SketchPastels.onPastel),
                 ),
               ],
             ),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Toggle ─────────────────────────────────────────────────────────
-
-class _SmoothMotionTile extends StatelessWidget {
-  const _SmoothMotionTile({required this.value, required this.onChanged});
-
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final l10n = AppL10n.of(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? cs.surface.withValues(alpha: 0.7)
-            : cs.surface.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outline.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05,
-            ),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            PinpointHaptics.light();
-            onChanged(!value);
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(Icons.animation_rounded, color: cs.primary, size: 22),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.displaySmoothMotion,
-                        style: theme.textTheme.bodyLarge
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        l10n.displaySmoothMotionSubtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Switch(
-                  value: value,
-                  onChanged: (v) {
-                    PinpointHaptics.light();
-                    onChanged(v);
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -306,41 +226,20 @@ class _SupportedRates extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
     // Ascending and de-duplicated: OEMs frequently report the same rate more
     // than once for different resolutions.
     final unique = rates.map((r) => r.roundToDouble()).toSet().toList()..sort();
 
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: unique.map((rate) {
-        final isCurrent = (rate - currentRate).abs() < 1.0;
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: isCurrent
-                ? cs.primary.withValues(alpha: 0.14)
-                : cs.surface.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isCurrent
-                  ? cs.primary.withValues(alpha: 0.45)
-                  : cs.outline.withValues(alpha: 0.12),
-              width: isCurrent ? 1.5 : 1,
-            ),
+      spacing: SketchSpace.chip,
+      runSpacing: SketchSpace.chip,
+      children: [
+        for (final rate in unique)
+          SketchChip(
+            label: _formatRate(context, rate),
+            selected: (rate - currentRate).abs() < 1.0,
           ),
-          child: Text(
-            _formatRate(context, rate),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-              color: isCurrent ? cs.primary : cs.onSurfaceVariant,
-            ),
-          ),
-        );
-      }).toList(),
+      ],
     );
   }
 }
@@ -348,35 +247,32 @@ class _SupportedRates extends StatelessWidget {
 // ─── Inline note ────────────────────────────────────────────────────
 
 class _Note extends StatelessWidget {
-  const _Note({required this.icon, required this.color, required this.text});
+  const _Note({required this.icon, required this.pastel, required this.text});
 
   final IconData icon;
-  final Color color;
+  final Color pastel;
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.24)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 18),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: theme.textTheme.bodySmall?.copyWith(height: 1.45),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: SketchSpace.screenX),
+      child: SketchCard(
+        pastel: pastel,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                text,
+                style: context.type.bodySmall
+                    .copyWith(color: SketchPastels.onPastel),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

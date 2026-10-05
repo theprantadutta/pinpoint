@@ -1,291 +1,157 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../theme.dart';
+
 import '../animations.dart';
-import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import '../colors.dart';
+import '../elevations.dart';
+import '../spacing.dart';
+import '../typography.dart';
+import 'sketch/sketch_pressable.dart';
 
-/// EditorToolbar - Floating toolbar for markdown/rich text controls
+/// One tool on the [EditorToolbar]: an icon or a short text glyph ("B",
+/// "H1"). Active tools sit in a 42px on-inverse circle.
+@immutable
+class EditorToolbarItem {
+  const EditorToolbarItem({
+    required this.semanticLabel,
+    required this.onPressed,
+    this.icon,
+    this.glyph,
+    this.glyphStyle,
+    this.active = false,
+  }) : assert(icon != null || glyph != null);
+
+  final String semanticLabel;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+
+  /// A short text glyph drawn instead of an icon. Formatting glyphs (B, I, U,
+  /// S, H1) are universal, so they are not localized; [semanticLabel] is.
+  final String? glyph;
+
+  /// Merged over the toolbar's 16/700 glyph style (italic for "I", etc.).
+  final TextStyle? glyphStyle;
+  final bool active;
+}
+
+/// The Sketchbook editor toolbar: a 58px inverse stadium floating above the
+/// keyboard, with the note-colour dot on the start side and the tools in a
+/// horizontal scroller (it scrolls when the tools overflow the width).
 ///
-/// Features:
-/// - Gradient background
-/// - Scroll-aware collapse
-/// - Markdown controls (bold, italic, code, etc.)
-/// - Checklist and code block buttons
-/// - Responsive to keyboard
-class EditorToolbar extends StatefulWidget {
-  final bool isVisible;
-  final VoidCallback? onBold;
-  final VoidCallback? onItalic;
-  final VoidCallback? onCode;
-  final VoidCallback? onCheckbox;
-  final VoidCallback? onH1;
-  final VoidCallback? onH2;
-  final VoidCallback? onQuote;
-  final VoidCallback? onLink;
-  final VoidCallback? onImage;
-  final ScrollController? scrollController;
-  final bool floating;
-
+/// Purely presentational — it knows nothing about the document. The
+/// rich-text editor builds the [items] (see `MarkdownToolbar`).
+class EditorToolbar extends StatelessWidget {
   const EditorToolbar({
     super.key,
-    this.isVisible = true,
-    this.onBold,
-    this.onItalic,
-    this.onCode,
-    this.onCheckbox,
-    this.onH1,
-    this.onH2,
-    this.onQuote,
-    this.onLink,
-    this.onImage,
-    this.scrollController,
-    this.floating = true,
+    required this.items,
+    required this.semanticLabel,
+    this.color,
+    this.colorLabel,
+    this.onColorPressed,
   });
 
-  @override
-  State<EditorToolbar> createState() => _EditorToolbarState();
-}
+  static const double height = 58;
 
-class _EditorToolbarState extends State<EditorToolbar> {
-  bool _isCollapsed = false;
+  /// The inset from the screen edges and from the bottom (keyboard closed).
+  static const double inset = 16;
+  static const double bottomGap = 30;
 
-  @override
-  void initState() {
-    super.initState();
-    widget.scrollController?.addListener(_onScroll);
-  }
+  final List<EditorToolbarItem> items;
 
-  @override
-  void didUpdateWidget(EditorToolbar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.scrollController != widget.scrollController) {
-      oldWidget.scrollController?.removeListener(_onScroll);
-      widget.scrollController?.addListener(_onScroll);
-    }
-  }
+  /// Announced for the toolbar as a whole ("Formatting").
+  final String semanticLabel;
 
-  @override
-  void dispose() {
-    widget.scrollController?.removeListener(_onScroll);
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (widget.scrollController != null) {
-      final offset = widget.scrollController!.offset;
-      setState(() {
-        // Collapse when scrolling down past threshold
-        _isCollapsed = offset > 100;
-      });
-    }
-  }
+  /// The colour dot's fill: the note's pastel, or null for the pen colour
+  /// (no note colour).
+  final Color? color;
+  final String? colorLabel;
+  final VoidCallback? onColorPressed;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final toolbarStyle = theme.toolbarStyle;
-    final motionSettings = MotionSettings.fromMediaQuery(context);
-
-    if (!widget.isVisible) {
-      return const SizedBox.shrink();
-    }
-
-    final toolbar = ClipRRect(
-      borderRadius: toolbarStyle.borderRadius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: toolbarStyle.padding,
-          decoration: BoxDecoration(
-            gradient: toolbarStyle.backgroundGradient,
-            color: toolbarStyle.backgroundColor.withValues(alpha: 0.8),
-            borderRadius: toolbarStyle.borderRadius,
-            boxShadow: toolbarStyle.elevation,
-          ),
-          child: AnimatedSize(
-            duration: motionSettings.getDuration(PinpointAnimations.normal),
-            curve: motionSettings.getCurve(PinpointAnimations.emphasized),
-            child: _isCollapsed
-                ? _buildCollapsedToolbar(theme, toolbarStyle)
-                : _buildFullToolbar(theme, toolbarStyle),
-          ),
-        ),
-      ),
-    );
-
-    if (widget.floating) {
-      return Positioned(
-        bottom: 24,
-        left: 16,
-        right: 16,
-        child: toolbar,
-      );
-    }
-
-    return toolbar;
-  }
-
-  Widget _buildFullToolbar(ThemeData theme, ToolbarStyle toolbarStyle) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      alignment: WrapAlignment.center,
-      children: [
-        // Text formatting
-        if (widget.onBold != null)
-          _ToolbarButton(
-            icon: Icons.format_bold_rounded,
-            label: AppL10n.of(context).toolbarBold,
-            onTap: widget.onBold!,
-            toolbarStyle: toolbarStyle,
-          ),
-        if (widget.onItalic != null)
-          _ToolbarButton(
-            icon: Icons.format_italic_rounded,
-            label: AppL10n.of(context).toolbarItalic,
-            onTap: widget.onItalic!,
-            toolbarStyle: toolbarStyle,
-          ),
-        if (widget.onCode != null)
-          _ToolbarButton(
-            icon: Icons.code_rounded,
-            label: AppL10n.of(context).toolbarCode,
-            onTap: widget.onCode!,
-            toolbarStyle: toolbarStyle,
-          ),
-
-        // Divider
-        _ToolbarDivider(),
-
-        // Headings
-        if (widget.onH1 != null)
-          _ToolbarButton(
-            icon: Icons.title_rounded,
-            label: 'H1',
-            onTap: widget.onH1!,
-            toolbarStyle: toolbarStyle,
-          ),
-        if (widget.onH2 != null)
-          _ToolbarButton(
-            icon: Icons.text_fields_rounded,
-            label: 'H2',
-            onTap: widget.onH2!,
-            toolbarStyle: toolbarStyle,
-          ),
-
-        // Divider
-        _ToolbarDivider(),
-
-        // Lists & blocks
-        if (widget.onCheckbox != null)
-          _ToolbarButton(
-            icon: Icons.check_box_outlined,
-            label: AppL10n.of(context).dsChecklist,
-            onTap: widget.onCheckbox!,
-            toolbarStyle: toolbarStyle,
-          ),
-        if (widget.onQuote != null)
-          _ToolbarButton(
-            icon: Icons.format_quote_rounded,
-            label: AppL10n.of(context).toolbarQuote,
-            onTap: widget.onQuote!,
-            toolbarStyle: toolbarStyle,
-          ),
-
-        // Divider
-        _ToolbarDivider(),
-
-        // Media
-        if (widget.onLink != null)
-          _ToolbarButton(
-            icon: Icons.link_rounded,
-            label: AppL10n.of(context).toolbarLink,
-            onTap: widget.onLink!,
-            toolbarStyle: toolbarStyle,
-          ),
-        if (widget.onImage != null)
-          _ToolbarButton(
-            icon: Icons.image_outlined,
-            label: AppL10n.of(context).toolbarImage,
-            onTap: widget.onImage!,
-            toolbarStyle: toolbarStyle,
-          ),
-      ],
-    );
-  }
-
-  Widget _buildCollapsedToolbar(ThemeData theme, ToolbarStyle toolbarStyle) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.edit_rounded,
-          size: 20,
-          color: toolbarStyle.iconColor,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          AppL10n.of(context).dsTapToExpand,
-          style: TextStyle(
-            fontSize: 12,
-            color: toolbarStyle.iconColor,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Toolbar button
-class _ToolbarButton extends StatefulWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final ToolbarStyle toolbarStyle;
-
-  const _ToolbarButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.toolbarStyle,
-  });
-
-  @override
-  State<_ToolbarButton> createState() => _ToolbarButtonState();
-}
-
-class _ToolbarButtonState extends State<_ToolbarButton> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final motionSettings = MotionSettings.fromMediaQuery(context);
+    final s = context.sketch;
 
     return Semantics(
-      label: widget.label,
-      button: true,
-      child: GestureDetector(
-        onTap: () {
-          PinpointHaptics.light();
-          widget.onTap();
-        },
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
-        child: AnimatedScale(
-          scale: _isPressed ? 0.9 : 1.0,
-          duration: motionSettings.getDuration(PinpointAnimations.veryFast),
-          curve: motionSettings.getCurve(PinpointAnimations.sharp),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
+      container: true,
+      label: semanticLabel,
+      child: Container(
+        height: height,
+        decoration: ShapeDecoration(
+          color: s.inverse,
+          shape: const StadiumBorder(),
+          shadows: SketchShadows.dock,
+        ),
+        clipBehavior: Clip.antiAlias,
+        padding: const EdgeInsetsDirectional.only(start: 6, end: 4),
+        child: Row(
+          children: [
+            if (onColorPressed != null)
+              _ColorDot(
+                color: color,
+                label: colorLabel ?? '',
+                onPressed: onColorPressed!,
+              ),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsetsDirectional.only(start: 6, end: 4),
+                child: Row(
+                  children: [
+                    for (final item in items) _ToolButton(item: item),
+                  ],
+                ),
+              ),
             ),
-            child: Icon(
-              widget.icon,
-              size: 20,
-              color: widget.toolbarStyle.iconColor,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 22px dot with an inverse gap ring and an on-inverse outer ring.
+class _ColorDot extends StatelessWidget {
+  const _ColorDot({
+    required this.color,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final Color? color;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.sketch;
+    final fill = color ?? s.pen;
+    return SketchPressable(
+      onTap: onPressed,
+      semanticLabel: label,
+      child: SizedBox(
+        width: 44,
+        height: EditorToolbar.height,
+        child: Center(
+          child: Container(
+            width: 29,
+            height: 29,
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border:
+                  Border.all(color: s.onInverse, width: SketchStroke.outline),
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: fill,
+                shape: BoxShape.circle,
+                // A pastel keeps its ink outline (visible on the cream dark
+                // toolbar); the pen colour stands on its own.
+                border: color == null
+                    ? null
+                    : Border.all(
+                        color: SketchPastels.onPastel,
+                        width: SketchStroke.pastel),
+              ),
             ),
           ),
         ),
@@ -294,15 +160,93 @@ class _ToolbarButtonState extends State<_ToolbarButton> {
   }
 }
 
-/// Toolbar divider
-class _ToolbarDivider extends StatelessWidget {
+class _ToolButton extends StatelessWidget {
+  const _ToolButton({required this.item});
+
+  final EditorToolbarItem item;
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      width: 1,
-      height: 24,
-      color: theme.colorScheme.outline.withValues(alpha: 0.3),
+    final s = context.sketch;
+    final t = context.type;
+    final active = item.active;
+    final fg = active ? s.inverse : s.onInverse;
+    final dur = SketchMotion.of(context, SketchMotion.fast);
+
+    final Widget glyph = item.glyph != null
+        ? Text(
+            item.glyph!,
+            maxLines: 1,
+            textScaler: TextScaler.noScaling,
+            style: t.button
+                .copyWith(color: fg, height: 1, decorationColor: fg)
+                .merge(item.glyphStyle),
+          )
+        : Icon(item.icon, size: 20, color: fg);
+
+    return SketchPressable(
+      onTap: item.onPressed,
+      semanticLabel: item.semanticLabel,
+      selected: active,
+      enabled: item.onPressed != null,
+      child: SizedBox(
+        width: 42,
+        height: EditorToolbar.height,
+        child: Center(
+          child: AnimatedContainer(
+            duration: dur,
+            curve: SketchMotion.enter,
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: active ? s.onInverse : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: ExcludeSemantics(child: glyph),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Positions an [EditorToolbar] the way the editor floats it: inset 16 from
+/// the sides, 30 from the bottom with the keyboard closed, 8 above it when
+/// open. Width is capped so it stays a pill on tablets.
+///
+/// [keyboardOpen] is passed in rather than read here: inside a resizing
+/// [Scaffold] body the keyboard inset has already been removed from the
+/// [MediaQuery].
+class EditorToolbarDock extends StatelessWidget {
+  const EditorToolbarDock({
+    super.key,
+    required this.child,
+    this.keyboardOpen = false,
+  });
+
+  final Widget child;
+  final bool keyboardOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final bottom = keyboardOpen
+        ? 8.0
+        : (mq.padding.bottom + 8 > EditorToolbar.bottomGap
+            ? mq.padding.bottom + 8
+            : EditorToolbar.bottomGap);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          EditorToolbar.inset, 0, EditorToolbar.inset, bottom),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: ConstrainedBox(
+          constraints:
+              const BoxConstraints(maxWidth: SketchSpace.maxContentWidth - 40),
+          child: child,
+        ),
+      ),
     );
   }
 }

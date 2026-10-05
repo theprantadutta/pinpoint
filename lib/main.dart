@@ -38,7 +38,6 @@ import 'services/refresh_rate_controller.dart';
 import 'services/notification_channels.dart';
 import 'screens/auth_screen.dart';
 import 'package:pinpoint/services/subscription_service.dart';
-import 'package:pinpoint/design_system/theme.dart';
 import 'package:flutter/services.dart';
 
 // void main() async {
@@ -368,6 +367,11 @@ class AuthenticationFailedApp extends StatelessWidget {
         ...material_ui.GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: LocaleController.supportedLocales,
+      // Follows the device's light/dark setting: no ThemeController exists
+      // this early.
+      theme: PinpointTheme.light(),
+      darkTheme: PinpointTheme.dark(),
+      debugShowCheckedModeBanner: false,
       // onGenerateTitle rather than `title`: the latter is evaluated with the
       // context *above* MaterialApp, where Localizations does not yet exist.
       onGenerateTitle: (context) => AppL10n.of(context).startupAuthRequired,
@@ -376,33 +380,18 @@ class AuthenticationFailedApp extends StatelessWidget {
       // Localizations this MaterialApp installs. Reading AppL10n from it finds
       // nothing and throws on the null check.
       home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.lock, size: 64, color: Colors.red),
-                SizedBox(height: 16),
-                Text(
-                  AppL10n.of(context).startupAuthFailed,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  AppL10n.of(context).startupRestartApp,
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () {
-                    // Try authentication again
-                    _retryAuthentication();
-                  },
-                  child: Text(AppL10n.of(context).startupTryAgain),
-                ),
-              ],
-            ),
+        builder: (context) => _StartupErrorScaffold(
+          sticker: const StickerTile(
+            color: SketchPastels.pink,
+            size: 76,
+            angle: -6,
+            icon: Icons.lock_rounded,
           ),
+          title: AppL10n.of(context).startupAuthFailed,
+          message: AppL10n.of(context).startupRestartApp,
+          actionLabel: AppL10n.of(context).startupTryAgain,
+          // Try authentication again
+          onAction: _retryAuthentication,
         ),
       ),
     );
@@ -437,6 +426,11 @@ class InitializationErrorApp extends StatelessWidget {
         ...material_ui.GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: LocaleController.supportedLocales,
+      // Follows the device's light/dark setting: no ThemeController exists
+      // this early.
+      theme: PinpointTheme.light(),
+      darkTheme: PinpointTheme.dark(),
+      debugShowCheckedModeBanner: false,
       // onGenerateTitle rather than `title`: the latter is evaluated with the
       // context *above* MaterialApp, where Localizations does not yet exist.
       onGenerateTitle: (context) => AppL10n.of(context).startupInitError,
@@ -445,34 +439,88 @@ class InitializationErrorApp extends StatelessWidget {
       // Localizations this MaterialApp installs. Reading AppL10n from it finds
       // nothing and throws on the null check.
       home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error, size: 64, color: Colors.orange),
-                  SizedBox(height: 16),
-                  Text(
-                    AppL10n.of(context).startupInitFailed,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    AppL10n.of(context).startupErrorDetail(error),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Restart the app
-                      main();
-                    },
-                    child: Text(AppL10n.of(context).commonRetry),
-                  ),
-                ],
+        builder: (context) => _StartupErrorScaffold(
+          sticker: const StickerTile(
+            color: SketchPastels.yellow,
+            size: 76,
+            angle: -6,
+            icon: Icons.priority_high_rounded,
+          ),
+          title: AppL10n.of(context).startupInitFailed,
+          message: AppL10n.of(context).startupErrorDetail(error),
+          messageIsError: true,
+          actionLabel: AppL10n.of(context).commonRetry,
+          // Restart the app
+          onAction: main,
+        ),
+      ),
+    );
+  }
+}
+
+/// The body both startup error apps share: a tilted sticker, a 22/800
+/// title, a muted (or error-coloured) line and one inverse pill. Colours
+/// come from the Sketchbook theme each app installs.
+class _StartupErrorScaffold extends StatelessWidget {
+  const _StartupErrorScaffold({
+    required this.sticker,
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+    this.messageIsError = false,
+  });
+
+  final Widget sticker;
+  final String title;
+  final String message;
+  final String actionLabel;
+  final VoidCallback onAction;
+  final bool messageIsError;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.sketch;
+    final t = context.type;
+    return Scaffold(
+      backgroundColor: s.bg,
+      body: DoodleBackground(
+        top: DoodleBackground.settingsTop,
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(SketchSpace.screenX + 4),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ExcludeSemantics(child: sticker),
+                    const SizedBox(height: 24),
+                    Semantics(
+                      header: true,
+                      child: Text(title,
+                          textAlign: TextAlign.center, style: t.emptyTitle),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: t.bodyRegular.copyWith(
+                        fontSize: 14,
+                        height: 1.5,
+                        color:
+                            messageIsError ? SketchFunctional.error : s.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    PillButton(
+                      label: actionLabel,
+                      expand: false,
+                      onPressed: onAction,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -519,121 +567,56 @@ class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final s = context.sketch;
+    final t = context.type;
     return PopScope(
       canPop: false, // Prevent back button from dismissing
       child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF1a1a2e),
-                Color(0xFF16213e),
-              ],
-            ),
-          ),
+        backgroundColor: s.bg,
+        body: DoodleBackground(
+          top: DoodleBackground.settingsTop,
           child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Update icon
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(60),
-                      border: Border.all(
-                        color: Colors.amber.withValues(alpha: 0.5),
-                        width: 3,
-                      ),
+            child: SketchContentWidth(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    StickerTile(
+                      color: s.highlight,
+                      size: 104,
+                      angle: -7,
+                      shadowOffset: 4,
+                      icon: Icons.system_update_rounded,
                     ),
-                    child: const Icon(
-                      Icons.system_update,
-                      size: 64,
-                      color: Colors.amber,
+                    const SizedBox(height: 36),
+                    Text(
+                      l10n.updateRequiredTitle,
+                      style: t.pageTitle,
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  // Title
-                  Text(
-                    AppL10n.of(context).updateRequiredTitle,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    const SizedBox(height: 14),
+                    Text(
+                      l10n.updateRequiredBody,
+                      style: t.bodyRegular.copyWith(color: s.muted),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Description
-                  Text(
-                    AppL10n.of(context).updateRequiredBody,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withValues(alpha: 0.8),
-                      height: 1.5,
+                    const SizedBox(height: 10),
+                    Text(
+                      l10n.updateRequiredNote,
+                      style: t.bodySmall,
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    AppL10n.of(context).updateRequiredNote,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 48),
-
-                  // Update button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
+                    const SizedBox(height: 40),
+                    PillButton(
+                      label: l10n.updateNow,
+                      icon: Icons.download_rounded,
+                      loading: _isUpdating,
                       onPressed: _isUpdating ? null : _retryUpdate,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                        foregroundColor: Colors.black,
-                        disabledBackgroundColor:
-                            Colors.amber.withValues(alpha: 0.5),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isUpdating
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.black,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.download_rounded, size: 24),
-                                const SizedBox(width: 12),
-                                Text(
-                                  AppL10n.of(context).updateNow,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -764,6 +747,46 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
     }
   }
 
+  /// Last window size seen, so keyboard insets (which also fire
+  /// [didChangeMetrics]) do not re-send the system bar style every frame.
+  Size? _lastWindowSize;
+  bool _systemBarsRestorePending = false;
+
+  // Android resets the window's system bar appearance to the SYSTEM theme on a
+  // configuration change (rotation, dark mode toggled in quick settings). The
+  // app's AnnotatedRegion does not notice — the style it wants has not changed,
+  // and SystemChrome skips sending an unchanged style — so an app set to Light
+  // on a phone in dark mode is left with white status-bar icons on a cream
+  // background until the next resume. Asking the engine to restore its overlays
+  // re-applies the last style it was given.
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isEmpty) return;
+    final size = views.first.physicalSize;
+    if (size == _lastWindowSize) return;
+    final hadSize = _lastWindowSize != null;
+    _lastWindowSize = size;
+    if (hadSize) _restoreSystemBarsAfterFrame();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    _restoreSystemBarsAfterFrame();
+  }
+
+  void _restoreSystemBarsAfterFrame() {
+    if (_systemBarsRestorePending) return;
+    _systemBarsRestorePending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _systemBarsRestorePending = false;
+      SystemChrome.restoreSystemUIOverlays();
+    });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
   /// Register callback for when user session expires (refresh token also expired)
   void _registerSessionExpiryHandler() {
     ApiService().onSessionExpired = () {
@@ -848,7 +871,9 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
           create: (_) => BackendAuthService()..initialize(),
         ),
         ChangeNotifierProvider(
-          create: (_) => FilterService(),
+          // Was a bare FilterService(): the instance initialised during
+          // startup was thrown away and this one never loaded saved filters.
+          create: (_) => FilterService()..initialize(),
         ),
         ChangeNotifierProvider(
           create: (_) => SearchService()..initialize(),
@@ -898,13 +923,15 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
             ),
             themeMode: themeController.mode,
             theme: PinpointTheme.light(
-              accentColor: themeController.accent,
+              accent: themeController.accent,
               highContrast: themeController.highContrast,
+              doodlesEnabled: themeController.doodlesEnabled,
               fontFamily: themeController.fontFamily,
             ),
             darkTheme: PinpointTheme.dark(
-              accentColor: themeController.accent,
+              accent: themeController.accent,
               highContrast: themeController.highContrast,
+              doodlesEnabled: themeController.doodlesEnabled,
               fontFamily: themeController.fontFamily,
             ),
             debugShowCheckedModeBanner: false,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../design_system/design_system.dart';
 import '../screens/subscription_screen.dart';
@@ -8,12 +7,25 @@ import '../services/analytics/analytics_facade.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:pinpoint/constants/premium_limits.dart';
 
-/// Dialog shown when user hits a premium limit
+/// The sheet shown when a free user hits a limit: one sticker, a title such
+/// as "You've used 5 of 5 folders", one line of copy, an inverse "See Pro"
+/// and an outline "Not now".
+///
+/// Use the static `show*` entry points; each records `premium_gate_shown`
+/// with its feature, exactly as before the redesign.
 class PremiumGateDialog extends StatelessWidget {
   final String title;
   final String message;
   final IconData icon;
+
+  /// Overrides the "See Pro" label.
   final String? ctaText;
+
+  /// The sticker's pastel.
+  final Color pastel;
+
+  /// A short label drawn on the sticker instead of [icon] ("OCR").
+  final String? glyph;
 
   const PremiumGateDialog({
     super.key,
@@ -21,172 +33,82 @@ class PremiumGateDialog extends StatelessWidget {
     required this.message,
     required this.icon,
     this.ctaText,
+    this.pastel = SketchPastels.yellow,
+    this.glyph,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final t = context.type;
+    final s = context.sketch;
+    final l10n = AppL10n.of(context);
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 400),
-        decoration: BoxDecoration(
-          gradient: isDark
-              ? PinpointGradients.crescentInk
-              : PinpointGradients.oceanQuartz,
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(
-            color: cs.primary.withValues(alpha: 0.3),
-            width: 1,
+    return SketchSheet(
+      scrollable: false,
+      titleWidget: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            // Room for the tilt and the hard shadow.
+            padding: const EdgeInsetsDirectional.only(start: 4, top: 4),
+            child: StickerTile(
+              color: pastel,
+              size: glyph == null ? 60 : 64,
+              height: glyph == null ? null : 46,
+              angle: -8,
+              icon: glyph == null ? icon : null,
+              glyph: glyph,
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icon
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: cs.primary.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(40),
-                  border: Border.all(
-                    color: cs.primary.withValues(alpha: 0.3),
-                    width: 2,
-                  ),
-                ),
-                child: Icon(
-                  icon,
-                  size: 40,
-                  color: cs.primary,
-                ),
-              )
-                  .animate()
-                  .scale(
-                    duration: 500.ms,
-                    curve: Curves.elasticOut,
-                  )
-                  .shimmer(
-                      duration: 1500.ms,
-                      color: cs.primary.withValues(alpha: 0.3)),
-
-              const SizedBox(height: 24),
-
-              // Title
-              Text(
-                title,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isDark
-                      ? PinpointColors.darkTextPrimary
-                      : PinpointColors.lightTextPrimary,
-                ),
-                textAlign: TextAlign.center,
-              )
-                  .animate(delay: 100.ms)
-                  .fadeIn(duration: 400.ms)
-                  .slideY(begin: 0.2, end: 0),
-
-              const SizedBox(height: 12),
-
-              // Message
-              Text(
-                message,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isDark
-                      ? PinpointColors.darkTextSecondary
-                      : PinpointColors.lightTextSecondary,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              )
-                  .animate(delay: 200.ms)
-                  .fadeIn(duration: 400.ms)
-                  .slideY(begin: 0.2, end: 0),
-
-              const SizedBox(height: 32),
-
-              // CTA Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    context.push(SubscriptionScreen.kRouteName);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: cs.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.stars_rounded, size: 20),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          ctaText ?? AppL10n.of(context).gateUpgradeCta,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-                  .animate(delay: 300.ms)
-                  .fadeIn(duration: 400.ms)
-                  .slideY(begin: 0.2, end: 0),
-
-              const SizedBox(height: 12),
-
-              // Maybe Later button
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  AppL10n.of(context).gateMaybeLater,
-                  style: TextStyle(
-                    color: isDark
-                        ? PinpointColors.darkTextSecondary
-                        : PinpointColors.lightTextSecondary,
-                  ),
-                ),
-              ).animate(delay: 400.ms).fadeIn(duration: 400.ms),
-            ],
+          const SizedBox(height: 18),
+          Semantics(
+            header: true,
+            child: Text(title, style: t.emptyTitle),
           ),
-        ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: t.bodyRegular.copyWith(fontSize: 14, color: s.muted),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          PillButton(
+            label: ctaText ?? l10n.pwSeePro,
+            onPressed: () {
+              // Resolve the router before popping: the sheet is a Navigator
+              // route, and its context is unsafe once it is gone.
+              final router = GoRouter.maybeOf(context);
+              Navigator.of(context).pop();
+              router?.push(SubscriptionScreen.kRouteName);
+            },
+          ),
+          const SizedBox(height: 10),
+          PillButton.secondary(
+            label: l10n.pwNotNow,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
       ),
     );
   }
 
+  static Future<void> _show(BuildContext context, WidgetBuilder builder) =>
+      showSketchSheet<void>(context: context, builder: builder);
+
   /// Show premium gate dialog for sync limit
   static Future<void> showSyncLimit(BuildContext context, int remaining) {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'sync');
-    return showDialog(
-      context: context,
-      builder: (context) => PremiumGateDialog(
-        title: AppL10n.of(context).gateSyncTitle,
-        message: AppL10n.of(context).gateSyncMessage(PremiumLimits.maxSyncedNotesForFree),
-        icon: Icons.cloud_off_rounded,
-        ctaText: AppL10n.of(context).gateSyncCta,
+    return _show(
+      context,
+      (context) => PremiumGateDialog(
+        title: AppL10n.of(context)
+            .pwGateSyncTitle(PremiumLimits.maxSyncedNotesForFree),
+        message: AppL10n.of(context).pwGateSyncBody,
+        icon: Icons.cloud_sync_rounded,
+        pastel: SketchPastels.sky,
       ),
     );
   }
@@ -194,13 +116,15 @@ class PremiumGateDialog extends StatelessWidget {
   /// Show premium gate dialog for OCR limit
   static Future<void> showOcrLimit(BuildContext context, int remaining) {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'ocr');
-    return showDialog(
-      context: context,
-      builder: (context) => PremiumGateDialog(
-        title: AppL10n.of(context).gateOcrTitle,
-        message: AppL10n.of(context).gateOcrMessage(PremiumLimits.maxOcrScansPerMonthForFree),
+    return _show(
+      context,
+      (context) => PremiumGateDialog(
+        title: AppL10n.of(context)
+            .pwGateOcrTitle(PremiumLimits.maxOcrScansPerMonthForFree),
+        message: AppL10n.of(context).pwGateOcrBody,
         icon: Icons.document_scanner_rounded,
-        ctaText: AppL10n.of(context).gateOcrCta,
+        glyph: 'OCR',
+        pastel: SketchPastels.sky,
       ),
     );
   }
@@ -208,13 +132,14 @@ class PremiumGateDialog extends StatelessWidget {
   /// Show premium gate dialog for export limit
   static Future<void> showExportLimit(BuildContext context) {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'export');
-    return showDialog(
-      context: context,
-      builder: (context) => PremiumGateDialog(
-        title: AppL10n.of(context).gateExportTitle,
-        message: AppL10n.of(context).gateExportMessage(PremiumLimits.maxExportsPerMonthForFree),
-        icon: Icons.file_download_off_rounded,
-        ctaText: AppL10n.of(context).gateExportCta,
+    return _show(
+      context,
+      (context) => PremiumGateDialog(
+        title: AppL10n.of(context)
+            .pwGateExportTitle(PremiumLimits.maxExportsPerMonthForFree),
+        message: AppL10n.of(context).pwGateExportBody,
+        icon: Icons.file_download_rounded,
+        pastel: SketchPastels.mint,
       ),
     );
   }
@@ -222,13 +147,14 @@ class PremiumGateDialog extends StatelessWidget {
   /// Show premium gate dialog for voice recording duration
   static Future<void> showVoiceRecordingLimit(BuildContext context) {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'voice_recording');
-    return showDialog(
-      context: context,
-      builder: (context) => PremiumGateDialog(
-        title: AppL10n.of(context).gateRecordingTitle,
-        message: AppL10n.of(context).gateRecordingMessage(PremiumLimits.maxVoiceRecordingDurationForFree ~/ 60),
-        icon: Icons.mic_off_rounded,
-        ctaText: AppL10n.of(context).gateRecordingCta,
+    return _show(
+      context,
+      (context) => PremiumGateDialog(
+        title: AppL10n.of(context).pwGateVoiceTitle(
+            PremiumLimits.maxVoiceRecordingDurationForFree ~/ 60),
+        message: AppL10n.of(context).pwGateVoiceBody,
+        icon: Icons.mic_rounded,
+        pastel: SketchPastels.pink,
       ),
     );
   }
@@ -236,13 +162,14 @@ class PremiumGateDialog extends StatelessWidget {
   /// Show premium gate dialog for folder limit
   static Future<void> showFolderLimit(BuildContext context) {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'folders');
-    return showDialog(
-      context: context,
-      builder: (context) => PremiumGateDialog(
-        title: AppL10n.of(context).gateFolderTitle,
-        message: AppL10n.of(context).gateFolderMessage(PremiumLimits.maxFoldersForFree),
-        icon: Icons.folder_off_rounded,
-        ctaText: AppL10n.of(context).gateFolderCta,
+    return _show(
+      context,
+      (context) => PremiumGateDialog(
+        title: AppL10n.of(context)
+            .pwGateFolderTitle(PremiumLimits.maxFoldersForFree),
+        message: AppL10n.of(context).pwGateFolderBody,
+        icon: Icons.folder_rounded,
+        pastel: SketchPastels.yellow,
       ),
     );
   }
@@ -250,13 +177,14 @@ class PremiumGateDialog extends StatelessWidget {
   /// Show premium gate dialog for theme color
   static Future<void> showThemeLimit(BuildContext context) {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'theme');
-    return showDialog(
-      context: context,
-      builder: (context) => PremiumGateDialog(
-        title: AppL10n.of(context).gateThemeTitle,
-        message: AppL10n.of(context).gateThemeMessage(PremiumLimits.totalThemeColors),
+    return _show(
+      context,
+      (context) => PremiumGateDialog(
+        title: AppL10n.of(context).pwGateThemeTitle,
+        message: AppL10n.of(context)
+            .pwGateThemeBody(PremiumLimits.totalThemeColors),
         icon: Icons.palette_rounded,
-        ctaText: AppL10n.of(context).gateThemeCta,
+        pastel: SketchPastels.lavender,
       ),
     );
   }
@@ -265,13 +193,13 @@ class PremiumGateDialog extends StatelessWidget {
   static Future<void> showFileAttachmentLimit(
       BuildContext context, int current, int max) {
     getIt<AnalyticsFacade>().trackPremiumGateShown(feature: 'file_attachment');
-    return showDialog(
-      context: context,
-      builder: (context) => PremiumGateDialog(
-        title: AppL10n.of(context).gateAttachmentTitle,
-        message: AppL10n.of(context).gateAttachmentMessage(max),
+    return _show(
+      context,
+      (context) => PremiumGateDialog(
+        title: AppL10n.of(context).pwGateAttachTitle(max),
+        message: AppL10n.of(context).pwGateAttachBody,
         icon: Icons.attach_file_rounded,
-        ctaText: AppL10n.of(context).gateAttachmentCta,
+        pastel: SketchPastels.yellow,
       ),
     );
   }

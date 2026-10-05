@@ -1,8 +1,13 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/shared_preference_keys.dart';
+import '../design_system/design_system.dart';
 import '../services/backend_auth_service.dart';
 import '../services/encryption_service.dart';
 import '../services/zero_knowledge_service.dart';
@@ -23,19 +28,26 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  String _statusMessage = '';
+  /// Nothing holds the user here: the splash leaves the moment startup work
+  /// is done. Only if that work runs past this does a caption appear.
+  static const Duration _lateCaptionAfter = Duration(milliseconds: 1500);
+
+  Timer? _lateTimer;
+  bool _late = false;
 
   @override
   void initState() {
     super.initState();
+    _lateTimer = Timer(_lateCaptionAfter, () {
+      if (mounted) setState(() => _late = true);
+    });
     _checkAndNavigate();
   }
 
-  void _updateStatus(String message) {
-    if (!mounted) return;
-    setState(() {
-      _statusMessage = message;
-    });
+  @override
+  void dispose() {
+    _lateTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkAndNavigate() async {
@@ -53,7 +65,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Navigate to onboarding if not completed
     if (!hasCompletedOnboarding) {
-      debugPrint('🔵 [Splash] Navigating to onboarding (${stopwatch.elapsedMilliseconds}ms)');
+      debugPrint(
+          '🔵 [Splash] Navigating to onboarding (${stopwatch.elapsedMilliseconds}ms)');
       context.go(OnboardingScreen.kRouteName);
       return;
     }
@@ -65,13 +78,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Navigate to terms acceptance if not accepted
     if (!hasAcceptedTerms) {
-      debugPrint('🔵 [Splash] Navigating to terms (${stopwatch.elapsedMilliseconds}ms)');
+      debugPrint(
+          '🔵 [Splash] Navigating to terms (${stopwatch.elapsedMilliseconds}ms)');
       context.go(TermsAcceptanceScreen.kRouteName);
       return;
     }
 
     // Get auth service (already initialized by provider with caching)
-    _updateStatus(AppL10n.of(context).splashCheckingAuth);
     final backendAuth = context.read<BackendAuthService>();
 
     // Wait for auth initialization to complete (uses cached data, very fast)
@@ -84,7 +97,6 @@ class _SplashScreenState extends State<SplashScreen> {
     // Navigate based on authentication status
     if (backendAuth.isAuthenticated) {
       debugPrint('✅ [Splash] User authenticated, setting up encryption...');
-      _updateStatus(AppL10n.of(context).splashSettingUp);
 
       // Zero-knowledge accounts: NEVER generate a key here (that would diverge
       // from the real, wrapped key). Only load an existing local key, then gate
@@ -115,7 +127,8 @@ class _SplashScreenState extends State<SplashScreen> {
       try {
         if (!SecureEncryptionService.isInitialized) {
           await SecureEncryptionService.initialize();
-          debugPrint('✅ [Splash] Encryption initialized (${stopwatch.elapsedMilliseconds}ms)');
+          debugPrint(
+              '✅ [Splash] Encryption initialized (${stopwatch.elapsedMilliseconds}ms)');
         }
       } catch (e) {
         debugPrint('⚠️ [Splash] Encryption init failed: $e');
@@ -125,10 +138,12 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
 
       // Navigate to home immediately - sync happens in background there
-      debugPrint('🚀 [Splash] Navigating to home (${stopwatch.elapsedMilliseconds}ms total)');
+      debugPrint(
+          '🚀 [Splash] Navigating to home (${stopwatch.elapsedMilliseconds}ms total)');
       context.go(HomeScreen.kRouteName);
     } else {
-      debugPrint('⚠️ [Splash] Not authenticated, navigating to auth (${stopwatch.elapsedMilliseconds}ms)');
+      debugPrint(
+          '⚠️ [Splash] Not authenticated, navigating to auth (${stopwatch.elapsedMilliseconds}ms)');
 
       // Initialize encryption without cloud sync (will be synced after login)
       if (!SecureEncryptionService.isInitialized) {
@@ -141,138 +156,120 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
+  Widget build(BuildContext context) => SplashView(showLateCaption: _late);
+}
+
+/// The Flutter splash, shown while the database opens, keys unwrap and auth
+/// resolves: the brand sticker drops in with a spring (scale 0.8 → 1,
+/// rotation 0 → −7°) while the doodle swooshes draw on behind it (900ms).
+///
+/// Purely presentational, so the static frame can be golden-tested.
+class SplashView extends StatefulWidget {
+  const SplashView({super.key, this.showLateCaption = false});
+
+  /// Show "Unlocking your notes…" — startup is taking longer than usual.
+  final bool showLateCaption;
+
+  @override
+  State<SplashView> createState() => _SplashViewState();
+}
+
+class _SplashViewState extends State<SplashView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _drop = AnimationController.unbounded(
+    vsync: this,
+  );
+
+  /// Underdamped, so the sticker overshoots a touch and settles (~0.5s).
+  static const SpringDescription _spring =
+      SpringDescription(mass: 1, stiffness: 260, damping: 18);
+
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (SketchMotion.enabled(context)) {
+      _drop.animateWith(SpringSimulation(_spring, 0, 1, 0));
+    } else {
+      _drop.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _drop.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final s = context.sketch;
+    final t = context.type;
+    final l10n = AppL10n.of(context);
+    // The 200px doodle band sits just behind the sticker.
+    final doodleTop = MediaQuery.sizeOf(context).height / 2 - 190;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: SizedBox(
-          width: double.infinity,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+      backgroundColor: s.bg,
+      body: DoodleBackground(
+        top: doodleTop,
+        squiggle: true,
+        animate: true,
+        child: SafeArea(
+          child: SizedBox.expand(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Spacer(flex: 2),
-
-                // Logo with enhanced shadow
-                Center(
-                  child: Hero(
-                    tag: 'app_logo',
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(28),
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            colorScheme.primary.withValues(alpha: 0.1),
-                            colorScheme.secondary.withValues(alpha: 0.05),
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: colorScheme.primary.withValues(alpha: 0.3),
-                            blurRadius: 30,
-                            spreadRadius: 5,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(28),
-                        child: Image.asset(
-                          'assets/images/pinpoint-logo.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
+                const Spacer(flex: 5),
+                AnimatedBuilder(
+                  animation: _drop,
+                  builder: (context, child) {
+                    final v = _drop.value;
+                    return Transform.rotate(
+                      angle: -7 * v * math.pi / 180,
+                      child:
+                          Transform.scale(scale: 0.8 + 0.2 * v, child: child),
+                    );
+                  },
+                  // The rotation is animated above, so the sticker itself
+                  // starts upright.
+                  child: const ExcludeSemantics(
+                    child: BrandSticker(size: 112, angle: 0, shadow: true),
                   ),
                 ),
-
-                const SizedBox(height: 40),
-
-                // App Name
-                Center(
+                const SizedBox(height: 28),
+                Text('Pinpoint', style: t.screenTitle),
+                const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SketchSpace.screenX),
                   child: Text(
-                    'PinPoint',
-                    style: theme.textTheme.displayMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                      letterSpacing: -1.0,
-                    ),
+                    l10n.obSplashTagline,
                     textAlign: TextAlign.center,
+                    style: t.bodyRegular.copyWith(fontSize: 14, color: s.muted),
                   ),
                 ),
-
-                const SizedBox(height: 8),
-
-                // Tagline
+                const Spacer(flex: 4),
                 SizedBox(
-                  width: double.infinity,
-                  child: Text(
-                    AppL10n.of(context).splashTagline,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      letterSpacing: 0.3,
-                    ),
-                    textAlign: TextAlign.center,
+                  height: 48,
+                  child: AnimatedOpacity(
+                    opacity: widget.showLateCaption ? 1 : 0,
+                    duration: SketchMotion.of(context, SketchMotion.base),
+                    child: widget.showLateCaption
+                        ? Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              l10n.obSplashUnlocking,
+                              textAlign: TextAlign.center,
+                              style: t.caption,
+                            ),
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 ),
-
-                const Spacer(flex: 2),
-
-                // Simple loading indicator
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.primaryContainer.withValues(alpha: 0.3),
-                        colorScheme.secondaryContainer.withValues(alpha: 0.2),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withValues(alpha: 0.2),
-                        blurRadius: 24,
-                        spreadRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 4,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Status message
-                Text(
-                  _statusMessage,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const Spacer(flex: 2),
+                const Spacer(),
               ],
             ),
           ),
