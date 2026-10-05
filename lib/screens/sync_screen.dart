@@ -1,13 +1,21 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
 import 'package:pinpoint/sync/sync_service.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/widgets/premium_gate_dialog.dart';
+import '../components/settings/settings_format.dart';
+import '../components/settings/settings_more_groups.dart';
+import '../components/settings/settings_widgets.dart';
 import '../design_system/design_system.dart';
+import '../navigation/app_navigation.dart';
+import '../services/backend_auth_service.dart';
+import '../services/pending_changes_service.dart';
+import 'sync_debug_screen.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
-import 'package:pinpoint/util/localized_dates.dart';
 
 class SyncScreen extends StatefulWidget {
   static const String kRouteName = '/sync';
@@ -20,6 +28,7 @@ class SyncScreen extends StatefulWidget {
 
 class _SyncScreenState extends State<SyncScreen> {
   late SyncManager _syncManager;
+  late final Stream<int> _pending = PendingChangesService.watchCount();
   bool _isSyncing = false;
 
   @override
@@ -198,106 +207,100 @@ class _SyncScreenState extends State<SyncScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final l10n = AppL10n.of(context);
+    final t = context.type;
+    final bottom = MediaQuery.paddingOf(context).bottom;
 
-    return GradientScaffold(
-      appBar: GlassAppBar(
-        title: Row(
-          children: [
-            Icon(Icons.sync_rounded, color: cs.primary, size: 20),
-            const SizedBox(width: 8),
-            Text(AppL10n.of(context).syncTitle),
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Text(
-              AppL10n.of(context).syncCloudSync,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              AppL10n.of(context).syncAcrossDevices,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: cs.onSurface.withAlpha(180),
-              ),
-            ),
-            const SizedBox(height: 24),
+    final status = _isSyncing ? SyncStatus.syncing : _syncManager.status;
+    final last = _syncManager.lastSyncDateTime;
+    final SyncStickerState sticker = switch (status) {
+      SyncStatus.syncing => SyncStickerState.syncing,
+      SyncStatus.error => SyncStickerState.error,
+      SyncStatus.synced => SyncStickerState.synced,
+      SyncStatus.idle =>
+        last == null ? SyncStickerState.idle : SyncStickerState.synced,
+    };
+    final title = switch (status) {
+      SyncStatus.synced => l10n.syncStatusSynced,
+      SyncStatus.error => l10n.syncStatusError,
+      SyncStatus.syncing => l10n.syncStatusSyncing,
+      SyncStatus.idle =>
+        last == null ? l10n.syncStatusNotSynced : l10n.syncStatusSynced,
+    };
 
-            // Sync status card
-            GlassContainer(
-              padding: const EdgeInsets.all(20),
-              borderRadius: 20,
+    final auth = context.read<BackendAuthService>();
+    final showDebug =
+        kDebugMode || auth.userEmail == kSettingsAdminEmail;
+
+    return SketchScaffold(
+      title: l10n.syncTitle,
+      doodleTop: DoodleBackground.settingsTop,
+      body: ListView(
+        padding: EdgeInsets.only(top: 18, bottom: 40 + bottom),
+        children: [
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: SketchSpace.screenX),
+            child: SketchCard(
+              radius: SketchRadius.group,
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  SyncStatusSticker(state: sticker),
+                  const SizedBox(height: 18),
+                  Semantics(
+                    header: true,
+                    liveRegion: true,
+                    child: Text(title,
+                        textAlign: TextAlign.center, style: t.emptyTitle),
+                  ),
+                  const SizedBox(height: 6),
                   Text(
-                    AppL10n.of(context).syncStatus,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.1,
+                    last == null
+                        ? l10n.stNotSyncedYet
+                        : l10n.syncLastSync(relativeAgo(context, last.toLocal())),
+                    textAlign: TextAlign.center,
+                    style: t.bodySmall,
+                  ),
+                  const SizedBox(height: 4),
+                  StreamBuilder<int>(
+                    stream: _pending,
+                    builder: (context, snap) => Text(
+                      l10n.stPendingChanges(snap.data ?? 0),
+                      textAlign: TextAlign.center,
+                      style: t.bodySmall,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  if (status == SyncStatus.error &&
+                      _syncManager.lastSyncMessage.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    SketchErrorPill(message: _syncManager.lastSyncMessage),
+                  ],
+                  const SizedBox(height: 20),
+                  PillButton(
+                    label: l10n.stSyncNow,
+                    icon: Icons.sync_rounded,
+                    loading: _isSyncing,
+                    onPressed: _isSyncing ? null : _triggerSync,
+                  ),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
-                      Icon(
-                        _syncManager.status == SyncStatus.synced
-                            ? Icons.check_circle_rounded
-                            : _syncManager.status == SyncStatus.error
-                                ? Icons.error_rounded
-                                : Icons.info_rounded,
-                        color: _syncManager.status == SyncStatus.synced
-                            ? Colors.green
-                            : _syncManager.status == SyncStatus.error
-                                ? cs.error
-                                : cs.primary,
-                        size: 28,
-                      ),
-                      const SizedBox(width: 16),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _syncManager.status == SyncStatus.synced
-                                  ? AppL10n.of(context).syncStatusSynced
-                                  : _syncManager.status == SyncStatus.error
-                                      ? AppL10n.of(context).syncStatusError
-                                      : _syncManager.status ==
-                                              SyncStatus.syncing
-                                          ? AppL10n.of(context).syncStatusSyncing
-                                          : AppL10n.of(context).syncStatusNotSynced,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _syncManager.lastSyncMessage,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: cs.onSurface.withAlpha(180),
-                              ),
-                            ),
-                            if (_syncManager.lastSyncDateTime != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                AppL10n.of(context).syncLastSync(LocalizedDates.dateTime(context, _syncManager.lastSyncDateTime!.toLocal())),
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: cs.onSurface.withAlpha(150),
-                                ),
-                              ),
-                            ],
-                          ],
+                        child: PillButton.secondary(
+                          label: l10n.syncUpload,
+                          icon: Icons.upload_rounded,
+                          height: 48,
+                          onPressed: _isSyncing ? null : _triggerUpload,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: PillButton.secondary(
+                          label: l10n.syncDownload,
+                          icon: Icons.download_rounded,
+                          height: 48,
+                          onPressed: _isSyncing ? null : _triggerDownload,
                         ),
                       ),
                     ],
@@ -305,82 +308,123 @@ class _SyncScreenState extends State<SyncScreen> {
                 ],
               ),
             ),
-
-            const SizedBox(height: 32),
-
-            // Sync actions
-            Text(
-              AppL10n.of(context).syncActions,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.1,
+          ),
+          SketchOverline(l10n.stSyncHowTitle),
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: SketchSpace.screenX),
+            child: SketchCard(
+              radius: SketchRadius.group,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Column(
+                children: [
+                  SketchBulletLine(text: l10n.stSyncHowEncrypt),
+                  SketchBulletLine(text: l10n.stSyncHowDevices),
+                  SketchBulletLine(text: l10n.stSyncHowOffline),
+                  SketchBulletLine(text: l10n.stSyncHowConflicts),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _isSyncing ? null : _triggerSync,
-                icon: _isSyncing
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.sync_rounded),
-                label: Text(AppL10n.of(context).setSyncNow),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            Row(
+          ),
+          if (showDebug) ...[
+            SketchOverline(l10n.stSectionDeveloper),
+            SketchGroup(
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _isSyncing ? null : _triggerUpload,
-                    icon: const Icon(Icons.upload_rounded),
-                    label: Text(AppL10n.of(context).syncUpload),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _isSyncing ? null : _triggerDownload,
-                    icon: const Icon(Icons.download_rounded),
-                    label: Text(AppL10n.of(context).syncDownload),
-                  ),
+                SketchRow(
+                  icon: Icons.bug_report_outlined,
+                  label: l10n.setSyncDebug,
+                  subtitle: l10n.setSyncDebugSubtitle,
+                  onTap: () {
+                    PinpointHaptics.medium();
+                    AppNavigation.router.push(SyncDebugScreen.kRouteName);
+                  },
                 ),
               ],
             ),
-
-            const SizedBox(height: 32),
-
-            // Sync info
-            Text(
-              AppL10n.of(context).syncHowItWorks,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.1,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '• Sync automatically uploads your notes to the cloud\n'
-              '• Download changes from other devices\n'
-              '• Resolve conflicts automatically\n'
-              '• Works offline - syncs when connection is restored',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                height: 1.6,
-                color: cs.onSurface.withAlpha(180),
-              ),
-            ),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+enum SyncStickerState { synced, syncing, error, idle }
+
+/// The big status sticker: mint check when synced, a yellow spinning sync
+/// arrow while syncing (still under reduced motion), pink "!" on error, and a
+/// lavender cloud before the first sync.
+class SyncStatusSticker extends StatefulWidget {
+  const SyncStatusSticker({super.key, required this.state, this.size = 96});
+
+  final SyncStickerState state;
+  final double size;
+
+  @override
+  State<SyncStatusSticker> createState() => _SyncStatusStickerState();
+}
+
+class _SyncStatusStickerState extends State<SyncStatusSticker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _spin = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateSpin();
+  }
+
+  @override
+  void didUpdateWidget(SyncStatusSticker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _updateSpin();
+  }
+
+  void _updateSpin() {
+    final spin = widget.state == SyncStickerState.syncing &&
+        SketchMotion.enabled(context);
+    if (spin && !_spin.isAnimating) {
+      _spin.repeat();
+    } else if (!spin && _spin.isAnimating) {
+      _spin.stop();
+      _spin.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _spin.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final (Color color, IconData icon) = switch (widget.state) {
+      SyncStickerState.synced => (SketchPastels.mint, Icons.check_rounded),
+      SyncStickerState.syncing => (SketchPastels.yellow, Icons.sync_rounded),
+      SyncStickerState.error =>
+        (SketchPastels.pink, Icons.priority_high_rounded),
+      SyncStickerState.idle => (SketchPastels.lavender, Icons.cloud_outlined),
+    };
+
+    final glyph = widget.state == SyncStickerState.syncing
+        ? RotationTransition(
+            turns: Tween<double>(begin: 0, end: -1).animate(_spin),
+            child: Icon(icon,
+                size: widget.size * 0.46, color: SketchPastels.onPastel),
+          )
+        : Icon(icon, size: widget.size * 0.46, color: SketchPastels.onPastel);
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 4, bottom: 4),
+      child: StickerTile(
+        color: color,
+        size: widget.size,
+        angle: -6,
+        shadowOffset: 4,
+        child: glyph,
       ),
     );
   }

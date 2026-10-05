@@ -74,7 +74,7 @@ class ThemeController extends ChangeNotifier {
     if (hc != null) _highContrast = hc;
 
     final font = prefs.getString(kSelectedFontKey);
-    if (font != null) _fontFamily = font;
+    if (font != null) _fontFamily = normalizeFontFamily(font);
 
     _loaded = true;
     notifyListeners();
@@ -122,6 +122,19 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(kSelectedFontKey, fontFamily);
+  }
+
+  /// Maps a persisted font name onto a family google_fonts knows.
+  ///
+  /// The old picker saved "Source Sans Pro", which google_fonts 8 no longer
+  /// has ("Source Sans 3" replaced it); `GoogleFonts.getFont` throws on an
+  /// unknown family, so building the theme with it would crash. Anything else
+  /// unknown falls back to the default rather than taking the app down.
+  static String normalizeFontFamily(String family) {
+    if (family == 'Source Sans Pro') return 'Source Sans 3';
+    return PinpointTypography.selectableFonts.contains(family)
+        ? family
+        : PinpointTypography.primaryFontFamily;
   }
 
   /// Lowercase label for analytics (e.g. 'light' | 'dark' | 'system').

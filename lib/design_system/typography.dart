@@ -74,6 +74,29 @@ class PinpointTypography {
     ).copyWith(fontFamilyFallback: scriptFallbacks);
   }
 
+  /// The UI fonts a user can pick in Settings → Theme, by google_fonts family
+  /// name (which is what [ThemeController] persists). Every one is bundled.
+  static const List<String> selectableFonts = <String>[
+    'Plus Jakarta Sans',
+    'Inter',
+    'Roboto',
+    'Open Sans',
+    'Lato',
+    'Montserrat',
+    'Poppins',
+    'Source Sans 3',
+    'Noto Sans',
+  ];
+
+  /// A sample of [family] for the font picker, with the script fallbacks.
+  static TextStyle fontPreview(
+    String family, {
+    double fontSize = 15,
+    FontWeight fontWeight = FontWeight.w600,
+    Color? color,
+  }) =>
+      _font(family, fontSize: fontSize, fontWeight: fontWeight, color: color);
+
   /// Monospace equivalent of [_font]. JetBrains Mono is Latin-only too, and
   /// code blocks can legitimately contain non-Latin text in comments.
   static TextStyle _mono({
