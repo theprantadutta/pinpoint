@@ -1,16 +1,23 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fleather/fleather.dart';
-import 'markdown_toolbar.dart';
+import 'package:material_ui/material_ui.dart' as material_ui;
 
-/// Advanced WYSIWYG editor powered by Fleather
-/// Supports full rich text formatting including colors, headings, lists, links, and more
-/// All formatting is preserved through JSON serialization
+import '../design_system/design_system.dart';
+
+/// The note body editor: a Fleather rich-text editor styled as Sketchbook
+/// paper (paragraph 16/1.65, H1 22/800, H2 18/700, H3 16/700, ink links,
+/// yellow marker highlight). All formatting is preserved through the JSON
+/// delta serialization below.
+///
+/// The editor is not scrollable itself: it sizes to its content and lives
+/// inside the screen's scroll view, so the title, body and attachments scroll
+/// as one page. The formatting toolbar is separate (`MarkdownToolbar`) and
+/// floated by the screen above the keyboard.
 class MarkdownEditor extends StatefulWidget {
   final FleatherController controller;
   final FocusNode? focusNode;
   final String? hintText;
-  final bool showToolbar;
   final ValueChanged<String>? onChanged;
 
   const MarkdownEditor({
@@ -18,9 +25,102 @@ class MarkdownEditor extends StatefulWidget {
     required this.controller,
     this.focusNode,
     this.hintText,
-    this.showToolbar = true,
     this.onChanged,
   });
+
+  /// The Sketchbook [FleatherThemeData]: every colour from [SketchColors],
+  /// every face through the Sketchbook type scale.
+  static FleatherThemeData sketchTheme(BuildContext context) {
+    final s = context.sketch;
+    final t = context.type;
+    final base = t.bodyLarge.copyWith(color: s.ink);
+    final mono =
+        PinpointTypography.codeBlock(brightness: Theme.of(context).brightness)
+            .copyWith(color: s.ink);
+    TextStyle heading(double size, FontWeight weight, double height) =>
+        base.copyWith(
+          fontSize: size,
+          fontWeight: weight,
+          height: height,
+          letterSpacing: size >= 20 ? -0.02 * size : 0,
+        );
+
+    return FleatherThemeData(
+      bold: const TextStyle(fontWeight: FontWeight.w800),
+      italic: const TextStyle(fontStyle: FontStyle.italic),
+      underline: TextStyle(
+          decoration: TextDecoration.underline, decorationColor: s.ink),
+      strikethrough: TextStyle(
+          decoration: TextDecoration.lineThrough, decorationColor: s.ink),
+      inlineCode: InlineCodeThemeData(
+        backgroundColor: s.soft,
+        radius: const Radius.circular(SketchRadius.highlight),
+        style: mono,
+      ),
+      link: TextStyle(
+        color: s.ink,
+        decoration: TextDecoration.underline,
+        decorationColor: s.ink,
+        decorationThickness: 1.5,
+      ),
+      paragraph: TextBlockTheme(
+        style: base,
+        spacing: const VerticalSpacing(top: 2, bottom: 8),
+      ),
+      heading1: TextBlockTheme(
+        style: heading(22, FontWeight.w800, 1.3),
+        spacing: const VerticalSpacing(top: 14, bottom: 4),
+      ),
+      heading2: TextBlockTheme(
+        style: heading(18, FontWeight.w700, 1.35),
+        spacing: const VerticalSpacing(top: 12, bottom: 2),
+      ),
+      heading3: TextBlockTheme(
+        style: heading(16, FontWeight.w700, 1.4),
+        spacing: const VerticalSpacing(top: 12, bottom: 2),
+      ),
+      heading4: TextBlockTheme(
+        style: heading(15, FontWeight.w700, 1.4),
+        spacing: const VerticalSpacing(top: 10, bottom: 0),
+      ),
+      heading5: TextBlockTheme(
+        style: heading(15, FontWeight.w600, 1.4),
+        spacing: const VerticalSpacing(top: 8, bottom: 0),
+      ),
+      heading6: TextBlockTheme(
+        style: heading(14, FontWeight.w600, 1.4).copyWith(color: s.muted),
+        spacing: const VerticalSpacing(top: 8, bottom: 0),
+      ),
+      lists: TextBlockTheme(
+        style: base.copyWith(fontSize: 15, height: 1.5),
+        spacing: const VerticalSpacing(top: 2, bottom: 8),
+        lineSpacing: const VerticalSpacing(bottom: 6),
+      ),
+      quote: TextBlockTheme(
+        style: base.copyWith(color: s.muted),
+        spacing: const VerticalSpacing(top: 4, bottom: 8),
+        lineSpacing: const VerticalSpacing(top: 4, bottom: 2),
+        decoration: BoxDecoration(
+          border: BorderDirectional(
+            start: BorderSide(width: 3, color: s.ink),
+          ),
+        ),
+      ),
+      code: TextBlockTheme(
+        style: mono,
+        spacing: const VerticalSpacing(top: 4, bottom: 8),
+        decoration: BoxDecoration(
+          color: s.soft,
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      horizontalRule: HorizontalRuleThemeData(
+        height: 26,
+        thickness: SketchStroke.outline,
+        color: s.hairline,
+      ),
+    );
+  }
 
   /// Forces a delta to satisfy Parchment's document invariant: it must end with
   /// a line break.
@@ -130,14 +230,32 @@ class MarkdownEditor extends StatefulWidget {
 }
 
 class _MarkdownEditorState extends State<MarkdownEditor> {
+  late bool _isEmpty;
+
   @override
   void initState() {
     super.initState();
-    // Listen to document changes and notify parent
+    _isEmpty = _documentIsEmpty();
     widget.controller.addListener(_onDocumentChanged);
   }
 
+  @override
+  void didUpdateWidget(MarkdownEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onDocumentChanged);
+      widget.controller.addListener(_onDocumentChanged);
+      _isEmpty = _documentIsEmpty();
+    }
+  }
+
+  bool _documentIsEmpty() =>
+      MarkdownEditor.getPlainText(widget.controller).trim().isEmpty &&
+      widget.controller.document.length <= 1;
+
   void _onDocumentChanged() {
+    final empty = _documentIsEmpty();
+    if (empty != _isEmpty && mounted) setState(() => _isEmpty = empty);
     if (widget.onChanged != null) {
       final content = MarkdownEditor.controllerToMarkdown(widget.controller);
       widget.onChanged!(content);
@@ -152,53 +270,65 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final s = context.sketch;
+    final t = context.type;
 
-    final backgroundColor = isDark ? cs.surfaceContainerLow : cs.surfaceContainerLowest;
+    // Fleather reads its cursor, selection and checklist-box styling from
+    // package:material_ui's themes, which the app's MaterialApp does not
+    // provide; give it the Sketchbook values directly.
+    final editor = material_ui.TextSelectionTheme(
+      data: material_ui.TextSelectionThemeData(
+        cursorColor: s.ink,
+        selectionColor: s.highlight.withValues(alpha: 0.7),
+        selectionHandleColor: s.ink,
+      ),
+      child: material_ui.CheckboxTheme(
+        data: material_ui.CheckboxThemeData(
+          fillColor: WidgetStateProperty.resolveWith((states) =>
+              states.contains(WidgetState.selected)
+                  ? SketchPastels.mint
+                  : Colors.transparent),
+          checkColor: const WidgetStatePropertyAll(SketchPastels.onPastel),
+          side: WidgetStateBorderSide.resolveWith((states) => BorderSide(
+                color: states.contains(WidgetState.selected)
+                    ? SketchPastels.onPastel
+                    : s.ink,
+                width: SketchStroke.checkbox,
+              )),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SketchRadius.checkboxSmall + 1),
+          ),
+        ),
+        child: FleatherTheme(
+          data: MarkdownEditor.sketchTheme(context),
+          child: FleatherEditor(
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+            scrollable: false,
+            padding: EdgeInsets.zero,
+            autofocus: false,
+          ),
+        ),
+      ),
+    );
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Stack(
-        children: [
-          // Editor area - leave space at bottom for toolbar
-          Positioned.fill(
-            bottom: widget.showToolbar ? 68 : 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: cs.outline.withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: FleatherEditor(
-                controller: widget.controller,
-                focusNode: widget.focusNode,
-                padding: EdgeInsets.zero,
-                autofocus: false,
-                expands: true,
+    if (widget.hintText == null) return editor;
+    return Stack(
+      children: [
+        editor,
+        if (_isEmpty)
+          PositionedDirectional(
+            start: 0,
+            end: 0,
+            top: 2,
+            child: IgnorePointer(
+              child: Text(
+                widget.hintText!,
+                style: t.bodyLarge.copyWith(color: s.muted),
               ),
             ),
           ),
-
-          // Toolbar - absolutely positioned above keyboard
-          if (widget.showToolbar)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: keyboardHeight,
-              child: MarkdownToolbar(
-                controller: widget.controller,
-                focusNode: widget.focusNode,
-              ),
-            ),
-        ],
-      ),
+      ],
     );
   }
 }
