@@ -738,5 +738,8 @@
       }
     }
   },
-  "displayUnknownRate": "جارٍ التحقق…"
+  "displayUnknownRate": "جارٍ التحقق…",
+  "noteCardPinned": "مثبّتة",
+  "noteCardVoice": "صوت · {duration}",
+  "noteCardMoreItems": "{count, plural, =1{+عنصر واحد آخر} =2{+عنصران آخران} few{+{count} عناصر أخرى} many{+{count} عنصرًا آخر} other{+{count} عنصر آخر}}"
 }

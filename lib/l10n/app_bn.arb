@@ -738,5 +738,8 @@
       }
     }
   },
-  "displayUnknownRate": "পরীক্ষা করা হচ্ছে…"
+  "displayUnknownRate": "পরীক্ষা করা হচ্ছে…",
+  "noteCardPinned": "পিন করা",
+  "noteCardVoice": "ভয়েস · {duration}",
+  "noteCardMoreItems": "{count, plural, =1{+আরও ১টি আইটেম} other{+আরও {count}টি আইটেম}}"
 }

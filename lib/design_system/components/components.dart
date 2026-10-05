@@ -4,6 +4,9 @@
 /// Import this file to access all components at once.
 library;
 
+// Sketchbook
+export 'sketch/sketch.dart';
+
 // Core components
 export 'gradient_scaffold.dart';
 export 'glass_app_bar.dart';

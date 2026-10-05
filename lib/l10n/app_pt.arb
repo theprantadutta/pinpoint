@@ -738,5 +738,8 @@
       }
     }
   },
-  "displayUnknownRate": "Verificando…"
+  "displayUnknownRate": "Verificando…",
+  "noteCardPinned": "Fixada",
+  "noteCardVoice": "Voz · {duration}",
+  "noteCardMoreItems": "{count, plural, =1{+1 item} other{+{count} itens}}"
 }

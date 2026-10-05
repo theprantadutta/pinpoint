@@ -738,5 +738,8 @@
       }
     }
   },
-  "displayUnknownRate": "กำลังตรวจสอบ…"
+  "displayUnknownRate": "กำลังตรวจสอบ…",
+  "noteCardPinned": "ปักหมุดแล้ว",
+  "noteCardVoice": "เสียง · {duration}",
+  "noteCardMoreItems": "{count, plural, other{+อีก {count} รายการ}}"
 }
