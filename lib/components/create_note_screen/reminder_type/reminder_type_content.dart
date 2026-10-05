@@ -42,16 +42,19 @@ class ReminderTypeContent extends StatefulWidget {
 }
 
 class _ReminderTypeContentState extends State<ReminderTypeContent> {
-  final TextEditingController _endOccurrencesController = TextEditingController();
+  final TextEditingController _endOccurrencesController =
+      TextEditingController();
   DateTime? _endDate;
   List<DateTime> _previewOccurrences = [];
 
   @override
   void initState() {
     super.initState();
-    if (widget.recurrenceEndType == 'after_occurrences' && widget.recurrenceEndValue != null) {
+    if (widget.recurrenceEndType == 'after_occurrences' &&
+        widget.recurrenceEndValue != null) {
       _endOccurrencesController.text = widget.recurrenceEndValue!;
-    } else if (widget.recurrenceEndType == 'on_date' && widget.recurrenceEndValue != null) {
+    } else if (widget.recurrenceEndType == 'on_date' &&
+        widget.recurrenceEndValue != null) {
       try {
         _endDate = DateTime.parse(widget.recurrenceEndValue!);
       } catch (e) {
@@ -111,7 +114,8 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
     int maxCount = maxOccurrences;
     DateTime? endDate;
 
-    if (recurrenceEndType == 'after_occurrences' && recurrenceEndValue != null) {
+    if (recurrenceEndType == 'after_occurrences' &&
+        recurrenceEndValue != null) {
       try {
         maxCount = int.parse(recurrenceEndValue);
         if (maxCount > maxOccurrences) maxCount = maxOccurrences;
@@ -172,7 +176,8 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
   Future<void> _pickDateTime() async {
     // Check if exact alarm permission is needed (Android only)
     final prefs = await SharedPreferences.getInstance();
-    final hasAskedExactAlarm = prefs.getBool('exact_alarm_permission_requested') ?? false;
+    final hasAskedExactAlarm =
+        prefs.getBool('exact_alarm_permission_requested') ?? false;
 
     if (!hasAskedExactAlarm && mounted) {
       // Show explanation dialog for exact alarm permission
@@ -408,7 +413,8 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: cs.primary.withValues(alpha: isDark ? 0.3 : 0.2),
+                          color:
+                              cs.primary.withValues(alpha: isDark ? 0.3 : 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -425,7 +431,8 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                             Text(
                               widget.selectedDateTime == null
                                   ? "Select Date & Time"
-                                  : LocalizedDates.fullDate(context, widget.selectedDateTime!),
+                                  : LocalizedDates.fullDate(
+                                      context, widget.selectedDateTime!),
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
@@ -435,7 +442,8 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                             if (widget.selectedDateTime != null) ...[
                               const SizedBox(height: 4),
                               Text(
-                                LocalizedDates.time(context, widget.selectedDateTime!),
+                                LocalizedDates.time(
+                                    context, widget.selectedDateTime!),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: cs.onSurface.withValues(alpha: 0.6),
@@ -497,15 +505,27 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                   fillColor: isDark
                       ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
                       : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 items: [
-                  DropdownMenuItem(value: 'once', child: Text(AppL10n.of(context).remOnce)),
-                  DropdownMenuItem(value: 'hourly', child: Text(AppL10n.of(context).remHourly)),
-                  DropdownMenuItem(value: 'daily', child: Text(AppL10n.of(context).remDaily)),
-                  DropdownMenuItem(value: 'weekly', child: Text(AppL10n.of(context).remWeekly)),
-                  DropdownMenuItem(value: 'monthly', child: Text(AppL10n.of(context).remMonthly)),
-                  DropdownMenuItem(value: 'yearly', child: Text(AppL10n.of(context).remYearly)),
+                  DropdownMenuItem(
+                      value: 'once', child: Text(AppL10n.of(context).remOnce)),
+                  DropdownMenuItem(
+                      value: 'hourly',
+                      child: Text(AppL10n.of(context).remHourly)),
+                  DropdownMenuItem(
+                      value: 'daily',
+                      child: Text(AppL10n.of(context).remDaily)),
+                  DropdownMenuItem(
+                      value: 'weekly',
+                      child: Text(AppL10n.of(context).remWeekly)),
+                  DropdownMenuItem(
+                      value: 'monthly',
+                      child: Text(AppL10n.of(context).remMonthly)),
+                  DropdownMenuItem(
+                      value: 'yearly',
+                      child: Text(AppL10n.of(context).remYearly)),
                 ],
                 onChanged: (value) {
                   if (value != null) {
@@ -522,7 +542,9 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                     Expanded(
                       child: TextField(
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
                         decoration: InputDecoration(
                           labelText: AppL10n.of(context).remEvery,
                           suffixText: _getIntervalUnit(widget.recurrenceType),
@@ -531,12 +553,18 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                           ),
                           filled: true,
                           fillColor: isDark
-                              ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                              : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                              ? cs.surfaceContainerHighest
+                                  .withValues(alpha: 0.3)
+                              : cs.surfaceContainerHighest
+                                  .withValues(alpha: 0.5),
                         ),
-                        controller: TextEditingController(text: widget.recurrenceInterval.toString())
+                        controller: TextEditingController(
+                            text: widget.recurrenceInterval.toString())
                           ..selection = TextSelection.fromPosition(
-                            TextPosition(offset: widget.recurrenceInterval.toString().length),
+                            TextPosition(
+                                offset: widget.recurrenceInterval
+                                    .toString()
+                                    .length),
                           ),
                         onChanged: (value) {
                           final interval = int.tryParse(value) ?? 1;
@@ -591,12 +619,19 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                     fillColor: isDark
                         ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
                         : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                   ),
                   items: [
-                    DropdownMenuItem(value: 'never', child: Text(AppL10n.of(context).remNeverEnds)),
-                    DropdownMenuItem(value: 'after_occurrences', child: Text(AppL10n.of(context).remAfterOccurrences)),
-                    DropdownMenuItem(value: 'on_date', child: Text(AppL10n.of(context).remOnDate)),
+                    DropdownMenuItem(
+                        value: 'never',
+                        child: Text(AppL10n.of(context).remNeverEnds)),
+                    DropdownMenuItem(
+                        value: 'after_occurrences',
+                        child: Text(AppL10n.of(context).remAfterOccurrences)),
+                    DropdownMenuItem(
+                        value: 'on_date',
+                        child: Text(AppL10n.of(context).remOnDate)),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -626,7 +661,8 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                           : cs.surfaceContainerHighest.withValues(alpha: 0.5),
                     ),
                     onChanged: (value) {
-                      widget.onRecurrenceEndValueChanged(value.isEmpty ? null : value);
+                      widget.onRecurrenceEndValueChanged(
+                          value.isEmpty ? null : value);
                     },
                   ),
                 ] else if (widget.recurrenceEndType == 'on_date') ...[
@@ -636,7 +672,8 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+                        border: Border.all(
+                            color: cs.outline.withValues(alpha: 0.2)),
                         borderRadius: BorderRadius.circular(16),
                         color: isDark
                             ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
@@ -661,7 +698,8 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                 const SizedBox(height: 20),
 
                 // Preview of Occurrences
-                if (_previewOccurrences.isNotEmpty && widget.selectedDateTime != null) ...[
+                if (_previewOccurrences.isNotEmpty &&
+                    widget.selectedDateTime != null) ...[
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -677,10 +715,12 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.preview_rounded, size: 20, color: cs.primary),
+                            Icon(Icons.preview_rounded,
+                                size: 20, color: cs.primary),
                             const SizedBox(width: 8),
                             Text(
-                              AppL10n.of(context).remPreview(_previewOccurrences.length),
+                              AppL10n.of(context)
+                                  .remPreview(_previewOccurrences.length),
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -771,13 +811,19 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildInfoItem('• Notification title and content will appear in push notifications', cs),
+                    _buildInfoItem(
+                        '• Notification title and content will appear in push notifications',
+                        cs),
                     const SizedBox(height: 6),
-                    _buildInfoItem('• Ensure notifications are enabled in settings', cs),
+                    _buildInfoItem(
+                        '• Ensure notifications are enabled in settings', cs),
                     const SizedBox(height: 6),
-                    _buildInfoItem('• Recurring reminders create multiple scheduled notifications', cs),
+                    _buildInfoItem(
+                        '• Recurring reminders create multiple scheduled notifications',
+                        cs),
                     const SizedBox(height: 6),
-                    _buildInfoItem('• You can edit or delete reminders anytime', cs),
+                    _buildInfoItem(
+                        '• You can edit or delete reminders anytime', cs),
                   ],
                 ),
               ),

@@ -3344,5 +3344,254 @@
         "type": "int"
       }
     }
+  },
+  "dateToday": "Today",
+  "@dateToday": {
+    "description": "Relative day name used in a reminder time label such as 'Today, 6:00 PM'."
+  },
+  "dateTomorrow": "Tomorrow",
+  "@dateTomorrow": {
+    "description": "Relative day name used in a reminder time label such as 'Tomorrow, 9:00 AM'."
+  },
+  "dateYesterday": "Yesterday",
+  "@dateYesterday": {
+    "description": "Relative day name used in a reminder time label such as 'Yesterday, 9:00 AM'."
+  },
+  "dateDayAtTime": "{day}, {time}",
+  "@dateDayAtTime": {
+    "description": "Joins a day ('Today', 'Mar 14') and a time ('6:00 PM') into a reminder label. Reorder if your language puts the time first.",
+    "placeholders": {
+      "day": {
+        "type": "String",
+        "example": "Today"
+      },
+      "time": {
+        "type": "String",
+        "example": "6:00 PM"
+      }
+    }
+  },
+  "homeGreeting": "Hello, {name}. What's on your mind?",
+  "@homeGreeting": {
+    "description": "Greeting under the 'Pinpoint' brand name at the top of the home screen. {name} is the user's first name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Pranta"
+      }
+    }
+  },
+  "homeGreetingNoName": "Hello! What's on your mind?",
+  "@homeGreetingNoName": {
+    "description": "Greeting at the top of the home screen when the user's name is unknown."
+  },
+  "homeRecentNotes": "Recent notes",
+  "@homeRecentNotes": {
+    "description": "Section title above the notes grid on the home screen."
+  },
+  "homeFolderChip": "{name} ({count})",
+  "@homeFolderChip": {
+    "description": "A folder chip on the home screen: the folder name and how many notes it holds.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Random"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderNoteCount": "{count, plural, =0{No notes} =1{1 note} other{{count} notes}}",
+  "@folderNoteCount": {
+    "description": "How many notes a folder holds, on folder cards and tiles.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderVoiceCount": "{count, plural, =1{1 voice} other{{count} voice}}",
+  "@folderVoiceCount": {
+    "description": "Appended to a folder's note count when it holds voice notes, e.g. '2 notes · 1 voice'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderSummarySeparator": "{notes} · {voice}",
+  "@folderSummarySeparator": {
+    "description": "Joins a folder's note count and voice count, e.g. '2 notes · 1 voice'.",
+    "placeholders": {
+      "notes": {
+        "type": "String"
+      },
+      "voice": {
+        "type": "String"
+      }
+    }
+  },
+  "folderPreviewEmpty": "Nothing in here yet.",
+  "@folderPreviewEmpty": {
+    "description": "Shown inside the home folder preview card when the selected folder has no notes."
+  },
+  "homeEmptyTitle": "Your notebook is empty",
+  "@homeEmptyTitle": {
+    "description": "Empty-state title on the home screen when the user has no notes."
+  },
+  "homeEmptyAction": "Write your first note",
+  "@homeEmptyAction": {
+    "description": "Button on the empty home screen that opens the editor."
+  },
+  "homeNoMatches": "No matches for “{query}”",
+  "@homeNoMatches": {
+    "description": "Empty state when a search finds nothing. {query} is the text the user searched for.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNoFilterMatches": "No notes match these filters",
+  "@homeNoFilterMatches": {
+    "description": "Empty state on the home screen when active filters hide every note."
+  },
+  "homeClearFilters": "Clear filters",
+  "@homeClearFilters": {
+    "description": "Button under the no-matching-notes empty state that removes all filters."
+  },
+  "sortLastEdited": "Last edited",
+  "@sortLastEdited": {
+    "description": "Sort option (and the label shown beside 'Recent notes'): newest edits first."
+  },
+  "sortDateCreated": "Date created",
+  "@sortDateCreated": {
+    "description": "Sort option: newest notes first by creation date."
+  },
+  "sortTitleAz": "Title A–Z",
+  "@sortTitleAz": {
+    "description": "Sort option: alphabetical by title."
+  },
+  "a11yOpenMenu": "Open menu",
+  "@a11yOpenMenu": {
+    "description": "Screen-reader label for the brand logo on the home screen, which opens the navigation drawer."
+  },
+  "dockNewNote": "New note",
+  "@dockNewNote": {
+    "description": "Screen-reader label for the pen button in the middle of the bottom dock; also the New note button in the tablet sidebar."
+  },
+  "newNoteChooserTitle": "What are you writing?",
+  "@newNoteChooserTitle": {
+    "description": "Title of the sheet that opens when the user long-presses the New note button, offering Text, Checklist, Voice and Reminder."
+  },
+  "noteTypeText": "Text",
+  "@noteTypeText": {
+    "description": "Note type: a text note. Used in the new-note chooser and the Filters sheet."
+  },
+  "noteTypeChecklist": "Checklist",
+  "@noteTypeChecklist": {
+    "description": "Note type: a checklist. Used in the new-note chooser and the Filters sheet."
+  },
+  "noteTypeVoice": "Voice",
+  "@noteTypeVoice": {
+    "description": "Note type: a voice recording. Used in the new-note chooser and the Filters sheet."
+  },
+  "noteTypeReminder": "Reminder",
+  "@noteTypeReminder": {
+    "description": "Note type: a reminder. Used in the new-note chooser and the Filters sheet."
+  },
+  "drawerAllNotes": "All notes",
+  "@drawerAllNotes": {
+    "description": "Navigation drawer row that shows every note."
+  },
+  "drawerVoiceNotes": "Voice notes",
+  "@drawerVoiceNotes": {
+    "description": "Navigation drawer row that shows only voice notes."
+  },
+  "drawerReminders": "Reminders",
+  "@drawerReminders": {
+    "description": "Navigation drawer row that shows only reminders."
+  },
+  "drawerFoldersOverline": "Folders",
+  "@drawerFoldersOverline": {
+    "description": "Small uppercase heading above the folder list in the navigation drawer (the app uppercases it)."
+  },
+  "drawerFreePlan": "Free plan",
+  "@drawerFreePlan": {
+    "description": "Title of the plan card in the navigation drawer for users without a subscription."
+  },
+  "drawerProPlan": "Pinpoint Pro",
+  "@drawerProPlan": {
+    "description": "Title of the plan card in the navigation drawer for subscribers. 'Pinpoint Pro' is the product name; do not translate."
+  },
+  "drawerProBadge": "Pro",
+  "@drawerProBadge": {
+    "description": "Small badge on the drawer plan card for subscribers. Short product tier name; usually left untranslated."
+  },
+  "drawerProBody": "No limits on notes, folders or scans.",
+  "@drawerProBody": {
+    "description": "Line on the drawer plan card for subscribers."
+  },
+  "drawerSyncedNotes": "{used} of {limit} synced notes",
+  "@drawerSyncedNotes": {
+    "description": "Usage line on the drawer plan card for free users, under a progress bar.",
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "signedInWithGoogle": "Signed in with Google",
+  "@signedInWithGoogle": {
+    "description": "Under the user's name in the drawer and settings. 'Google' is a brand name; do not translate."
+  },
+  "signedInWithApple": "Signed in with Apple",
+  "@signedInWithApple": {
+    "description": "Under the user's name in the drawer and settings. 'Apple' is a brand name; do not translate."
+  },
+  "notSignedIn": "Not signed in",
+  "@notSignedIn": {
+    "description": "Under the profile in the drawer when no account is signed in."
+  },
+  "filtersSortBy": "Sort by",
+  "@filtersSortBy": {
+    "description": "Heading above the sort chips in the Filters sheet."
+  },
+  "filtersNoteType": "Note type",
+  "@filtersNoteType": {
+    "description": "Heading above the note-type chips (Text, Checklist, Voice, Reminder) in the Filters sheet."
+  },
+  "filtersReset": "Reset",
+  "@filtersReset": {
+    "description": "Underlined action at the top of the Filters sheet that clears every filter."
+  },
+  "filtersPinnedOnly": "Pinned only",
+  "@filtersPinnedOnly": {
+    "description": "Toggle in the Filters sheet: show only pinned notes."
+  },
+  "filtersIncludeArchived": "Include archived",
+  "@filtersIncludeArchived": {
+    "description": "Toggle in the Filters sheet: also show archived notes."
+  },
+  "filtersShowNotes": "{count, plural, =1{Show 1 note} other{Show {count} notes}}",
+  "@filtersShowNotes": {
+    "description": "Button at the bottom of the Filters sheet; the count updates live as filters change.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filtersNoMatch": "No notes match",
+  "@filtersNoMatch": {
+    "description": "Disabled button text at the bottom of the Filters sheet when the filters match nothing."
+  },
+  "wtCreateBodyDock": "Tap the pen to start a note. Hold it to pick a checklist, voice note or reminder instead.",
+  "@wtCreateBodyDock": {
+    "description": "Walkthrough coach mark pointing at the pen button in the middle of the bottom dock."
   }
 }

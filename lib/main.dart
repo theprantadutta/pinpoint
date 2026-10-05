@@ -848,7 +848,9 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
           create: (_) => BackendAuthService()..initialize(),
         ),
         ChangeNotifierProvider(
-          create: (_) => FilterService(),
+          // Was a bare FilterService(): the instance initialised during
+          // startup was thrown away and this one never loaded saved filters.
+          create: (_) => FilterService()..initialize(),
         ),
         ChangeNotifierProvider(
           create: (_) => SearchService()..initialize(),

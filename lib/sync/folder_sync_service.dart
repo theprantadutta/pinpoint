@@ -81,6 +81,11 @@ class FolderSyncService {
           'title': folder.noteFolderTitle,
           'created_at': folder.createdAt.toIso8601String(),
           'updated_at': folder.updatedAt.toIso8601String(),
+          // Sketchbook (schema v12). Folders are organisational and already
+          // plaintext server-side, so these travel beside the title. A server
+          // without the columns ignores them.
+          'color': folder.color,
+          'sort_order': folder.sortOrder,
         };
       }).toList();
 
@@ -133,6 +138,11 @@ class FolderSyncService {
           final title = serverFolder['title'] as String;
           final createdAt = DateTime.parse(serverFolder['created_at']);
           final updatedAt = DateTime.parse(serverFolder['updated_at']);
+          // Absent on a server without the Sketchbook columns: keep local.
+          final hasColor = serverFolder.containsKey('color');
+          final hasOrder = serverFolder.containsKey('sort_order');
+          final color = serverFolder['color'] as String?;
+          final sortOrder = (serverFolder['sort_order'] as num?)?.toInt();
 
           debugPrint('🔽 [FolderSync] Processing folder: $uuid ($title)');
 
@@ -151,6 +161,9 @@ class FolderSyncService {
                 NoteFoldersCompanion(
                   noteFolderTitle: Value(title),
                   updatedAt: Value(updatedAt),
+                  color: hasColor ? Value(color) : const Value.absent(),
+                  sortOrder:
+                      hasOrder ? Value(sortOrder) : const Value.absent(),
                 ),
               );
               upsertedCount++;
@@ -166,6 +179,8 @@ class FolderSyncService {
                     noteFolderTitle: Value(title),
                     createdAt: Value(createdAt),
                     updatedAt: Value(updatedAt),
+                    color: Value(color),
+                    sortOrder: Value(sortOrder),
                   ),
                   mode: InsertMode.insertOrIgnore,
                 );

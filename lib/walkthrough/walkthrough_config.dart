@@ -39,9 +39,8 @@ class WalkthroughConfig {
             align: ContentAlign.top,
             builder: (context, controller) => WalkthroughTooltip(
               title: AppL10n.of(context).wtCreateTitle,
-              description:
-                  AppL10n.of(context).wtCreateBody,
-              icon: Icons.add_rounded,
+              description: AppL10n.of(context).wtCreateBodyDock,
+              icon: Icons.edit_rounded,
               onNext: controller.next,
               showNextButton: true,
             ),

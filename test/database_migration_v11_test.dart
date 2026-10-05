@@ -204,8 +204,9 @@ void main() {
     final enforced = await db.customSelect('PRAGMA foreign_keys').getSingle();
     expect(enforced.data.values.first, 1);
 
+    // Migrates all the way to the current schema, which may be past v11.
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.data.values.first, 11);
+    expect(version.data.values.first, db.schemaVersion);
   });
 
   test('cascades work on a migrated database, not just a fresh one', () async {

@@ -74,18 +74,16 @@ ToastificationItem showSketchToast({
                               message,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: t.body.copyWith(
-                                  fontSize: 14, color: s.onInverse),
+                              style: t.body
+                                  .copyWith(fontSize: 14, color: s.onInverse),
                             ),
-                            if (description != null &&
-                                description.isNotEmpty)
+                            if (description != null && description.isNotEmpty)
                               Text(
                                 description,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: t.caption.copyWith(
-                                    color:
-                                        s.onInverse.withValues(alpha: 0.7)),
+                                    color: s.onInverse.withValues(alpha: 0.7)),
                               ),
                           ],
                         ),
