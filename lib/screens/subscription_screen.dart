@@ -1,13 +1,13 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:pinpoint/components/paywall/paywall_widgets.dart';
 import 'package:pinpoint/design_system/design_system.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
+import 'package:pinpoint/services/purchases/purchase_mapping.dart';
 import 'package:pinpoint/services/subscription_service.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
@@ -16,6 +16,12 @@ import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
+/// The Pinpoint Pro paywall.
+///
+/// Every price and trial on this screen comes from the store: prices from the
+/// product details, the "SAVE x%" badge computed from those prices, and the
+/// trial from the live offer for THIS user (see [SubscriptionService
+/// .resolveTrialDays]). Nothing about money is hardcoded here.
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
 
@@ -32,6 +38,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   bool _isRestoring = false;
   String? _selectedProductId;
   String? _productLoadError;
+
+  /// The plan card the user has picked; the CTA buys this one.
+  String? _chosenPlan;
 
   /// Trial length per product id, as the store reports it FOR THIS USER.
   /// Resolved once when products load — the StoreKit eligibility check is a
@@ -190,181 +199,122 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final s = context.sketch;
+    final t = context.type;
+    final l10n = AppL10n.of(context);
+    final bottom = MediaQuery.paddingOf(context).bottom;
 
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: isDark
-              ? PinpointGradients.crescentInk
-              : PinpointGradients.oceanQuartz,
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => context.pop(),
-                    ),
-                    const Spacer(),
-                    _isRestoring
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : TextButton(
-                            onPressed: _handleRestore,
-                            child: Text(AppL10n.of(context).subRestore),
-                          ),
-                  ],
+    final header = Padding(
+      padding: const EdgeInsets.fromLTRB(
+          SketchSpace.screenX, 6, SketchSpace.screenX - 2, 0),
+      child: Row(
+        children: [
+          if (_isRestoring)
+            SizedBox(
+              width: SketchSpace.minTap,
+              height: SketchSpace.minTap,
+              child: Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child:
+                      CircularProgressIndicator(strokeWidth: 2, color: s.ink),
                 ),
               ),
+            )
+          else
+            SketchTextAction(
+              label: l10n.subRestore,
+              onTap: _handleRestore,
+              style: t.chip.copyWith(fontSize: 14),
+            ),
+          const Spacer(),
+          CircleIconButton.close(
+            context,
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+        ],
+      ),
+    );
 
-              Expanded(
-                child: ResponsiveCenter(
+    return Scaffold(
+      backgroundColor: s.bg,
+      body: DoodleBackground(
+        top: DoodleBackground.premiumTop,
+        squiggle: true,
+        child: SafeArea(
+          bottom: false,
+          child: SketchContentWidth(
+            child: Column(
+              children: [
+                header,
+                Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: EdgeInsets.only(bottom: 24 + bottom),
                     children: [
-                      // Logo and title
-                      Column(
-                        children: [
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(40),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: colorScheme.primary
-                                      .withValues(alpha: 0.3),
-                                  blurRadius: 20,
-                                  spreadRadius: 5,
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(40),
-                              child: Image.asset(
-                                'assets/images/pinpoint-logo.png',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          )
-                              .animate()
-                              .scale(duration: 600.ms, curve: Curves.elasticOut)
-                              .fadeIn(duration: 400.ms),
-                          const SizedBox(height: 16),
-                          Text(
-                            AppL10n.of(context).subHeroTitle,
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ).animate(delay: 200.ms).fadeIn(),
-                          const SizedBox(height: 8),
-                          Text(
-                            AppL10n.of(context).subHeroSubtitle,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: isDark
-                                  ? PinpointColors.darkTextSecondary
-                                  : PinpointColors.lightTextSecondary,
-                            ),
-                            textAlign: TextAlign.center,
-                          ).animate(delay: 300.ms).fadeIn(),
-                        ],
+                      const SizedBox(height: 4),
+                      const PaywallStickerCollage(),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            SketchSpace.editorX, 6, SketchSpace.editorX, 0),
+                        child: HighlightedText(
+                          l10n.pwHeadline,
+                          style: t.heroTitle,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            SketchSpace.editorX, 10, SketchSpace.editorX, 0),
+                        child: Text(
+                          l10n.pwSubtitle,
+                          style: t.bodyRegular
+                              .copyWith(fontSize: 14, color: s.muted),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            SketchSpace.screenX, 16, SketchSpace.screenX, 0),
+                        child: PaywallLimitsTable(
+                            rows: paywallLimitRows(l10n)),
                       ),
 
-                      const SizedBox(height: 32),
-
-                      // Features list
-                      _buildFeaturesList(isDark),
-
-                      const SizedBox(height: 32),
-
-                      // Current Plan Card (for premium users)
+                      // Current plan card (for premium users)
                       Consumer<SubscriptionManager>(
                         builder: (context, subscriptionManager, child) {
                           if (!subscriptionManager.isPremium) {
                             return const SizedBox.shrink();
                           }
-                          return Column(
-                            children: [
-                              _buildCurrentPlanCard(
-                                subscriptionManager,
-                                colorScheme,
-                                isDark,
-                              ),
-                              const SizedBox(height: 24),
-                              // Divider with "Upgrade Options" text
-                              if (_hasUpgradeOptions(subscriptionManager))
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Divider(
-                                          color: isDark
-                                              ? PinpointColors.darkTextTertiary
-                                              : PinpointColors
-                                                  .lightTextTertiary,
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 16),
-                                        child: Text(
-                                          AppL10n.of(context).subUpgradeOptions,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark
-                                                ? PinpointColors
-                                                    .darkTextSecondary
-                                                : PinpointColors
-                                                    .lightTextSecondary,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Divider(
-                                          color: isDark
-                                              ? PinpointColors.darkTextTertiary
-                                              : PinpointColors
-                                                  .lightTextTertiary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              const SizedBox(height: 16),
-                            ],
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                                SketchSpace.screenX,
+                                20,
+                                SketchSpace.screenX,
+                                0),
+                            child:
+                                _buildCurrentPlanCard(subscriptionManager),
                           );
                         },
                       ),
 
-                      // Subscription plans
-                      _buildSubscriptionPlans(colorScheme, isDark),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            SketchSpace.screenX, 24, SketchSpace.screenX, 0),
+                        child: _buildSubscriptionPlans(),
+                      ),
 
-                      const SizedBox(height: 24),
-
-                      // Legal / auto-renewable subscription disclosure (App Store
-                      // Guideline 3.1.2 requires this + Terms & Privacy links).
-                      _buildLegalFooter(theme, isDark),
-
-                      const SizedBox(height: 32),
+                      // Legal / auto-renewable subscription disclosure (App
+                      // Store Guideline 3.1.2 requires this + Terms & Privacy
+                      // links).
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            SketchSpace.editorX, 18, SketchSpace.editorX, 0),
+                        child: _buildLegalFooter(),
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -381,117 +331,40 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   /// Required by App Store Review Guideline 3.1.2: the paywall must state the
   /// subscription length/price context, that it auto-renews, how to cancel, and
   /// provide functional links to the Terms of Use (EULA) and Privacy Policy.
-  Widget _buildLegalFooter(ThemeData theme, bool isDark) {
-    final tertiary = isDark
-        ? PinpointColors.darkTextTertiary
-        : PinpointColors.lightTextTertiary;
-    final linkColor = theme.colorScheme.primary;
+  Widget _buildLegalFooter() {
+    final t = context.type;
+    final s = context.sketch;
+    final small = t.caption.copyWith(fontSize: 11);
 
     return Column(
       children: [
         Text(
           AppL10n.of(context).subLegalAutoRenew(_storeName),
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: tertiary, fontSize: 11),
+          style: small,
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 12),
         Wrap(
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 16,
           children: [
-            GestureDetector(
+            SketchTextAction(
+              label: AppL10n.of(context).subTermsOfUse,
               onTap: _openLegal,
-              child: Text(
-                AppL10n.of(context).subTermsOfUse,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: linkColor,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
+              muted: true,
+              style: small.copyWith(fontWeight: FontWeight.w600),
             ),
-            Text('   •   ',
-                style: theme.textTheme.bodySmall?.copyWith(color: tertiary)),
-            GestureDetector(
+            SketchTextAction(
+              label: AppL10n.of(context).subPrivacyPolicy,
               onTap: _openLegal,
-              child: Text(
-                AppL10n.of(context).subPrivacyPolicy,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: linkColor,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
+              muted: true,
+              style: small.copyWith(
+                  fontWeight: FontWeight.w600, color: s.muted),
             ),
           ],
         ),
       ],
     );
-  }
-
-  Widget _buildFeaturesList(bool isDark) {
-    // Every bullet here must describe a limit that PremiumService actually
-    // enforces today, so the paywall never sells something the app cannot do.
-    // The removed bullets (images/attachments, drawing, encrypted sharing,
-    // priority support) had no shipped free/premium delta; do not add a bullet
-    // back until its gate has a live call site. Voice length was removed for
-    // the same reason and then restored once the cap became real — the free
-    // recorder now stops at PremiumLimits.maxVoiceRecordingDurationForFree in
-    // create_note_screen_v2.dart.
-    final features = [
-      _Feature(Symbols.cloud_sync, AppL10n.of(context).subFeatureSync),
-      _Feature(Symbols.folder, AppL10n.of(context).subFeatureFolders),
-      _Feature(Symbols.mic, AppL10n.of(context).subFeatureVoice),
-      _Feature(Symbols.text_fields, AppL10n.of(context).subFeatureOcr),
-      _Feature(Symbols.file_download, AppL10n.of(context).subFeatureExport),
-      _Feature(Symbols.palette, AppL10n.of(context).subFeatureThemes),
-    ];
-
-    return Column(
-      children: features.map((feature) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: PinpointColors.mint.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  feature.icon,
-                  size: 20,
-                  color: PinpointColors.mint,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  feature.title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isDark
-                        ? PinpointColors.darkTextPrimary
-                        : PinpointColors.lightTextPrimary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ).animate().fadeIn().slideX(begin: -0.2, end: 0);
-      }).toList(),
-    );
-  }
-
-  /// Check if user has upgrade options available
-  bool _hasUpgradeOptions(SubscriptionManager manager) {
-    final currentType = manager.subscriptionType;
-    // Lifetime users can't upgrade
-    if (currentType == 'lifetime') return false;
-    // Monthly/yearly users can upgrade
-    return true;
   }
 
   /// Get plan display name
@@ -555,523 +428,285 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   /// Build the current plan card for premium users
-  Widget _buildCurrentPlanCard(
-    SubscriptionManager manager,
-    ColorScheme colorScheme,
-    bool isDark,
-  ) {
+  Widget _buildCurrentPlanCard(SubscriptionManager manager) {
+    final t = context.type;
+    final l10n = AppL10n.of(context);
     final planName = _getPlanDisplayName(manager.subscriptionType);
     final expiryText = _getExpiryText(context, manager);
     final isGracePeriod = manager.isInGracePeriod;
     final isCancelledButActive = manager.isCancelledButActive;
 
-    final accent = isGracePeriod
-        ? PinpointColors.warning
+    final pastel = isGracePeriod
+        ? SketchPastels.yellow
         : isCancelledButActive
-            ? PinpointColors.amber
-            : PinpointColors.mint;
+            ? SketchPastels.pink
+            : SketchPastels.mint;
     final badgeLabel = isGracePeriod
-        ? AppL10n.of(context).subPaymentPendingBadge
+        ? l10n.subPaymentPendingBadge
         : isCancelledButActive
-            ? AppL10n.of(context).subCancelledBadge
-            : AppL10n.of(context).subCurrentPlanBadge;
-    final badgeIcon = isGracePeriod
-        ? Icons.warning_amber_rounded
-        : isCancelledButActive
-            ? Icons.cancel_schedule_send
-            : Icons.check_circle;
+            ? l10n.subCancelledBadge
+            : l10n.subCurrentPlanBadge;
 
-    return GlassContainer(
-      padding: EdgeInsets.zero,
-      borderRadius: 20,
-      border: Border.all(
-        color: accent,
-        width: 2,
-      ),
-      child: Stack(
+    return SketchCard(
+      radius: SketchRadius.group,
+      padding: const EdgeInsets.all(SketchSpace.cardPadLg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Status badge
-          PositionedDirectional(
-            top: 0,
-            end: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: accent,
-                borderRadius: const BorderRadiusDirectional.only(
-                  topEnd: Radius.circular(20),
-                  bottomStart: Radius.circular(12),
-                ),
+          Row(
+            children: [
+              const StickerTile(
+                color: SketchPastels.lavender,
+                size: 40,
+                angle: -8,
+                icon: Icons.workspace_premium_rounded,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    badgeIcon,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    badgeLabel,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+              const SizedBox(width: 14),
+              Expanded(child: Text(planName, style: t.cardTitleLarge)),
+              SketchTag(label: badgeLabel, pastel: pastel),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.workspace_premium,
-                      color: accent,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      planName,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: isDark
-                            ? PinpointColors.darkTextPrimary
-                            : PinpointColors.lightTextPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  expiryText,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: (isGracePeriod || isCancelledButActive)
-                        ? accent
-                        : (isDark
-                            ? PinpointColors.darkTextSecondary
-                            : PinpointColors.lightTextSecondary),
-                  ),
-                ),
-                if (isCancelledButActive) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    AppL10n.of(context).subResubscribePrompt(_storeName),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark
-                          ? PinpointColors.darkTextSecondary
-                          : PinpointColors.lightTextSecondary,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    onPressed: _openManageSubscriptions,
-                    icon: const Icon(Icons.settings_outlined, size: 18),
-                    label: Text(isCancelledButActive
-                        ? AppL10n.of(context).subResubscribeIn(_storeName)
-                        : AppL10n.of(context).subManageIn(_storeName)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: (isGracePeriod || isCancelledButActive)
-                          ? accent
-                          : colorScheme.primary,
-                      side: BorderSide(
-                        color: ((isGracePeriod || isCancelledButActive)
-                                ? accent
-                                : colorScheme.primary)
-                            .withValues(alpha: 0.5),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+          if (expiryText.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              expiryText,
+              style: t.bodySmall.copyWith(
+                color: (isGracePeriod || isCancelledButActive)
+                    ? SketchFunctional.error
+                    : null,
+              ),
             ),
+          ],
+          if (isCancelledButActive) ...[
+            const SizedBox(height: 6),
+            Text(l10n.subResubscribePrompt(_storeName), style: t.caption),
+          ],
+          const SizedBox(height: 14),
+          PillButton.secondary(
+            height: 48,
+            icon: Icons.open_in_new_rounded,
+            label: isCancelledButActive
+                ? l10n.subResubscribeIn(_storeName)
+                : l10n.subManageIn(_storeName),
+            onPressed: _openManageSubscriptions,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSubscriptionPlans(ColorScheme colorScheme, bool isDark) {
+  Widget _buildSubscriptionPlans() {
+    final t = context.type;
+    final s = context.sketch;
+    final l10n = AppL10n.of(context);
+
     // Show loading state
     if (_isLoadingProducts) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: colorScheme.primary),
-            const SizedBox(height: 16),
-            Text(
-              AppL10n.of(context).subLoadingPlans,
-              style: TextStyle(
-                color: isDark
-                    ? PinpointColors.darkTextSecondary
-                    : PinpointColors.lightTextSecondary,
-              ),
-            ),
-          ],
-        ),
+      return Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: _PlanPlaceholder()),
+              const SizedBox(width: 10),
+              Expanded(child: _PlanPlaceholder()),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(l10n.subLoadingPlans, style: t.caption),
+        ],
       );
     }
 
     // Show error state
     if (_productLoadError != null) {
-      return Center(
+      return SketchCard(
+        radius: SketchRadius.group,
+        padding: const EdgeInsets.all(SketchSpace.cardPadLg),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: PinpointColors.rose,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _productLoadError!,
-              style: TextStyle(
-                color: isDark
-                    ? PinpointColors.darkTextPrimary
-                    : PinpointColors.lightTextPrimary,
-                fontSize: 16,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
+            Text(_productLoadError!,
+                textAlign: TextAlign.center, style: t.bodyRegular),
+            const SizedBox(height: 14),
+            PillButton.secondary(
+              height: 48,
+              icon: Icons.refresh_rounded,
+              label: l10n.commonRetry,
               onPressed: _loadProducts,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: Colors.white,
-              ),
             ),
           ],
         ),
       );
     }
 
-    // Get current subscription type to filter plans
-    final subscriptionManager = SubscriptionManager();
-    final currentType = subscriptionManager.subscriptionType;
-
-    // Show subscription plans with dynamic pricing
-    // Filter out plans based on current subscription
     return Consumer<SubscriptionManager>(
       builder: (context, manager, child) {
-        final widgets = <Widget>[];
-
-        // Monthly - show if not already monthly/yearly/lifetime
-        if (currentType != 'monthly' &&
-            currentType != 'yearly' &&
-            currentType != 'lifetime') {
-          widgets.add(_buildDynamicPlanCard(
-            productId: SubscriptionService.premiumMonthly,
-            title: AppL10n.of(context).subPlanMonthly,
-            period: 'per month',
-            colorScheme: colorScheme,
-            isDark: isDark,
-          ));
-        }
-
-        // Yearly - show if not already yearly/lifetime (upgrade from monthly)
-        if (currentType != 'yearly' && currentType != 'lifetime') {
-          if (widgets.isNotEmpty) widgets.add(const SizedBox(height: 16));
-          widgets.add(_buildDynamicPlanCard(
-            productId: SubscriptionService.premiumYearly,
-            title: AppL10n.of(context).subPlanYearly,
-            period: 'per year',
-            badge: currentType == 'monthly'
-                ? AppL10n.of(context).subBadgeUpgradeSave
-                : AppL10n.of(context).subBadgeBestValue,
-            isPopular: true,
-            colorScheme: colorScheme,
-            isDark: isDark,
-          ));
-        }
-
-        // Lifetime - show if not already lifetime
-        if (currentType != 'lifetime') {
-          if (widgets.isNotEmpty) widgets.add(const SizedBox(height: 16));
-          widgets.add(_buildDynamicPlanCard(
-            productId: SubscriptionService.premiumLifetime,
-            title: AppL10n.of(context).subPlanLifetime,
-            period: 'one-time',
-            badge: AppL10n.of(context).subBadgePayOnce,
-            colorScheme: colorScheme,
-            isDark: isDark,
-          ));
-        }
+        // Filter out plans based on current subscription
+        final currentType = manager.subscriptionType;
 
         // If lifetime user, show thank you message
         if (currentType == 'lifetime') {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.favorite,
-                    size: 48,
-                    color: PinpointColors.mint,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    AppL10n.of(context).subThankYou,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? PinpointColors.darkTextPrimary
-                          : PinpointColors.lightTextPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    AppL10n.of(context).subLifetimeAccess,
+          return SketchCard(
+            pastel: SketchPastels.mint,
+            radius: SketchRadius.group,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const Icon(Icons.favorite_rounded, size: 36),
+                const SizedBox(height: 12),
+                Text(l10n.subThankYou,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark
-                          ? PinpointColors.darkTextSecondary
-                          : PinpointColors.lightTextSecondary,
-                    ),
-                  ),
-                ],
-              ),
+                    style: t.sectionTitle
+                        .copyWith(color: SketchPastels.onPastel)),
+                const SizedBox(height: 6),
+                Text(l10n.subLifetimeAccess,
+                    textAlign: TextAlign.center,
+                    style: t.bodySmall.copyWith(color: SketchPastels.onPastel)),
+              ],
             ),
           );
         }
 
-        return Column(children: widgets);
-      },
-    );
-  }
+        final monthly =
+            _subscriptionService.getProduct(SubscriptionService.premiumMonthly);
+        final yearly =
+            _subscriptionService.getProduct(SubscriptionService.premiumYearly);
+        final lifetime = _subscriptionService
+            .getProduct(SubscriptionService.premiumLifetime);
 
-  Widget _buildDynamicPlanCard({
-    required String productId,
-    required String title,
-    required String period,
-    String? badge,
-    bool isPopular = false,
-    required ColorScheme colorScheme,
-    required bool isDark,
-  }) {
-    // Get product details from Google Play
-    final product = _subscriptionService.getProduct(productId);
+        // Monthly - show if not already monthly/yearly/lifetime
+        final showMonthly = monthly != null &&
+            currentType != 'monthly' &&
+            currentType != 'yearly';
+        // Yearly - show if not already yearly (upgrade from monthly)
+        final showYearly = yearly != null && currentType != 'yearly';
+        final showLifetime = lifetime != null;
 
-    // Fallback if product not found
-    if (product == null) {
-      return const SizedBox.shrink();
-    }
+        final available = [
+          if (showYearly) SubscriptionService.premiumYearly,
+          if (showMonthly) SubscriptionService.premiumMonthly,
+          if (showLifetime) SubscriptionService.premiumLifetime,
+        ];
+        if (available.isEmpty) return const SizedBox.shrink();
+        final chosen =
+            available.contains(_chosenPlan) ? _chosenPlan! : available.first;
 
-    // Use dynamic price from Google Play. Use getDisplayPrice (not
-    // product.price) so the real recurring price shows, skipping any
-    // zero-priced intro pricing phase Google Play may report first.
-    return _buildPlanCard(
-      productId: productId,
-      title: title,
-      price: _subscriptionService.getDisplayPrice(product),
-      period: period,
-      // Resolved from the live store offer for THIS user, so the card stops
-      // advertising a trial the moment the offer is withdrawn — or when this
-      // particular user is no longer eligible for one.
-      trialDays: _trialDays[productId],
-      badge: badge,
-      isPopular: isPopular,
-      colorScheme: colorScheme,
-      isDark: isDark,
-    );
-  }
+        // Computed from the store's prices, never hardcoded.
+        final savings = monthly != null && yearly != null
+            ? yearlySavingsPercent(monthly, yearly)
+            : null;
 
-  Widget _buildPlanCard({
-    required String productId,
-    required String title,
-    required String price,
-    required String period,
-    int? trialDays,
-    String? badge,
-    bool isPopular = false,
-    required ColorScheme colorScheme,
-    required bool isDark,
-  }) {
-    final isSelected = _selectedProductId == productId;
-    final isCurrentlyLoading = _isLoading && isSelected;
-    // The lifetime plan is a one-time non-consumable, not a subscription, so its
-    // CTA must not say "Subscribe" (accurate purchase labeling — App Store 3.1.2).
-    final isOneTime = productId == SubscriptionService.premiumLifetime;
-    // A one-time purchase can never carry a trial, whatever the store reports.
-    final hasTrial = !isOneTime && trialDays != null && trialDays > 0;
-    final ctaLabel = isOneTime
-        ? AppL10n.of(context).subBuyLifetime
-        : hasTrial
-            ? AppL10n.of(context).subTrialCta(trialDays)
-            : AppL10n.of(context).subSubscribe;
+        Widget card(String productId, String title,
+            {String? badge, String? caption}) {
+          final product = _subscriptionService.getProduct(productId)!;
+          return PaywallPlanCard(
+            title: title,
+            // getDisplayPrice (not product.price) so the real recurring price
+            // shows, skipping any zero-priced intro phase Play reports first.
+            price: _subscriptionService.getDisplayPrice(product),
+            selected: chosen == productId,
+            badge: badge,
+            caption: caption,
+            onTap: _isLoading
+                ? null
+                : () {
+                    PinpointHaptics.selection();
+                    setState(() => _chosenPlan = productId);
+                  },
+          );
+        }
 
-    return GlassContainer(
-      padding: EdgeInsets.zero,
-      borderRadius: 20,
-      border:
-          isPopular ? Border.all(color: colorScheme.primary, width: 2) : null,
-      child: Stack(
-        children: [
-          if (badge != null)
-            PositionedDirectional(
-              top: 0,
-              end: 0,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isPopular ? colorScheme.primary : PinpointColors.amber,
-                  borderRadius: const BorderRadiusDirectional.only(
-                    topEnd: Radius.circular(20),
-                    bottomStart: Radius.circular(12),
-                  ),
+        final monthlyCard =
+            showMonthly ? card(SubscriptionService.premiumMonthly, l10n.subPlanMonthly) : null;
+        final yearlyCard = showYearly
+            ? card(
+                SubscriptionService.premiumYearly,
+                l10n.subPlanYearly,
+                badge: savings == null ? null : l10n.pwSave(savings),
+              )
+            : null;
+
+        // The chosen plan decides the CTA. The lifetime plan is a one-time
+        // non-consumable, not a subscription, so its CTA must not say
+        // "Subscribe" (accurate purchase labeling — App Store 3.1.2), and it
+        // can never carry a trial, whatever the store reports.
+        final isOneTime = chosen == SubscriptionService.premiumLifetime;
+        final trialDays = isOneTime ? null : _trialDays[chosen];
+        final hasTrial = trialDays != null && trialDays > 0;
+        final chosenPrice = _subscriptionService
+            .getDisplayPrice(_subscriptionService.getProduct(chosen)!);
+        final ctaLabel = isOneTime
+            ? l10n.subBuyLifetime
+            : hasTrial
+                ? l10n.subTrialCta(trialDays)
+                : l10n.pwContinue;
+        final isCurrentlyLoading = _isLoading && _selectedProductId == chosen;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (monthlyCard != null && yearlyCard != null)
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: monthlyCard),
+                    const SizedBox(width: 10),
+                    Expanded(child: yearlyCard),
+                  ],
                 ),
-                child: Text(
-                  badge,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              )
+            else if (monthlyCard != null || yearlyCard != null)
+              (monthlyCard ?? yearlyCard)!,
+            if (showLifetime) ...[
+              if (showMonthly || showYearly) const SizedBox(height: 14),
+              card(
+                SubscriptionService.premiumLifetime,
+                l10n.subPlanLifetime,
+                caption: l10n.subBadgePayOnce,
               ),
+            ],
+            const SizedBox(height: 14),
+            PillButton(
+              label: ctaLabel,
+              loading: isCurrentlyLoading,
+              onPressed:
+                  _isLoading ? null : () => _purchaseSubscription(chosen),
             ),
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? PinpointColors.darkTextPrimary
-                        : PinpointColors.lightTextPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        price,
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        period,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark
-                              ? PinpointColors.darkTextSecondary
-                              : PinpointColors.lightTextSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (hasTrial) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Symbols.card_giftcard,
-                          size: 16, color: colorScheme.primary),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          // The price is already formatted and localized by the
-                          // store; it is inserted, never rebuilt here.
-                          AppL10n.of(context)
-                              .subTrialThenPrice(trialDays, price),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: isCurrentlyLoading
-                        ? null
-                        : () => _purchaseSubscription(productId),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isPopular
-                          ? colorScheme.primary
-                          : colorScheme.primaryContainer,
-                      foregroundColor: isPopular
-                          ? Colors.white
-                          : colorScheme.onPrimaryContainer,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: isCurrentlyLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            ctaLabel,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: isPopular ? Colors.white : null,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
+            if (hasTrial) ...[
+              const SizedBox(height: 10),
+              Text(
+                // The price is already formatted and localized by the
+                // store; it is inserted, never rebuilt here.
+                l10n.subTrialThenPrice(trialDays, chosenPrice),
+                textAlign: TextAlign.center,
+                style: t.chip.copyWith(fontSize: 12, color: s.ink),
+              ),
+            ],
+            const SizedBox(height: 10),
+            Text(
+              l10n.pwCancelAnytime,
+              textAlign: TextAlign.center,
+              style: t.caption.copyWith(fontSize: 11),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 }
 
-class _Feature {
-  final IconData icon;
-  final String title;
-
-  _Feature(this.icon, this.title);
+/// A soft, outlined plan-card stand-in while the store answers.
+class _PlanPlaceholder extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final s = context.sketch;
+    return Container(
+      height: 74,
+      decoration: BoxDecoration(
+        color: s.soft,
+        borderRadius: BorderRadius.circular(SketchRadius.card),
+        border: Border.all(color: s.hairline, width: SketchStroke.outline),
+      ),
+    );
+  }
 }

@@ -3749,5 +3749,622 @@
   "ulUseRecoveryCode": "Use recovery code",
   "@ulUseRecoveryCode": {
     "description": "Text button on the unlock screen (zero-knowledge accounts) that switches from the passphrase to the recovery code."
+  },
+  "stSyncNow": "Sync now",
+  "@stSyncNow": {
+    "description": "Small dark pill button on the Settings account card, and the main button on the Sync screen. Starts a sync immediately."
+  },
+  "stSyncing": "Syncing…",
+  "@stSyncing": {
+    "description": "Shown on the Settings account card's sync button and status line while a sync is running."
+  },
+  "stSyncingChanges": "{count, plural, =1{Syncing 1 change…} other{Syncing {count} changes…}}",
+  "@stSyncingChanges": {
+    "description": "Status line on the Settings account card while a sync is running and some local changes are waiting to upload.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stSyncedAgo": "All notes synced · {when}",
+  "@stSyncedAgo": {
+    "description": "Status line on the Settings account card after a successful sync. {when} is a relative time such as '2 min ago' or 'just now'.",
+    "placeholders": {
+      "when": {
+        "type": "String",
+        "example": "2 min ago"
+      }
+    }
+  },
+  "stNotSyncedYet": "Not synced yet",
+  "@stNotSyncedYet": {
+    "description": "Status line on the Settings account card and Sync screen when this device has never completed a sync."
+  },
+  "stSyncFailedRetry": "Sync failed · Retry",
+  "@stSyncFailedRetry": {
+    "description": "Status line on the Settings account card when the last sync failed. Tapping it retries the sync."
+  },
+  "stJustNow": "just now",
+  "@stJustNow": {
+    "description": "Relative time for something that happened less than a minute ago, used inside 'All notes synced · just now'."
+  },
+  "stMinutesAgo": "{count, plural, =1{1 min ago} other{{count} min ago}}",
+  "@stMinutesAgo": {
+    "description": "Relative time in minutes, used inside 'All notes synced · 2 min ago'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stHoursAgo": "{count, plural, =1{1 h ago} other{{count} h ago}}",
+  "@stHoursAgo": {
+    "description": "Relative time in hours, used inside 'All notes synced · 3 h ago'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stSyncedItems": "{count, plural, =0{Everything is already up to date.} =1{1 item synced.} other{{count} items synced.}}",
+  "@stSyncedItems": {
+    "description": "Toast body after a manual sync from Settings: how many notes, folders and reminders were synced in total.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stSignInTitle": "Sign in to sync",
+  "@stSignInTitle": {
+    "description": "Title of the lavender card at the top of Settings when the user is not signed in."
+  },
+  "stSignInBody": "Back up your notes and use them on all your devices.",
+  "@stSignInBody": {
+    "description": "Body of the sign-in card at the top of Settings when the user is not signed in."
+  },
+  "stSignInAction": "Sign in",
+  "@stSignInAction": {
+    "description": "Dark pill button on the Settings sign-in card; opens the sign-in screen."
+  },
+  "stThemeAuto": "Auto",
+  "@stThemeAuto": {
+    "description": "Third option of the Light / Dark / Auto theme switch in Settings: follow the device setting."
+  },
+  "stAccent": "Accent",
+  "@stAccent": {
+    "description": "Settings row label for the accent colour swatches."
+  },
+  "stFont": "Font",
+  "@stFont": {
+    "description": "Settings row label showing the current font; opens the font list. Also the overline above the font list on the Theme screen."
+  },
+  "stProTag": "PRO",
+  "@stProTag": {
+    "description": "Tiny yellow tag beside the accent swatches in Settings, marking colours that need Pinpoint Pro. Keep it very short."
+  },
+  "stAccentSemantic": "{name} accent",
+  "@stAccentSemantic": {
+    "description": "Screen-reader label for an accent colour swatch in Settings. {name} is the colour's name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Neon Mint"
+      }
+    }
+  },
+  "stAccentLockedSemantic": "{name} accent, Pro only",
+  "@stAccentLockedSemantic": {
+    "description": "Screen-reader label for an accent colour swatch that needs Pinpoint Pro. {name} is the colour's name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Pink Bliss"
+      }
+    }
+  },
+  "stSectionPrivacy": "Privacy & security",
+  "@stSectionPrivacy": {
+    "description": "Settings group overline above biometric lock, zero-knowledge mode and encryption. Rendered in capitals."
+  },
+  "stBiometricLock": "Biometric lock",
+  "@stBiometricLock": {
+    "description": "Settings toggle: require fingerprint or face unlock to open the app."
+  },
+  "stZeroKnowledge": "Zero-knowledge mode",
+  "@stZeroKnowledge": {
+    "description": "Settings row and Encryption screen card: the opt-in mode where the encryption key is locked with the user's passphrase so the server cannot read notes."
+  },
+  "stZeroKnowledgeSubtitle": "Only your passphrase unlocks notes",
+  "@stZeroKnowledgeSubtitle": {
+    "description": "Subtitle under 'Zero-knowledge mode' in Settings."
+  },
+  "stOn": "On",
+  "@stOn": {
+    "description": "Value shown at the end of a Settings row when the setting is enabled (e.g. 'Zero-knowledge mode … On ›')."
+  },
+  "stOff": "Off",
+  "@stOff": {
+    "description": "Value shown at the end of a Settings row when the setting is disabled (e.g. 'Zero-knowledge mode … Off ›')."
+  },
+  "stEncryptionPill": "AES-256 on device",
+  "@stEncryptionPill": {
+    "description": "Small mint pill on the Settings 'Encryption' row: notes are encrypted with AES-256 on the phone. Keep 'AES-256' as is."
+  },
+  "stSyncedNotes": "Synced notes",
+  "@stSyncedNotes": {
+    "description": "Usage card label in Settings and the usage sheet, and a row of the paywall limits table: how many notes are synced to the cloud."
+  },
+  "stOcrScans": "OCR scans",
+  "@stOcrScans": {
+    "description": "Usage card label in Settings and the usage sheet, and a row of the paywall limits table: text scans from images this month. Keep 'OCR'."
+  },
+  "stExports": "Exports",
+  "@stExports": {
+    "description": "Usage row in the usage sheet: PDF and Markdown exports this month."
+  },
+  "stUsageLimitSuffix": "/ {limit}",
+  "@stUsageLimitSuffix": {
+    "description": "Shown after the big usage number on a usage card, e.g. '38' followed by '/ 50'.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "stUsageSemantic": "{label}: {used} of {limit}",
+  "@stUsageSemantic": {
+    "description": "Screen-reader label for a usage card, e.g. 'Synced notes: 38 of 50'.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "stUnlimited": "Unlimited",
+  "@stUnlimited": {
+    "description": "Shown on usage cards and in the paywall table for Pinpoint Pro users, instead of a count."
+  },
+  "stFreePlanBody": "Go Pro to remove every limit.",
+  "@stFreePlanBody": {
+    "description": "Line on the yellow plan banner in Settings for free users, under 'Free plan'."
+  },
+  "stManageSubscription": "Manage subscription",
+  "@stManageSubscription": {
+    "description": "Settings row for Pro users; opens the App Store or Google Play subscription page."
+  },
+  "stSectionPlan": "Plan",
+  "@stSectionPlan": {
+    "description": "Settings group overline above the current subscription plan. Rendered in capitals."
+  },
+  "stSectionGeneral": "General",
+  "@stSectionGeneral": {
+    "description": "Settings group overline above Language, Display and Notifications. Rendered in capitals."
+  },
+  "stNotifications": "Notifications",
+  "@stNotifications": {
+    "description": "Settings row showing whether notifications are allowed; opens the system notification settings for the app."
+  },
+  "stSectionNotes": "Notes",
+  "@stSectionNotes": {
+    "description": "Settings group overline above My folders, Archive, Trash, Sync and Import. Rendered in capitals."
+  },
+  "stMyFolders": "My folders",
+  "@stMyFolders": {
+    "description": "Settings row that opens the My folders screen."
+  },
+  "stImportNote": "Import a note",
+  "@stImportNote": {
+    "description": "Settings row that imports a single .pinpoint-note file."
+  },
+  "stSectionHelp": "Help & legal",
+  "@stSectionHelp": {
+    "description": "Settings group overline above tutorial, rating, terms and about. Rendered in capitals."
+  },
+  "stReplayTutorial": "Replay tutorial",
+  "@stReplayTutorial": {
+    "description": "Settings row that shows the app walkthrough again."
+  },
+  "stTermsPrivacy": "Terms & privacy",
+  "@stTermsPrivacy": {
+    "description": "Settings row that opens the terms of service and privacy policy."
+  },
+  "stVersionShort": "v{version}",
+  "@stVersionShort": {
+    "description": "App version shown at the end of the 'About Pinpoint' row in Settings, e.g. 'v3.4.0'.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "3.4.0"
+      }
+    }
+  },
+  "stSectionAccount": "Account",
+  "@stSectionAccount": {
+    "description": "Settings group overline above the linked sign-in methods. Rendered in capitals."
+  },
+  "stLink": "Link",
+  "@stLink": {
+    "description": "Value on the Google row in Settings when Google is not yet linked; tapping links it."
+  },
+  "stSignOut": "Sign out",
+  "@stSignOut": {
+    "description": "Outlined row at the bottom of Settings (red text), and the confirm button of the sign-out sheet."
+  },
+  "stDangerZone": "Danger zone",
+  "@stDangerZone": {
+    "description": "Title of the card at the very bottom of Settings that holds Delete account."
+  },
+  "stDeleteAccount": "Delete account",
+  "@stDeleteAccount": {
+    "description": "Row inside the Danger zone card in Settings, and the confirm button of the delete-account sheet."
+  },
+  "stSectionDeveloper": "Developer",
+  "@stSectionDeveloper": {
+    "description": "Settings group overline for debug and admin tools; only developers and the admin see it. Rendered in capitals."
+  },
+  "stBackgroundDoodles": "Background doodles",
+  "@stBackgroundDoodles": {
+    "description": "Toggle on the Display screen: show the soft marker swooshes drawn behind screens."
+  },
+  "stBackgroundDoodlesSubtitle": "Soft marker swooshes behind your screens",
+  "@stBackgroundDoodlesSubtitle": {
+    "description": "Subtitle under the 'Background doodles' toggle on the Display screen."
+  },
+  "stSectionLooks": "Looks",
+  "@stSectionLooks": {
+    "description": "Overline on the Display screen above the Background doodles toggle. Rendered in capitals."
+  },
+  "stSectionMotion": "Motion",
+  "@stSectionMotion": {
+    "description": "Overline on the Display screen above the refresh-rate settings. Rendered in capitals."
+  },
+  "stModeOverline": "Mode",
+  "@stModeOverline": {
+    "description": "Overline on the Theme screen above the Light / Dark / System default choices. Rendered in capitals."
+  },
+  "stAccentOverline": "Accent colour",
+  "@stAccentOverline": {
+    "description": "Overline on the Theme screen above the five accent colours. Rendered in capitals."
+  },
+  "stLangEnglish": "English",
+  "@stLangEnglish": {
+    "description": "Name of the English language, shown in the current app language under the native name on the Language screen."
+  },
+  "stLangSpanish": "Spanish",
+  "@stLangSpanish": {
+    "description": "Name of the Spanish language, shown under 'Español' on the Language screen."
+  },
+  "stLangPortuguese": "Portuguese (Brazil)",
+  "@stLangPortuguese": {
+    "description": "Name of Brazilian Portuguese, shown under 'Português' on the Language screen."
+  },
+  "stLangItalian": "Italian",
+  "@stLangItalian": {
+    "description": "Name of the Italian language, shown under 'Italiano' on the Language screen."
+  },
+  "stLangFrench": "French",
+  "@stLangFrench": {
+    "description": "Name of the French language, shown under 'Français' on the Language screen."
+  },
+  "stLangThai": "Thai",
+  "@stLangThai": {
+    "description": "Name of the Thai language, shown under 'ไทย' on the Language screen."
+  },
+  "stLangBengali": "Bengali",
+  "@stLangBengali": {
+    "description": "Name of the Bengali language, shown under 'বাংলা' on the Language screen."
+  },
+  "stLangArabic": "Arabic",
+  "@stLangArabic": {
+    "description": "Name of the Arabic language, shown under 'العربية' on the Language screen."
+  },
+  "stLangPersian": "Persian",
+  "@stLangPersian": {
+    "description": "Name of the Persian language, shown under 'فارسی' on the Language screen."
+  },
+  "stPendingChanges": "{count, plural, =0{No changes waiting} =1{1 change waiting to sync} other{{count} changes waiting to sync}}",
+  "@stPendingChanges": {
+    "description": "Line on the Sync screen: how many local notes have changes not yet uploaded.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stSyncHowTitle": "How sync works",
+  "@stSyncHowTitle": {
+    "description": "Overline on the Sync screen above a short list explaining sync. Rendered in capitals."
+  },
+  "stSyncHowEncrypt": "Notes are encrypted on this device before they upload.",
+  "@stSyncHowEncrypt": {
+    "description": "Bullet on the Sync screen explaining sync."
+  },
+  "stSyncHowDevices": "Changes from your other devices download automatically.",
+  "@stSyncHowDevices": {
+    "description": "Bullet on the Sync screen explaining sync."
+  },
+  "stSyncHowOffline": "Works offline — your changes sync when you're back online.",
+  "@stSyncHowOffline": {
+    "description": "Bullet on the Sync screen explaining sync."
+  },
+  "stSyncHowConflicts": "Conflicts between devices are resolved automatically.",
+  "@stSyncHowConflicts": {
+    "description": "Bullet on the Sync screen explaining sync."
+  },
+  "stEncIntro": "Your notes are encrypted on this device with AES-256 before they sync. Choose who can recover the key.",
+  "@stEncIntro": {
+    "description": "Intro paragraph at the top of the Encryption screen. Keep 'AES-256'."
+  },
+  "stEncStdPoint1": "A recovery copy of your key is kept on our server, so a new device unlocks your notes automatically.",
+  "@stEncStdPoint1": {
+    "description": "First trade-off bullet on the Standard encryption card."
+  },
+  "stEncStdPoint2": "You can't get locked out, but it also means we could technically read your notes.",
+  "@stEncStdPoint2": {
+    "description": "Second trade-off bullet on the Standard encryption card. Must stay honest: the server holds a usable key."
+  },
+  "stEncNotE2ee": "Cloud voice recordings and reminder text are not end-to-end encrypted in either mode.",
+  "@stEncNotE2ee": {
+    "description": "Trade-off bullet shown on both encryption cards. Must stay honest: voice recordings and reminder text are readable by the server."
+  },
+  "stEncZkPoint1": "Your key is locked with a passphrase only you know, so we can't read your notes.",
+  "@stEncZkPoint1": {
+    "description": "First trade-off bullet on the Zero-knowledge encryption card."
+  },
+  "stEncZkPoint2": "Lose both the passphrase and the recovery code and your notes are gone for good.",
+  "@stEncZkPoint2": {
+    "description": "Second trade-off bullet on the Zero-knowledge encryption card."
+  },
+  "stEncTurnOn": "Turn on zero-knowledge",
+  "@stEncTurnOn": {
+    "description": "Primary button on the Encryption screen that starts setting a passphrase."
+  },
+  "stEncCurrent": "Current",
+  "@stEncCurrent": {
+    "description": "Small tag on the selected (active) encryption mode card."
+  },
+  "stUsageTitle": "Your usage",
+  "@stUsageTitle": {
+    "description": "Title of the usage sheet that lists synced notes, OCR scans and exports."
+  },
+  "stRemaining": "{count, plural, =1{1 left} other{{count} left}}",
+  "@stRemaining": {
+    "description": "Under a usage bar in the usage sheet: how many uses remain before the free limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stUsageReconciled": "Usage corrected: {oldCount} → {newCount} synced notes",
+  "@stUsageReconciled": {
+    "description": "Toast after long-pressing refresh in the usage sheet, when the synced-note count was corrected against the server.",
+    "placeholders": {
+      "oldCount": {
+        "type": "int"
+      },
+      "newCount": {
+        "type": "int"
+      }
+    }
+  },
+  "stUsageInSync": "Already in sync: {count} synced notes",
+  "@stUsageInSync": {
+    "description": "Toast after long-pressing refresh in the usage sheet, when the count already matched the server.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pwHeadline": "[[Go unlimited]]\nwith Pinpoint Pro",
+  "@pwHeadline": {
+    "description": "Paywall headline. The part inside [[ ]] sits on a yellow marker highlight; keep the brackets around the words you want highlighted, and keep the line break if it reads well. 'Pinpoint Pro' is a brand name: do not translate."
+  },
+  "pwSubtitle": "Every note type stays free. Pro just removes the limits.",
+  "@pwSubtitle": {
+    "description": "Paywall line under the headline."
+  },
+  "pwRowFolders": "Folders",
+  "@pwRowFolders": {
+    "description": "Row of the paywall limits table."
+  },
+  "pwRowExports": "PDF & Markdown exports",
+  "@pwRowExports": {
+    "description": "Row of the paywall limits table. Keep 'PDF' and 'Markdown'."
+  },
+  "pwRowVoice": "Voice recording",
+  "@pwRowVoice": {
+    "description": "Row of the paywall limits table: how long one voice recording can be."
+  },
+  "pwRowAccents": "Accent colours",
+  "@pwRowAccents": {
+    "description": "Row of the paywall limits table: how many accent colours can be chosen."
+  },
+  "pwPerMonth": "{count}/mo",
+  "@pwPerMonth": {
+    "description": "A monthly allowance in the paywall table, e.g. '20/mo'. Keep it short.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pwMinutes": "{count, plural, =1{1 min} other{{count} min}}",
+  "@pwMinutes": {
+    "description": "A recording length in the paywall table, e.g. '2 min'. Keep it short.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pwAll": "All {count}",
+  "@pwAll": {
+    "description": "The Pro value in the 'Accent colours' row of the paywall table, e.g. 'All 5'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pwRowSemantic": "{feature}: {free} on the free plan, {pro} with Pro",
+  "@pwRowSemantic": {
+    "description": "Screen-reader label for a row of the paywall limits table, e.g. 'Folders: 5 on the free plan, Unlimited with Pro'.",
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      },
+      "free": {
+        "type": "String"
+      },
+      "pro": {
+        "type": "String"
+      }
+    }
+  },
+  "pwSave": "SAVE {percent}%",
+  "@pwSave": {
+    "description": "Badge on the yearly plan card: how much cheaper a year is than twelve monthly payments, computed from store prices.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "pwPlanSemantic": "{plan}, {price}",
+  "@pwPlanSemantic": {
+    "description": "Screen-reader label for a plan card on the paywall, e.g. 'Yearly, $19.99'.",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "pwContinue": "Continue",
+  "@pwContinue": {
+    "description": "Main paywall button that starts the purchase of the selected plan (when no free trial applies)."
+  },
+  "pwCancelAnytime": "Cancel anytime in your store account.",
+  "@pwCancelAnytime": {
+    "description": "Small print under the paywall button."
+  },
+  "pwSeePro": "See Pro",
+  "@pwSeePro": {
+    "description": "Main button of the premium limit sheet; opens the paywall. 'Pro' is the plan name."
+  },
+  "pwNotNow": "Not now",
+  "@pwNotNow": {
+    "description": "Secondary button of the premium limit sheet; closes it."
+  },
+  "pwGateSyncTitle": "{limit, plural, =1{You've synced 1 of 1 note} other{You've synced {limit} of {limit} notes}}",
+  "@pwGateSyncTitle": {
+    "description": "Title of the premium limit sheet when a free user reaches the synced-note limit.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateSyncBody": "Pro syncs every note, with no cap.",
+  "@pwGateSyncBody": {
+    "description": "One-line body of the premium limit sheet for the synced-note limit."
+  },
+  "pwGateFolderTitle": "{limit, plural, =1{You've used 1 of 1 folder} other{You've used {limit} of {limit} folders}}",
+  "@pwGateFolderTitle": {
+    "description": "Title of the premium limit sheet when a free user reaches the folder limit.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateFolderBody": "Go Pro for unlimited folders.",
+  "@pwGateFolderBody": {
+    "description": "One-line body of the premium limit sheet for the folder limit."
+  },
+  "pwGateOcrTitle": "{limit, plural, =1{You've used 1 of 1 scan this month} other{You've used {limit} of {limit} scans this month}}",
+  "@pwGateOcrTitle": {
+    "description": "Title of the premium limit sheet when a free user reaches the monthly OCR scan limit.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateOcrBody": "Scans reset next month, or go Pro for unlimited.",
+  "@pwGateOcrBody": {
+    "description": "One-line body of the premium limit sheet for the OCR scan limit."
+  },
+  "pwGateExportTitle": "{limit, plural, =1{You've used 1 of 1 export this month} other{You've used {limit} of {limit} exports this month}}",
+  "@pwGateExportTitle": {
+    "description": "Title of the premium limit sheet when a free user reaches the monthly export limit.",
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateExportBody": "Exports reset next month, or go Pro for unlimited.",
+  "@pwGateExportBody": {
+    "description": "One-line body of the premium limit sheet for the export limit."
+  },
+  "pwGateVoiceTitle": "{minutes, plural, =1{Free recordings stop at 1 min} other{Free recordings stop at {minutes} min}}",
+  "@pwGateVoiceTitle": {
+    "description": "Title of the premium limit sheet when a free user's voice recording hits the length limit.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateVoiceBody": "Go Pro to record for as long as you like.",
+  "@pwGateVoiceBody": {
+    "description": "One-line body of the premium limit sheet for the recording-length limit."
+  },
+  "pwGateThemeTitle": "This accent is part of Pro",
+  "@pwGateThemeTitle": {
+    "description": "Title of the premium limit sheet when a free user taps a locked accent colour."
+  },
+  "pwGateThemeBody": "Pro unlocks all {total} accent colours.",
+  "@pwGateThemeBody": {
+    "description": "One-line body of the premium limit sheet for a locked accent colour. {total} is the number of accent colours.",
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateAttachTitle": "{max, plural, =1{You've added 1 of 1 attachment} other{You've added {max} of {max} attachments}}",
+  "@pwGateAttachTitle": {
+    "description": "Title of the premium limit sheet when a free user reaches the attachments-per-note limit.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "pwGateAttachBody": "Go Pro for unlimited attachments.",
+  "@pwGateAttachBody": {
+    "description": "One-line body of the premium limit sheet for the attachment limit."
+  },
+  "stShowPassword": "Show password",
+  "@stShowPassword": {
+    "description": "Screen-reader label and tooltip for the eye button that reveals a password or passphrase field."
+  },
+  "stHidePassword": "Hide password",
+  "@stHidePassword": {
+    "description": "Screen-reader label and tooltip for the eye button that hides a revealed password or passphrase field."
   }
 }
