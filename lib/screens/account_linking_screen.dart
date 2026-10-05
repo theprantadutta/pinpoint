@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:pinpoint/design_system/design_system.dart';
+import 'package:pinpoint/services/api_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
+import 'package:pinpoint/util/api_error_messages.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
@@ -30,7 +33,6 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
-  bool _obscurePassword = true;
   String? _errorMessage;
 
   @override
@@ -71,8 +73,13 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
         context.go('/');
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        // A coded API error renders in the user's language; anything else
+        // falls back to the exception text, as before.
+        _errorMessage = e is ApiError
+            ? localizedApiError(context, e)
+            : e.toString().replaceAll('Exception: ', '');
       });
     } finally {
       if (mounted) {
@@ -90,246 +97,146 @@ class _AccountLinkingScreenState extends State<AccountLinkingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final s = context.sketch;
+    final t = context.type;
+    final l10n = AppL10n.of(context);
+    final muted =
+        t.bodyRegular.copyWith(fontSize: 14, height: 1.5, color: s.muted);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppL10n.of(context).linkTitle),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: _isLoading ? null : _handleCancel,
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Icon
-              Icon(
-                Icons.link,
-                size: 80,
-                color: cs.primary,
-              ),
-
-              const SizedBox(height: 24),
-
-              // Title
-              Text(
-                AppL10n.of(context).linkAccountExists,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: cs.onSurface,
+    return SketchScaffold(
+      title: l10n.linkTitle,
+      onBack: _isLoading ? () {} : _handleCancel,
+      doodleTop: DoodleBackground.settingsTop,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+            SketchSpace.screenX, 22, SketchSpace.screenX, 28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const ExcludeSemantics(
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: StickerTile(
+                  color: SketchPastels.sky,
+                  size: 64,
+                  angle: -7,
+                  icon: Icons.link_rounded,
                 ),
-                textAlign: TextAlign.center,
               ),
+            ),
+            const SizedBox(height: 18),
+            Semantics(
+              header: true,
+              child: Text(l10n.linkAccountExists, style: t.pageTitle),
+            ),
+            const SizedBox(height: 16),
 
-              const SizedBox(height: 16),
-
-              // Info Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: cs.onPrimaryContainer,
-                          size: 20,
+            // Info card
+            SketchCard(
+              pastel: SketchPastels.lavender,
+              radius: SketchRadius.group,
+              padding: const EdgeInsets.all(SketchSpace.cardPadLg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          l10n.linkWhatsHappening,
+                          style: t.body.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: SketchPastels.onPastel),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppL10n.of(context).linkWhatsHappening,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: cs.onPrimaryContainer,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      AppL10n.of(context).linkExplanation,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: cs.onPrimaryContainer,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    l10n.linkExplanation,
+                    style: t.bodyRegular.copyWith(
+                        fontSize: 14,
                         height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
+                        color: SketchPastels.onPastel),
+                  ),
+                ],
               ),
+            ),
 
-              const SizedBox(height: 32),
+            const SizedBox(height: SketchSpace.section),
 
-              // Password Form
-              Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      AppL10n.of(context).linkEnterPassword,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurface,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Password Field
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: AppL10n.of(context).authPasswordLabel,
-                        hintText: AppL10n.of(context).linkPasswordHint,
-                        prefixIcon: const Icon(Icons.lock_outlined),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return AppL10n.of(context).authPasswordRequired;
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Error Message
-                    if (_errorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: cs.errorContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              color: cs.onErrorContainer,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: cs.onErrorContainer,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    // Link Button
-                    FilledButton(
-                      onPressed: _isLoading ? null : _handleLinkAccounts,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text(
-                              AppL10n.of(context).linkGoogleAccount,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Cancel Button
-                    OutlinedButton(
-                      onPressed: _isLoading ? null : _handleCancel,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        AppL10n.of(context).commonCancel,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+            // Password Form
+            Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l10n.linkEnterPassword, style: t.sectionTitle),
+                  const SizedBox(height: 12),
+                  SketchTextField(
+                    controller: _passwordController,
+                    hint: l10n.linkPasswordHint,
+                    semanticLabel: l10n.authPasswordLabel,
+                    prefixIcon: Icons.lock_outline_rounded,
+                    obscureText: true,
+                    revealLabel: l10n.auShowPassword,
+                    concealLabel: l10n.auHidePassword,
+                    autofocus: true,
+                    textInputAction: TextInputAction.done,
+                    autofillHints: const [AutofillHints.password],
+                    onSubmitted: (_) {
+                      if (!_isLoading) _handleLinkAccounts();
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return l10n.authPasswordRequired;
+                      }
+                      return null;
+                    },
+                  ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 14),
+                    SketchErrorPill(message: _errorMessage!),
                   ],
-                ),
-              ),
+                  const SizedBox(height: 20),
 
-              const SizedBox(height: 24),
+                  // Link Button
+                  PillButton(
+                    label: l10n.auLinkAccountsCta,
+                    loading: _isLoading,
+                    onPressed: _handleLinkAccounts,
+                  ),
+                  const SizedBox(height: 10),
 
-              // Security Note
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.security,
-                      color: cs.onSurfaceVariant,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        AppL10n.of(context).linkPasswordNeverStored,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  // Cancel Button
+                  PillButton.secondary(
+                    label: l10n.commonCancel,
+                    onPressed: _isLoading ? null : _handleCancel,
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: SketchSpace.section),
+
+            // Security Note
+            SketchCard(
+              color: s.soft,
+              borderColor: s.hairline,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.shield_outlined, color: s.muted, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(l10n.linkPasswordNeverStored, style: muted),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

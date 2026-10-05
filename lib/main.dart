@@ -38,7 +38,6 @@ import 'services/refresh_rate_controller.dart';
 import 'services/notification_channels.dart';
 import 'screens/auth_screen.dart';
 import 'package:pinpoint/services/subscription_service.dart';
-import 'package:pinpoint/design_system/theme.dart';
 import 'package:flutter/services.dart';
 
 // void main() async {
@@ -368,6 +367,11 @@ class AuthenticationFailedApp extends StatelessWidget {
         ...material_ui.GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: LocaleController.supportedLocales,
+      // Follows the device's light/dark setting: no ThemeController exists
+      // this early.
+      theme: PinpointTheme.light(),
+      darkTheme: PinpointTheme.dark(),
+      debugShowCheckedModeBanner: false,
       // onGenerateTitle rather than `title`: the latter is evaluated with the
       // context *above* MaterialApp, where Localizations does not yet exist.
       onGenerateTitle: (context) => AppL10n.of(context).startupAuthRequired,
@@ -376,33 +380,18 @@ class AuthenticationFailedApp extends StatelessWidget {
       // Localizations this MaterialApp installs. Reading AppL10n from it finds
       // nothing and throws on the null check.
       home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.lock, size: 64, color: Colors.red),
-                SizedBox(height: 16),
-                Text(
-                  AppL10n.of(context).startupAuthFailed,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  AppL10n.of(context).startupRestartApp,
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () {
-                    // Try authentication again
-                    _retryAuthentication();
-                  },
-                  child: Text(AppL10n.of(context).startupTryAgain),
-                ),
-              ],
-            ),
+        builder: (context) => _StartupErrorScaffold(
+          sticker: const StickerTile(
+            color: SketchPastels.pink,
+            size: 76,
+            angle: -6,
+            icon: Icons.lock_rounded,
           ),
+          title: AppL10n.of(context).startupAuthFailed,
+          message: AppL10n.of(context).startupRestartApp,
+          actionLabel: AppL10n.of(context).startupTryAgain,
+          // Try authentication again
+          onAction: _retryAuthentication,
         ),
       ),
     );
@@ -437,6 +426,11 @@ class InitializationErrorApp extends StatelessWidget {
         ...material_ui.GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: LocaleController.supportedLocales,
+      // Follows the device's light/dark setting: no ThemeController exists
+      // this early.
+      theme: PinpointTheme.light(),
+      darkTheme: PinpointTheme.dark(),
+      debugShowCheckedModeBanner: false,
       // onGenerateTitle rather than `title`: the latter is evaluated with the
       // context *above* MaterialApp, where Localizations does not yet exist.
       onGenerateTitle: (context) => AppL10n.of(context).startupInitError,
@@ -445,34 +439,88 @@ class InitializationErrorApp extends StatelessWidget {
       // Localizations this MaterialApp installs. Reading AppL10n from it finds
       // nothing and throws on the null check.
       home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error, size: 64, color: Colors.orange),
-                  SizedBox(height: 16),
-                  Text(
-                    AppL10n.of(context).startupInitFailed,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    AppL10n.of(context).startupErrorDetail(error),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Restart the app
-                      main();
-                    },
-                    child: Text(AppL10n.of(context).commonRetry),
-                  ),
-                ],
+        builder: (context) => _StartupErrorScaffold(
+          sticker: const StickerTile(
+            color: SketchPastels.yellow,
+            size: 76,
+            angle: -6,
+            icon: Icons.priority_high_rounded,
+          ),
+          title: AppL10n.of(context).startupInitFailed,
+          message: AppL10n.of(context).startupErrorDetail(error),
+          messageIsError: true,
+          actionLabel: AppL10n.of(context).commonRetry,
+          // Restart the app
+          onAction: main,
+        ),
+      ),
+    );
+  }
+}
+
+/// The body both startup error apps share: a tilted sticker, a 22/800
+/// title, a muted (or error-coloured) line and one inverse pill. Colours
+/// come from the Sketchbook theme each app installs.
+class _StartupErrorScaffold extends StatelessWidget {
+  const _StartupErrorScaffold({
+    required this.sticker,
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+    this.messageIsError = false,
+  });
+
+  final Widget sticker;
+  final String title;
+  final String message;
+  final String actionLabel;
+  final VoidCallback onAction;
+  final bool messageIsError;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.sketch;
+    final t = context.type;
+    return Scaffold(
+      backgroundColor: s.bg,
+      body: DoodleBackground(
+        top: DoodleBackground.settingsTop,
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(SketchSpace.screenX + 4),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ExcludeSemantics(child: sticker),
+                    const SizedBox(height: 24),
+                    Semantics(
+                      header: true,
+                      child: Text(title,
+                          textAlign: TextAlign.center, style: t.emptyTitle),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: t.bodyRegular.copyWith(
+                        fontSize: 14,
+                        height: 1.5,
+                        color:
+                            messageIsError ? SketchFunctional.error : s.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    PillButton(
+                      label: actionLabel,
+                      expand: false,
+                      onPressed: onAction,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -20,8 +20,8 @@ import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/encryption_service.dart';
 import 'package:pinpoint/services/zero_knowledge_service.dart';
 import 'package:pinpoint/screens/unlock_screen.dart';
-import 'package:pinpoint/design_system/colors.dart';
-import 'package:pinpoint/design_system/responsive.dart';
+import 'package:pinpoint/design_system/design_system.dart';
+import 'package:pinpoint/components/auth/provider_logos.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:pinpoint/util/api_error_messages.dart';
@@ -36,7 +36,15 @@ const int kMinPasswordLength = 6;
 class AuthScreen extends StatefulWidget {
   static const String kRouteName = '/auth';
 
-  const AuthScreen({super.key});
+  /// The query that opens this screen in sign-up mode (see
+  /// [TermsAcceptanceScreen.signUpLocation]).
+  static const String signUpLocation = '$kRouteName?mode=signup';
+
+  const AuthScreen({super.key, this.startInSignUp = false});
+
+  /// Open with the email form in sign-up mode — the onboarding's
+  /// "Get started" path. Social sign-in is the same either way.
+  final bool startInSignUp;
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -47,12 +55,18 @@ class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool _isLogin = true;
+  late bool _isLogin = !widget.startInSignUp;
   bool _isGoogleLoading = false;
   bool _isAppleLoading = false;
   bool _isEmailLoading = false;
-  bool _obscurePassword = true;
   String? _errorMessage;
+
+  /// Where [_errorMessage] is shown: under the email button when the email
+  /// form raised it, otherwise under the provider buttons.
+  bool _errorFromEmail = false;
+
+  /// Doodle band offset: the swooshes run behind the brand sticker.
+  static const double _doodleTop = 20;
 
   /// Whether any auth flow is currently in progress (used to disable buttons).
   bool get _isBusy => _isGoogleLoading || _isAppleLoading || _isEmailLoading;
@@ -212,25 +226,12 @@ class _AuthScreenState extends State<AuthScreen> {
 
         // Show error dialog with retry option
         if (mounted) {
-          final retry = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text(_l10n.authSyncFailedTitle),
-              content: Text(
-                _l10n.authSyncFailedBody(
-                  result?.message ?? _l10n.authUnknownError,
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(_l10n.authContinueAnyway),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text(_l10n.commonRetry),
-                ),
-              ],
+          // true = Retry, false = Continue anyway, null = dismissed
+          // (which, as before, continues).
+          final retry = await _askRetry(
+            _l10n.authSyncFailedTitle,
+            _l10n.authSyncFailedBody(
+              result.message.isEmpty ? _l10n.authUnknownError : result.message,
             ),
           );
 
@@ -251,25 +252,13 @@ class _AuthScreenState extends State<AuthScreen> {
 
       // Show error with option to continue
       if (mounted) {
-        final continueAnyway = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(_l10n.authSyncErrorTitle),
-            content: Text(_l10n.authSyncErrorBody(e.toString())),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(_l10n.authContinueAnyway),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(_l10n.commonRetry),
-              ),
-            ],
-          ),
+        // Dismissing retries, as before: only "Continue anyway" continues.
+        final retry = await _askRetry(
+          _l10n.authSyncErrorTitle,
+          _l10n.authSyncErrorBody(e.toString()),
         );
 
-        if (continueAnyway != true) {
+        if (retry != false) {
           return await _performInitialSync(); // Retry
         }
       }
@@ -278,169 +267,138 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  /// The Retry / Continue-anyway choice after a failed initial sync, as a
+  /// Sketchbook sheet. Returns true for Retry, false for Continue anyway and
+  /// null when dismissed.
+  Future<bool?> _askRetry(String title, String body) {
+    return showSketchSheet<bool>(
+      context: context,
+      builder: (ctx) {
+        final t = ctx.type;
+        return SketchSheet(
+          titleWidget: Semantics(
+            header: true,
+            child: Text(title, style: t.emptyTitle),
+          ),
+          footer: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PillButton.secondary(
+                label: _l10n.authContinueAnyway,
+                onPressed: () => Navigator.of(ctx).pop(false),
+              ),
+              const SizedBox(height: 10),
+              PillButton(
+                label: _l10n.commonRetry,
+                onPressed: () => Navigator.of(ctx).pop(true),
+              ),
+            ],
+          ),
+          child: Text(
+            body,
+            style: t.bodyRegular
+                .copyWith(fontSize: 14, height: 1.5, color: ctx.sketch.muted),
+          ),
+        );
+      },
+    );
+  }
+
   /// Show sync result dialog with detailed information
   Future<void> _showSyncResultDialog(SyncResult result) async {
     final hasErrors = result.notesFailed > 0 || result.decryptionErrors > 0;
 
-    await showDialog(
+    await showSketchSheet<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              hasErrors ? Icons.warning_amber : Icons.check_circle,
-              color: hasErrors ? Colors.orange : Colors.green,
-              size: 24,
+      builder: (ctx) {
+        final t = ctx.type;
+        final rows = <Widget>[
+          if (result.notesSynced > 0)
+            _buildSyncStat(
+                _l10n.authStatNotes, result.notesSynced, Icons.notes_rounded),
+          if (result.foldersSynced > 0)
+            _buildSyncStat(_l10n.authStatFolders, result.foldersSynced,
+                Icons.folder_outlined),
+          if (result.remindersSynced > 0)
+            _buildSyncStat(_l10n.authStatReminders, result.remindersSynced,
+                Icons.alarm_rounded),
+          if (result.notesFailed > 0)
+            _buildSyncStat(
+              _l10n.authStatFailedToRestore,
+              result.notesFailed,
+              Icons.error_outline_rounded,
+              isError: true,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                hasErrors
-                    ? _l10n.authSyncCompletedWithErrors
-                    : _l10n.authSyncSuccessful,
-                style: const TextStyle(fontSize: 18),
-              ),
-            ),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ];
+
+        return SketchSheet(
+          titleWidget: Row(
             children: [
-              if (result.notesSynced > 0) ...[
-                _buildSyncStat(_l10n.authStatNotes, result.notesSynced, Icons.note),
-              ],
-              if (result.foldersSynced > 0) ...[
-                const SizedBox(height: 12),
-                _buildSyncStat(
-                    _l10n.authStatFolders, result.foldersSynced, Icons.folder),
-              ],
-              if (result.remindersSynced > 0) ...[
-                const SizedBox(height: 12),
-                _buildSyncStat(
-                    _l10n.authStatReminders, result.remindersSynced, Icons.alarm),
-              ],
-              if (result.notesFailed > 0) ...[
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 8),
-                _buildSyncStat(
-                  _l10n.authStatFailedToRestore,
-                  result.notesFailed,
-                  Icons.error_outline,
-                  isError: true,
+              StickerTile(
+                color: hasErrors ? SketchPastels.yellow : SketchPastels.mint,
+                size: 44,
+                angle: -6,
+                icon: hasErrors
+                    ? Icons.priority_high_rounded
+                    : Icons.check_rounded,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    hasErrors
+                        ? _l10n.authSyncCompletedWithErrors
+                        : _l10n.authSyncSuccessful,
+                    style: t.emptyTitle,
+                  ),
                 ),
-              ],
+              ),
+            ],
+          ),
+          footer: PillButton(
+            label: _l10n.commonOk,
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (rows.isNotEmpty)
+                SketchGroup(margin: EdgeInsets.zero, children: rows),
               if (result.decryptionErrors > 0) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.lock_outline,
-                              color: Colors.red.shade700, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            _l10n.authDecryptionErrors,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red.shade700,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${result.decryptionErrors} notes could not be decrypted. This usually means the encryption key is incorrect or corrupted.',
-                        style:
-                            TextStyle(fontSize: 12, color: Colors.red.shade900),
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: 14),
+                Text(
+                  _l10n.authDecryptionErrors,
+                  style: t.chip.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: SketchFunctional.error),
+                ),
+                const SizedBox(height: 6),
+                SketchErrorPill(
+                  message:
+                      _l10n.auDecryptionErrorsBody(result.decryptionErrors),
                 ),
               ],
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  /// Helper widget to build sync stat row
+  /// One row of the restore summary: icon, label and the count.
   Widget _buildSyncStat(String label, int count, IconData icon,
       {bool isError = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: isError
-            ? Colors.red.withValues(alpha: 0.1)
-            : Colors.green.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isError
-              ? Colors.red.withValues(alpha: 0.3)
-              : Colors.green.withValues(alpha: 0.3),
+    return SketchRow(
+      icon: icon,
+      label: label,
+      labelColor: isError ? SketchFunctional.error : null,
+      trailing: Text(
+        '$count',
+        style: context.type.body.copyWith(
+          fontWeight: FontWeight.w800,
+          color: isError ? SketchFunctional.error : context.sketch.ink,
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: isError
-                  ? Colors.red.withValues(alpha: 0.15)
-                  : Colors.green.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(
-              icon,
-              size: 18,
-              color: isError ? Colors.red.shade700 : Colors.green.shade700,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: isError
-                  ? Colors.red.withValues(alpha: 0.2)
-                  : Colors.green.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '$count',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: isError ? Colors.red.shade700 : Colors.green.shade700,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -497,6 +455,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (mounted) {
         setState(() {
           _errorMessage = _describeError(e);
+          _errorFromEmail = false;
         });
       }
     } finally {
@@ -646,6 +605,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (mounted) {
         setState(() {
           _errorMessage = _describeError(e);
+          _errorFromEmail = false;
         });
       }
     } finally {
@@ -755,6 +715,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } catch (e) {
       setState(() {
         _errorMessage = _describeError(e);
+        _errorFromEmail = true;
       });
     } finally {
       if (mounted) {
@@ -765,354 +726,189 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  void _toggleMode() {
+    setState(() {
+      _isLogin = !_isLogin;
+      _errorMessage = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final s = context.sketch;
+    final t = context.type;
+    final muted =
+        t.bodyRegular.copyWith(fontSize: 14, height: 1.5, color: s.muted);
+    final socialError = _errorMessage != null && !_errorFromEmail;
+    final emailError = _errorMessage != null && _errorFromEmail;
 
     return Scaffold(
-      body: SafeArea(
-        child: ResponsiveCenter(
-          maxWidth: Breakpoints.formMaxWidth,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 40),
-
-                // App Logo/Icon
-                Icon(
-                  Icons.push_pin,
-                  size: 80,
-                  color: cs.primary,
-                ),
-
-                const SizedBox(height: 16),
-
-                // App Title
-                Text(
-                  'PinPoint',
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: cs.onSurface,
+      backgroundColor: s.bg,
+      body: DoodleBackground(
+        top: _doodleTop,
+        squiggle: true,
+        child: SafeArea(
+          child: ResponsiveCenter(
+            maxWidth: Breakpoints.formMaxWidth,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                  SketchSpace.screenX, 28, SketchSpace.screenX, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _AuthHero(),
+                  const SizedBox(height: 26),
+                  Semantics(
+                    header: true,
+                    child: HighlightedText(_l10n.auReadyTitle,
+                        style: t.screenTitle),
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                  const SizedBox(height: 10),
+                  Text(_l10n.auReadyBody, style: muted),
+                  const SizedBox(height: 26),
 
-                const SizedBox(height: 8),
-
-                // Subtitle
-                Text(
-                  _isLogin ? _l10n.authWelcomeBack : _l10n.authCreateAccount,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: cs.onSurfaceVariant,
+                  // Google Sign-In Button (Primary)
+                  PillButton.secondary(
+                    label: _l10n.authContinueWithGoogle,
+                    leading: const GoogleLogo(),
+                    loading: _isGoogleLoading,
+                    onPressed: _isBusy && !_isGoogleLoading
+                        ? null
+                        : _handleGoogleSignIn,
                   ),
-                  textAlign: TextAlign.center,
-                ),
 
-                const SizedBox(height: 40),
-
-                // Google Sign-In Button (Primary)
-                _buildGoogleSignInButton(theme, cs),
-
-                // Sign in with Apple (iOS only — App Store Guideline 4.8)
-                if (Platform.isIOS) ...[
-                  const SizedBox(height: 12),
-                  _buildAppleSignInButton(theme, cs),
-                ],
-
-                const SizedBox(height: 24),
-
-                // Divider
-                Row(
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        color: cs.outlineVariant,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        _l10n.authEmailDivider,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Divider(
-                        color: cs.outlineVariant,
-                      ),
+                  // Sign in with Apple (iOS only — App Store Guideline 4.8).
+                  // An outlined button with the Apple logo and an approved
+                  // title, which the HIG permits for a custom button.
+                  if (Platform.isIOS) ...[
+                    const SizedBox(height: 12),
+                    PillButton.secondary(
+                      label: _l10n.authContinueWithApple,
+                      leading: Icon(Icons.apple, size: 24, color: s.ink),
+                      loading: _isAppleLoading,
+                      onPressed: _isBusy && !_isAppleLoading
+                          ? null
+                          : _handleAppleSignIn,
                     ),
                   ],
-                ),
 
-                const SizedBox(height: 24),
+                  if (socialError) ...[
+                    const SizedBox(height: 14),
+                    SketchErrorPill(message: _errorMessage!),
+                  ],
 
-                // Email/Password Form
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Email Field
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          labelText: _l10n.authEmailLabel,
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return _l10n.authEmailRequired;
-                          }
-                          if (!value.contains('@')) {
-                            return _l10n.authEmailInvalid;
-                          }
-                          return null;
-                        },
-                      ),
+                  const SizedBox(height: 26),
+                  _OrDivider(label: _l10n.authEmailDivider),
+                  const SizedBox(height: 18),
 
-                      const SizedBox(height: 16),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      _isLogin
+                          ? _l10n.authWelcomeBack
+                          : _l10n.authCreateAccount,
+                      style: t.sectionTitle,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
 
-                      // Password Field
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: _l10n.authPasswordLabel,
-                          prefixIcon: const Icon(Icons.lock_outlined),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
+                  // Email/Password Form
+                  AutofillGroup(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SketchTextField(
+                            controller: _emailController,
+                            hint: _l10n.authEmailLabel,
+                            prefixIcon: Icons.mail_outline_rounded,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.email],
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return _l10n.authEmailRequired;
+                              }
+                              if (!value.contains('@')) {
+                                return _l10n.authEmailInvalid;
+                              }
+                              return null;
                             },
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return _l10n.authPasswordRequired;
-                          }
-                          if (!_isLogin && value.length < kMinPasswordLength) {
-                            return _l10n
-                                .authPasswordTooShort(kMinPasswordLength);
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Error Message
-                      if (_errorMessage != null)
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: cs.errorContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                color: cs.onErrorContainer,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _errorMessage!,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: cs.onErrorContainer,
-                                  ),
-                                ),
-                              ),
+                          const SizedBox(height: 12),
+                          SketchTextField(
+                            controller: _passwordController,
+                            hint: _l10n.authPasswordLabel,
+                            prefixIcon: Icons.lock_outline_rounded,
+                            obscureText: true,
+                            revealLabel: _l10n.auShowPassword,
+                            concealLabel: _l10n.auHidePassword,
+                            textInputAction: TextInputAction.done,
+                            autofillHints: [
+                              _isLogin
+                                  ? AutofillHints.password
+                                  : AutofillHints.newPassword,
                             ],
+                            onSubmitted: (_) {
+                              if (!_isBusy) _handleEmailPasswordAuth();
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return _l10n.authPasswordRequired;
+                              }
+                              if (!_isLogin &&
+                                  value.length < kMinPasswordLength) {
+                                return _l10n
+                                    .authPasswordTooShort(kMinPasswordLength);
+                              }
+                              return null;
+                            },
                           ),
-                        ),
+                          if (emailError) ...[
+                            const SizedBox(height: 14),
+                            SketchErrorPill(message: _errorMessage!),
+                          ],
+                          const SizedBox(height: 18),
 
-                      // Login/Register Button
-                      FilledButton(
-                        onPressed: _isBusy ? null : _handleEmailPasswordAuth,
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: _isEmailLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(
+                          // Login/Register Button
+                          PillButton(
+                            label:
                                 _isLogin ? _l10n.authLogIn : _l10n.authSignUp,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                            loading: _isEmailLoading,
+                            onPressed: _isBusy && !_isEmailLoading
+                                ? null
+                                : _handleEmailPasswordAuth,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Toggle Login/Register
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        _isLogin
+                            ? _l10n.authNoAccountPrompt
+                            : _l10n.authHaveAccountPrompt,
+                        style: muted,
+                      ),
+                      SketchTextAction(
+                        label: _isLogin ? _l10n.authSignUp : _l10n.authLogIn,
+                        style: t.chip.copyWith(fontSize: 14),
+                        onTap: (_isGoogleLoading || _isEmailLoading)
+                            ? null
+                            : _toggleMode,
                       ),
                     ],
                   ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Toggle Login/Register
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _isLogin
-                          ? _l10n.authNoAccountPrompt
-                          : _l10n.authHaveAccountPrompt,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: (_isGoogleLoading || _isEmailLoading)
-                          ? null
-                          : () {
-                              setState(() {
-                                _isLogin = !_isLogin;
-                                _errorMessage = null;
-                              });
-                            },
-                      child: Text(
-                        _isLogin ? _l10n.authSignUp : _l10n.authLogIn,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: cs.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGoogleSignInButton(ThemeData theme, ColorScheme cs) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: FilledButton.tonalIcon(
-        onPressed: _isBusy ? null : _handleGoogleSignIn,
-        icon: _isGoogleLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Image.asset(
-                'assets/images/google_logo.png',
-                height: 24,
-                width: 24,
-                errorBuilder: (context, error, stackTrace) {
-                  // Fallback to icon if image not found
-                  return const Icon(Icons.g_mobiledata, size: 24);
-                },
+                ],
               ),
-        label: Text(
-          _l10n.authContinueWithGoogle,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          backgroundColor: cs.surface,
-          foregroundColor: cs.onSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: cs.outline,
-              width: 1,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// "Continue with Apple" button (iOS only).
-  ///
-  /// Custom-styled to match [_buildGoogleSignInButton] for a consistent look.
-  /// App Store HIG permits a custom Sign in with Apple button as long as it uses
-  /// the Apple logo, an approved title, and adequate size/contrast — this is the
-  /// "white with outline" treatment (surface background + outline in light mode,
-  /// adapting to the theme).
-  Widget _buildAppleSignInButton(ThemeData theme, ColorScheme cs) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: FilledButton.tonalIcon(
-        onPressed: _isBusy ? null : _handleAppleSignIn,
-        icon: _isAppleLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Icon(Icons.apple, size: 26, color: cs.onSurface),
-        label: Text(
-          _l10n.authContinueWithApple,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          backgroundColor: cs.surface,
-          foregroundColor: cs.onSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: cs.outline,
-              width: 1,
             ),
           ),
         ),
@@ -1121,7 +917,78 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 }
 
-/// Animated sync progress dialog
+/// The brand sticker with two small companions — the same hero as the
+/// onboarding's "Get started" step.
+class _AuthHero extends StatelessWidget {
+  const _AuthHero();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ExcludeSemantics(
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: SizedBox(
+          width: 190,
+          height: 118,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              PositionedDirectional(
+                start: 6,
+                top: 14,
+                child: BrandSticker(size: 92, shadow: true),
+              ),
+              PositionedDirectional(
+                start: 120,
+                top: 0,
+                child: StickerTile(
+                    color: SketchPastels.mint,
+                    size: 42,
+                    angle: 12,
+                    icon: Icons.check_rounded),
+              ),
+              PositionedDirectional(
+                start: 116,
+                top: 70,
+                child: StickerTile(
+                    color: SketchPastels.lavender,
+                    size: 36,
+                    angle: -10,
+                    icon: Icons.star_rounded),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "—— or continue with email ——" with hairline rules.
+class _OrDivider extends StatelessWidget {
+  const _OrDivider({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.sketch;
+    Widget rule() => Expanded(
+          child: Container(height: SketchStroke.outline, color: s.hairline),
+        );
+    return Row(
+      children: [
+        rule(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Text(label, style: context.type.caption),
+        ),
+        rule(),
+      ],
+    );
+  }
+}
+
 /// Restore dialog driven by REAL, live sync progress (folders → notes →
 /// reminders), with a per-note counter and a step checklist.
 class _SyncProgressDialog extends StatelessWidget {
@@ -1158,24 +1025,33 @@ class _SyncProgressDialog extends StatelessWidget {
       case 2:
         return Icons.alarm_rounded;
       default:
-        return Icons.check_circle_rounded;
+        return Icons.check_rounded;
+    }
+  }
+
+  Color _heroColor(BuildContext context, int step) {
+    switch (step) {
+      case 0:
+        return context.sketch.highlight;
+      case 1:
+        return SketchPastels.lavender;
+      case 2:
+        return SketchPastels.sky;
+      default:
+        return SketchPastels.mint;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final brightness = theme.brightness;
+    final s = context.sketch;
+    final t = context.type;
     final l10n = AppL10n.of(context);
 
+    // Shape, surface and outline come from the Sketchbook dialog theme.
     return Dialog(
-      backgroundColor: brightness == Brightness.dark
-          ? PinpointColors.darkSurface1
-          : PinpointColors.lightSurface1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
         child: ValueListenableBuilder<SyncProgress>(
           valueListenable: progress,
           builder: (context, p, _) {
@@ -1184,35 +1060,28 @@ class _SyncProgressDialog extends StatelessWidget {
             final fraction = (p.overallProgress ??
                     (p.totalItems > 0 ? p.currentItem / p.totalItems : 0.0))
                 .clamp(0.0, 1.0);
-            final accent = isError ? cs.error : cs.primary;
 
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Hero phase icon in a soft circle
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: accent.withValues(alpha: 0.12),
-                  ),
-                  child: Icon(
-                    isError ? Icons.error_rounded : _heroIcon(step),
-                    size: 32,
-                    color: accent,
-                  ),
+                StickerTile(
+                  color:
+                      isError ? SketchPastels.pink : _heroColor(context, step),
+                  size: 64,
+                  angle: -6,
+                  icon: isError ? Icons.priority_high_rounded : _heroIcon(step),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Text(
                   l10n.authRestoringNotes,
-                  style: theme.textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                  style: t.emptyTitle,
                 ),
                 const SizedBox(height: 6),
                 // Live status message (+ per-item counter when available)
                 AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
+                  duration: SketchMotion.of(
+                      context, const Duration(milliseconds: 250)),
                   child: Text(
                     // Rendered from the phase rather than the service's own
                     // message: the sync layer has no BuildContext and cannot
@@ -1221,48 +1090,44 @@ class _SyncProgressDialog extends StatelessWidget {
                     key: ValueKey(
                         '${p.message}-${p.currentItem}-${p.totalItems}'),
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: cs.onSurfaceVariant),
+                    style: t.bodyRegular.copyWith(fontSize: 14, color: s.muted),
                   ),
                 ),
                 const SizedBox(height: 20),
                 // Real, smoothly-animated progress bar
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: 0, end: fraction),
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOut,
-                    builder: (context, value, _) => LinearProgressIndicator(
-                      value: value,
-                      minHeight: 8,
-                      backgroundColor: cs.surfaceContainerHighest,
-                      valueColor: AlwaysStoppedAnimation<Color>(accent),
-                    ),
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: fraction),
+                  duration: SketchMotion.of(
+                      context, const Duration(milliseconds: 300)),
+                  curve: SketchMotion.enter,
+                  builder: (context, value, _) => UsageBar(
+                    fraction: value,
+                    height: 10,
+                    fill: isError ? SketchFunctional.error : s.ink,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   '${(fraction * 100).round()}%',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: accent,
-                    fontWeight: FontWeight.bold,
+                  style: t.cardTitleLarge.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: isError ? SketchFunctional.error : s.ink,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 // Step checklist
                 _StepRow(
                     label: l10n.authStatFolders,
-                    icon: Icons.folder_rounded,
+                    icon: Icons.folder_outlined,
                     index: 0,
                     step: step),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 _StepRow(
                     label: l10n.authStatNotes,
                     icon: Icons.notes_rounded,
                     index: 1,
                     step: step),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 _StepRow(
                     label: l10n.authStatReminders,
                     icon: Icons.alarm_rounded,
@@ -1277,8 +1142,8 @@ class _SyncProgressDialog extends StatelessWidget {
   }
 }
 
-/// A single line in the restore step checklist: done (check), active (spinner)
-/// or pending (outline).
+/// A single line in the restore step checklist: done (mint check), active
+/// (spinner) or pending (hairline ring).
 class _StepRow extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -1293,38 +1158,53 @@ class _StepRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final s = context.sketch;
+    final t = context.type;
     final done = step > index;
     final active = step == index;
-    final muted = cs.onSurfaceVariant.withValues(alpha: 0.5);
+    final lit = done || active;
 
     Widget leading;
     if (done) {
-      leading = Icon(Icons.check_circle_rounded, size: 20, color: cs.primary);
+      leading = Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: SketchPastels.mint,
+          shape: BoxShape.circle,
+          border: Border.all(
+              color: SketchPastels.onPastel, width: SketchStroke.pastel),
+        ),
+        child: const Icon(Icons.check_rounded,
+            size: 14, color: SketchPastels.onPastel),
+      );
     } else if (active) {
       leading = SizedBox(
         width: 18,
         height: 18,
-        child: CircularProgressIndicator(
-          strokeWidth: 2.2,
-          valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
-        ),
+        child: CircularProgressIndicator(strokeWidth: 2.2, color: s.ink),
       );
     } else {
-      leading = Icon(Icons.circle_outlined, size: 20, color: muted);
+      leading = Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: s.hairline, width: SketchStroke.outline),
+        ),
+      );
     }
 
     return Row(
       children: [
         SizedBox(width: 24, child: Center(child: leading)),
         const SizedBox(width: 12),
-        Icon(icon, size: 18, color: (done || active) ? cs.primary : muted),
+        Icon(icon, size: 18, color: lit ? s.ink : s.muted),
         const SizedBox(width: 8),
         Text(
           label,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: (done || active) ? cs.onSurface : muted,
+          style: t.body.copyWith(
+            color: lit ? s.ink : s.muted,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
