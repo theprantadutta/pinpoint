@@ -3593,5 +3593,195 @@
   "wtCreateBodyDock": "Tap the pen to start a note. Hold it to pick a checklist, voice note or reminder instead.",
   "@wtCreateBodyDock": {
     "description": "Walkthrough coach mark pointing at the pen button in the middle of the bottom dock."
+  },
+  "flSubtitle": "A note can live in more than one folder.",
+  "@flSubtitle": {
+    "description": "Subtitle under the 'My folders' title on the My folders screen. Explains that one note can be added to several folders at once."
+  },
+  "flNewFolder": "New folder",
+  "@flNewFolder": {
+    "description": "Label of the dashed tile at the end of the My folders grid, and title of the sheet that asks for a new folder's name."
+  },
+  "flFreeLimitTitle": "{limit, plural, =1{{used} of 1 free folder used} other{{used} of {limit} free folders used}}",
+  "@flFreeLimitTitle": {
+    "description": "Title of the yellow banner at the bottom of My folders, shown to free users who are at or near the folder limit. {used} is how many folders they have, {limit} the free-plan maximum.",
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "example": "4"
+      },
+      "limit": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "flFreeLimitBody": "Go Pro for unlimited folders.",
+  "@flFreeLimitBody": {
+    "description": "Second line of the free-folder-limit banner on My folders. 'Pro' refers to the paid plan Pinpoint Pro."
+  },
+  "flMenuLabel": "Options for {folder}",
+  "@flMenuLabel": {
+    "description": "Screen-reader label of the '⋯' button on a folder tile, which opens rename / change colour / delete. {folder} is the folder name.",
+    "placeholders": {
+      "folder": {
+        "type": "String",
+        "example": "Work"
+      }
+    }
+  },
+  "flChangeColour": "Change colour",
+  "@flChangeColour": {
+    "description": "Menu item on a folder tile that opens the folder colour picker."
+  },
+  "flColourSheetTitle": "Folder colour",
+  "@flColourSheetTitle": {
+    "description": "Title of the sheet where the user picks one of five pastel colours for a folder."
+  },
+  "flColorYellow": "Yellow",
+  "@flColorYellow": {
+    "description": "Name of the yellow pastel in the folder colour picker (read by screen readers)."
+  },
+  "flColorLavender": "Lavender",
+  "@flColorLavender": {
+    "description": "Name of the lavender (light purple) pastel in the folder colour picker."
+  },
+  "flColorMint": "Mint",
+  "@flColorMint": {
+    "description": "Name of the mint (light green) pastel in the folder colour picker."
+  },
+  "flColorSky": "Sky",
+  "@flColorSky": {
+    "description": "Name of the sky (light blue) pastel in the folder colour picker."
+  },
+  "flColorPink": "Pink",
+  "@flColorPink": {
+    "description": "Name of the pink pastel in the folder colour picker."
+  },
+  "flReorderHint": "Drag folders to reorder them.",
+  "@flReorderHint": {
+    "description": "Hint shown at the top of My folders while reorder mode is on (entered by long-pressing a folder)."
+  },
+  "flMoveEarlier": "Move earlier",
+  "@flMoveEarlier": {
+    "description": "Screen-reader action on a folder tile in reorder mode: moves the folder one place towards the start of the list."
+  },
+  "flMoveLater": "Move later",
+  "@flMoveLater": {
+    "description": "Screen-reader action on a folder tile in reorder mode: moves the folder one place towards the end of the list."
+  },
+  "flDeletedBody": "“{folder}” removed",
+  "@flDeletedBody": {
+    "description": "Toast text after a folder is deleted. {folder} is the folder name. Notes in it are kept.",
+    "placeholders": {
+      "folder": {
+        "type": "String",
+        "example": "Work"
+      }
+    }
+  },
+  "flEmptyTitle": "Nothing in {folder} yet",
+  "@flEmptyTitle": {
+    "description": "Empty-state title on a folder's screen when it has no notes. {folder} is the folder name.",
+    "placeholders": {
+      "folder": {
+        "type": "String",
+        "example": "Work"
+      }
+    }
+  },
+  "flEmptyAction": "Add a note",
+  "@flEmptyAction": {
+    "description": "Button on an empty folder's screen; creates a new note."
+  },
+  "lsChipAll": "All",
+  "@lsChipAll": {
+    "description": "First chip in the folder chip row on the All notes and Todos screens; shows everything (no folder or status filter)."
+  },
+  "lsShowAllNotes": "Show all notes",
+  "@lsShowAllNotes": {
+    "description": "Screen-reader label of the back button on the Voice notes / Reminders list; returns to All notes."
+  },
+  "lsEmptyVoice": "No voice notes yet",
+  "@lsEmptyVoice": {
+    "description": "Empty-state title of the Voice notes list (opened from the drawer)."
+  },
+  "lsEmptyReminders": "No reminders yet",
+  "@lsEmptyReminders": {
+    "description": "Empty-state title of the Reminders list (opened from the drawer)."
+  },
+  "lsTodoEmpty": "No tasks. Enjoy it.",
+  "@lsTodoEmpty": {
+    "description": "Empty-state title of the Todos tab when there are no checklist items at all."
+  },
+  "lsTodoSummary": "{total, plural, =1{{done} of 1 done} other{{done} of {total} done}}",
+  "@lsTodoSummary": {
+    "description": "Progress line in the header of each checklist group on the Todos tab, e.g. '2 of 4 done'.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "example": "2"
+      },
+      "total": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "lsTrashKeep": "Notes stay in trash until you empty it.",
+  "@lsTrashKeep": {
+    "description": "Banner at the top of the Trash screen. Pinpoint does not delete trashed notes automatically."
+  },
+  "lsEmptyTrash": "Empty trash",
+  "@lsEmptyTrash": {
+    "description": "Text action on the Trash banner and confirm button; permanently deletes every note in the trash."
+  },
+  "lsEmptyTrashTitle": "Empty trash?",
+  "@lsEmptyTrashTitle": {
+    "description": "Title of the confirm sheet before every note in the trash is permanently deleted."
+  },
+  "lsEmptyTrashBody": "{count, plural, =1{1 note will be deleted forever. This can't be undone.} other{{count} notes will be deleted forever. This can't be undone.}}",
+  "@lsEmptyTrashBody": {
+    "description": "Body of the Empty trash confirm sheet. {count} is the number of notes in the trash.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "lsUnarchive": "Unarchive {note}",
+  "@lsUnarchive": {
+    "description": "Screen-reader label of the unarchive button under a note card on the Archive screen. {note} is the note title.",
+    "placeholders": {
+      "note": {
+        "type": "String",
+        "example": "Groceries"
+      }
+    }
+  },
+  "lsRestoreNote": "Restore {note}",
+  "@lsRestoreNote": {
+    "description": "Screen-reader label of the restore button under a note card on the Trash screen. {note} is the note title.",
+    "placeholders": {
+      "note": {
+        "type": "String",
+        "example": "Groceries"
+      }
+    }
+  },
+  "lsDeleteNoteForever": "Delete {note} forever",
+  "@lsDeleteNoteForever": {
+    "description": "Screen-reader label of the delete-forever button under a note card on the Archive and Trash screens. {note} is the note title.",
+    "placeholders": {
+      "note": {
+        "type": "String",
+        "example": "Groceries"
+      }
+    }
+  },
+  "dgCreate": "Create",
+  "@dgCreate": {
+    "description": "Primary button of the name sheet when creating a new folder."
   }
 }
