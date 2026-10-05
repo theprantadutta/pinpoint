@@ -747,6 +747,46 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
     }
   }
 
+  /// Last window size seen, so keyboard insets (which also fire
+  /// [didChangeMetrics]) do not re-send the system bar style every frame.
+  Size? _lastWindowSize;
+  bool _systemBarsRestorePending = false;
+
+  // Android resets the window's system bar appearance to the SYSTEM theme on a
+  // configuration change (rotation, dark mode toggled in quick settings). The
+  // app's AnnotatedRegion does not notice — the style it wants has not changed,
+  // and SystemChrome skips sending an unchanged style — so an app set to Light
+  // on a phone in dark mode is left with white status-bar icons on a cream
+  // background until the next resume. Asking the engine to restore its overlays
+  // re-applies the last style it was given.
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isEmpty) return;
+    final size = views.first.physicalSize;
+    if (size == _lastWindowSize) return;
+    final hadSize = _lastWindowSize != null;
+    _lastWindowSize = size;
+    if (hadSize) _restoreSystemBarsAfterFrame();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    _restoreSystemBarsAfterFrame();
+  }
+
+  void _restoreSystemBarsAfterFrame() {
+    if (_systemBarsRestorePending) return;
+    _systemBarsRestorePending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _systemBarsRestorePending = false;
+      SystemChrome.restoreSystemUIOverlays();
+    });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
   /// Register callback for when user session expires (refresh token also expired)
   void _registerSessionExpiryHandler() {
     ApiService().onSessionExpired = () {
