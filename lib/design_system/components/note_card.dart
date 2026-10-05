@@ -234,13 +234,18 @@ class NoteCard extends StatelessWidget {
   }
 
   Widget _title(BuildContext context, bool onPastel) {
-    return Text(
-      title,
-      textDirection: contentDirection(title),
-      style: context.type.cardTitle
-          .copyWith(color: onPastel ? SketchPastels.onPastel : null),
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
+    // Full width, so a short title aligns by its own direction rather
+    // than sitting at the UI's start edge.
+    return SizedBox(
+      width: double.infinity,
+      child: Text(
+        title,
+        textDirection: contentDirection(title),
+        style: context.type.cardTitle
+            .copyWith(color: onPastel ? SketchPastels.onPastel : null),
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 
@@ -341,12 +346,15 @@ class NoteCard extends StatelessWidget {
 
     if (excerpt != null && excerpt!.trim().isNotEmpty) {
       final preview = previewText(excerpt!);
-      return Text(
-        preview,
-        textDirection: contentDirection(preview),
-        style: t.caption.copyWith(height: 1.5, color: mutedColor),
-        maxLines: hasTitle ? 6 : 10,
-        overflow: TextOverflow.ellipsis,
+      return SizedBox(
+        width: double.infinity,
+        child: Text(
+          preview,
+          textDirection: contentDirection(preview),
+          style: t.caption.copyWith(height: 1.5, color: mutedColor),
+          maxLines: hasTitle ? 6 : 10,
+          overflow: TextOverflow.ellipsis,
+        ),
       );
     }
 
