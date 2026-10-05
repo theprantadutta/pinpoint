@@ -261,15 +261,23 @@ class TodoListNoteService {
   // ==================== TODO ITEM OPERATIONS ====================
 
   /// Add a new item to a todo list
+  ///
+  /// New items go to the end of the list ([TodoItemEntity.orderIndex] one past
+  /// the current last). [isCompleted] and [orderIndex] let an undone delete
+  /// put an item back where it was.
   static Future<int> addTodoItem({
     required int todoListNoteId,
     required String todoListNoteUuid,
     required String content,
+    bool isCompleted = false,
+    int? orderIndex,
   }) async {
     try {
       final database = getIt<AppDatabase>();
       final now = DateTime.now();
       const uuid = Uuid();
+
+      final index = orderIndex ?? await _nextOrderIndex(todoListNoteId);
 
       final itemId = await database.into(database.todoItemsV2).insert(
         TodoItemsV2Companion(
@@ -277,7 +285,8 @@ class TodoListNoteService {
           todoListNoteId: Value(todoListNoteId),
           todoListNoteUuid: Value(todoListNoteUuid),
           content: Value(content),
-          isCompleted: const Value(false),
+          isCompleted: Value(isCompleted),
+          orderIndex: Value(index),
           isSynced: const Value(false), // Needs cloud sync
           createdAt: Value(now),
           updatedAt: Value(now),
@@ -400,15 +409,62 @@ class TodoListNoteService {
     }
   }
 
-  /// Watch all items for a todo list
+  /// Watch all items for a todo list, in display order: [orderIndex] (the
+  /// user's manual order, synced inside the encrypted payload), then creation.
+  /// Items written before ordering existed all share index 0, so they keep
+  /// their creation order.
   static Stream<List<TodoItemEntity>> watchTodoItems(int todoListNoteId) {
     final database = getIt<AppDatabase>();
     return (database.select(database.todoItemsV2)
           ..where((t) => t.todoListNoteId.equals(todoListNoteId))
           ..orderBy([
+            (t) => OrderingTerm(expression: t.orderIndex, mode: OrderingMode.asc),
             (t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.asc),
+            (t) => OrderingTerm(expression: t.id, mode: OrderingMode.asc),
           ]))
         .watch();
+  }
+
+  /// Persists a manual order: each id in [orderedIds] takes its position as
+  /// its [TodoItemEntity.orderIndex]. Items of the list not named keep their
+  /// index. The order travels inside the encrypted note payload, like every
+  /// other item field.
+  static Future<void> reorderTodoItems(
+      int todoListNoteId, List<int> orderedIds) async {
+    try {
+      final database = getIt<AppDatabase>();
+      final now = DateTime.now();
+      await database.transaction(() async {
+        for (var i = 0; i < orderedIds.length; i++) {
+          await (database.update(database.todoItemsV2)
+                ..where((t) =>
+                    t.id.equals(orderedIds[i]) &
+                    t.todoListNoteId.equals(todoListNoteId)))
+              .write(TodoItemsV2Companion(
+            orderIndex: Value(i),
+            isSynced: const Value(false),
+            updatedAt: Value(now),
+          ));
+        }
+      });
+      await _markTodoListForSync(todoListNoteId);
+    } catch (e, st) {
+      debugPrint('❌ [TodoListNoteService] Failed to reorder todo items: $e');
+      debugPrint('Stack trace: $st');
+      rethrow;
+    }
+  }
+
+  /// One past the highest [TodoItemEntity.orderIndex] in the list.
+  static Future<int> _nextOrderIndex(int todoListNoteId) async {
+    final database = getIt<AppDatabase>();
+    final maxIndex = database.todoItemsV2.orderIndex.max();
+    final row = await (database.selectOnly(database.todoItemsV2)
+          ..addColumns([maxIndex])
+          ..where(database.todoItemsV2.todoListNoteId.equals(todoListNoteId)))
+        .getSingleOrNull();
+    final current = row?.read(maxIndex);
+    return current == null ? 0 : current + 1;
   }
 
   // ==================== PRIVATE HELPER METHODS ====================
@@ -457,7 +513,7 @@ class TodoListNoteService {
     const uuid = Uuid();
 
     await database.batch((batch) {
-      for (final content in items) {
+      for (final (i, content) in items.indexed) {
         batch.insert(
           database.todoItemsV2,
           TodoItemsV2Companion(
@@ -466,6 +522,7 @@ class TodoListNoteService {
             todoListNoteUuid: Value(todoListNoteUuid),
             content: Value(content),
             isCompleted: const Value(false),
+            orderIndex: Value(i),
             isSynced: const Value(false),
             createdAt: Value(now),
             updatedAt: Value(now),
