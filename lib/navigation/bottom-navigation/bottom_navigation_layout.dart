@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
+import '../../components/onboarding/whats_new_sheet.dart';
 import '../../design_system/design_system.dart';
 import '../../screens/settings_screen.dart';
 import '../../services/walkthrough_service.dart';
@@ -36,10 +37,19 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
   @override
   void initState() {
     super.initState();
-    // Walkthrough check — the service persists completion itself.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) WalkthroughService().showWalkthroughIfNeeded(context);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _runIntros());
+  }
+
+  /// First-frame intros, strictly one after the other so they never stack:
+  /// the one-time What's-new sheet (people upgrading from an older
+  /// onboarding) and then the walkthrough (whose service persists its own
+  /// completion). A brand-new install records the current onboarding
+  /// version as it finishes onboarding, so it only ever gets the walkthrough.
+  Future<void> _runIntros() async {
+    if (!mounted) return;
+    await WhatsNewSheet.showIfNeeded(context);
+    if (!mounted) return;
+    await WalkthroughService().showWalkthroughIfNeeded(context);
   }
 
   void _goBranch(int index) {

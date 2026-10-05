@@ -30,6 +30,14 @@ const kDidPopulatedNoteFolder = 'did-populate-note-folder';
 // onboarding key
 const kHasCompletedOnboardingKey = 'has_completed_onboarding';
 
+// Existing users who finished an older onboarding get a one-time "What's new"
+// sheet instead of the full flow. See services/onboarding_version.dart.
+const kOnboardingVersionKey = 'onboarding_version'; // int, the onboarding/What's-new version the user has seen
+
+// The current onboarding generation. 2 = the Sketchbook redesign. Bump it
+// when onboarding / What's-new content is worth showing again.
+const int kCurrentOnboardingVersion = 2;
+
 // walkthrough/tutorial key
 const kHasCompletedWalkthroughKey = 'has_completed_walkthrough';
 

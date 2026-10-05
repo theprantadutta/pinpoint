@@ -16,4 +16,5 @@ export 'sketch_dock.dart';
 export 'sketch_layout.dart';
 export 'sketch_pressable.dart';
 export 'sketch_sheet.dart';
+export 'sketch_text_field.dart';
 export 'sticker_tile.dart';

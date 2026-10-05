@@ -88,7 +88,12 @@ class AppNavigation {
           final isViewOnly = state.extra as bool? ?? false;
           return NoTransitionPage(
             key: state.pageKey,
-            child: TermsAcceptanceScreen(isViewOnly: isViewOnly),
+            child: TermsAcceptanceScreen(
+              isViewOnly: isViewOnly,
+              startInSignUp: state
+                      .uri.queryParameters[TermsAcceptanceScreen.signUpQuery] ==
+                  TermsAcceptanceScreen.signUpValue,
+            ),
           );
         },
       ),
@@ -100,7 +105,11 @@ class AppNavigation {
         name: "Auth",
         pageBuilder: (context, state) => NoTransitionPage(
           key: state.pageKey,
-          child: const AuthScreen(),
+          child: AuthScreen(
+            startInSignUp:
+                state.uri.queryParameters[TermsAcceptanceScreen.signUpQuery] ==
+                    TermsAcceptanceScreen.signUpValue,
+          ),
         ),
       ),
 

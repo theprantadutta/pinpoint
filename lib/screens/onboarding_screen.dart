@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../components/onboarding/onboarding_heroes.dart';
 import '../constants/shared_preference_keys.dart';
 import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
+import '../services/onboarding_version.dart';
 import 'terms_acceptance_screen.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
+/// First-run onboarding: three Sketchbook pages, then on to the terms and the
+/// sign-in screen (which is the "Get started" step).
+///
+/// Shown once per [OnboardingVersion]; people who finished an older
+/// onboarding get the one-time What's-new sheet on the home screen instead.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -22,6 +27,10 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _finishing = false;
+
+  static const int _pageCount = 3;
+
 
   @override
   void initState() {
@@ -31,52 +40,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   // Built per-call rather than stored in a field: the copy needs
   // Localizations, which a field initializer cannot reach.
-  List<OnboardingPage> _buildPages(BuildContext context) => [
-    OnboardingPage(
-      icon: Symbols.edit_note_rounded,
-      title: AppL10n.of(context).obCaptureTitle,
-      description:
-          AppL10n.of(context).obCaptureBody,
-      gradient: PinpointGradients.azureBloom,
-    ),
-    OnboardingPage(
-      icon: Symbols.folder_rounded,
-      title: AppL10n.of(context).obOrganizeTitle,
-      description:
-          AppL10n.of(context).obOrganizeBody,
-      gradient: PinpointGradients.solarRose,
-    ),
-    OnboardingPage(
-      icon: Symbols.lock_rounded,
-      title: AppL10n.of(context).obPrivacyTitle,
-      description:
-          AppL10n.of(context).obPrivacyBody,
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          PinpointColors.iris,
-          PinpointColors.ocean,
-          PinpointColors.mint,
-        ],
+  List<OnboardingPageView> _buildPages(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return [
+      OnboardingPageView(
+        hero: const WriteItDownHero(),
+        title: l10n.obWriteTitle,
+        body: l10n.obWriteBody,
       ),
-    ),
-    OnboardingPage(
-      icon: Symbols.check_circle_rounded,
-      title: AppL10n.of(context).obReadyTitle,
-      description:
-          AppL10n.of(context).obReadyBody,
-      gradient: LinearGradient(
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-        colors: [
-          PinpointColors.amber,
-          PinpointColors.rose,
-          PinpointColors.iris,
-        ],
+      OnboardingPageView(
+        hero: const OrganizedHero(),
+        title: l10n.obOrganizedTitle,
+        body: l10n.obOrganizedBody,
       ),
-    ),
-  ];
+      OnboardingPageView(
+        hero: const PrivateHero(),
+        title: l10n.obPrivateTitle,
+        body: l10n.obPrivateBody,
+        footnote: l10n.obPrivateFootnote,
+      ),
+    ];
+  }
 
   void _onPageChanged(int page) {
     setState(() {
@@ -84,24 +68,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  Future<void> _completeOnboarding() async {
+  /// [signUp] picks the mode the sign-in screen opens in: "Get started" is
+  /// for new people, "Log in" (and Skip) for returning ones.
+  Future<void> _completeOnboarding({bool signUp = false}) async {
+    if (_finishing) return;
+    _finishing = true;
     final preferences = await SharedPreferences.getInstance();
     await preferences.setBool(kHasCompletedOnboardingKey, true);
+    // A new user has now seen this generation's onboarding, so the
+    // What's-new sheet (meant for upgraders) never shows for them.
+    await OnboardingVersion.markSeen(preferences);
 
     getIt<AnalyticsFacade>().trackOnboardingComplete();
 
     if (!mounted) return;
-    context.go(TermsAcceptanceScreen.kRouteName);
+    context.go(signUp
+        ? TermsAcceptanceScreen.signUpLocation
+        : TermsAcceptanceScreen.kRouteName);
   }
 
   void _nextPage() {
-    if (_currentPage < _buildPages(context).length - 1) {
+    if (_currentPage < _pageCount - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: SketchMotion.of(context, SketchMotion.slow),
+        curve: SketchMotion.enter,
       );
     } else {
-      _completeOnboarding();
+      _completeOnboarding(signUp: true);
     }
   }
 
@@ -117,145 +110,63 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppL10n.of(context);
+    final pages = _buildPages(context);
+    final isLast = _currentPage == pages.length - 1;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: isDark
-              ? PinpointGradients.crescentInk
-              : PinpointGradients.oceanQuartz,
-        ),
+      backgroundColor: context.sketch.bg,
+      body: DoodleBackground(
+        // The 200px doodle band runs behind the hero, which centres in the
+        // space above the copy, dots and buttons (~300px).
+        top: (MediaQuery.sizeOf(context).height - 300) / 2 - 110,
+        squiggle: true,
+        animate: true,
         child: SafeArea(
-          child: Column(
-            children: [
-              // Logo and Skip Button
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Logo
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    colorScheme.primary.withValues(alpha: 0.2),
-                                blurRadius: 8,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.asset(
-                              'assets/images/pinpoint-logo.png',
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Pinpoint',
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                      ],
-                    ),
-
-                    // Skip button
-                    if (_currentPage < _buildPages(context).length - 1)
-                      TextButton(
-                        onPressed: _skipOnboarding,
-                        child: Text(
-                          AppL10n.of(context).obSkip,
-                          style: TextStyle(
-                            color: isDark
-                                ? PinpointColors.darkTextSecondary
-                                : PinpointColors.lightTextSecondary,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-              // PageView
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: _onPageChanged,
-                  itemCount: _buildPages(context).length,
-                  itemBuilder: (context, index) {
-                    return _OnboardingPageWidget(
-                      page: _buildPages(context)[index],
-                      isDark: isDark,
-                    );
-                  },
-                ),
-              ),
-
-              // Page Indicator
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    _buildPages(context).length,
-                    (index) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: _currentPage == index ? 32 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _currentPage == index
-                            ? colorScheme.primary
-                            : colorScheme.primary.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
+          child: SketchContentWidth(
+            maxWidth: 560,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: _onPageChanged,
+                    itemCount: pages.length,
+                    itemBuilder: (context, index) => pages[index],
                   ),
                 ),
-              ),
-
-              // Next/Get Started Button
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _nextPage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Text(
-                      _currentPage == _buildPages(context).length - 1
-                          ? AppL10n.of(context).obGetStarted
-                          : AppL10n.of(context).obNext,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                      SketchSpace.screenX, 8, SketchSpace.screenX, 0),
+                  child: OnboardingDots(
+                    count: pages.length,
+                    current: _currentPage,
                   ),
                 ),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      SketchSpace.screenX, 20, SketchSpace.screenX, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: PillButton.secondary(
+                          label: isLast ? l10n.obLogIn : l10n.obSkip,
+                          onPressed: _skipOnboarding,
+                        ),
+                      ),
+                      const SizedBox(width: SketchSpace.grid),
+                      Expanded(
+                        child: PillButton(
+                          label: isLast ? l10n.obGetStarted : l10n.obNext,
+                          onPressed: _nextPage,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -263,109 +174,108 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-class OnboardingPage {
-  final IconData icon;
-  final String title;
-  final String description;
-  final Gradient gradient;
-
-  OnboardingPage({
-    required this.icon,
+/// One onboarding page: the hero illustration in the top 55%, then the
+/// highlighted headline and a 14/1.5 muted line (plus an optional caveat).
+class OnboardingPageView extends StatelessWidget {
+  const OnboardingPageView({
+    super.key,
+    required this.hero,
     required this.title,
-    required this.description,
-    required this.gradient,
+    required this.body,
+    this.footnote,
   });
-}
 
-class _OnboardingPageWidget extends StatelessWidget {
-  final OnboardingPage page;
-  final bool isDark;
+  final Widget hero;
 
-  const _OnboardingPageWidget({
-    required this.page,
-    required this.isDark,
-  });
+  /// A localized string with the `[[...]]` highlight marker.
+  final String title;
+  final String body;
+  final String? footnote;
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isSmallScreen = screenHeight < 700;
+    final s = context.sketch;
+    final t = context.type;
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(isSmallScreen ? 24.0 : 32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(height: isSmallScreen ? 20 : 40),
-
-          // Icon with gradient background
-          Container(
-            width: isSmallScreen ? 140 : 180,
-            height: isSmallScreen ? 140 : 180,
-            decoration: BoxDecoration(
-              gradient: page.gradient,
-              borderRadius: BorderRadius.circular(isSmallScreen ? 70 : 90),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.3),
-                  blurRadius: 30,
-                  spreadRadius: 8,
-                ),
-              ],
-            ),
-            child: Icon(
-              page.icon,
-              size: isSmallScreen ? 70 : 90,
-              color: Colors.white,
-            ),
-          )
-              .animate()
-              .scale(
-                duration: 600.ms,
-                curve: Curves.elasticOut,
-              )
-              .fadeIn(duration: 400.ms),
-
-          SizedBox(height: isSmallScreen ? 40 : 64),
-
-          // Title
-          Text(
-            page.title,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: isDark
-                      ? PinpointColors.darkTextPrimary
-                      : PinpointColors.lightTextPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-          )
-              .animate(delay: 200.ms)
-              .fadeIn(duration: 600.ms)
-              .slideY(begin: 0.3, end: 0),
-
-          const SizedBox(height: 16),
-
-          // Description
-          Text(
-            page.description,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isDark
-                      ? PinpointColors.darkTextSecondary
-                      : PinpointColors.lightTextSecondary,
-                  fontSize: 15,
-                  height: 1.5,
-                ),
-          )
-              .animate(delay: 400.ms)
-              .fadeIn(duration: 600.ms)
-              .slideY(begin: 0.3, end: 0),
-
-          SizedBox(height: isSmallScreen ? 20 : 40),
+    final copy = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          header: true,
+          child: HighlightedText(title, style: t.screenTitle),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          body,
+          style:
+              t.bodyRegular.copyWith(fontSize: 14, height: 1.5, color: s.muted),
+        ),
+        if (footnote != null) ...[
+          const SizedBox(height: 10),
+          Text(footnote!, style: t.caption),
         ],
+      ],
+    );
+
+    // The hero takes the space the copy leaves (at least the top 55%) and
+    // centres in it; the copy sits right above the dots and only scrolls if
+    // a large text scale makes it taller than its 45% band.
+    return LayoutBuilder(
+      builder: (context, box) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(28, 24, 28, 8),
+              child: hero,
+            ),
+          ),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: box.maxHeight * 0.45),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                  SketchSpace.screenX + 4, 12, SketchSpace.screenX + 4, 8),
+              child: copy,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Progress dots: the active one is a 20×6 ink pill, the rest 6×6 hairline.
+class OnboardingDots extends StatelessWidget {
+  const OnboardingDots({super.key, required this.count, required this.current});
+
+  final int count;
+  final int current;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.sketch;
+    final dur = SketchMotion.of(context, SketchMotion.base);
+    return Semantics(
+      label: AppL10n.of(context).obPageIndicator(current + 1, count),
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.only(start: 4),
+        child: Row(
+          children: [
+            for (var i = 0; i < count; i++)
+              AnimatedContainer(
+                duration: dur,
+                curve: SketchMotion.enter,
+                margin: const EdgeInsetsDirectional.only(end: 6),
+                width: i == current ? 20 : 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: i == current ? s.ink : s.hairline,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
