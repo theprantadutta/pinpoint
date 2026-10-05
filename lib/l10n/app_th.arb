@@ -129,8 +129,6 @@
   "setTestNotificationSubtitle": "ส่งการแจ้งเตือนแบบพุชเพื่อทดสอบ",
   "setTestCrash": "ทดสอบการขัดข้อง",
   "setTestCrashSubtitle": "บังคับให้ขัดข้องเพื่อทดสอบ Crashlytics",
-  "setAdminPanel": "แผงผู้ดูแลระบบ",
-  "setAdminPanelSubtitle": "ดีบักปัญหาการซิงค์",
   "setAboutApp": "เกี่ยวกับ Pinpoint",
   "setAboutAppSubtitle": "ข้อมูลแอป เวอร์ชัน และผู้พัฒนา",
   "setRateApp": "ให้คะแนน Pinpoint",

@@ -11,7 +11,6 @@ import 'package:provider/provider.dart';
 
 import '../../design_system/design_system.dart';
 import '../../navigation/app_navigation.dart';
-import '../../screens/admin_panel_screen.dart';
 import '../../screens/archive_screen.dart';
 import '../../screens/display_screen.dart';
 import '../../screens/language_screen.dart';
@@ -26,13 +25,8 @@ import '../../services/firebase_notification_service.dart';
 import '../../services/locale_controller.dart';
 import '../../services/walkthrough_service.dart';
 import '../../util/show_a_toast.dart';
-import '../../widgets/admin_password_dialog.dart';
 import 'settings_about_sheet.dart';
 import 'settings_widgets.dart';
-
-/// The admin identity. Matches the server's ADMIN_EMAIL; the admin panel
-/// itself is still behind its own password.
-const String kSettingsAdminEmail = 'prantadutta1997@gmail.com';
 
 /// GENERAL: language, display, notifications.
 class SettingsGeneralGroup extends StatefulWidget {
@@ -296,20 +290,16 @@ class _SettingsHelpGroupState extends State<SettingsHelpGroup> {
   }
 }
 
-/// Debug-build and admin-only tools. English by design, like the admin
-/// screens they open.
+/// Debug-build tools. English by design, like the debug screens they open.
+/// Administration lives in the backend's web dashboard, not in the app.
 class SettingsDeveloperGroup extends StatelessWidget {
   const SettingsDeveloperGroup({super.key});
 
-  static bool visible(BuildContext context) =>
-      kDebugMode ||
-      context.read<BackendAuthService>().userEmail == kSettingsAdminEmail;
+  static bool visible(BuildContext context) => kDebugMode;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final isAdmin =
-        context.read<BackendAuthService>().userEmail == kSettingsAdminEmail;
     final authenticated = context.read<BackendAuthService>().isAuthenticated;
 
     return SketchGroup(
@@ -359,22 +349,6 @@ class SettingsDeveloperGroup extends StatelessWidget {
             onTap: () {
               PinpointHaptics.medium();
               FirebaseCrashlytics.instance.crash();
-            },
-          ),
-        if (isAdmin)
-          SketchRow(
-            icon: Icons.admin_panel_settings_outlined,
-            label: l10n.setAdminPanel,
-            subtitle: l10n.setAdminPanelSubtitle,
-            onTap: () async {
-              PinpointHaptics.medium();
-              final authenticated = await showDialog<bool>(
-                context: context,
-                builder: (context) => const AdminPasswordDialog(),
-              );
-              if (authenticated == true && context.mounted) {
-                AppNavigation.router.push(AdminPanelScreen.kRouteName);
-              }
             },
           ),
       ],

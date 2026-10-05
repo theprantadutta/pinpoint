@@ -129,8 +129,6 @@
   "setTestNotificationSubtitle": "Enviar una notificación push de prueba",
   "setTestCrash": "Fallo de prueba",
   "setTestCrashSubtitle": "Forzar un fallo para probar Crashlytics",
-  "setAdminPanel": "Panel de administración",
-  "setAdminPanelSubtitle": "Depurar problemas de sincronización",
   "setAboutApp": "Acerca de Pinpoint",
   "setAboutAppSubtitle": "Info de la app, versión y desarrollador",
   "setRateApp": "Valorar Pinpoint",
