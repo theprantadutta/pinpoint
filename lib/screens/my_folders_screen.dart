@@ -308,7 +308,6 @@ class FolderGrid extends StatelessWidget {
 
 class _FolderGridTile extends StatelessWidget {
   const _FolderGridTile({
-    super.key,
     required this.summary,
     required this.index,
     required this.count,

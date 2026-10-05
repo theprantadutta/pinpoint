@@ -82,29 +82,42 @@ class _AdminUserDetailsScreenState extends State<AdminUserDetailsScreen>
       );
     }
 
-    return GradientScaffold(
-      appBar: GlassAppBar(
-        title: Text(_userDetails!['email']),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Notes'),
-            Tab(text: 'Encryption'),
-            Tab(text: 'Sync'),
-            Tab(text: 'Subscription'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+    final sk = context.sketch;
+    return SketchScaffold(
+      title: _userDetails!['email'],
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _OverviewTab(userDetails: _userDetails!, onCopy: _copyToClipboard),
-          _NotesTab(userId: widget.userId),
-          _EncryptionTab(userId: widget.userId, onCopy: _copyToClipboard),
-          _SyncTab(userId: widget.userId),
-          _SubscriptionTab(userId: widget.userId),
+          TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            labelColor: sk.ink,
+            unselectedLabelColor: sk.muted,
+            indicatorColor: sk.ink,
+            dividerColor: sk.hairline,
+            tabs: const [
+              Tab(text: 'Overview'),
+              Tab(text: 'Notes'),
+              Tab(text: 'Encryption'),
+              Tab(text: 'Sync'),
+              Tab(text: 'Subscription'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _OverviewTab(
+                    userDetails: _userDetails!, onCopy: _copyToClipboard),
+                _NotesTab(userId: widget.userId),
+                _EncryptionTab(
+                    userId: widget.userId, onCopy: _copyToClipboard),
+                _SyncTab(userId: widget.userId),
+                _SubscriptionTab(userId: widget.userId),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -329,21 +342,21 @@ class _EncryptionTabState extends State<_EncryptionTab> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Card(
-          color: Colors.red.shade50,
+        SketchCard(
+          pastel: SketchPastels.pink,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(2),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.warning, color: Colors.red.shade700),
+                    Icon(Icons.warning, color: SketchFunctional.error),
                     const SizedBox(width: 8),
                     Text(
                       'CRITICAL: Encryption Key',
                       style: TextStyle(
-                        color: Colors.red.shade700,
+                        color: SketchFunctional.error,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -468,7 +481,7 @@ class _SyncTabState extends State<_SyncTab> {
           child: ListTile(
             leading: Icon(
               event['status'] == 'success' ? Icons.check_circle : Icons.error,
-              color: event['status'] == 'success' ? Colors.green : Colors.red,
+              color: event['status'] == 'success' ? SketchFunctional.success : SketchFunctional.error,
             ),
             title: Text('Device: ${event['device_id']}'),
             subtitle: Text(
