@@ -821,5 +821,6 @@
   "lsRestoreNote": "{note} পুনরুদ্ধার করুন",
   "lsDeleteNoteForever": "{note} চিরতরে মুছুন",
   "dgCreate": "তৈরি করুন",
-  "lsNewChecklist": "নতুন চেকলিস্ট"
+  "lsNewChecklist": "নতুন চেকলিস্ট",
+  "dgUndo": "পূর্বাবস্থায় ফেরান"
 }

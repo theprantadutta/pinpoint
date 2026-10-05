@@ -821,5 +821,6 @@
   "lsRestoreNote": "กู้คืน {note}",
   "lsDeleteNoteForever": "ลบ {note} ถาวร",
   "dgCreate": "สร้าง",
-  "lsNewChecklist": "เช็กลิสต์ใหม่"
+  "lsNewChecklist": "เช็กลิสต์ใหม่",
+  "dgUndo": "เลิกทำ"
 }

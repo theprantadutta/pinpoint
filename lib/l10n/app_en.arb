@@ -3787,5 +3787,9 @@
   "lsNewChecklist": "New checklist",
   "@lsNewChecklist": {
     "description": "Screen-reader label of the '+' button on the Todos tab; starts a new checklist note."
+  },
+  "dgUndo": "Undo",
+  "@dgUndo": {
+    "description": "Screen-reader label of the undo button on the drawing canvas; removes the last stroke."
   }
 }

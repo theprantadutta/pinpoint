@@ -821,5 +821,6 @@
   "lsRestoreNote": "بازیابی {note}",
   "lsDeleteNoteForever": "حذف همیشگی {note}",
   "dgCreate": "ایجاد",
-  "lsNewChecklist": "چک‌لیست جدید"
+  "lsNewChecklist": "چک‌لیست جدید",
+  "dgUndo": "واگرد"
 }

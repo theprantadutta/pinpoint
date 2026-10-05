@@ -821,5 +821,6 @@
   "lsRestoreNote": "Restaurer {note}",
   "lsDeleteNoteForever": "Supprimer {note} définitivement",
   "dgCreate": "Créer",
-  "lsNewChecklist": "Nouvelle liste de tâches"
+  "lsNewChecklist": "Nouvelle liste de tâches",
+  "dgUndo": "Annuler"
 }

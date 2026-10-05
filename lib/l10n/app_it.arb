@@ -821,5 +821,6 @@
   "lsRestoreNote": "Ripristina {note}",
   "lsDeleteNoteForever": "Elimina {note} per sempre",
   "dgCreate": "Crea",
-  "lsNewChecklist": "Nuova checklist"
+  "lsNewChecklist": "Nuova checklist",
+  "dgUndo": "Annulla"
 }
