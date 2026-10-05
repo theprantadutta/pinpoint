@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 import '../../components/onboarding/whats_new_sheet.dart';
+import '../../components/shared/app_update_prompt.dart';
 import '../../components/shared/notification_prompt.dart';
 import '../../design_system/design_system.dart';
 import '../../screens/settings_screen.dart';
+import '../../services/update/app_release_service.dart';
+import '../../services/update/in_app_update_service.dart';
 import '../../services/walkthrough_service.dart';
 import '../../walkthrough/walkthrough_keys.dart';
 import '../app_shell_scope.dart';
@@ -46,6 +51,18 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
   /// completion). A brand-new install records the current onboarding
   /// version as it finishes onboarding, so it only ever gets the walkthrough.
   Future<void> _runIntros() async {
+    if (!mounted) return;
+    // Android: Play's in-app update, flexible by default. It never blocks
+    // this chain — the download runs while the user writes and the pill
+    // above the dock offers the restart.
+    unawaited(InAppUpdateService().checkForUpdate());
+    // iOS: the App Store has no in-app update API, so the version to compare
+    // against comes from our backend. First in the chain, because a
+    // required update outranks every intro behind it. Returns at once on
+    // Android, in debug, and offline.
+    final prompt = await AppReleaseService().check();
+    if (!mounted) return;
+    await showAppUpdatePrompt(context, prompt);
     if (!mounted) return;
     await WhatsNewSheet.showIfNeeded(context);
     if (!mounted) return;
@@ -143,11 +160,27 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
       ],
     );
 
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    // Above the dock where there is one, near the bottom edge otherwise.
+    final updatePill = PositionedDirectional(
+      start: SketchSpace.screenX,
+      end: SketchSpace.screenX,
+      bottom: bottomInset + (showDock ? SketchSpace.dockClearance : 24),
+      child: const Center(child: UpdateReadyPill()),
+    );
+
     final body = pinnedDrawer
         ? Row(
             children: [
               const KeepDrawer(permanent: true),
-              Expanded(child: widget.navigationShell),
+              Expanded(
+                child: Stack(
+                  children: [
+                    Positioned.fill(child: widget.navigationShell),
+                    updatePill,
+                  ],
+                ),
+              ),
             ],
           )
         : Stack(
@@ -157,10 +190,10 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
                 PositionedDirectional(
                   start: 0,
                   end: 0,
-                  bottom: SketchSpace.dockBottom +
-                      MediaQuery.paddingOf(context).bottom,
+                  bottom: SketchSpace.dockBottom + bottomInset,
                   child: Center(child: dock),
                 ),
+              updatePill,
             ],
           );
 

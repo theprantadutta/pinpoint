@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
@@ -30,7 +29,6 @@ import 'services/google_sign_in_service.dart';
 import 'services/filter_service.dart';
 import 'services/search_service.dart';
 import 'services/connectivity_service.dart';
-import 'services/app_update_service.dart';
 import 'services/api_service.dart';
 import 'services/theme_controller.dart';
 import 'services/locale_controller.dart';
@@ -530,102 +528,6 @@ class _StartupErrorScaffold extends StatelessWidget {
   }
 }
 
-/// Screen shown when a mandatory update is required.
-/// This blocks the user from using the app until they update.
-class UpdateRequiredScreen extends StatefulWidget {
-  const UpdateRequiredScreen({super.key});
-
-  @override
-  State<UpdateRequiredScreen> createState() => _UpdateRequiredScreenState();
-}
-
-class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
-  bool _isUpdating = false;
-
-  Future<void> _retryUpdate() async {
-    setState(() => _isUpdating = true);
-
-    try {
-      final updateService = AppUpdateService();
-      final hasUpdate = await updateService.checkForUpdate();
-
-      if (hasUpdate) {
-        await updateService.performImmediateUpdate();
-      } else {
-        // No update needed anymore, restart app
-        if (mounted) {
-          // Pop back to allow normal app flow
-          Navigator.of(context).pop();
-        }
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isUpdating = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    final s = context.sketch;
-    final t = context.type;
-    return PopScope(
-      canPop: false, // Prevent back button from dismissing
-      child: Scaffold(
-        backgroundColor: s.bg,
-        body: DoodleBackground(
-          top: DoodleBackground.settingsTop,
-          child: SafeArea(
-            child: SketchContentWidth(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    StickerTile(
-                      color: s.highlight,
-                      size: 104,
-                      angle: -7,
-                      shadowOffset: 4,
-                      icon: Icons.system_update_rounded,
-                    ),
-                    const SizedBox(height: 36),
-                    Text(
-                      l10n.updateRequiredTitle,
-                      style: t.pageTitle,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      l10n.updateRequiredBody,
-                      style: t.bodyRegular.copyWith(color: s.muted),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      l10n.updateRequiredNote,
-                      style: t.bodySmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 40),
-                    PillButton(
-                      label: l10n.updateNow,
-                      icon: Icons.download_rounded,
-                      loading: _isUpdating,
-                      onPressed: _isUpdating ? null : _retryUpdate,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class PinPointApp extends StatefulWidget {
   const PinPointApp({super.key});
 
@@ -692,9 +594,6 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
   /// preference, and is re-applied on resume — see [didChangeAppLifecycleState].
   final RefreshRateController _refreshRateController = RefreshRateController();
 
-  bool _updateCheckCompleted = false;
-  bool _updateRequired = false;
-
   @override
   void initState() {
     super.initState();
@@ -711,9 +610,6 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Initialize Firebase in background (non-blocking)
       _initializeFirebaseInBackground();
-
-      // Check for updates
-      _checkForMandatoryUpdate();
     });
   }
 
@@ -801,64 +697,8 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
     };
   }
 
-  /// Check for mandatory app updates from Google Play Store.
-  /// Called after the first frame is rendered so app loads quickly.
-  Future<void> _checkForMandatoryUpdate() async {
-    // Only check on Android and only once
-    if (!Platform.isAndroid || _updateCheckCompleted) return;
-    _updateCheckCompleted = true;
-
-    try {
-      debugPrint('🔄 [PinPointApp] Checking for app updates...');
-      final updateService = AppUpdateService();
-      final hasUpdate = await updateService.checkForUpdate();
-
-      if (hasUpdate) {
-        debugPrint('⚠️ [PinPointApp] Update available - forcing immediate update');
-
-        // Try immediate update first
-        final updateStarted = await updateService.performImmediateUpdate();
-
-        if (!updateStarted && mounted) {
-          // If immediate update fails, show blocking update screen
-          debugPrint(
-              '❌ [PinPointApp] Immediate update failed - showing update screen');
-          setState(() => _updateRequired = true);
-        }
-      } else {
-        debugPrint('✅ [PinPointApp] App is up to date');
-      }
-    } catch (e, stackTrace) {
-      debugPrint('⚠️ [PinPointApp] Update check failed: $e');
-      debugPrint('⚠️ [PinPointApp] Stack trace: $stackTrace');
-      // Don't block the app if update check fails
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // If update is required, show blocking update screen
-    if (_updateRequired) {
-      return MaterialApp(
-        title: 'Pinpoint',
-        // Its own shell, shown before the main app builds, so it needs its
-        // own Localizations.
-        localizationsDelegates: const [
-          AppL10n.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          // See the note on the first delegate list.
-          ...material_ui.GlobalMaterialLocalizations.delegates,
-        ],
-        supportedLocales: LocaleController.supportedLocales,
-        themeMode: ThemeMode.dark,
-        darkTheme: ThemeData.dark(useMaterial3: true),
-        debugShowCheckedModeBanner: false,
-        home: const UpdateRequiredScreen(),
-      );
-    }
-
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: _themeController),

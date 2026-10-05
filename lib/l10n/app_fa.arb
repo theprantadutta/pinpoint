@@ -703,7 +703,6 @@
   "dsClear": "پاک کردن",
   "updateRequiredTitle": "به‌روزرسانی لازم است",
   "updateRequiredBody": "نسخه جدید Pinpoint در دسترس است. برای ادامه استفاده، به‌روزرسانی کنید.",
-  "updateRequiredNote": "این به‌روزرسانی شامل بهبودهای مهم و رفع اشکال است.",
   "updateNow": "اکنون به‌روزرسانی کنید",
   "errNetworkTimeout": "زمان اتصال به پایان رسید.",
   "errNetworkTimeoutHint": "لطفاً اتصال اینترنت خود را بررسی و دوباره تلاش کنید.",
@@ -1037,5 +1036,11 @@
   "edRemInfoNotifications": "مطمئن شوید اعلان‌های Pinpoint در تنظیمات دستگاه مجاز است.",
   "edRemInfoRepeat": "یادآور تکراری برای هر بار یک اعلان زمان‌بندی می‌کند.",
   "edRemInfoEdit": "هر زمان می‌توانید یادآور را تغییر دهید یا حذف کنید.",
-  "edSaveReminder": "ذخیره یادآور"
+  "edSaveReminder": "ذخیره یادآور",
+  "updateAvailableTitle": "نسخهٔ جدید آماده است",
+  "updateAvailableBody": "‏Pinpoint {version} در App Store منتشر شده، با رفع اشکال و بهبودها.",
+  "updateLater": "بعداً",
+  "updateOpenStoreFailed": "App Store باز نشد. خودتان آن را باز کنید و Pinpoint را از آنجا به‌روز کنید.",
+  "updateReadyTitle": "به‌روزرسانی دانلود شد",
+  "updateReadyRestart": "راه‌اندازی مجدد"
 }

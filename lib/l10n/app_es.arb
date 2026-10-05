@@ -703,7 +703,6 @@
   "dsClear": "Borrar",
   "updateRequiredTitle": "Actualización necesaria",
   "updateRequiredBody": "Hay una nueva versión de Pinpoint disponible. Actualiza para seguir usando la aplicación.",
-  "updateRequiredNote": "Esta actualización incluye mejoras importantes y correcciones de errores.",
   "updateNow": "Actualizar ahora",
   "errNetworkTimeout": "Se agotó el tiempo de conexión.",
   "errNetworkTimeoutHint": "Comprueba tu conexión a internet e inténtalo de nuevo.",
@@ -1037,5 +1036,11 @@
   "edRemInfoNotifications": "Asegúrate de que Pinpoint tenga permiso para enviar notificaciones en los ajustes del dispositivo.",
   "edRemInfoRepeat": "Un recordatorio que se repite programa una notificación por cada vez.",
   "edRemInfoEdit": "Puedes cambiar o eliminar un recordatorio cuando quieras.",
-  "edSaveReminder": "Guardar recordatorio"
+  "edSaveReminder": "Guardar recordatorio",
+  "updateAvailableTitle": "Hay una nueva versión",
+  "updateAvailableBody": "Pinpoint {version} ya está en la App Store, con correcciones y mejoras.",
+  "updateLater": "Más tarde",
+  "updateOpenStoreFailed": "No se pudo abrir la App Store. Ábrela tú y actualiza Pinpoint desde allí.",
+  "updateReadyTitle": "Actualización descargada",
+  "updateReadyRestart": "Reiniciar"
 }
