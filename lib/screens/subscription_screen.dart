@@ -540,8 +540,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     return Consumer<SubscriptionManager>(
       builder: (context, manager, child) {
-        // Filter out plans based on current subscription
-        final currentType = manager.subscriptionType;
+        // Filter out the plan the user currently HAS. The server keeps
+        // reporting the last subscription_type after a plan lapses, so
+        // without the isPremium check an expired monthly subscriber could
+        // never buy monthly again.
+        final currentType = manager.isPremium ? manager.subscriptionType : null;
 
         // If lifetime user, show thank you message
         if (currentType == 'lifetime') {

@@ -105,7 +105,12 @@ class SketchSegmentedControl<T> extends StatelessWidget {
     required this.selected,
     required this.onChanged,
     this.semanticLabel,
+    this.expand = false,
   });
+
+  /// Fill the available width with equal segments (a tab bar), instead of
+  /// hugging the labels (an inline switch).
+  final bool expand;
 
   final List<SketchSegment<T>> segments;
   final T selected;
@@ -128,10 +133,10 @@ class SketchSegmentedControl<T> extends StatelessWidget {
               side: BorderSide(color: s.outline, width: SketchStroke.outline)),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
           children: [
             for (final seg in segments)
-              SketchPressable(
+              _maybeExpanded(SketchPressable(
                 onTap: () {
                   if (seg.value == selected) return;
                   HapticFeedback.selectionClick();
@@ -142,29 +147,32 @@ class SketchSegmentedControl<T> extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: dur,
                   curve: SketchMotion.enter,
-                  constraints: const BoxConstraints(minHeight: 30),
+                  constraints: BoxConstraints(minHeight: expand ? 36 : 30),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
                   decoration: BoxDecoration(
                     color:
                         seg.value == selected ? s.inverse : Colors.transparent,
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(expand ? 18 : 13),
                   ),
                   alignment: Alignment.center,
                   child: ExcludeSemantics(
                     child: Text(
                       seg.label,
                       style: t.chip.copyWith(
-                        fontSize: 12,
+                        fontSize: expand ? 13 : 12,
                         color: seg.value == selected ? s.onInverse : s.ink,
                       ),
                     ),
                   ),
                 ),
-              ),
+              )),
           ],
         ),
       ),
     );
   }
+
+  Widget _maybeExpanded(Widget child) =>
+      expand ? Expanded(child: child) : child;
 }

@@ -48,6 +48,9 @@ class LocalizedDates {
   /// reminder chip on note cards and in the editor.
   static String relativeDayTime(BuildContext context, DateTime date,
       {DateTime? now}) {
+    // Reminder times can arrive in UTC (they are scheduled server-side);
+    // always show them in the device's zone.
+    date = date.toLocal();
     final l10n = AppL10n.of(context);
     final today = DateUtils.dateOnly(now ?? DateTime.now());
     final day = DateUtils.dateOnly(date);
