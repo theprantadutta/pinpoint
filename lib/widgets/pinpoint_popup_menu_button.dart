@@ -63,6 +63,7 @@ class PinpointPopupMenuButton<T> extends StatelessWidget {
     this.onCanceled,
     this.dividers = true,
     this.size = SketchSpace.minTap,
+    this.builder,
   });
 
   /// Builds the entries. Called once per open, like `PopupMenuButton`'s.
@@ -95,6 +96,11 @@ class PinpointPopupMenuButton<T> extends StatelessWidget {
 
   /// The trigger's tap target.
   final double size;
+
+  /// Builds a custom trigger (e.g. the editor's outlined `CircleIconButton`)
+  /// in place of the plain "⋯"; call `open` from its tap handler. The menu
+  /// still anchors to this widget's box.
+  final Widget Function(BuildContext context, VoidCallback open)? builder;
 
   /// A 44px menu row: an optional leading icon and a 15/600 label.
   /// [destructive] paints both in the error colour.
@@ -135,6 +141,7 @@ class PinpointPopupMenuButton<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (builder != null) return builder!(context, () => _open(context));
     final s = context.sketch;
     final label = tooltip ?? MaterialLocalizations.of(context).showMenuTooltip;
     return SketchPressable(
