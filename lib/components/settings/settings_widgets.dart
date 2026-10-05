@@ -103,6 +103,26 @@ class SketchChoiceRow extends StatelessWidget {
   }
 }
 
+/// A short muted value ("Off", "On") for the trailing slot of a [SketchRow].
+///
+/// SketchRow's own `value` shares the row's width with the label, which
+/// wraps a long label ("Zero-knowledge mode") around a one-word value; as a
+/// trailing widget the value keeps its natural width and the label gets the
+/// rest. Pair it with `chevron: true`.
+class SettingsValue extends StatelessWidget {
+  const SettingsValue(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        text,
+        maxLines: 1,
+        style: context.type.bodyRegular
+            .copyWith(fontSize: 14, color: context.sketch.muted),
+      );
+}
+
 /// A short bulleted line: a 6px ink dot and wrapped text.
 class SketchBulletLine extends StatelessWidget {
   const SketchBulletLine({super.key, required this.text, this.color});

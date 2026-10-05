@@ -28,6 +28,7 @@ import '../../services/walkthrough_service.dart';
 import '../../util/show_a_toast.dart';
 import '../../widgets/admin_password_dialog.dart';
 import 'settings_about_sheet.dart';
+import 'settings_widgets.dart';
 
 /// The admin identity. Matches the server's ADMIN_EMAIL; the admin panel
 /// itself is still behind its own password.
@@ -102,9 +103,9 @@ class _SettingsGeneralGroupState extends State<SettingsGeneralGroup>
         ),
         SketchRow(
           label: l10n.stNotifications,
-          value: _notificationsOn == null
+          trailing: _notificationsOn == null
               ? null
-              : (_notificationsOn! ? l10n.stOn : l10n.stOff),
+              : SettingsValue(_notificationsOn! ? l10n.stOn : l10n.stOff),
           chevron: true,
           onTap: () {
             PinpointHaptics.medium();
@@ -281,7 +282,9 @@ class _SettingsHelpGroupState extends State<SettingsHelpGroup> {
         ),
         SketchRow(
           label: l10n.setAboutApp,
-          value: _version == null ? null : l10n.stVersionShort(_version!),
+          trailing: _version == null
+              ? null
+              : SettingsValue(l10n.stVersionShort(_version!)),
           chevron: true,
           onTap: () {
             PinpointHaptics.medium();

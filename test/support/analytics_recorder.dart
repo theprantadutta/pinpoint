@@ -61,6 +61,12 @@ class RecordingAnalyticsFacade extends AnalyticsFacade {
       _rec('search_performed',
           {'query_length_bucket': searchLengthBucket(queryLength)});
 
+  // --- Premium gates -----------------------------------------------------
+
+  @override
+  Future<void> trackPremiumGateShown({required String feature}) async =>
+      _rec('premium_gate_shown', {'feature': feature});
+
   // --- Subscription -------------------------------------------------------
 
   @override

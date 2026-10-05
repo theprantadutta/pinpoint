@@ -388,6 +388,8 @@ class PaywallPlanCard extends StatelessWidget {
       child: ExcludeSemantics(
         child: Stack(
           clipBehavior: Clip.none,
+          // Fill the slot the parent gives (two cards share a row).
+          fit: StackFit.passthrough,
           children: [
             card,
             if (badge != null)

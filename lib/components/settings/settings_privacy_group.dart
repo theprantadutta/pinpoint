@@ -6,6 +6,7 @@ import '../../main.dart';
 import '../../navigation/app_navigation.dart';
 import '../../screens/encryption_settings_screen.dart';
 import '../../services/zero_knowledge_service.dart';
+import 'settings_widgets.dart';
 
 /// PRIVACY & SECURITY: biometric lock, zero-knowledge mode, encryption.
 ///
@@ -73,9 +74,9 @@ class _SettingsPrivacyGroupState extends State<SettingsPrivacyGroup> {
         SketchRow(
           label: l10n.stZeroKnowledge,
           subtitle: l10n.stZeroKnowledgeSubtitle,
-          value: _zeroKnowledge == null
+          trailing: _zeroKnowledge == null
               ? null
-              : (_zeroKnowledge! ? l10n.stOn : l10n.stOff),
+              : SettingsValue(_zeroKnowledge! ? l10n.stOn : l10n.stOff),
           chevron: true,
           onTap: _openEncryption,
         ),
