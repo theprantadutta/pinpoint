@@ -4564,5 +4564,357 @@
   "dgCreate": "Create",
   "@dgCreate": {
     "description": "Primary button of the name sheet when creating a new folder."
+  },
+  "edMoreOptions": "More options",
+  "@edMoreOptions": {
+    "description": "Screen-reader label of the round '⋯' button in the note editor's top bar that opens the note menu (archive, colour, export, share, delete)."
+  },
+  "edFolderChipMore": "{folder} +{count}",
+  "@edFolderChipMore": {
+    "description": "Folder chip in the note editor's top bar when a note is in several folders: the first folder's name plus how many more, e.g. 'Random +2'.",
+    "placeholders": {
+      "folder": {
+        "type": "String",
+        "example": "Random"
+      },
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edFolderChipSemantic": "Folders: {folders}. Change folders",
+  "@edFolderChipSemantic": {
+    "description": "Screen-reader label of the folder chip in the note editor's top bar. {folders} is a comma-separated list of the note's folder names. Tapping opens the folder picker.",
+    "placeholders": {
+      "folders": {
+        "type": "String",
+        "example": "Random, Work"
+      }
+    }
+  },
+  "edFoldersSheetHint": "A note can live in more than one folder.",
+  "@edFoldersSheetHint": {
+    "description": "Subtitle in the folder picker sheet opened from the note editor, explaining that several folders can be selected at once."
+  },
+  "edNewFolder": "New folder",
+  "@edNewFolder": {
+    "description": "Dashed chip at the end of the folder picker sheet in the note editor; creates a folder and selects it."
+  },
+  "edEditedOn": "Edited {date}",
+  "@edEditedOn": {
+    "description": "Small muted line under the note title in the editor saying when the note was last changed, e.g. 'Edited Oct 2, 2026'.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "Oct 2, 2026"
+      }
+    }
+  },
+  "edEncrypted": "Encrypted",
+  "@edEncrypted": {
+    "description": "Label next to a small green dot under the note title in the editor. Tapping it explains how the note is protected."
+  },
+  "edEncryptedSemantic": "Encrypted. How is this note protected?",
+  "@edEncryptedSemantic": {
+    "description": "Screen-reader label of the 'Encrypted' label under the note title; tapping opens an explanation sheet."
+  },
+  "edEncSheetTitle": "How this note is protected",
+  "@edEncSheetTitle": {
+    "description": "Title of the sheet that opens when the user taps 'Encrypted' in the note editor."
+  },
+  "edEncStandardBody": "This note is encrypted on your device before it syncs. You are in Standard mode: we keep a recovery copy of your key so you never get locked out, which means we could technically decrypt your notes.",
+  "@edEncStandardBody": {
+    "description": "Body of the encryption sheet in the note editor when the account uses Standard mode. Must stay honest: the server holds a recovery copy of the key."
+  },
+  "edEncZkBody": "This note is encrypted on your device before it syncs. Maximum Privacy is on: only your passphrase unlocks the key, so we cannot read your notes.",
+  "@edEncZkBody": {
+    "description": "Body of the encryption sheet in the note editor when zero-knowledge ('Maximum Privacy') mode is on."
+  },
+  "edEncExceptions": "Reminders and cloud voice recordings are the exceptions: our server reads a reminder's title, text and time to deliver it, and voice recordings are not end-to-end encrypted.",
+  "@edEncExceptions": {
+    "description": "Second paragraph of the encryption sheet in the note editor. Honest list of what is NOT end-to-end encrypted. Keep the meaning exact."
+  },
+  "edEncManage": "Encryption settings",
+  "@edEncManage": {
+    "description": "Button at the bottom of the encryption sheet in the note editor; opens the Encryption settings screen."
+  },
+  "edFormatting": "Formatting",
+  "@edFormatting": {
+    "description": "Screen-reader label for the black formatting toolbar at the bottom of the note editor."
+  },
+  "edHighlight": "Highlight",
+  "@edHighlight": {
+    "description": "Formatting toolbar button that puts a yellow marker highlight behind the selected text."
+  },
+  "edColorDefault": "No colour",
+  "@edColorDefault": {
+    "description": "Note colour picker: the option that removes the note's colour."
+  },
+  "edColorYellow": "Yellow",
+  "@edColorYellow": {
+    "description": "Note colour picker: pastel yellow."
+  },
+  "edColorLavender": "Lavender",
+  "@edColorLavender": {
+    "description": "Note colour picker: pastel lavender."
+  },
+  "edColorMint": "Mint",
+  "@edColorMint": {
+    "description": "Note colour picker: pastel mint green."
+  },
+  "edColorSky": "Sky",
+  "@edColorSky": {
+    "description": "Note colour picker: pastel sky blue."
+  },
+  "edColorPink": "Pink",
+  "@edColorPink": {
+    "description": "Note colour picker: pastel pink."
+  },
+  "edOcrImage": "Image to scan",
+  "@edOcrImage": {
+    "description": "Screen-reader label for the picked image shown in the scan card in the note editor, before its text is extracted."
+  },
+  "edOcrCaption": "Only the text is kept",
+  "@edOcrCaption": {
+    "description": "Small caption on the scan card in the note editor: the picked image is not saved with the note, only the text extracted from it."
+  },
+  "edExtractText": "Extract text",
+  "@edExtractText": {
+    "description": "Small sky-blue pill on the scan card in the note editor; reads the text in the picked image and adds it to the note."
+  },
+  "edExtractTextQuota": "Extract text · {used}/{total}",
+  "@edExtractTextQuota": {
+    "description": "The 'Extract text' pill when a free user is close to the monthly text-scan limit, e.g. 'Extract text · 18/20'.",
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "example": "18"
+      },
+      "total": {
+        "type": "int",
+        "example": "20"
+      }
+    }
+  },
+  "edExtracting": "Reading…",
+  "@edExtracting": {
+    "description": "The 'Extract text' pill while the text in the image is being recognised."
+  },
+  "edOcrDiscard": "Discard image",
+  "@edOcrDiscard": {
+    "description": "Screen-reader label of the small close button on the scan card in the note editor."
+  },
+  "edNewVoiceNote": "New voice note",
+  "@edNewVoiceNote": {
+    "description": "Screen-reader label of the round microphone button in the text note editor; opens a new voice note and starts recording."
+  },
+  "edVoiceEmpty": "Tap the mic to record",
+  "@edVoiceEmpty": {
+    "description": "Dashed card in an empty voice note; tapping it (or the round mic button) starts recording."
+  },
+  "edVoiceFreeCap": "Free recordings stop at {duration}",
+  "@edVoiceFreeCap": {
+    "description": "Muted line under the empty voice-note card for free users, stating the recording length limit, e.g. 'Free recordings stop at 2:00'.",
+    "placeholders": {
+      "duration": {
+        "type": "String",
+        "example": "2:00"
+      }
+    }
+  },
+  "edVoicePlay": "Play",
+  "@edVoicePlay": {
+    "description": "Screen-reader label of the play button on a voice note's player card."
+  },
+  "edVoicePause": "Pause",
+  "@edVoicePause": {
+    "description": "Screen-reader label of the pause button on a voice note's player card."
+  },
+  "edVoiceStop": "Stop",
+  "@edVoiceStop": {
+    "description": "Screen-reader label of the stop button on a voice note's player card."
+  },
+  "edVoicePosition": "Playback position",
+  "@edVoicePosition": {
+    "description": "Screen-reader label of the waveform on a voice note's player card; drag or tap it to seek."
+  },
+  "edChecklistProgress": "Progress",
+  "@edChecklistProgress": {
+    "description": "Small label on the mint progress card at the top of a checklist note."
+  },
+  "edChecklistDoneOf": "{total, plural, =1{{done} of 1 done} other{{done} of {total} done}}",
+  "@edChecklistDoneOf": {
+    "description": "Bold line on a checklist note's progress card: how many tasks are ticked off out of the total, e.g. '2 of 4 done'.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "example": "2"
+      },
+      "total": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "edAutoSaved": "Auto-saved",
+  "@edAutoSaved": {
+    "description": "Small outlined chip under a checklist note's title confirming changes are saved automatically."
+  },
+  "edSaving": "Saving…",
+  "@edSaving": {
+    "description": "The 'Auto-saved' chip on a checklist note while a change is being written."
+  },
+  "edAddTaskHint": "Add a task…",
+  "@edAddTaskHint": {
+    "description": "Placeholder in the black add bar at the bottom of a checklist note. Pressing Enter adds the task and keeps the keyboard open."
+  },
+  "edAddTask": "Add task",
+  "@edAddTask": {
+    "description": "Screen-reader label of the round mint '+' button in a checklist note's add bar."
+  },
+  "edTaskDeleted": "Task deleted",
+  "@edTaskDeleted": {
+    "description": "Toast after swiping a checklist task away; offers Undo."
+  },
+  "edUndo": "Undo",
+  "@edUndo": {
+    "description": "Action on a toast that reverses what was just done (e.g. restores a deleted checklist task)."
+  },
+  "edChecklistEmpty": "No tasks yet. Add your first one below.",
+  "@edChecklistEmpty": {
+    "description": "Muted line in an empty checklist note, pointing at the add bar at the bottom of the screen."
+  },
+  "edDragToReorder": "Drag to reorder",
+  "@edDragToReorder": {
+    "description": "Screen-reader label of the drag handle that appears on a checklist task while it is being moved (long-press a task to move it)."
+  },
+  "edAllDone": "All done!",
+  "@edAllDone": {
+    "description": "Announced to screen readers when every task in a checklist note is ticked off (small celebration stickers appear)."
+  },
+  "edEditTask": "Edit task",
+  "@edEditTask": {
+    "description": "Placeholder of the text field while a checklist task's text is being edited."
+  },
+  "edReminderChipSemantic": "Reminder {when}. Change reminder time",
+  "@edReminderChipSemantic": {
+    "description": "Screen-reader label of the lavender reminder chip in the reminder editor, e.g. 'Reminder Today, 6:00 PM. Change reminder time'.",
+    "placeholders": {
+      "when": {
+        "type": "String",
+        "example": "Today, 6:00 PM"
+      }
+    }
+  },
+  "edRemPickTime": "Pick a date and time",
+  "@edRemPickTime": {
+    "description": "Outlined chip in the reminder editor before a time is chosen; opens the date and time picker."
+  },
+  "edRemTitleLabel": "Notification title",
+  "@edRemTitleLabel": {
+    "description": "Label above the text field for the title shown in the reminder's push notification."
+  },
+  "edRemTitleHint": "e.g. Take medication",
+  "@edRemTitleHint": {
+    "description": "Example placeholder in the reminder notification title field."
+  },
+  "edRemBodyLabel": "Notification text (optional)",
+  "@edRemBodyLabel": {
+    "description": "Label above the optional text field for the body of the reminder's push notification."
+  },
+  "edRemBodyHint": "Anything else to include",
+  "@edRemBodyHint": {
+    "description": "Placeholder in the optional reminder notification text field."
+  },
+  "edRemWhen": "When",
+  "@edRemWhen": {
+    "description": "Section title in the reminder editor above the date-and-time chip."
+  },
+  "edRemRepeat": "Repeat",
+  "@edRemRepeat": {
+    "description": "Section title in the reminder editor above the repeat options (Once, Hourly, Daily…)."
+  },
+  "edRemEnds": "Ends",
+  "@edRemEnds": {
+    "description": "Section title in the reminder editor above the options for when a repeating reminder stops."
+  },
+  "edRemEveryHours": "{count, plural, =1{Every hour} other{Every {count} hours}}",
+  "@edRemEveryHours": {
+    "description": "Repeat interval in the reminder editor for an hourly reminder, shown between − and + buttons.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edRemEveryDays": "{count, plural, =1{Every day} other{Every {count} days}}",
+  "@edRemEveryDays": {
+    "description": "Repeat interval in the reminder editor for a daily reminder, shown between − and + buttons.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edRemEveryWeeks": "{count, plural, =1{Every week} other{Every {count} weeks}}",
+  "@edRemEveryWeeks": {
+    "description": "Repeat interval in the reminder editor for a weekly reminder, shown between − and + buttons.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edRemEveryMonths": "{count, plural, =1{Every month} other{Every {count} months}}",
+  "@edRemEveryMonths": {
+    "description": "Repeat interval in the reminder editor for a monthly reminder, shown between − and + buttons.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edRemEveryYears": "{count, plural, =1{Every year} other{Every {count} years}}",
+  "@edRemEveryYears": {
+    "description": "Repeat interval in the reminder editor for a yearly reminder, shown between − and + buttons.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "edRemLessOften": "Repeat less often",
+  "@edRemLessOften": {
+    "description": "Screen-reader label of the '+' button next to a reminder's repeat interval (raises the interval, e.g. every 2 days → every 3 days)."
+  },
+  "edRemMoreOften": "Repeat more often",
+  "@edRemMoreOften": {
+    "description": "Screen-reader label of the '−' button next to a reminder's repeat interval (lowers the interval)."
+  },
+  "edRemInfoServer": "Your reminder's title, text and time are sent to our server so it can deliver the notification. They are not end-to-end encrypted.",
+  "@edRemInfoServer": {
+    "description": "Honest privacy note in the reminder editor's info card. Keep the meaning exact: reminder details are readable by the server."
+  },
+  "edRemInfoNotifications": "Make sure notifications are allowed for Pinpoint in your device settings.",
+  "@edRemInfoNotifications": {
+    "description": "Tip in the reminder editor's info card. 'Pinpoint' is the app name; do not translate it."
+  },
+  "edRemInfoRepeat": "A repeating reminder schedules one notification for each occurrence.",
+  "@edRemInfoRepeat": {
+    "description": "Tip in the reminder editor's info card about repeating reminders."
+  },
+  "edRemInfoEdit": "You can change or delete a reminder at any time.",
+  "@edRemInfoEdit": {
+    "description": "Tip in the reminder editor's info card."
+  },
+  "edSaveReminder": "Save reminder",
+  "@edSaveReminder": {
+    "description": "Black pill button at the bottom of the reminder editor; saves the reminder and closes the editor."
   }
 }
