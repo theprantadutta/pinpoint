@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated:** July 1, 2026
+**Last Updated:** October 5, 2026
 
 ## Introduction
 
@@ -18,6 +18,7 @@ Pinpoint ("we," "our," or "us") is a mobile application developed and operated b
 
 - **Device Information:** Device type, operating system version, and unique device identifiers
 - **Usage Data:** App features used, crash reports, and performance data
+- **Activity Data:** When you are signed in, our servers record which days you used the app, how many requests the app made that day, and the app version and platform (Android or iOS). It is kept with your account and used to understand how many people use Pinpoint and which versions are still in use
 - **Authentication Data:** Account information from your chosen sign-in provider — your email address and name when you sign in with Google (Google account) or with Apple (Sign in with Apple). If you use Apple's "Hide My Email" feature, we receive only a private relay email address on Apple's domain
 - **Purchase Information:** A transaction/subscription identifier and status (product purchased, renewal, expiry, cancellation) from the app store when you buy Premium — never your card number or full payment details
 

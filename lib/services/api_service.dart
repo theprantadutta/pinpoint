@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pinpoint/services/encryption_service.dart';
 
@@ -130,6 +131,7 @@ class ApiService {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          options.headers.addAll(await _clientHeaders());
           _logger.d('REQUEST[${options.method}] => ${options.uri}');
           return handler.next(options);
         },
@@ -634,6 +636,26 @@ class ApiService {
     } on DioException catch (e) {
       throw _handleError(e);
     }
+  }
+
+  Map<String, String>? _clientHeadersCache;
+
+  /// Which build is calling: the platform and the marketing version (no
+  /// build number). The server keeps them per user per day for the admin
+  /// dashboard's active-user and version-adoption numbers. Nothing else —
+  /// no device model, no locale, no identifiers.
+  Future<Map<String, String>> _clientHeaders() async {
+    final cached = _clientHeadersCache;
+    if (cached != null) return cached;
+    final headers = <String, String>{
+      'X-Client-Platform': kIsWeb ? 'web' : Platform.operatingSystem,
+    };
+    try {
+      headers['X-App-Version'] = (await PackageInfo.fromPlatform()).version;
+    } catch (_) {
+      // A missing version only leaves a gap in the dashboard.
+    }
+    return _clientHeadersCache = headers;
   }
 
   /// What the store offers for [platform] ('ios'), for the update dialog.
