@@ -19,8 +19,12 @@ class NoteGridSliver extends StatelessWidget {
     super.key,
     required this.notes,
     this.itemBuilder,
+    this.columns,
     this.padding = const EdgeInsets.symmetric(horizontal: SketchSpace.screenX),
   });
+
+  /// Fixed column count (1 = the list view); null picks 2 or 3 by width.
+  final int? columns;
 
   final List<NoteWithDetails> notes;
   final Widget Function(BuildContext context, NoteWithDetails note)?
@@ -33,9 +37,9 @@ class NoteGridSliver extends StatelessWidget {
       padding: padding,
       sliver: SliverLayoutBuilder(
         builder: (context, c) {
-          final columns = c.crossAxisExtent >= 560 ? 3 : 2;
+          final count = columns ?? (c.crossAxisExtent >= 560 ? 3 : 2);
           return SliverMasonryGrid.count(
-            crossAxisCount: columns,
+            crossAxisCount: count,
             mainAxisSpacing: SketchSpace.grid,
             crossAxisSpacing: SketchSpace.grid,
             childCount: notes.length,

@@ -6,6 +6,8 @@ import '../design_system/design_system.dart';
 import '../models/filter_options.dart';
 import '../models/folder_summary.dart';
 import '../models/note_with_details.dart';
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/drift_note_service.dart';
 import '../services/filter_service.dart';
@@ -62,8 +64,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   Future<void> _apply() async {
     final service = context.read<FilterService>();
     final navigator = Navigator.of(context);
+    final sortChanged = service.sort != _sort;
     await service.updateFilters(_draft);
     await service.setSort(_sort);
+    if (sortChanged) {
+      // The sort used to live in the All notes screen's menu; same event.
+      getIt<AnalyticsFacade>().trackSortChanged(
+        sortBy: _sort.key,
+        direction: _sort == NoteSort.titleAz ? 'asc' : 'desc',
+      );
+    }
     navigator.pop();
   }
 
