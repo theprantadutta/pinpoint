@@ -20,7 +20,7 @@ class ThemeScreen extends StatefulWidget {
 }
 
 class _ThemeScreenState extends State<ThemeScreen> {
-  String _selectedFont = 'Inter';
+  String _selectedFont = PinpointTypography.primaryFontFamily;
   SharedPreferences? _preferences;
 
   @override
@@ -33,7 +33,8 @@ class _ThemeScreenState extends State<ThemeScreen> {
   Future<void> _loadFontPreference() async {
     _preferences = await SharedPreferences.getInstance();
     setState(() {
-      _selectedFont = _preferences?.getString(kSelectedFontKey) ?? 'Inter';
+      _selectedFont = _preferences?.getString(kSelectedFontKey) ??
+          PinpointTypography.primaryFontFamily;
     });
   }
 
@@ -153,9 +154,9 @@ class _ThemeScreenState extends State<ThemeScreen> {
                       }
 
                       PinpointHaptics.medium();
-                      context
-                          .read<ThemeController>()
-                          .setAccent(accent['color'] as Color);
+                      context.read<ThemeController>().setAccent(SketchAccent
+                          .values
+                          .firstWhere((a) => a.premiumName == colorName));
                       getIt<AnalyticsFacade>().trackAccentColorChanged(
                           colorName: colorName);
                     },
@@ -252,6 +253,8 @@ class _ThemeScreenState extends State<ThemeScreen> {
             ),
           ),
           const SizedBox(height: 12),
+          _buildFontOption(
+              'Plus Jakarta Sans', GoogleFonts.plusJakartaSans().fontFamily),
           _buildFontOption('Inter', GoogleFonts.inter().fontFamily),
           _buildFontOption('Roboto', GoogleFonts.roboto().fontFamily),
           _buildFontOption('Open Sans', GoogleFonts.openSans().fontFamily),

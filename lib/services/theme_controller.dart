@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/shared_preference_keys.dart';
 import '../design_system/colors.dart';
+import '../design_system/typography.dart';
 
 /// Central, reactive owner of app-wide appearance state.
 ///
@@ -16,14 +17,20 @@ import '../design_system/colors.dart';
 /// string. The legacy `kIsDarkModeKey` bool is migrated on first load.
 class ThemeController extends ChangeNotifier {
   ThemeMode _mode = ThemeMode.system;
-  Color _accent = PinpointColors.accentRefined;
+  SketchAccent _accent = SketchAccent.fallback;
   bool _highContrast = false;
-  String _fontFamily = 'Inter';
+  bool _doodlesEnabled = true;
+  String _fontFamily = PinpointTypography.primaryFontFamily;
   bool _loaded = false;
 
   ThemeMode get mode => _mode;
-  Color get accent => _accent;
+  /// The accent; it only picks the highlight pastel (see [SketchAccent]).
+  SketchAccent get accent => _accent;
   bool get highContrast => _highContrast;
+
+  /// The "Background doodles" Display setting. The doodle painter also stays
+  /// off under high contrast and when the OS asks for reduced motion.
+  bool get doodlesEnabled => _doodlesEnabled;
   String get fontFamily => _fontFamily;
   bool get isLoaded => _loaded;
 
@@ -55,8 +62,13 @@ class ThemeController extends ChangeNotifier {
       }
     }
 
-    final accentValue = prefs.getInt(kAccentColorKey);
-    if (accentValue != null) _accent = Color(accentValue);
+    // Persisted as the pre-Sketchbook accent hex so the value still means
+    // something to an older build; unknown values (the old indigo default)
+    // resolve to the Sketchbook default.
+    _accent = SketchAccent.fromStored(prefs.getInt(kAccentColorKey));
+
+    final doodles = prefs.getBool(kDoodlesEnabledKey);
+    if (doodles != null) _doodlesEnabled = doodles;
 
     final hc = prefs.getBool(kHighContrastKey);
     if (hc != null) _highContrast = hc;
@@ -80,12 +92,20 @@ class ThemeController extends ChangeNotifier {
     }
   }
 
-  Future<void> setAccent(Color color) async {
-    if (_accent == color) return;
-    _accent = color;
+  Future<void> setAccent(SketchAccent accent) async {
+    if (_accent == accent) return;
+    _accent = accent;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(kAccentColorKey, color.toARGB32());
+    await prefs.setInt(kAccentColorKey, accent.legacyColor.toARGB32());
+  }
+
+  Future<void> setDoodlesEnabled(bool enabled) async {
+    if (_doodlesEnabled == enabled) return;
+    _doodlesEnabled = enabled;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kDoodlesEnabledKey, enabled);
   }
 
   Future<void> setHighContrast(bool enabled) async {

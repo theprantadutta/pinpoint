@@ -180,3 +180,86 @@ class SpacingPresets {
     vertical: PinpointSpacing.inputPaddingV,
   );
 }
+
+// ============================================
+// Sketchbook
+// ============================================
+
+/// Sketchbook spacing. Logical px at a 390-wide reference screen; the layout
+/// scales with width rather than these values.
+class SketchSpace {
+  SketchSpace._();
+
+  /// Screen horizontal padding.
+  static const double screenX = 20;
+
+  /// Editor text horizontal padding.
+  static const double editorX = 24;
+
+  /// Header row top padding below the status bar.
+  static const double headerTop = 8;
+
+  /// Between sections.
+  static const double section = 22;
+
+  /// Section title to its content.
+  static const double titleToContent = 12;
+
+  /// Grid / card gap.
+  static const double grid = 12;
+
+  /// Chip gap.
+  static const double chip = 8;
+
+  static const double cardPad = 14;
+  static const double cardPadLg = 16;
+
+  /// Dock offset from the bottom (plus the system inset).
+  static const double dockBottom = 26;
+
+  /// Bottom padding a scroll view needs so nothing hides behind the dock.
+  static const double dockClearance = 110;
+
+  /// Minimum tap target.
+  static const double minTap = 44;
+
+  /// Content max width on tablets — the mocks are phone-width, and a 1.5px
+  /// outlined card stretched to 1200px stops reading as a card.
+  static const double maxContentWidth = 720;
+}
+
+/// Sketchbook corner radii.
+class SketchRadius {
+  SketchRadius._();
+
+  static const double card = 18;
+  static const double group = 20;
+  static const double banner = 22;
+  static const double sheet = 34;
+  static const double drawer = 34;
+  static const double dock = 31;
+  static const double checkbox = 8;
+  static const double checkboxSmall = 4;
+  static const double bullet = 4;
+  static const double folderTab = 14;
+  static const double folderBody = 16;
+  static const double highlight = 4;
+}
+
+/// Sketchbook stroke widths.
+class SketchStroke {
+  SketchStroke._();
+
+  /// Standard outline on cards, chips, circle buttons, inputs.
+  static const double outline = 1.5;
+
+  /// Outline on a pastel element.
+  static const double pastel = 1.2;
+
+  /// Checkbox stroke.
+  static const double checkbox = 2;
+
+  /// Dashed "add" affordance.
+  static const double dashLength = 6;
+  static const double dashGap = 4;
+}

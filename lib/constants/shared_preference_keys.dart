@@ -6,6 +6,8 @@ const kHighContrastKey = 'high_contrast';
 const kFlexSchemeKey = 'is_flex_scheme_key';
 const kBiometricKey = 'biometric_key';
 const String kSelectedFontKey = 'selected-font-key';
+// Display → "Background doodles" (Sketchbook marker swooshes). Default on.
+const kDoodlesEnabledKey = 'doodles_enabled';
 
 // language / locale key. Stores a BCP-47 tag ('es', 'pt_BR', ...) or is absent
 // to mean "follow the system locale".
