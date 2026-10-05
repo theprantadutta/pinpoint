@@ -159,7 +159,7 @@ class SketchTag extends StatelessWidget {
     final Color fill = inverse ? s.inverse : (pastel ?? Colors.transparent);
     final Color stroke = inverse
         ? s.inverse
-        : (pastel != null ? SketchPastels.onPastel : s.outline);
+        : (pastel != null || onPastel ? SketchPastels.onPastel : s.outline);
     final style = (dense
             ? t.chip.copyWith(fontSize: 11)
             : t.chip.copyWith(fontSize: 12, fontWeight: FontWeight.w700))

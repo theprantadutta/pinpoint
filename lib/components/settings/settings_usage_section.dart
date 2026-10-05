@@ -104,8 +104,9 @@ class SettingsUsageSection extends StatelessWidget {
     final expiry = m.expirationDate;
     if (expiry == null) return '';
     final date = LocalizedDates.mediumDate(context, expiry);
-    if (expiry.isBefore(DateTime.now()))
+    if (expiry.isBefore(DateTime.now())) {
       return l10n.subscriptionExpiredOn(date);
+    }
     if (m.isCancelledButActive) {
       return l10n.subscriptionCancelledAccessUntil(date);
     }
