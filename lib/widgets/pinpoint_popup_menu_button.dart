@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../design_system/design_system.dart';
 import '../services/crash_breadcrumbs.dart';
 
 /// A [PopupMenuButton] replacement that anchors its menu **once**, when the
@@ -60,15 +61,24 @@ class PinpointPopupMenuButton<T> extends StatelessWidget {
     this.onSelected,
     this.onOpened,
     this.onCanceled,
+    this.dividers = true,
+    this.size = SketchSpace.minTap,
   });
 
   /// Builds the entries. Called once per open, like `PopupMenuButton`'s.
   final List<PopupMenuEntry<T>> Function(BuildContext context) itemBuilder;
 
+  /// The trigger glyph. Defaults to a "⋯".
   final Widget? icon;
   final double? iconSize;
+
+  /// Kept for call-site compatibility; the trigger is a fixed 44px target.
   final EdgeInsetsGeometry? padding;
+
+  /// Also the trigger's screen-reader label.
   final String? tooltip;
+
+  /// Overrides the Sketchbook menu (surface, 1.5px outline, radius 18).
   final ShapeBorder? shape;
   final Color? color;
   final double? elevation;
@@ -80,14 +90,69 @@ class PinpointPopupMenuButton<T> extends StatelessWidget {
   final VoidCallback? onOpened;
   final VoidCallback? onCanceled;
 
+  /// Separate adjacent rows with a hairline.
+  final bool dividers;
+
+  /// The trigger's tap target.
+  final double size;
+
+  /// A 44px menu row: an optional leading icon and a 15/600 label.
+  /// [destructive] paints both in the error colour.
+  static PopupMenuItem<T> item<T>(
+    BuildContext context, {
+    required T value,
+    required String label,
+    IconData? icon,
+    bool destructive = false,
+    bool enabled = true,
+  }) {
+    final s = context.sketch;
+    final fg = destructive ? SketchFunctional.error : s.ink;
+    return PopupMenuItem<T>(
+      value: value,
+      enabled: enabled,
+      height: SketchSpace.minTap,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: fg),
+            const SizedBox(width: 12),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.type.body.copyWith(color: fg),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: icon ?? const Icon(Icons.more_vert),
-      iconSize: iconSize,
-      padding: padding ?? const EdgeInsets.all(8),
-      tooltip: tooltip,
-      onPressed: () => _open(context),
+    final s = context.sketch;
+    final label =
+        tooltip ?? MaterialLocalizations.of(context).showMenuTooltip;
+    return SketchPressable(
+      onTap: () => _open(context),
+      semanticLabel: label,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: Center(
+          child: ExcludeSemantics(
+            child: IconTheme.merge(
+              data: IconThemeData(color: s.ink, size: iconSize ?? 22),
+              child: icon ?? const Icon(Icons.more_horiz_rounded),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -95,18 +160,31 @@ class PinpointPopupMenuButton<T> extends StatelessWidget {
     final position = _anchorOf(context);
     if (position == null) return;
 
-    final items = itemBuilder(context);
-    if (items.isEmpty) return;
+    final built = itemBuilder(context);
+    if (built.isEmpty) return;
+    final items = dividers ? _withHairlines(built) : built;
 
     onOpened?.call();
 
+    final s = context.sketch;
     final selected = await showMenu<T>(
       context: context,
       position: position,
       items: items,
-      shape: shape,
-      color: color,
-      elevation: elevation,
+      shape: shape ??
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SketchRadius.card),
+            side: BorderSide(color: s.outline, width: SketchStroke.outline),
+          ),
+      color: color ?? s.surface,
+      elevation: elevation ?? 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      menuPadding: const EdgeInsets.symmetric(vertical: 4),
+      clipBehavior: Clip.antiAlias,
+      popUpAnimationStyle: SketchMotion.enabled(context)
+          ? null
+          : AnimationStyle.noAnimation,
     );
 
     if (selected == null) {
@@ -114,6 +192,21 @@ class PinpointPopupMenuButton<T> extends StatelessWidget {
     } else {
       onSelected?.call(selected);
     }
+  }
+
+  /// A hairline between two adjacent rows; existing dividers are kept and
+  /// never doubled.
+  static List<PopupMenuEntry<T>> _withHairlines<T>(
+      List<PopupMenuEntry<T>> entries) {
+    final out = <PopupMenuEntry<T>>[];
+    for (final e in entries) {
+      final prevIsRow = out.isNotEmpty && out.last is! PopupMenuDivider;
+      if (prevIsRow && e is! PopupMenuDivider) {
+        out.add(const PopupMenuDivider(height: SketchStroke.outline));
+      }
+      out.add(e);
+    }
+    return out;
   }
 
   /// The button's rect in overlay space, or null if it cannot be measured.
