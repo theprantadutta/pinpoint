@@ -70,33 +70,33 @@ class HighlightedText extends StatelessWidget {
         spans.add(TextSpan(text: source.substring(last, m.start)));
       }
       final words = m.group(1)!.split(' ');
+      const r = Radius.circular(SketchRadius.highlight);
       for (var i = 0; i < words.length; i++) {
+        final first = i == 0, lastWord = i == words.length - 1;
+        // Each word carries the space after it inside its own box, and only
+        // the outer ends are rounded and padded, so neighbouring boxes join
+        // into one continuous marker stroke. A separate highlighted space
+        // box left a visible seam between words, and a stray sliver at the
+        // end of a line when the phrase wrapped there.
         spans.add(WidgetSpan(
           alignment: PlaceholderAlignment.baseline,
           baseline: TextBaseline.alphabetic,
           child: Container(
-            margin:
-                EdgeInsetsDirectional.only(end: i < words.length - 1 ? 0 : 0),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: EdgeInsetsDirectional.only(
+              start: first ? 4 : 0,
+              end: lastWord ? 4 : 0,
+            ),
             decoration: BoxDecoration(
               color: hl,
-              borderRadius: BorderRadius.circular(SketchRadius.highlight),
+              borderRadius: BorderRadiusDirectional.horizontal(
+                start: first ? r : Radius.zero,
+                end: lastWord ? r : Radius.zero,
+              ),
             ),
-            child: Text(words[i],
+            child: Text(lastWord ? words[i] : '${words[i]} ',
                 style: style.copyWith(color: SketchPastels.onPastel)),
           ),
         ));
-        if (i < words.length - 1) {
-          // A highlighted space keeps the marker continuous between words.
-          spans.add(WidgetSpan(
-            alignment: PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: ColoredBox(
-              color: hl,
-              child: Text(' ', style: style),
-            ),
-          ));
-        }
       }
       last = m.end;
     }
