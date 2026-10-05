@@ -322,7 +322,10 @@ class SketchRow extends StatelessWidget {
             ),
             if (value != null) ...[
               const SizedBox(width: 8),
-              Flexible(
+              // Capped rather than Flexible: Flexible shares the free space
+              // 50/50 with the Expanded label and floats the value mid-row.
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 170),
                 child: Text(
                   value!,
                   maxLines: 1,
@@ -530,5 +533,22 @@ class SketchBottomCta extends StatelessWidget {
               SketchSpace.screenX, 8, SketchSpace.screenX, 16),
           child: button,
         ),
+      );
+}
+
+/// A "go forward" chevron that points the right way in RTL.
+class SketchChevron extends StatelessWidget {
+  const SketchChevron({super.key, this.color, this.size = 20});
+
+  final Color? color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Icon(
+        Directionality.of(context) == TextDirection.rtl
+            ? Icons.chevron_left_rounded
+            : Icons.chevron_right_rounded,
+        size: size,
+        color: color ?? context.sketch.muted,
       );
 }

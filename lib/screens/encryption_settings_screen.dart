@@ -303,7 +303,7 @@ class EncryptionModeCard extends StatelessWidget {
                   SketchTag(
                       label: l10n.stEncCurrent, pastel: SketchPastels.mint)
                 else
-                  Icon(Icons.chevron_right_rounded, size: 20, color: s.muted),
+                  SketchChevron(color: s.muted),
               ],
             ),
             const SizedBox(height: 12),

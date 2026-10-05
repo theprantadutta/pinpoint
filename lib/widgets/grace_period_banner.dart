@@ -85,11 +85,7 @@ class GracePeriodBannerContent extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                textDirection: Directionality.of(context),
-              ),
+              const SketchChevron(color: SketchPastels.onPastel),
             ],
           ),
         ),
