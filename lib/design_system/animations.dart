@@ -418,3 +418,48 @@ enum SlideDirection {
   fromTop,
   fromBottom,
 }
+
+// ============================================
+// Sketchbook
+// ============================================
+
+/// Sketchbook motion tokens.
+class SketchMotion {
+  SketchMotion._();
+
+  /// Press feedback.
+  static const Duration fast = Duration(milliseconds: 120);
+
+  /// Chips, toggles, checkbox.
+  static const Duration base = Duration(milliseconds: 200);
+
+  /// Drawer, sheet, page.
+  static const Duration slow = Duration(milliseconds: 280);
+
+  /// Check-path draw.
+  static const Duration check = Duration(milliseconds: 180);
+
+  /// Doodle stroke draw-on (splash / onboarding only).
+  static const Duration doodleDraw = Duration(milliseconds: 900);
+
+  /// Stagger between list items on first load.
+  static const Duration stagger = Duration(milliseconds: 30);
+
+  static const Curve enter = Cubic(0.2, 0.9, 0.2, 1);
+  static const Curve exit = Curves.easeInCubic;
+
+  /// Press scale.
+  static const double pressScale = 0.97;
+
+  /// Sheet spring.
+  static const SpringDescription sheetSpring =
+      SpringDescription(mass: 1, stiffness: 400, damping: 34);
+
+  /// Whether to animate at all (honours the OS "remove animations" setting).
+  static bool enabled(BuildContext context) =>
+      !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
+
+  /// [d], or zero when animations are disabled.
+  static Duration of(BuildContext context, Duration d) =>
+      enabled(context) ? d : Duration.zero;
+}

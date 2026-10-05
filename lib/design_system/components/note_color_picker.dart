@@ -18,8 +18,7 @@ class NoteColorPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final current = selected ?? 'default';
+    final current = NoteSwatch.selectedFor(selected).name;
 
     return SizedBox(
       height: 64,
@@ -32,8 +31,7 @@ class NoteColorPicker extends StatelessWidget {
           final swatch = NoteSwatch.all[i];
           final isDefault = swatch.name == 'default';
           final isSelected = swatch.name == current;
-          final color =
-              brightness == Brightness.dark ? swatch.dark : swatch.light;
+          final color = swatch.color ?? context.sketch.surface;
 
           return _SwatchDot(
             color: color,

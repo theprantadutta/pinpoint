@@ -24,8 +24,17 @@ class PremiumLimits {
   static const int maxVoiceRecordingDurationForPremium = -1;
 
   // Theme Limits
-  static const int maxThemeColorsForFree = 2;
-  static const List<String> freeThemeColors = ['Neon Mint', 'Blue Ocean'];
+  //
+  // Amber ('Orange Sunset') joined the free set with the Sketchbook redesign:
+  // its yellow is the brand pastel and the default accent, and a default a
+  // free user could switch away from but never back to would be a trap.
+  // Mint and Ocean stay free as before. Names are SketchAccent.premiumName.
+  static const int maxThemeColorsForFree = 3;
+  static const List<String> freeThemeColors = [
+    'Orange Sunset',
+    'Neon Mint',
+    'Blue Ocean',
+  ];
 
   /// How many accent colours exist in total, free and premium combined.
   ///

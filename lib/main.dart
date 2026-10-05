@@ -898,13 +898,15 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
             ),
             themeMode: themeController.mode,
             theme: PinpointTheme.light(
-              accentColor: themeController.accent,
+              accent: themeController.accent,
               highContrast: themeController.highContrast,
+              doodlesEnabled: themeController.doodlesEnabled,
               fontFamily: themeController.fontFamily,
             ),
             darkTheme: PinpointTheme.dark(
-              accentColor: themeController.accent,
+              accent: themeController.accent,
               highContrast: themeController.highContrast,
+              doodlesEnabled: themeController.doodlesEnabled,
               fontFamily: themeController.fontFamily,
             ),
             debugShowCheckedModeBanner: false,
