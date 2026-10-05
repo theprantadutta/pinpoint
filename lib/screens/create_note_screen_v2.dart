@@ -1,20 +1,27 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:go_router/go_router.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:image_picker/image_picker.dart';
 import 'package:fleather/fleather.dart';
 
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
+import '../components/create_note_screen/editor_chrome.dart';
+import '../components/create_note_screen/editor_overflow_menu.dart';
+import '../components/create_note_screen/note_export_actions.dart';
+import '../components/create_note_screen/record_audio_type/voice_fab.dart';
+import '../components/create_note_screen/record_audio_type/voice_note_body.dart';
 import '../components/create_note_screen/reminder_type/reminder_type_content.dart';
 import '../components/create_note_screen/show_note_folder_bottom_sheet.dart';
+import '../components/create_note_screen/title_content_type/ocr_scan_card.dart';
+import '../components/create_note_screen/todo_list_type/checklist_add_bar.dart';
+import '../components/create_note_screen/todo_list_type/checklist_editor.dart';
 import '../constants/constants.dart';
 import '../database/database.dart';
 import '../design_system/design_system.dart';
@@ -28,20 +35,25 @@ import '../services/text_note_service.dart';
 import '../services/voice_note_service.dart';
 import '../services/todo_list_note_service.dart';
 import '../services/reminder_note_service.dart';
-import '../services/pdf_font_service.dart';
 import '../services/premium_service.dart';
 import '../services/ocr_service.dart';
+import '../util/folder_palette.dart';
 import '../util/show_a_toast.dart';
 import '../widgets/markdown_editor.dart';
+import '../widgets/markdown_toolbar.dart';
 import '../widgets/premium_gate_dialog.dart';
 import '../widgets/usage_stats_bottom_sheet.dart';
-import '../services/crash_breadcrumbs.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
-import 'package:pinpoint/util/localized_dates.dart';
-import '../widgets/pinpoint_popup_menu_button.dart';
 
 /// CreateNoteScreen V2 - Architecture V8 Implementation
 /// Uses new independent note type tables and type-specific services
+///
+/// Sketchbook layout (SCREENS.md §04/§05): a top bar (back, folder chip, pin,
+/// ⋯), a 28/800 title, an "Edited · Encrypted" meta row, then the body for
+/// the note type — the rich-text editor with the floating [MarkdownToolbar]
+/// and voice button, the checklist with its add bar, the voice recorder, or
+/// the reminder form. The pieces live in `lib/components/create_note_screen/`;
+/// this State owns the data, saving, recording and quotas.
 class CreateNoteScreenV2 extends StatefulWidget {
   static const String kRouteName = '/create-note-v2';
   final CreateNoteScreenArguments? arguments;
@@ -74,10 +86,16 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   late TextEditingController _titleController;
   late FocusNode _titleFocusNode;
   List<NoteFolderDto> selectedFolders = [];
+  late final Stream<List<NoteFolder>> _foldersStream =
+      DriftNoteFolderService.watchFolders();
 
   // Text note fields
   late FleatherController _fleatherController;
   late FocusNode _textContentFocusNode;
+
+  // OCR: the picked image waiting for "Extract text" (never stored).
+  String? _ocrImagePath;
+  bool _ocrBusy = false;
 
   // Voice note fields
   String? _audioFilePath;
@@ -98,6 +116,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   // Todo list fields
   List<TodoItemEntity> _todoItems = [];
   String? _todoListNoteUuid;
+  final FocusNode _addTaskFocusNode = FocusNode();
 
   // Keep-style note color (swatch name); null = default card color.
   String? _selectedColor;
@@ -124,6 +143,27 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   int? _currentNoteId; // Track saved note ID
   bool _isSaving = false;
   Timer? _autoSaveTimer; // Auto-save timer
+  DateTime? _editedAt; // "Edited {date}"
+
+  /// Title + body of the text note as last loaded or saved. The editor
+  /// notifies on every cursor move, so auto-save compares against this
+  /// rather than re-saving (and re-dating) an unchanged note.
+  String? _savedTextSignature;
+
+  String _textSignature() =>
+      '${_titleController.text.trim()}\n${MarkdownEditor.controllerToMarkdown(_fleatherController)}';
+
+  /// Drives the checklist's "Auto-saved" / "Saving…" chip. Held true for at
+  /// least [_savingMinVisible] so a fast local write still reads as a flash.
+  final ValueNotifier<bool> _saving = ValueNotifier(false);
+  DateTime? _savingSince;
+  Timer? _savingOffTimer;
+  static const Duration _savingMinVisible = Duration(milliseconds: 600);
+
+  bool get _isText => selectedNoteType == 'Title Content';
+  bool get _isTodo => selectedNoteType == 'Todo List';
+  bool get _isVoice => selectedNoteType == 'Record Audio';
+  bool get _isReminder => selectedNoteType == 'Reminder';
 
   @override
   void initState() {
@@ -182,6 +222,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     // Load existing note if editing
     if (widget.arguments?.existingNote != null) {
       _loadExistingNote();
+    } else if (widget.arguments?.autoStartRecording == true && _isVoice) {
+      // Opened from the text editor's microphone: record straight away.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _startRecording();
+      });
     }
   }
 
@@ -198,10 +243,13 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   @override
   void dispose() {
     _autoSaveTimer?.cancel();
+    _savingOffTimer?.cancel();
+    _saving.dispose();
     _titleController.dispose();
     _titleFocusNode.dispose();
     _fleatherController.dispose();
     _textContentFocusNode.dispose();
+    _addTaskFocusNode.dispose();
     _reminderNotificationTitleController.dispose();
     _reminderNotificationContentController.dispose();
     _reminderDescriptionController.dispose();
@@ -218,7 +266,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       final folders =
           await DriftNoteFolderService.watchAllNoteFoldersStream().first;
 
-      if (folders.isNotEmpty && mounted) {
+      // An existing note's own folders win over the default.
+      if (folders.isNotEmpty && mounted && selectedFolders.isEmpty) {
         setState(() {
           // Default to first folder (usually "Random")
           selectedFolders = [
@@ -247,6 +296,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       _selectedColor = existingNote.color;
       _isPinned = note.isPinned;
       _isArchived = note.isArchived;
+      _editedAt = note.updatedAt;
 
       // Set folders
       selectedFolders = existingNote.folders
@@ -260,8 +310,10 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         // Load raw content from database (not the plain text version)
         final textNote = await TextNoteService.getTextNote(note.id);
         if (textNote != null && textNote.content.isNotEmpty) {
+          _fleatherController.removeListener(_scheduleAutoSave);
           _fleatherController =
               MarkdownEditor.createControllerFromMarkdown(textNote.content);
+          _fleatherController.addListener(_scheduleAutoSave);
         }
       } else if (note.noteType == 'voice') {
         // Voice note
@@ -301,6 +353,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         }
       }
 
+      // Loading set the fields; that is not an edit worth an auto-save.
+      _autoSaveTimer?.cancel();
+      if (selectedNoteType == 'Title Content') {
+        _savedTextSignature = _textSignature();
+      }
+
       if (mounted) {
         setState(() {});
       }
@@ -314,37 +372,54 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
   /// Show folder selection bottom sheet
   Future<void> _showFolderBottomSheet() async {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final allFolders =
-        await DriftNoteFolderService.watchAllNoteFoldersStream().first;
-
-    if (!mounted) return;
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.65,
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: ShowNoteFolderBottomSheet(
-          selectedFolders: selectedFolders,
-          setSelectedFolders: (folders) {
-            if (mounted) {
-              setState(() {
-                selectedFolders = folders;
-              });
-            }
-          },
-          noteFolderData: allFolders,
-        ),
-      ),
+    await ShowNoteFolderBottomSheet.show(
+      context,
+      selected: selectedFolders,
+      onChanged: (folders) {
+        if (mounted) {
+          setState(() {
+            selectedFolders = folders;
+          });
+          // Folder membership is part of the note: save it right away.
+          if (_currentNoteId != null && !_isReminder) {
+            unawaited(_saveNote().catchError((Object e) {
+              debugPrint('⚠️ [CreateNoteV2] Saving folders failed: $e');
+            }));
+          }
+        }
+      },
     );
+  }
+
+  void _setSaving(bool saving) {
+    if (saving) {
+      _savingOffTimer?.cancel();
+      _savingSince = DateTime.now();
+      _saving.value = true;
+      return;
+    }
+    final shown = DateTime.now().difference(_savingSince ?? DateTime.now());
+    final remaining = _savingMinVisible - shown;
+    _savingOffTimer?.cancel();
+    if (remaining > Duration.zero) {
+      _savingOffTimer = Timer(remaining, () {
+        if (mounted) _saving.value = false;
+      });
+    } else if (mounted) {
+      _saving.value = false;
+    }
+  }
+
+  /// Runs a direct database write (checklist items) under the saving chip.
+  Future<T> _withSaving<T>(Future<T> Function() write) async {
+    _setSaving(true);
+    try {
+      final result = await write();
+      if (mounted) setState(() => _editedAt = DateTime.now());
+      return result;
+    } finally {
+      _setSaving(false);
+    }
   }
 
   /// Save note based on current type.
@@ -359,6 +434,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       await Future.delayed(const Duration(milliseconds: 50));
     }
     _isSaving = true;
+    _setSaving(true);
 
     try {
       final title = _titleController.text.trim();
@@ -411,6 +487,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         analytics.trackNoteUpdated(noteType: noteTypeKey);
       }
 
+      if (mounted) setState(() => _editedAt = DateTime.now());
+
       debugPrint('✅ [CreateNoteV2] Note saved successfully: $_currentNoteId');
     } catch (e, st) {
       debugPrint('❌ [CreateNoteV2] Failed to save note: $e');
@@ -419,6 +497,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     } finally {
       // Always release the lock (no setState needed — build doesn't read it).
       _isSaving = false;
+      _setSaving(false);
     }
   }
 
@@ -439,6 +518,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
   Future<int> _saveTextNote(String title) async {
     final content = MarkdownEditor.controllerToMarkdown(_fleatherController);
+    final int noteId;
 
     if (_currentNoteId != null) {
       // Update existing note
@@ -448,15 +528,17 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         content: content,
         folders: selectedFolders,
       );
-      return _currentNoteId!;
+      noteId = _currentNoteId!;
     } else {
       // Create new note
-      return await TextNoteService.createTextNote(
+      noteId = await TextNoteService.createTextNote(
         title: title,
         content: content,
         folders: selectedFolders,
       );
     }
+    _savedTextSignature = '$title\n$content';
+    return noteId;
   }
 
   Future<int> _saveVoiceNote(String title) async {
@@ -598,7 +680,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       case 'Title Content':
         final content =
             MarkdownEditor.controllerToMarkdown(_fleatherController).trim();
-        hasContent = title.isNotEmpty || content.isNotEmpty;
+        hasContent = (title.isNotEmpty || content.isNotEmpty) &&
+            _textSignature() != _savedTextSignature;
         break;
 
       case 'Record Audio':
@@ -627,1053 +710,475 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     }
   }
 
+  // ============================================
+  // Build
+  // ============================================
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final s = context.sketch;
+    // Read above the Scaffold: inside its resizing body the keyboard inset
+    // has already been consumed.
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final noteColor = NoteSwatch.resolve(_selectedColor)?.color;
+    final bottomSafe = MediaQuery.paddingOf(context).bottom;
 
-    final noteBg = PinpointColors.noteColor(_selectedColor, theme.brightness) ??
-        cs.surface;
+    final showVoiceFab = !keyboardOpen &&
+        ((_isText) || (_isVoice && (_audioFilePath == null || _isRecording)));
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: noteBg,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
+      backgroundColor: s.bg,
+      body: DoodleBackground(
+        top: _isText ? DoodleBackground.editorTop : DoodleBackground.todoTop,
+        squiggle: _isText,
+        child: Stack(
           children: [
-            // Header
-            _buildHeader(context, cs, isDark),
-
-            // Content
-            Expanded(
-              child: ResponsiveCenter(
-                child: CustomScrollView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  slivers: [
-                    // (Keep-style: no note-type selector — the type is chosen from
-                    // the FAB speed-dial, and notes convert between text/checklist.)
-
-                    // Title (in the body, Keep-style) — clean borderless field
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-                        child: TextField(
-                          controller: _titleController,
-                          focusNode: _titleFocusNode,
-                          decoration: InputDecoration(
-                            hintText: AppL10n.of(context).edTitleHint,
-                            // Borderless + unfilled: override the global input
-                            // theme so there's no pill background or focus ring.
-                            filled: false,
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            isDense: true,
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 6),
-                            hintStyle: TextStyle(
-                              color: cs.onSurface.withValues(alpha: 0.4),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 18,
-                            ),
-                          ),
-                          style: TextStyle(
-                            color: cs.onSurface,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 18,
-                          ),
-                          maxLines: null,
-                          textInputAction: TextInputAction.next,
-                        ),
+            SafeArea(
+              bottom: false,
+              child: SketchContentWidth(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildTopBar(),
+                    Expanded(
+                      child: CustomScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        slivers: [
+                          _buildTitleSliver(),
+                          ..._buildContentSlivers(),
+                        ],
                       ),
                     ),
-
-                    // Folder Selection
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () => _showFolderBottomSheet(),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? cs.surfaceContainerHighest
-                                      .withValues(alpha: 0.3)
-                                  : cs.surfaceContainerHighest
-                                      .withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: cs.outline.withValues(alpha: 0.15),
-                                width: 1,
-                              ),
-                            ),
-                            child: selectedFolders.isEmpty
-                                ? Row(
-                                    children: [
-                                      Icon(
-                                        Symbols.add,
-                                        size: 18,
-                                        color: cs.primary,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        AppL10n.of(context).edAddToFolder,
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(
-                                          fontWeight: FontWeight.w500,
-                                          color: cs.onSurface
-                                              .withValues(alpha: 0.7),
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      Icon(
-                                        Icons.chevron_right_rounded,
-                                        size: 18,
-                                        color:
-                                            cs.onSurface.withValues(alpha: 0.4),
-                                      ),
-                                    ],
-                                  )
-                                : Row(
-                                    children: [
-                                      Icon(
-                                        Symbols.folder,
-                                        size: 18,
-                                        color: cs.primary,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Wrap(
-                                          spacing: 6,
-                                          runSpacing: 4,
-                                          children:
-                                              selectedFolders.map((folder) {
-                                            return Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: cs.primary
-                                                    .withValues(alpha: 0.08),
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                                border: Border.all(
-                                                  color: cs.primary
-                                                      .withValues(alpha: 0.15),
-                                                  width: 0.5,
-                                                ),
-                                              ),
-                                              child: Text(
-                                                folder.title,
-                                                style: theme
-                                                    .textTheme.labelSmall
-                                                    ?.copyWith(
-                                                  color: cs.primary
-                                                      .withValues(alpha: 0.9),
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Icon(
-                                        Icons.edit_rounded,
-                                        size: 16,
-                                        color:
-                                            cs.onSurface.withValues(alpha: 0.4),
-                                      ),
-                                    ],
-                                  ),
-                          ),
+                    if (_isReminder)
+                      SketchBottomCta(
+                        button: PillButton(
+                          label: AppL10n.of(context).edSaveReminder,
+                          onPressed: () => _saveAndClose(context),
                         ),
                       ),
-                    ),
-
-                    // Dynamic Content Area
-                    _buildContentArea(),
                   ],
                 ),
               ),
             ),
+
+            // Note colour: a 6px pastel strip down the leading edge.
+            PositionedDirectional(
+              start: 0,
+              top: 0,
+              bottom: 0,
+              child: NoteColorEdge(color: noteColor),
+            ),
+
+            if (_isText)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: EditorToolbarDock(
+                  keyboardOpen: keyboardOpen,
+                  child: MarkdownToolbar(
+                    controller: _fleatherController,
+                    focusNode: _textContentFocusNode,
+                    noteColor: noteColor,
+                    onColorPressed: _pickColor,
+                    onImagePressed: () => _handleOcrScan(context),
+                  ),
+                ),
+              ),
+
+            if (_isTodo)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: EditorToolbarDock(
+                  keyboardOpen: keyboardOpen,
+                  child: ChecklistAddBar(
+                    focusNode: _addTaskFocusNode,
+                    onAdd: _addTodoItem,
+                  ),
+                ),
+              ),
+
+            if (showVoiceFab)
+              PositionedDirectional(
+                // The button reserves 10px around its 48px circle for the
+                // recording pulse; offset so the circle sits at 104 / 22.
+                end: VoiceFab.end - 10,
+                bottom: (_isText ? VoiceFab.bottom : 40) - 10 + bottomSafe,
+                child: VoiceFab(
+                  recording: _isRecording,
+                  elapsed: _recordedDuration,
+                  semanticLabel: _isText
+                      ? AppL10n.of(context).edNewVoiceNote
+                      : _isRecording
+                          ? AppL10n.of(context).edTapToStop
+                          : AppL10n.of(context).edTapToStart,
+                  onPressed: _isText
+                      ? _openNewVoiceNote
+                      : (_isRecording ? _stopRecording : _startRecording),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, ColorScheme cs, bool isDark) {
-    final noteBg = PinpointColors.noteColor(
-            _selectedColor, Theme.of(context).brightness) ??
-        cs.surface;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: noteBg,
-        border: Border(
-          bottom: BorderSide(
-            color: cs.outline.withValues(alpha: 0.1),
-            width: 1,
-          ),
+  Widget _buildTopBar() {
+    return EditorTopBar(
+      embedded: widget.embedded,
+      onBack: () => _handleBack(context),
+      folderChip: StreamBuilder<List<NoteFolder>>(
+        stream: _foldersStream,
+        builder: (context, snapshot) => EditorFolderChip(
+          folders: selectedFolders,
+          colors: FolderPalette.resolve(snapshot.data ?? const []),
+          onTap: _showFolderBottomSheet,
         ),
       ),
-      child: Row(
-        children: [
-          // Back Button
-          IconButton(
-            icon: Icon(Symbols.arrow_back, color: cs.onSurface),
-            iconSize: 24,
-            onPressed: () async {
-              PinpointHaptics.light();
-
-              // Cancel auto-save timer to prevent conflicts
-              _autoSaveTimer?.cancel();
-
-              // Save before exiting (but don't trigger sync to avoid db locks)
-              if (_shouldSave()) {
-                try {
-                  await _saveNote();
-                  // Give a brief moment for save to complete
-                  await Future.delayed(const Duration(milliseconds: 100));
-                } catch (e) {
-                  debugPrint('⚠️ [CreateNoteV2] Error saving on back: $e');
-                  // Continue navigation even if save fails
-                }
-              }
-
-              if (context.mounted) {
-                _exitEditor(context);
-              }
-            },
-          ),
-
-          const SizedBox(width: 5),
-
-          // Title Input
-          const Spacer(),
-
-          // Pin toggle
-          IconButton(
-            icon: Icon(
-              Symbols.push_pin,
-              color: cs.onSurface,
-              fill: _isPinned ? 1 : 0,
-            ),
-            iconSize: 24,
-            visualDensity: VisualDensity.compact,
-            tooltip: _isPinned ? AppL10n.of(context).edUnpin : AppL10n.of(context).edPin,
-            onPressed: () async {
-              PinpointHaptics.light();
-              setState(() => _isPinned = !_isPinned);
-              if (_currentNoteId != null) {
-                await DriftNoteService.setNotePinned(
-                  _currentNoteId!,
-                  _noteTypeToKey(selectedNoteType),
-                  _isPinned,
-                );
-              }
-            },
-          ),
-
-          // Archive toggle
-          IconButton(
-            icon: Icon(
-              _isArchived ? Symbols.unarchive : Symbols.archive,
-              color: cs.onSurface,
-            ),
-            iconSize: 24,
-            visualDensity: VisualDensity.compact,
-            tooltip: _isArchived ? AppL10n.of(context).edUnarchive : AppL10n.of(context).edArchive,
-            onPressed: () async {
-              PinpointHaptics.light();
-              setState(() => _isArchived = !_isArchived);
-              if (_currentNoteId != null) {
-                await DriftNoteService.setNoteArchived(
-                  _currentNoteId!,
-                  _noteTypeToKey(selectedNoteType),
-                  _isArchived,
-                );
-              }
-            },
-          ),
-
-          // Color (palette) button
-          IconButton(
-            icon: Icon(Symbols.palette, color: cs.onSurface),
-            iconSize: 24,
-            visualDensity: VisualDensity.compact,
-            tooltip: AppL10n.of(context).edColor,
-            onPressed: () async {
-              PinpointHaptics.light();
-              final picked = await showNoteColorPicker(
-                context,
-                selected: _selectedColor,
-              );
-              if (picked != null && mounted) {
-                setState(
-                    () => _selectedColor = picked == 'default' ? null : picked);
-                // Persist immediately for already-saved notes.
-                if (_currentNoteId != null) {
-                  await DriftNoteService.setNoteColor(
-                    _currentNoteId!,
-                    _noteTypeToKey(selectedNoteType),
-                    _selectedColor,
-                  );
-                }
-              }
-            },
-          ),
-
-          // Three-dot menu
-          PinpointPopupMenuButton<String>(
-            icon: Icon(Icons.more_vert_rounded, color: cs.onSurface),
-            iconSize: 24,
-            padding: EdgeInsets.zero,
-            offset: const Offset(0, 40),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            onOpened: () => CrashBreadcrumbs.popupMenuOpened('editor.overflow'),
-            onCanceled: () =>
-                CrashBreadcrumbs.popupMenuClosed('editor.overflow'),
-            onSelected: (value) async {
-              CrashBreadcrumbs.popupMenuClosed('editor.overflow',
-                  selected: value);
-              PinpointHaptics.light();
-              switch (value) {
-                case 'save':
-                  try {
-                    await _saveNote(isExplicit: true);
-                    if (context.mounted) {
-                      _exitEditor(context);
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content:
-                              Text(e.toString().replaceAll('Exception: ', '')),
-                          backgroundColor: cs.error,
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 3),
-                        ),
-                      );
-                    }
-                  }
-                  break;
-                case 'delete':
-                  _handleDeleteNote(context, cs);
-                  break;
-                case 'share':
-                  _handleShareNote(context);
-                  break;
-                case 'export_markdown':
-                  _handleExportMarkdown(context);
-                  break;
-                case 'export_pdf':
-                  _handleExportPdf(context);
-                  break;
-                case 'ocr_scan':
-                  _handleOcrScan(context);
-                  break;
-                case 'usage':
-                  _showUsageStats(context);
-                  break;
-                case 'info':
-                  _showNoteInfo(context, cs, isDark);
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'save',
-                child: Row(
-                  children: [
-                    Icon(Symbols.check, size: 20, color: cs.primary),
-                    const SizedBox(width: 12),
-                    Text(AppL10n.of(context).edSaveAndClose),
-                  ],
-                ),
-              ),
-              if (_currentNoteId != null) ...[
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_outline_rounded,
-                          size: 20, color: cs.error),
-                      const SizedBox(width: 12),
-                      Text(AppL10n.of(context).commonDelete),
-                    ],
-                  ),
-                ),
-              ],
-              PopupMenuItem(
-                value: 'share',
-                child: Row(
-                  children: [
-                    Icon(Symbols.share, size: 20, color: cs.primary),
-                    const SizedBox(width: 12),
-                    Text(AppL10n.of(context).edShare),
-                  ],
-                ),
-              ),
-              // OCR Scan
-              if (selectedNoteType == 'Title Content')
-                PopupMenuItem(
-                  value: 'ocr_scan',
-                  child: Row(
-                    children: [
-                      Icon(Icons.document_scanner_rounded,
-                          size: 20, color: cs.primary),
-                      const SizedBox(width: 12),
-                      Builder(
-                        builder: (context) {
-                          final premiumService = PremiumService();
-                          final isPremium = premiumService.isPremium;
-                          final used = premiumService.getOcrScansThisMonth();
-                          final total =
-                              PremiumLimits.maxOcrScansPerMonthForFree;
-
-                          String ocrText = AppL10n.of(context).edScanText;
-                          if (!isPremium) {
-                            ocrText = AppL10n.of(context).edScanTextQuota(used, total);
-                          }
-
-                          return Text(ocrText);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              // Markdown Export
-              if (selectedNoteType == 'Title Content')
-                PopupMenuItem(
-                  value: 'export_markdown',
-                  child: Row(
-                    children: [
-                      Icon(Icons.file_download_rounded,
-                          size: 20, color: cs.primary),
-                      const SizedBox(width: 12),
-                      Builder(
-                        builder: (context) {
-                          final premiumService = PremiumService();
-                          final isPremium = premiumService.isPremium;
-                          final used = premiumService.getExportsThisMonth();
-                          final total = PremiumLimits.maxExportsPerMonthForFree;
-
-                          String text = AppL10n.of(context).edExportMarkdown;
-                          if (!isPremium) {
-                            text = AppL10n.of(context).edExportMarkdownQuota(used, total);
-                          }
-
-                          return Text(text);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              // PDF Export
-              if (selectedNoteType == 'Title Content')
-                PopupMenuItem(
-                  value: 'export_pdf',
-                  child: Row(
-                    children: [
-                      Icon(Icons.picture_as_pdf_rounded,
-                          size: 20, color: cs.primary),
-                      const SizedBox(width: 12),
-                      Builder(
-                        builder: (context) {
-                          final premiumService = PremiumService();
-                          final isPremium = premiumService.isPremium;
-                          final used = premiumService.getExportsThisMonth();
-                          final total = PremiumLimits.maxExportsPerMonthForFree;
-
-                          String text = AppL10n.of(context).edExportPdf;
-                          if (!isPremium) {
-                            text = AppL10n.of(context).edExportPdfQuota(used, total);
-                          }
-
-                          return Text(text);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              // Encrypted Sharing (Coming Soon)
-              PopupMenuItem(
-                enabled: false,
-                child: Row(
-                  children: [
-                    Icon(Icons.lock_outline_rounded,
-                        size: 20, color: cs.onSurface.withValues(alpha: 0.4)),
-                    const SizedBox(width: 12),
-                    Text(AppL10n.of(context).edShareEncrypted,
-                        style: TextStyle(
-                            color: cs.onSurface.withValues(alpha: 0.4))),
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: cs.onSurface.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        AppL10n.of(context).edSoonBadge,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: cs.onSurface.withValues(alpha: 0.5),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Usage Stats
-              PopupMenuItem(
-                value: 'usage',
-                child: Row(
-                  children: [
-                    Icon(Icons.analytics_outlined, size: 20, color: cs.primary),
-                    const SizedBox(width: 12),
-                    Text(AppL10n.of(context).edUsage),
-                  ],
-                ),
-              ),
-              if (_currentNoteId != null)
-                PopupMenuItem(
-                  value: 'info',
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline_rounded,
-                          size: 20, color: cs.primary),
-                      const SizedBox(width: 12),
-                      Text(AppL10n.of(context).edInfo),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ],
+      pin: _isText
+          ? EditorPinButton(pinned: _isPinned, onPressed: _togglePin)
+          : null,
+      menu: EditorOverflowMenu(
+        entries: _menuEntries,
+        onSelected: (value) => _onMenuSelected(context, value),
       ),
     );
   }
 
-  Widget _buildContentArea() {
+  /// Title, meta row and (checklists) the auto-save chip.
+  Widget _buildTitleSliver() {
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+          SketchSpace.editorX, 26, SketchSpace.editorX, 0),
+      sliver: SliverToBoxAdapter(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            EditorTitleField(
+              controller: _titleController,
+              focusNode: _titleFocusNode,
+              onSubmitted: (_) {
+                if (_isText) _textContentFocusNode.requestFocus();
+                if (_isTodo) _addTaskFocusNode.requestFocus();
+              },
+            ),
+            const SizedBox(height: 2),
+            EditorMetaRow(
+              editedAt: _editedAt,
+              showEncrypted: _isText || _isTodo,
+            ),
+            if (_isTodo && _currentNoteId != null) ...[
+              const SizedBox(height: 4),
+              _AutoSaveChip(saving: _saving),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildContentSlivers() {
     switch (selectedNoteType) {
       case 'Title Content':
         return _buildTextNoteContent();
       case 'Record Audio':
-        return _buildVoiceNoteContent();
+        return [_buildVoiceNoteContent()];
       case 'Todo List':
-        return _buildTodoListContent();
+        return [_buildTodoListContent()];
       case 'Reminder':
-        return _buildReminderContent();
+        return [_buildReminderContent()];
       default:
-        return const SliverToBoxAdapter(child: SizedBox.shrink());
+        return const [SliverToBoxAdapter(child: SizedBox.shrink())];
     }
   }
 
-  Widget _buildTextNoteContent() {
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-
-    return SliverToBoxAdapter(
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.7 - keyboardHeight,
-        child: MarkdownEditor(
-          controller: _fleatherController,
-          focusNode: _textContentFocusNode,
-          hintText: AppL10n.of(context).edBodyHint,
-          showToolbar: true,
-          onChanged: (markdown) {
-            // Content changes are automatically saved via transaction stream
-          },
+  List<Widget> _buildTextNoteContent() {
+    final l10n = AppL10n.of(context);
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(
+            SketchSpace.editorX, 10, SketchSpace.editorX, 0),
+        sliver: SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              MarkdownEditor(
+                controller: _fleatherController,
+                focusNode: _textContentFocusNode,
+                hintText: l10n.edBodyHint,
+              ),
+              if (_ocrImagePath != null) ...[
+                const SizedBox(height: SketchSpace.section),
+                OcrScanCard(
+                  imagePath: _ocrImagePath!,
+                  busy: _ocrBusy,
+                  pillLabel: _ocrPillLabel(l10n),
+                  onExtract: _extractOcrText,
+                  onDiscard: () => setState(() => _ocrImagePath = null),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
+      // The rest of the page focuses the body, so a short note is still
+      // easy to tap into; it also clears the toolbar and voice button.
+      SliverFillRemaining(
+        hasScrollBody: false,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _focusBodyEnd,
+          child: const SizedBox(height: 180),
+        ),
+      ),
+    ];
+  }
+
+  void _focusBodyEnd() {
+    final end = _fleatherController.document.length - 1;
+    _fleatherController.updateSelection(
+      TextSelection.collapsed(offset: end < 0 ? 0 : end),
     );
+    _textContentFocusNode.requestFocus();
+  }
+
+  String _ocrPillLabel(AppL10n l10n) {
+    if (_ocrBusy) return l10n.edExtracting;
+    final premium = PremiumService();
+    if (premium.isPremium) return l10n.edExtractText;
+    final used = premium.getOcrScansThisMonth();
+    const total = PremiumLimits.maxOcrScansPerMonthForFree;
+    // Near the limit (the last quarter), show how much is left.
+    return used >= total * 0.75
+        ? l10n.edExtractTextQuota(used, total)
+        : l10n.edExtractText;
   }
 
   Widget _buildVoiceNoteContent() {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Column(
-          children: [
-            // Recording UI (shown when recording or no audio exists)
-            if (_audioFilePath == null || _isRecording) ...[
-              // Recording indicator / status
-              if (_isRecording) ...[
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? cs.surfaceContainerHighest.withValues(alpha: 0.3)
-                        : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: cs.outline.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: cs.error,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            AppL10n.of(context).edRecording,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        _formatDuration(_recordedDuration),
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: cs.primary,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-              ],
-
-              // Record button
-              GestureDetector(
-                onTap: _isRecording ? _stopRecording : _startRecording,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: _isRecording
-                          ? [cs.error, cs.error.withValues(alpha: 0.8)]
-                          : [cs.primary, cs.primary.withValues(alpha: 0.8)],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (_isRecording ? cs.error : cs.primary)
-                            .withValues(alpha: 0.3),
-                        blurRadius: 24,
-                        spreadRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    _isRecording ? Symbols.stop : Symbols.mic,
-                    size: 48,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Status text
-              Text(
-                _isRecording
-                    ? AppL10n.of(context).edTapToStop
-                    : AppL10n.of(context).edTapToStart,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: cs.onSurface.withValues(alpha: 0.7),
-                ),
-              ),
-            ],
-
-            // Audio player UI (shown when audio exists and not recording)
-            if (_audioFilePath != null && !_isRecording) ...[
-              // Audio player card
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      cs.primaryContainer.withValues(alpha: 0.5),
-                      cs.secondaryContainer.withValues(alpha: 0.3),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: cs.outline.withValues(alpha: 0.1),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: cs.shadow.withValues(alpha: 0.08),
-                      blurRadius: 20,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // Audio icon
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: cs.primary.withValues(alpha: 0.1),
-                        border: Border.all(
-                          color: cs.primary.withValues(alpha: 0.2),
-                          width: 2,
-                        ),
-                      ),
-                      child: Icon(
-                        Symbols.audio_file,
-                        size: 40,
-                        color: cs.primary,
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Progress slider
-                    SliderTheme(
-                      data: SliderThemeData(
-                        trackHeight: 4,
-                        activeTrackColor: cs.primary,
-                        inactiveTrackColor: cs.primary.withValues(alpha: 0.2),
-                        thumbShape:
-                            const RoundSliderThumbShape(enabledThumbRadius: 8),
-                        overlayShape:
-                            const RoundSliderOverlayShape(overlayRadius: 16),
-                        thumbColor: cs.primary,
-                        overlayColor: cs.primary.withValues(alpha: 0.2),
-                      ),
-                      child: Slider(
-                        value: _playbackPosition.inMilliseconds.toDouble(),
-                        max: _playbackDuration.inMilliseconds > 0
-                            ? _playbackDuration.inMilliseconds.toDouble()
-                            : (_audioDurationSeconds != null
-                                ? (_audioDurationSeconds! * 1000).toDouble()
-                                : 100.0),
-                        onChanged: (value) async {
-                          final position =
-                              Duration(milliseconds: value.toInt());
-                          // Reflect the drag immediately in the UI.
-                          setState(() {
-                            _playbackPosition = position;
-                          });
-                          // Only seek once a source is loaded; seeking before
-                          // playback has started throws inside audioplayers.
-                          if (!_hasAudioSource) return;
-                          try {
-                            await _audioPlayer.seek(position);
-                          } catch (e) {
-                            debugPrint('❌ [VoiceNote] Failed to seek: $e');
-                          }
-                        },
-                      ),
-                    ),
-
-                    // Time display
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _formatDuration(_playbackPosition),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: cs.onSurface.withValues(alpha: 0.7),
-                              fontFeatures: const [
-                                FontFeature.tabularFigures()
-                              ],
-                            ),
-                          ),
-                          Text(
-                            _formatDuration(_playbackDuration.inMilliseconds > 0
-                                ? _playbackDuration
-                                : Duration(
-                                    seconds: _audioDurationSeconds ?? 0)),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: cs.onSurface.withValues(alpha: 0.7),
-                              fontFeatures: const [
-                                FontFeature.tabularFigures()
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Playback controls
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Play/Pause button
-                        IconButton.filled(
-                          onPressed:
-                              _isPlaying ? _pausePlayback : _startPlayback,
-                          icon: Icon(
-                              _isPlaying ? Symbols.pause : Symbols.play_arrow),
-                          iconSize: 32,
-                          style: IconButton.styleFrom(
-                            backgroundColor: cs.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.all(20),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        // Stop button
-                        IconButton.outlined(
-                          onPressed: _stopPlayback,
-                          icon: const Icon(Symbols.stop),
-                          iconSize: 28,
-                          style: IconButton.styleFrom(
-                            padding: const EdgeInsets.all(18),
-                            side: BorderSide(
-                                color: cs.outline.withValues(alpha: 0.3)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Replace recording button
-              OutlinedButton.icon(
-                onPressed: _replaceRecording,
-                icon: const Icon(Symbols.refresh),
-                label: Text(AppL10n.of(context).edRecordAgain),
-                style: OutlinedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  side: BorderSide(color: cs.primary.withValues(alpha: 0.5)),
-                  foregroundColor: cs.primary,
-                ),
-              ),
-            ],
-          ],
+    final premium = PremiumService();
+    final cap = premium.getMaxVoiceRecordingDuration();
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+              SketchSpace.screenX, SketchSpace.section, SketchSpace.screenX, 0),
+          sliver: SliverToBoxAdapter(
+            child: VoiceNoteBody(
+              recording: _isRecording,
+              recorded: _recordedDuration,
+              hasAudio: _audioFilePath != null,
+              playing: _isPlaying,
+              position: _playbackPosition,
+              total: _playbackDuration.inMilliseconds > 0
+                  ? _playbackDuration
+                  : Duration(seconds: _audioDurationSeconds ?? 0),
+              seed: _audioFilePath?.hashCode ?? 0,
+              freeCapSeconds: cap > 0 ? cap : null,
+              onRecord: _startRecording,
+              onPlay: _startPlayback,
+              onPause: _pausePlayback,
+              onStop: _stopPlayback,
+              onReplace: _replaceRecording,
+              onSeek: _seekPlayback,
+            ),
+          ),
         ),
-      ),
+        const SliverToBoxAdapter(child: SizedBox(height: 140)),
+      ],
     );
+  }
+
+  Future<void> _seekPlayback(Duration position) async {
+    // Reflect the drag immediately in the UI.
+    setState(() {
+      _playbackPosition = position;
+    });
+    // Only seek once a source is loaded; seeking before
+    // playback has started throws inside audioplayers.
+    if (!_hasAudioSource) return;
+    try {
+      await _audioPlayer.seek(position);
+    } catch (e) {
+      debugPrint('❌ [VoiceNote] Failed to seek: $e');
+    }
   }
 
   Widget _buildTodoListContent() {
-    final cs = Theme.of(context).colorScheme;
-
-    return SliverPadding(
-      padding: const EdgeInsets.all(16),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            if (index == _todoItems.length) {
-              // Add new todo button
-              return Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: OutlinedButton.icon(
-                  onPressed: _addTodoItem,
-                  icon: Icon(Symbols.add, size: 20),
-                  label: Text(AppL10n.of(context).edAddTodoItem),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    side: BorderSide(color: cs.outline.withValues(alpha: 0.3)),
-                  ),
-                ),
-              );
-            }
-
-            final item = _todoItems[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Row(
-                  children: [
-                    // Checkbox (interactive)
-                    Checkbox(
-                      value: item.isCompleted,
-                      onChanged: (value) async {
-                        if (value != null) {
-                          await _toggleTodoItem(item.id);
-                        }
-                      },
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Todo text (also interactive - tapping toggles completion)
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () async {
-                          await _toggleTodoItem(item.id);
-                        },
-                        child: Text(
-                          item.content,
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: cs.onSurface,
-                            decoration: item.isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Delete button
-                    IconButton(
-                      icon: Icon(
-                        Symbols.delete_outline,
-                        size: 20,
-                        color: cs.onSurface.withValues(alpha: 0.5),
-                      ),
-                      onPressed: () async {
-                        await _deleteTodoItem(item.id);
-                      },
-                    ),
-                  ],
-                ),
+    return SliverMainAxisGroup(
+      slivers: [
+        ChecklistEditorSliver(
+          items: [
+            for (final item in _todoItems)
+              ChecklistEntry(
+                id: item.id,
+                text: item.content,
+                done: item.isCompleted,
               ),
-            );
-          },
-          childCount: _todoItems.length + 1, // +1 for add button
+          ],
+          onToggle: (e) => _toggleTodoItem(e.id),
+          onDelete: _deleteTodoItem,
+          onReorder: _reorderTodoItems,
+          onEdit: _editTodoItem,
         ),
-      ),
+        SliverToBoxAdapter(
+          child: SizedBox(
+              height: SketchSpace.dockClearance +
+                  MediaQuery.paddingOf(context).bottom),
+        ),
+      ],
     );
   }
 
+  // ============================================
+  // Checklist items
+  // ============================================
+
+  Future<void> _reloadTodoItems() async {
+    if (_currentNoteId == null) return;
+    final items =
+        await TodoListNoteService.watchTodoItems(_currentNoteId!).first;
+    if (mounted) {
+      setState(() {
+        _todoItems = items;
+      });
+    }
+  }
+
   Future<void> _toggleTodoItem(int itemId) async {
+    // Move it in this frame; the database follows.
+    setState(() {
+      _todoItems = [
+        for (final i in _todoItems)
+          i.id == itemId ? i.copyWith(isCompleted: !i.isCompleted) : i,
+      ];
+    });
     try {
-      await TodoListNoteService.toggleTodoItemCompletion(itemId);
-      // Reload items from database
-      if (_currentNoteId != null) {
-        final items =
-            await TodoListNoteService.watchTodoItems(_currentNoteId!).first;
-        if (mounted) {
-          setState(() {
-            _todoItems = items;
-          });
-        }
-      }
+      await _withSaving(
+          () => TodoListNoteService.toggleTodoItemCompletion(itemId));
     } catch (e) {
       debugPrint('❌ Failed to toggle todo item: $e');
     }
+    await _reloadTodoItems();
   }
 
-  Future<void> _deleteTodoItem(int itemId) async {
+  Future<void> _deleteTodoItem(ChecklistEntry entry) async {
+    final index = _todoItems.indexWhere((i) => i.id == entry.id);
+    if (index < 0) return;
+    final removed = _todoItems[index];
+    final previousOrder = [for (final i in _todoItems) i.id];
+
+    // The dismissed row must leave the tree now.
+    setState(() {
+      _todoItems = List.of(_todoItems)..removeAt(index);
+    });
+
     try {
-      await TodoListNoteService.deleteTodoItem(itemId);
-      // Reload items from database
-      if (_currentNoteId != null) {
-        final items =
-            await TodoListNoteService.watchTodoItems(_currentNoteId!).first;
-        if (mounted) {
-          setState(() {
-            _todoItems = items;
-          });
-        }
-      }
+      await _withSaving(() => TodoListNoteService.deleteTodoItem(entry.id));
     } catch (e) {
       debugPrint('❌ Failed to delete todo item: $e');
+      await _reloadTodoItems();
+      return;
     }
+
+    if (mounted) {
+      final l10n = AppL10n.of(context);
+      showSketchToast(
+        context: context,
+        message: l10n.edTaskDeleted,
+        actionLabel: l10n.edUndo,
+        onAction: () => _restoreTodoItem(removed, previousOrder),
+      );
+    }
+    await _reloadTodoItems();
   }
 
-  Future<void> _addTodoItem() async {
+  /// Undo for a swiped-away task: re-adds it with its text, state and place.
+  Future<void> _restoreTodoItem(
+      TodoItemEntity item, List<int> previousOrder) async {
+    if (_currentNoteId == null || _todoListNoteUuid == null) return;
+    try {
+      await _withSaving(() async {
+        final newId = await TodoListNoteService.addTodoItem(
+          todoListNoteId: _currentNoteId!,
+          todoListNoteUuid: _todoListNoteUuid!,
+          content: item.content,
+          isCompleted: item.isCompleted,
+          orderIndex: item.orderIndex,
+        );
+        final current =
+            await TodoListNoteService.watchTodoItems(_currentNoteId!).first;
+        final alive = {for (final i in current) i.id};
+        final order = [
+          for (final id in previousOrder)
+            if (id == item.id) newId else if (alive.contains(id)) id,
+        ];
+        await TodoListNoteService.reorderTodoItems(_currentNoteId!, order);
+      });
+    } catch (e) {
+      debugPrint('❌ Failed to restore todo item: $e');
+    }
+    await _reloadTodoItems();
+  }
+
+  /// [openIds] is the new order of the open tasks; done tasks keep theirs.
+  Future<void> _reorderTodoItems(List<int> openIds) async {
+    if (_currentNoteId == null) return;
+    final byId = {for (final i in _todoItems) i.id: i};
+    final order = [
+      ...openIds,
+      for (final i in _todoItems)
+        if (i.isCompleted) i.id,
+    ];
+    setState(() {
+      _todoItems = [
+        for (final (index, id) in order.indexed)
+          if (byId[id] != null) byId[id]!.copyWith(orderIndex: index),
+      ];
+    });
+    try {
+      await _withSaving(
+          () => TodoListNoteService.reorderTodoItems(_currentNoteId!, order));
+    } catch (e) {
+      debugPrint('❌ Failed to reorder todo items: $e');
+    }
+    await _reloadTodoItems();
+  }
+
+  Future<void> _editTodoItem(ChecklistEntry entry, String text) async {
+    setState(() {
+      _todoItems = [
+        for (final i in _todoItems)
+          i.id == entry.id ? i.copyWith(content: text) : i,
+      ];
+    });
+    try {
+      await _withSaving(() =>
+          TodoListNoteService.updateTodoItem(itemId: entry.id, content: text));
+    } catch (e) {
+      debugPrint('❌ Failed to edit todo item: $e');
+    }
+    await _reloadTodoItems();
+  }
+
+  /// The add bar's Enter / "+". The note is created first if it is new.
+  Future<void> _addTodoItem(String content) async {
     // Ensure we have a note created first
     if (_currentNoteId == null) {
-      await _saveNote();
+      try {
+        await _saveNote();
+      } catch (e) {
+        debugPrint('❌ Failed to create todo list note: $e');
+      }
       if (_currentNoteId == null) {
         debugPrint('❌ Failed to create todo list note');
         return;
       }
     }
-
-    if (!mounted) return;
-
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppL10n.of(context).edAddTodoItem),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: AppL10n.of(context).edTodoHint,
-            border: const OutlineInputBorder(),
-          ),
-          textInputAction: TextInputAction.done,
-          onSubmitted: (value) async {
-            if (value.trim().isNotEmpty) {
-              await _saveTodoItemToDatabase(value.trim());
-              if (context.mounted) {
-                Navigator.pop(context);
-              }
-            }
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppL10n.of(context).commonCancel),
-          ),
-          FilledButton(
-            onPressed: () async {
-              if (controller.text.trim().isNotEmpty) {
-                await _saveTodoItemToDatabase(controller.text.trim());
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
-              }
-            },
-            child: Text(AppL10n.of(context).edAdd),
-          ),
-        ],
-      ),
-    );
+    await _saveTodoItemToDatabase(content);
   }
 
   Future<void> _saveTodoItemToDatabase(String content) async {
@@ -1683,62 +1188,294 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         return;
       }
 
-      await TodoListNoteService.addTodoItem(
-        todoListNoteId: _currentNoteId!,
-        todoListNoteUuid: _todoListNoteUuid!,
-        content: content,
-      );
+      await _withSaving(() => TodoListNoteService.addTodoItem(
+            todoListNoteId: _currentNoteId!,
+            todoListNoteUuid: _todoListNoteUuid!,
+            content: content,
+          ));
 
-      // Reload items from database
-      final items =
-          await TodoListNoteService.watchTodoItems(_currentNoteId!).first;
-      if (mounted) {
-        setState(() {
-          _todoItems = items;
-        });
-      }
-
-      debugPrint('✅ Added todo item: $content');
+      await _reloadTodoItems();
+      debugPrint('✅ Added todo item');
     } catch (e) {
       debugPrint('❌ Failed to add todo item: $e');
     }
   }
 
   Widget _buildReminderContent() {
-    // ReminderTypeContent already returns a SliverToBoxAdapter
-    return ReminderTypeContent(
-      notificationTitleController: _reminderNotificationTitleController,
-      notificationContentController: _reminderNotificationContentController,
-      selectedDateTime: _reminderTime,
-      recurrenceType: _recurrenceType,
-      recurrenceInterval: _recurrenceInterval,
-      recurrenceEndType: _recurrenceEndType,
-      recurrenceEndValue: _recurrenceEndValue,
-      onReminderDateTimeChanged: (DateTime selectedDateTime) {
-        setState(() {
-          _reminderTime = selectedDateTime;
-        });
-      },
-      onRecurrenceTypeChanged: (String type) {
-        setState(() {
-          _recurrenceType = type;
-        });
-      },
-      onRecurrenceIntervalChanged: (int interval) {
-        setState(() {
-          _recurrenceInterval = interval;
-        });
-      },
-      onRecurrenceEndTypeChanged: (String type) {
-        setState(() {
-          _recurrenceEndType = type;
-        });
-      },
-      onRecurrenceEndValueChanged: (String? value) {
-        setState(() {
-          _recurrenceEndValue = value;
-        });
-      },
+    return SliverMainAxisGroup(
+      slivers: [
+        // ReminderTypeContent already returns a SliverToBoxAdapter
+        ReminderTypeContent(
+          notificationTitleController: _reminderNotificationTitleController,
+          notificationContentController: _reminderNotificationContentController,
+          selectedDateTime: _reminderTime,
+          recurrenceType: _recurrenceType,
+          recurrenceInterval: _recurrenceInterval,
+          recurrenceEndType: _recurrenceEndType,
+          recurrenceEndValue: _recurrenceEndValue,
+          onReminderDateTimeChanged: (DateTime selectedDateTime) {
+            setState(() {
+              _reminderTime = selectedDateTime;
+            });
+          },
+          onRecurrenceTypeChanged: (String type) {
+            setState(() {
+              _recurrenceType = type;
+            });
+          },
+          onRecurrenceIntervalChanged: (int interval) {
+            setState(() {
+              _recurrenceInterval = interval;
+            });
+          },
+          onRecurrenceEndTypeChanged: (String type) {
+            setState(() {
+              _recurrenceEndType = type;
+            });
+          },
+          onRecurrenceEndValueChanged: (String? value) {
+            setState(() {
+              _recurrenceEndValue = value;
+            });
+          },
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+      ],
+    );
+  }
+
+  // ============================================
+  // Top bar actions
+  // ============================================
+
+  Future<void> _handleBack(BuildContext context) async {
+    PinpointHaptics.light();
+
+    // Cancel auto-save timer to prevent conflicts
+    _autoSaveTimer?.cancel();
+
+    // Save before exiting (but don't trigger sync to avoid db locks)
+    if (_shouldSave()) {
+      try {
+        await _saveNote();
+        // Give a brief moment for save to complete
+        await Future.delayed(const Duration(milliseconds: 100));
+      } catch (e) {
+        debugPrint('⚠️ [CreateNoteV2] Error saving on back: $e');
+        // Continue navigation even if save fails
+      }
+    }
+
+    if (context.mounted) {
+      _exitEditor(context);
+    }
+  }
+
+  Future<void> _togglePin() async {
+    setState(() => _isPinned = !_isPinned);
+    if (_currentNoteId != null) {
+      await DriftNoteService.setNotePinned(
+        _currentNoteId!,
+        _noteTypeToKey(selectedNoteType),
+        _isPinned,
+      );
+    }
+  }
+
+  Future<void> _toggleArchive() async {
+    setState(() => _isArchived = !_isArchived);
+    if (_currentNoteId != null) {
+      await DriftNoteService.setNoteArchived(
+        _currentNoteId!,
+        _noteTypeToKey(selectedNoteType),
+        _isArchived,
+      );
+    }
+  }
+
+  Future<void> _pickColor() async {
+    PinpointHaptics.light();
+    final picked = await showNoteColorPicker(
+      context,
+      selected: _selectedColor,
+    );
+    if (picked != null && mounted) {
+      setState(() => _selectedColor = picked == 'default' ? null : picked);
+      // Persist immediately for already-saved notes.
+      if (_currentNoteId != null) {
+        await DriftNoteService.setNoteColor(
+          _currentNoteId!,
+          _noteTypeToKey(selectedNoteType),
+          _selectedColor,
+        );
+      }
+    }
+  }
+
+  /// The ⋯ menu, rebuilt on each open so the quota counts are current.
+  List<EditorMenuEntry> _menuEntries() {
+    final l10n = AppL10n.of(context);
+    final premium = PremiumService();
+    final isPremium = premium.isPremium;
+    final exportsUsed = premium.getExportsThisMonth();
+    const exportsTotal = PremiumLimits.maxExportsPerMonthForFree;
+
+    return [
+      EditorMenuEntry(
+          value: 'save', icon: Icons.check_rounded, label: l10n.edSaveAndClose),
+      if (!_isText)
+        EditorMenuEntry(
+          value: 'pin',
+          icon: _isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+          label: _isPinned ? l10n.edUnpin : l10n.edPin,
+        ),
+      EditorMenuEntry(
+        value: 'archive',
+        icon: _isArchived ? Icons.unarchive_outlined : Icons.archive_outlined,
+        label: _isArchived ? l10n.edUnarchive : l10n.edArchive,
+      ),
+      EditorMenuEntry(
+          value: 'color', icon: Icons.palette_outlined, label: l10n.edColor),
+      if (_isText) ...[
+        EditorMenuEntry(
+          value: 'export_pdf',
+          icon: Icons.picture_as_pdf_outlined,
+          label: isPremium
+              ? l10n.edExportPdf
+              : l10n.edExportPdfQuota(exportsUsed, exportsTotal),
+          dividerBefore: true,
+        ),
+        EditorMenuEntry(
+          value: 'export_markdown',
+          icon: Icons.file_download_outlined,
+          label: isPremium
+              ? l10n.edExportMarkdown
+              : l10n.edExportMarkdownQuota(exportsUsed, exportsTotal),
+        ),
+        EditorMenuEntry(
+          value: 'ocr_scan',
+          icon: Icons.document_scanner_outlined,
+          label: isPremium
+              ? l10n.edScanText
+              : l10n.edScanTextQuota(premium.getOcrScansThisMonth(),
+                  PremiumLimits.maxOcrScansPerMonthForFree),
+        ),
+      ],
+      EditorMenuEntry(
+        value: 'share',
+        icon: Icons.ios_share_rounded,
+        label: l10n.edShare,
+        dividerBefore: !_isText,
+      ),
+      // Encrypted sharing is not built yet: shown, disabled, labelled SOON.
+      EditorMenuEntry(
+        value: 'share_encrypted',
+        icon: Icons.lock_outline_rounded,
+        label: l10n.edShareEncrypted,
+        enabled: false,
+        badge: l10n.edSoonBadge,
+      ),
+      EditorMenuEntry(
+          value: 'usage', icon: Icons.analytics_outlined, label: l10n.edUsage),
+      if (_currentNoteId != null) ...[
+        EditorMenuEntry(
+            value: 'info',
+            icon: Icons.info_outline_rounded,
+            label: l10n.edInfo),
+        EditorMenuEntry(
+          value: 'delete',
+          icon: Icons.delete_outline_rounded,
+          label: l10n.commonDelete,
+          destructive: true,
+          dividerBefore: true,
+        ),
+      ],
+    ];
+  }
+
+  Future<void> _onMenuSelected(BuildContext context, String value) async {
+    PinpointHaptics.light();
+    switch (value) {
+      case 'save':
+        await _saveAndClose(context);
+        break;
+      case 'pin':
+        await _togglePin();
+        break;
+      case 'archive':
+        await _toggleArchive();
+        break;
+      case 'color':
+        await _pickColor();
+        break;
+      case 'delete':
+        _handleDeleteNote(context);
+        break;
+      case 'share':
+        _handleShareNote(context);
+        break;
+      case 'export_markdown':
+        if (!_isText) return;
+        await NoteExportActions.exportMarkdown(
+          context,
+          title: _titleController.text.trim(),
+          content:
+              MarkdownEditor.controllerToMarkdown(_fleatherController).trim(),
+        );
+        break;
+      case 'export_pdf':
+        if (!_isText) return;
+        await NoteExportActions.exportPdf(
+          context,
+          title: _titleController.text.trim(),
+          content:
+              MarkdownEditor.controllerToMarkdown(_fleatherController).trim(),
+        );
+        break;
+      case 'ocr_scan':
+        _handleOcrScan(context);
+        break;
+      case 'usage':
+        _showUsageStats(context);
+        break;
+      case 'info':
+        _showNoteInfo(context);
+        break;
+    }
+  }
+
+  /// Explicit save, then leave (menu "Save & close", the reminder CTA).
+  Future<void> _saveAndClose(BuildContext context) async {
+    try {
+      await _saveNote(isExplicit: true);
+      if (context.mounted) {
+        _exitEditor(context);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showSketchToast(
+          context: context,
+          message: e.toString().replaceAll('Exception: ', ''),
+          tone: ToastTone.error,
+        );
+      }
+    }
+  }
+
+  /// Opens a new voice note that starts recording (the text editor's mic).
+  void _openNewVoiceNote() {
+    if (_shouldSave()) {
+      _autoSaveTimer?.cancel();
+      unawaited(_saveNote().catchError((Object e) {
+        debugPrint('⚠️ [CreateNoteV2] Save before voice note failed: $e');
+      }));
+    }
+    context.push(
+      CreateNoteScreenV2.kRouteName,
+      extra: const CreateNoteScreenArguments(
+        noticeType: 'Record Audio',
+        autoStartRecording: true,
+      ),
     );
   }
 
@@ -1940,128 +1677,75 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     }
   }
 
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$minutes:$seconds';
-  }
-
   /// Handle delete note
-  void _handleDeleteNote(BuildContext context, ColorScheme cs) {
+  Future<void> _handleDeleteNote(BuildContext context) async {
     if (_currentNoteId == null) return;
+    final l10n = AppL10n.of(context);
 
-    showDialog(
+    final confirmed = await showSketchConfirm(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(AppL10n.of(context).edDeleteNoteTitle),
-        content: Text(AppL10n.of(context).edDeleteNoteConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(AppL10n.of(context).commonCancel),
-          ),
-          TextButton(
-            onPressed: () async {
-              // Close the dialog first
-              Navigator.pop(dialogContext);
-
-              // Delete based on note type
-              switch (selectedNoteType) {
-                case 'Title Content':
-                  await TextNoteService.deleteTextNote(_currentNoteId!);
-                  break;
-                case 'Record Audio':
-                  await VoiceNoteService.deleteVoiceNote(_currentNoteId!);
-                  break;
-                case 'Todo List':
-                  await TodoListNoteService.deleteTodoListNote(_currentNoteId!);
-                  break;
-                case 'Reminder':
-                  await ReminderNoteService.deleteReminderNote(_currentNoteId!);
-                  break;
-              }
-
-              getIt<AnalyticsFacade>()
-                  .trackNoteDeleted(noteType: _noteTypeToKey(selectedNoteType));
-
-              // Return to previous screen (or clear the detail pane when embedded)
-              if (context.mounted) {
-                _exitEditor(context);
-              }
-            },
-            child: Text(AppL10n.of(context).commonDelete,
-                style: TextStyle(color: cs.error)),
-          ),
-        ],
-      ),
+      title: l10n.edDeleteNoteTitle,
+      message: l10n.edDeleteNoteConfirm,
+      confirmLabel: l10n.commonDelete,
+      cancelLabel: l10n.commonCancel,
     );
+    if (!confirmed || _currentNoteId == null) return;
+
+    // Delete based on note type
+    switch (selectedNoteType) {
+      case 'Title Content':
+        await TextNoteService.deleteTextNote(_currentNoteId!);
+        break;
+      case 'Record Audio':
+        await VoiceNoteService.deleteVoiceNote(_currentNoteId!);
+        break;
+      case 'Todo List':
+        await TodoListNoteService.deleteTodoListNote(_currentNoteId!);
+        break;
+      case 'Reminder':
+        await ReminderNoteService.deleteReminderNote(_currentNoteId!);
+        break;
+    }
+
+    getIt<AnalyticsFacade>()
+        .trackNoteDeleted(noteType: _noteTypeToKey(selectedNoteType));
+
+    // Return to previous screen (or clear the detail pane when embedded)
+    if (context.mounted) {
+      _exitEditor(context);
+    }
   }
 
-  /// Show note info modal
-  void _showNoteInfo(BuildContext context, ColorScheme cs, bool isDark) {
+  /// Show note info sheet
+  void _showNoteInfo(BuildContext context) {
     if (_currentNoteId == null) return;
+    final l10n = AppL10n.of(context);
+    final typeLabel = switch (selectedNoteType) {
+      'Title Content' => l10n.noteTypeText,
+      'Todo List' => l10n.noteTypeChecklist,
+      'Record Audio' => l10n.noteTypeVoice,
+      'Reminder' => l10n.noteTypeReminder,
+      _ => selectedNoteType,
+    };
 
-    showModalBottomSheet(
+    showSketchSheet<void>(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (ctx) => SketchSheet(
+        title: l10n.edNoteInfo,
+        child: SketchGroup(
+          margin: EdgeInsets.zero,
           children: [
-            Text(
-              AppL10n.of(context).edNoteInfo,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+            _InfoRow(label: l10n.edInfoType, value: typeLabel),
+            _InfoRow(label: 'ID', value: _currentNoteId.toString()),
+            _InfoRow(
+              label: l10n.edInfoFolder,
+              value: selectedFolders.isEmpty
+                  ? l10n.edInfoNone
+                  : selectedFolders.map((f) => f.title).join(', '),
             ),
-            const SizedBox(height: 24),
-            _buildInfoRow(AppL10n.of(context).edInfoType, selectedNoteType, cs),
-            const SizedBox(height: 12),
-            _buildInfoRow('ID', _currentNoteId.toString(), cs),
-            const SizedBox(height: 12),
-            _buildInfoRow(
-              AppL10n.of(context).edInfoFolder,
-              selectedFolders.isEmpty ? AppL10n.of(context).edInfoNone : selectedFolders.first.title,
-              cs,
-            ),
-            const SizedBox(height: 24),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value, ColorScheme cs) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: cs.onSurface.withValues(alpha: 0.6),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              color: cs.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -2092,18 +1776,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     }
 
     if (title.isEmpty && content.isEmpty) {
-      showDialog(
+      final l10n = AppL10n.of(context);
+      showWarningToast(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text(AppL10n.of(context).edNothingToShare),
-          content: Text(AppL10n.of(context).edAddContentBeforeShare),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+        title: l10n.edNothingToShare,
+        description: l10n.edAddContentBeforeShare,
       );
       return;
     }
@@ -2119,248 +1796,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     PinpointHaptics.success();
   }
 
-  /// Handle export markdown
-  Future<void> _handleExportMarkdown(BuildContext context) async {
-    if (selectedNoteType != 'Title Content') return;
-
-    final title = _titleController.text.trim();
-    final content =
-        MarkdownEditor.controllerToMarkdown(_fleatherController).trim();
-
-    if (title.isEmpty && content.isEmpty) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(AppL10n.of(context).edNothingToExport),
-          content: Text(AppL10n.of(context).edAddContentBeforeExport),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    final premiumService = PremiumService();
-    if (!premiumService.isPremium) {
-      if (!premiumService.canExport()) {
-        if (mounted) {
-          PremiumGateDialog.showExportLimit(context);
-        }
-        return;
-      }
-    }
-
-    try {
-      // Read before the file I/O below; the context may be defunct after.
-      final exportedNoteSubject = AppL10n.of(context).edExportedNoteSubject;
-
-      final markdown = StringBuffer();
-
-      if (title.isNotEmpty) {
-        markdown.writeln('# $title');
-        markdown.writeln();
-      }
-
-      if (content.isNotEmpty) {
-        markdown.writeln(content);
-      }
-
-      markdown.writeln();
-      markdown.writeln('---');
-      markdown.writeln('*Exported from Pinpoint*');
-      markdown.writeln('*Date: ${DateTime.now().toString().split('.')[0]}*');
-
-      final directory = await getTemporaryDirectory();
-      final fileName = title.isNotEmpty
-          ? '${title.replaceAll(RegExp(r'[^\w\s-]'), '')}.md'
-          : 'note_${DateTime.now().millisecondsSinceEpoch}.md';
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsString(markdown.toString());
-
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path)],
-          subject: title.isNotEmpty ? title : exportedNoteSubject,
-        ),
-      );
-
-      if (!premiumService.isPremium) {
-        await premiumService.incrementExports();
-      }
-
-      getIt<AnalyticsFacade>().trackNoteExported(format: 'markdown');
-      PinpointHaptics.success();
-
-      if (context.mounted) {
-        showSuccessToast(
-          context: context,
-          title: AppL10n.of(context).edExported,
-          description: AppL10n.of(context).edMarkdownExported,
-        );
-      }
-    } catch (e) {
-      debugPrint('Error exporting markdown: $e');
-      PinpointHaptics.error();
-
-      if (context.mounted) {
-        showErrorToast(
-          context: context,
-          title: AppL10n.of(context).edExportFailed,
-          description: AppL10n.of(context).edMarkdownExportFailed,
-        );
-      }
-    }
-  }
-
-  /// Handle export PDF
-  Future<void> _handleExportPdf(BuildContext context) async {
-    if (selectedNoteType != 'Title Content') return;
-
-    final title = _titleController.text.trim();
-    final content =
-        MarkdownEditor.controllerToMarkdown(_fleatherController).trim();
-
-    if (title.isEmpty && content.isEmpty) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(AppL10n.of(context).edNothingToExport),
-          content: Text(AppL10n.of(context).edAddContentBeforeExport),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    final premiumService = PremiumService();
-    if (!premiumService.isPremium) {
-      if (!premiumService.canExport()) {
-        if (mounted) {
-          PremiumGateDialog.showExportLimit(context);
-        }
-        return;
-      }
-    }
-
-    try {
-      // Read everything that needs the Flutter BuildContext before the await
-      // below, and before entering pw.Page's builder — its `context` parameter
-      // is a pw.Context that shadows this one.
-      final pageDirection = Directionality.of(context) == TextDirection.rtl
-          ? pw.TextDirection.rtl
-          : pw.TextDirection.ltr;
-      final exportedFromLine = AppL10n.of(context).edExportedFromApp;
-      final exportedDateLine = AppL10n.of(context)
-          .edExportedDate(LocalizedDates.dateTime(context, DateTime.now()));
-      final exportedNoteSubject = AppL10n.of(context).edExportedNoteSubject;
-
-      // Embed real fonts: the PDF base-14 defaults are Latin-only, so a Thai,
-      // Bengali, Arabic or Persian note would otherwise export as blank pages.
-      final pdf = pw.Document(theme: await PdfFontService.theme());
-
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          textDirection: pageDirection,
-          build: (pw.Context context) {
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                if (title.isNotEmpty) ...[
-                  pw.Text(
-                    title,
-                    style: pw.TextStyle(
-                      fontSize: 24,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.SizedBox(height: 20),
-                ],
-                if (content.isNotEmpty) ...[
-                  pw.Text(
-                    content,
-                    style: const pw.TextStyle(
-                      fontSize: 12,
-                      lineSpacing: 1.5,
-                    ),
-                  ),
-                  pw.SizedBox(height: 20),
-                ],
-                pw.Spacer(),
-                pw.Divider(),
-                pw.SizedBox(height: 10),
-                pw.Text(
-                  exportedFromLine,
-                  style: pw.TextStyle(
-                    fontSize: 10,
-                    fontStyle: pw.FontStyle.italic,
-                  ),
-                ),
-                pw.Text(
-                  exportedDateLine,
-                  style: pw.TextStyle(
-                    fontSize: 10,
-                    fontStyle: pw.FontStyle.italic,
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      );
-
-      final directory = await getTemporaryDirectory();
-      final fileName = title.isNotEmpty
-          ? '${title.replaceAll(RegExp(r'[^\w\s-]'), '')}.pdf'
-          : 'note_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsBytes(await pdf.save());
-
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path)],
-          subject: title.isNotEmpty ? title : exportedNoteSubject,
-        ),
-      );
-
-      if (!premiumService.isPremium) {
-        await premiumService.incrementExports();
-      }
-
-      getIt<AnalyticsFacade>().trackNoteExported(format: 'pdf');
-      PinpointHaptics.success();
-
-      if (context.mounted) {
-        showSuccessToast(
-          context: context,
-          title: AppL10n.of(context).edExported,
-          description: AppL10n.of(context).edPdfExported,
-        );
-      }
-    } catch (e) {
-      debugPrint('Error exporting PDF: $e');
-      PinpointHaptics.error();
-
-      if (context.mounted) {
-        showErrorToast(
-          context: context,
-          title: AppL10n.of(context).edExportFailed,
-          description: AppL10n.of(context).edPdfExportFailed,
-        );
-      }
-    }
-  }
-
-  /// Handle OCR scan
+  /// OCR, step 1: check the quota, then pick an image into the scan card.
   Future<void> _handleOcrScan(BuildContext context) async {
     if (selectedNoteType != 'Title Content') return;
 
@@ -2384,33 +1820,50 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         maxHeight: 3000,
       );
 
-      if (image == null) return;
-
+      if (image == null || !mounted) return;
+      setState(() {
+        _ocrImagePath = image.path;
+        _ocrBusy = false;
+      });
+    } catch (e) {
+      debugPrint('Error picking image for OCR: $e');
+      PinpointHaptics.error();
       if (context.mounted) {
-        showDialog(
+        showErrorToast(
           context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(),
-          ),
+          title: AppL10n.of(context).edOcrFailed,
+          description: AppL10n.of(context).edOcrFailedBody,
         );
       }
+    }
+  }
 
-      final String recognizedText = await OCRService.recognizeText(image.path);
+  /// OCR, step 2 ("Extract text"): recognise and append to the note.
+  Future<void> _extractOcrText() async {
+    final path = _ocrImagePath;
+    if (path == null || _ocrBusy) return;
 
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
+    final premiumService = PremiumService();
+    if (!premiumService.canPerformOcrScan()) {
+      PinpointHaptics.error();
+      await PremiumGateDialog.showOcrLimit(
+          context, premiumService.getRemainingOcrScans());
+      return;
+    }
+
+    setState(() => _ocrBusy = true);
+    try {
+      final String recognizedText = await OCRService.recognizeText(path);
+      if (!mounted) return;
 
       if (recognizedText.isEmpty) {
         PinpointHaptics.error();
-        if (context.mounted) {
-          showErrorToast(
-            context: context,
-            title: AppL10n.of(context).edNoTextFound,
-            description: AppL10n.of(context).edNoTextFoundBody,
-          );
-        }
+        setState(() => _ocrBusy = false);
+        showErrorToast(
+          context: context,
+          title: AppL10n.of(context).edNoTextFound,
+          description: AppL10n.of(context).edNoTextFoundBody,
+        );
         return;
       }
 
@@ -2433,7 +1886,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
       getIt<AnalyticsFacade>().trackOcrPerformed();
       PinpointHaptics.success();
-      if (context.mounted) {
+      if (mounted) {
+        setState(() {
+          _ocrImagePath = null;
+          _ocrBusy = false;
+        });
         showSuccessToast(
           context: context,
           title: AppL10n.of(context).edTextExtracted,
@@ -2443,12 +1900,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     } catch (e) {
       debugPrint('Error performing OCR: $e');
       PinpointHaptics.error();
-
-      if (context.mounted && Navigator.canPop(context)) {
-        Navigator.of(context).pop();
-      }
-
-      if (context.mounted) {
+      if (mounted) {
+        setState(() => _ocrBusy = false);
         showErrorToast(
           context: context,
           title: AppL10n.of(context).edOcrFailed,
@@ -2465,6 +1918,76 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const UsageStatsBottomSheet(),
+    );
+  }
+}
+
+/// The checklist's outline chip: "Auto-saved", flashing "Saving…" while a
+/// write is in flight.
+class _AutoSaveChip extends StatelessWidget {
+  const _AutoSaveChip({required this.saving});
+
+  final ValueListenable<bool> saving;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final s = context.sketch;
+    final t = context.type;
+    return ValueListenableBuilder<bool>(
+      valueListenable: saving,
+      builder: (context, isSaving, _) => Semantics(
+        liveRegion: true,
+        child: AnimatedContainer(
+          duration: SketchMotion.of(context, SketchMotion.base),
+          height: 30,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: ShapeDecoration(
+            color: isSaving ? s.soft : Colors.transparent,
+            shape: StadiumBorder(
+              side: BorderSide(color: s.outline, width: SketchStroke.pastel),
+            ),
+          ),
+          child: AnimatedSwitcher(
+            duration:
+                SketchMotion.of(context, const Duration(milliseconds: 150)),
+            child: Center(
+              key: ValueKey(isSaving),
+              widthFactor: 1,
+              child: Text(
+                isSaving ? l10n.edSaving : l10n.edAutoSaved,
+                style: t.chip.copyWith(fontSize: 12),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.sketch;
+    final t = context.type;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 96,
+            child: Text(label, style: t.bodySmall.copyWith(color: s.muted)),
+          ),
+          Expanded(child: Text(value, style: t.body)),
+        ],
+      ),
     );
   }
 }

@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 
 import '../../database/database.dart';
+import '../../design_system/design_system.dart';
 import '../../dtos/note_folder_dto.dart';
 import '../../services/dialog_service.dart';
 import '../../services/drift_note_folder_service.dart';
-import '../../design_system/design_system.dart';
-import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import '../../services/premium_service.dart';
+import '../../util/folder_palette.dart';
+import '../../widgets/premium_gate_dialog.dart';
 
+/// The editor's folder picker: a Sketchbook sheet of pastel folder chips,
+/// multi-select (a note can live in several folders), with a dashed
+/// "New folder" chip and a Done pill.
+///
+/// The list is live, so a folder created here — or arriving from sync while
+/// the sheet is open — appears without reopening it.
 class ShowNoteFolderBottomSheet extends StatefulWidget {
   final List<NoteFolderDto> selectedFolders;
   final Function(List<NoteFolderDto>) setSelectedFolders;
+
+  /// The folders known when the sheet opened; shown until the live list
+  /// arrives.
   final List<NoteFolder> noteFolderData;
 
   const ShowNoteFolderBottomSheet({
@@ -21,362 +32,225 @@ class ShowNoteFolderBottomSheet extends StatefulWidget {
     required this.noteFolderData,
   });
 
+  /// Loads the folders and opens the picker.
+  static Future<void> show(
+    BuildContext context, {
+    required List<NoteFolderDto> selected,
+    required ValueChanged<List<NoteFolderDto>> onChanged,
+  }) async {
+    final folders = await DriftNoteFolderService.watchFolders().first;
+    if (!context.mounted) return;
+    await showSketchSheet<void>(
+      context: context,
+      builder: (_) => ShowNoteFolderBottomSheet(
+        selectedFolders: selected,
+        setSelectedFolders: onChanged,
+        noteFolderData: folders,
+      ),
+    );
+  }
+
   @override
   State<ShowNoteFolderBottomSheet> createState() =>
       _ShowNoteFolderBottomSheetState();
 }
 
 class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
-  List<NoteFolderDto> tempSelectedFolders = [];
+  late final List<NoteFolderDto> _selected = List.of(widget.selectedFolders);
+  late final Stream<List<NoteFolder>> _folders =
+      DriftNoteFolderService.watchFolders();
 
-  @override
-  void initState() {
-    tempSelectedFolders = List.from(widget.selectedFolders);
-    super.initState();
+  bool _isSelected(NoteFolder f) => _selected
+      .any((x) => x.id == f.noteFolderId || x.title == f.noteFolderTitle);
+
+  void _toggle(NoteFolder f) {
+    PinpointHaptics.light();
+    setState(() {
+      if (_isSelected(f)) {
+        _selected.removeWhere(
+            (x) => x.id == f.noteFolderId || x.title == f.noteFolderTitle);
+      } else {
+        _selected
+            .add(NoteFolderDto(id: f.noteFolderId, title: f.noteFolderTitle));
+      }
+    });
+  }
+
+  Future<void> _createFolder(List<NoteFolder> existing) async {
+    final l10n = AppL10n.of(context);
+    // Same free-tier cap as everywhere else folders are created.
+    if (!PremiumService().canCreateFolder(existing.length)) {
+      PinpointHaptics.error();
+      await PremiumGateDialog.showFolderLimit(context);
+      return;
+    }
+    if (!mounted) return;
+
+    PinpointHaptics.light();
+    final controller = TextEditingController();
+    DialogService.addSomethingDialog(
+      context: context,
+      controller: controller,
+      title: l10n.foldersAdd,
+      hintText: l10n.foldersNameHint,
+      onAddPressed: () async {
+        final text = controller.text.trim();
+        if (text.isEmpty) return;
+
+        // The database has the final say on duplicates: the list this sheet
+        // holds can be stale (a folder may have arrived from sync).
+        final NoteFolderDto folder;
+        try {
+          folder = await DriftNoteFolderService.insertNoteFolder(text);
+        } on FolderTitleTakenException {
+          if (!mounted) return;
+          showErrorToast(
+            context: context,
+            title: l10n.foldersAlreadyExists,
+            description: l10n.foldersChooseUniqueName,
+          );
+          return;
+        }
+
+        if (!mounted) return;
+        setState(() => _selected.add(folder));
+        Navigator.pop(context);
+        PinpointHaptics.success();
+      },
+    );
+  }
+
+  void _confirm() {
+    final l10n = AppL10n.of(context);
+    if (_selected.isEmpty) {
+      PinpointHaptics.error();
+      showErrorToast(
+        context: context,
+        title: l10n.folderNoneSelected,
+        description: l10n.folderSelectAtLeastOne,
+      );
+      return;
+    }
+    PinpointHaptics.medium();
+    widget.setSelectedFolders(List.of(_selected));
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppL10n.of(context);
+    final s = context.sketch;
+    final t = context.type;
 
-    return Column(
-      children: [
-        // Handle bar
-        Container(
-          margin: const EdgeInsets.only(top: 12, bottom: 8),
-          height: 4,
-          width: 40,
-          decoration: BoxDecoration(
-            color: cs.outline.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
+    return StreamBuilder<List<NoteFolder>>(
+      stream: _folders,
+      initialData: widget.noteFolderData,
+      builder: (context, snapshot) {
+        final folders = snapshot.data ?? const <NoteFolder>[];
+        final colors = FolderPalette.resolve(folders);
+        final ordered = FolderPalette.ordered(folders);
 
-        // Header
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-          child: Row(
+        return SketchSheet(
+          title: l10n.folderSelectTitle,
+          footer: PillButton(label: l10n.commonDone, onPressed: _confirm),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(Symbols.folder, color: cs.primary, size: 24),
-              const SizedBox(width: 12),
-              Text(
-                AppL10n.of(context).folderSelectTitle,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () {
-                  PinpointHaptics.light();
-                  final TextEditingController controller =
-                      TextEditingController();
-                  if (mounted) {
-                    DialogService.addSomethingDialog(
-                      context: context,
-                      controller: controller,
-                      title: AppL10n.of(context).foldersAdd,
-                      hintText: AppL10n.of(context).foldersNameHint,
-                      onAddPressed: () async {
-                        final text = controller.text.trim();
-                        if (text.isNotEmpty) {
-                          if (widget.noteFolderData.any((x) =>
-                              x.noteFolderTitle.toLowerCase() ==
-                              text.toLowerCase())) {
-                            if (!mounted) return;
-                            showErrorToast(
-                              context: context,
-                              title: AppL10n.of(context).foldersAlreadyExists,
-                              description:
-                                  AppL10n.of(context).foldersChooseUniqueName,
-                            );
-                            return;
-                          }
-
-                          // The list check above can be stale (a folder may
-                          // have arrived from sync since this sheet opened), so
-                          // the database has the final say.
-                          final NoteFolderDto noteFolder;
-                          try {
-                            noteFolder =
-                                await DriftNoteFolderService.insertNoteFolder(
-                                    text);
-                          } on FolderTitleTakenException {
-                            if (!context.mounted) return;
-                            showErrorToast(
-                              context: context,
-                              title: AppL10n.of(context).foldersAlreadyExists,
-                              description:
-                                  AppL10n.of(context).foldersChooseUniqueName,
-                            );
-                            return;
-                          }
-
-                          if (context.mounted) {
-                            setState(() {
-                              tempSelectedFolders.add(noteFolder);
-                            });
-                            Navigator.pop(context);
-                            PinpointHaptics.success();
-                          }
-                        }
-                      },
-                    );
-                  }
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        cs.primary,
-                        cs.primary.withValues(alpha: 0.8),
-                      ],
+              Text(l10n.edFoldersSheetHint,
+                  style: t.bodySmall.copyWith(color: s.muted)),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: SketchSpace.chip,
+                runSpacing: SketchSpace.chip,
+                children: [
+                  for (final f in ordered)
+                    _FolderChip(
+                      title: f.noteFolderTitle,
+                      pastel: colors[f.noteFolderId] ?? s.highlight,
+                      selected: _isSelected(f),
+                      onTap: () => _toggle(f),
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: cs.primary.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                  _NewFolderChip(
+                    label: l10n.edNewFolder,
+                    onTap: () => _createFolder(folders),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Symbols.add, color: Colors.white, size: 18),
-                      const SizedBox(width: 6),
-                      Text(
-                        'New',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
+              ),
+              if (folders.isEmpty) ...[
+                const SizedBox(height: 16),
+                Text(l10n.folderTapNewHint,
+                    style: t.bodySmall.copyWith(color: s.muted)),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// A folder chip: unselected shows a 12px pastel square in an outline
+/// stadium; selected fills with the folder's pastel and a check.
+class _FolderChip extends StatelessWidget {
+  const _FolderChip({
+    required this.title,
+    required this.pastel,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final Color pastel;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SketchChip(
+      label: title,
+      selected: selected,
+      pastel: pastel,
+      onTap: onTap,
+      padding: SketchChip.filterPadding,
+      leading:
+          selected ? null : PastelSquare(color: pastel, size: 12, radius: 3),
+    );
+  }
+}
+
+class _NewFolderChip extends StatelessWidget {
+  const _NewFolderChip({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.sketch;
+    return SketchPressable(
+      onTap: onTap,
+      semanticLabel: label,
+      child: CustomPaint(
+        foregroundPainter: DashedRRectPainter(
+          color: s.outline,
+          strokeWidth: SketchStroke.outline,
+          radius: 19,
+        ),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 38),
+          padding: SketchChip.filterPadding,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_rounded, size: 16, color: s.ink),
+              const SizedBox(width: 4),
+              ExcludeSemantics(
+                child: Text(label, style: context.type.chip),
               ),
             ],
           ),
         ),
-
-        // Folders List
-        Expanded(
-          child: widget.noteFolderData.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Symbols.folder_off,
-                        size: 64,
-                        color: cs.onSurface.withValues(alpha: 0.3),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        AppL10n.of(context).foldersEmptyTitle,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: cs.onSurface.withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        AppL10n.of(context).folderTapNewHint,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: cs.onSurface.withValues(alpha: 0.4),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  itemCount: widget.noteFolderData.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) {
-                    final currentFolder = widget.noteFolderData[i];
-                    final title = currentFolder.noteFolderTitle;
-                    final isSelected =
-                        tempSelectedFolders.any((x) => x.title == title);
-
-                    return GestureDetector(
-                      onTap: () {
-                        PinpointHaptics.light();
-                        setState(() {
-                          if (isSelected) {
-                            tempSelectedFolders.removeWhere(
-                              (x) => x.title == title,
-                            );
-                          } else {
-                            tempSelectedFolders.add(
-                              NoteFolderDto(
-                                id: currentFolder.noteFolderId,
-                                title: currentFolder.noteFolderTitle,
-                              ),
-                            );
-                          }
-                        });
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeOutCubic,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: isSelected
-                              ? LinearGradient(
-                                  colors: [
-                                    cs.primary.withValues(alpha: 0.15),
-                                    cs.primary.withValues(alpha: 0.08),
-                                  ],
-                                )
-                              : null,
-                          color: isSelected
-                              ? null
-                              : isDark
-                                  ? cs.surface.withValues(alpha: 0.4)
-                                  : cs.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected
-                                ? cs.primary.withValues(alpha: 0.4)
-                                : cs.outline.withValues(alpha: 0.1),
-                            width: isSelected ? 2 : 1,
-                          ),
-                          boxShadow: [
-                            if (isSelected)
-                              BoxShadow(
-                                color: cs.primary.withValues(alpha: 0.15),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            // Checkbox
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? cs.primary
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? cs.primary
-                                      : cs.outline.withValues(alpha: 0.3),
-                                  width: 2,
-                                ),
-                              ),
-                              child: isSelected
-                                  ? Icon(
-                                      Symbols.check,
-                                      size: 16,
-                                      color: Colors.white,
-                                      weight: 700,
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(width: 16),
-                            // Folder Icon
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? cs.primary.withValues(alpha: 0.2)
-                                    : cs.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Symbols.folder,
-                                color: cs.primary,
-                                size: 20,
-                                fill: isSelected ? 1.0 : 0.0,
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            // Title
-                            Expanded(
-                              child: Text(
-                                title,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontWeight: isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w600,
-                                  color: isSelected ? cs.primary : cs.onSurface,
-                                  letterSpacing: 0.1,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ),
-
-        // Confirm Button
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                if (tempSelectedFolders.isEmpty) {
-                  if (!mounted) return;
-                  PinpointHaptics.error();
-                  showErrorToast(
-                    context: context,
-                    title: AppL10n.of(context).folderNoneSelected,
-                    description: AppL10n.of(context).folderSelectAtLeastOne,
-                  );
-                  return;
-                }
-                PinpointHaptics.medium();
-                widget.setSelectedFolders(List.from(tempSelectedFolders));
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: cs.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                shadowColor: cs.primary.withValues(alpha: 0.3),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Symbols.check_circle, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    AppL10n.of(context).folderConfirmSelection,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
