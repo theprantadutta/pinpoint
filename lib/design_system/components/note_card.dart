@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 import '../colors.dart';
+import '../content_direction.dart';
 import '../spacing.dart';
 import '../typography.dart';
 import 'sketch/checklist_row.dart';
@@ -235,6 +236,7 @@ class NoteCard extends StatelessWidget {
   Widget _title(BuildContext context, bool onPastel) {
     return Text(
       title,
+      textDirection: contentDirection(title),
       style: context.type.cardTitle
           .copyWith(color: onPastel ? SketchPastels.onPastel : null),
       maxLines: 3,
@@ -338,8 +340,10 @@ class NoteCard extends StatelessWidget {
     }
 
     if (excerpt != null && excerpt!.trim().isNotEmpty) {
+      final preview = previewText(excerpt!);
       return Text(
-        previewText(excerpt!),
+        preview,
+        textDirection: contentDirection(preview),
         style: t.caption.copyWith(height: 1.5, color: mutedColor),
         maxLines: hasTitle ? 6 : 10,
         overflow: TextOverflow.ellipsis,
