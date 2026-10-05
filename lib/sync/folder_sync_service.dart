@@ -79,8 +79,10 @@ class FolderSyncService {
         return {
           'uuid': folder.uuid,
           'title': folder.noteFolderTitle,
-          'created_at': folder.createdAt.toIso8601String(),
-          'updated_at': folder.updatedAt.toIso8601String(),
+          // UTC with a 'Z': the server compares these for last-write-wins,
+          // and a bare local timestamp is read there as UTC.
+          'created_at': folder.createdAt.toUtc().toIso8601String(),
+          'updated_at': folder.updatedAt.toUtc().toIso8601String(),
           // Sketchbook (schema v12). Folders are organisational and already
           // plaintext server-side, so these travel beside the title. A server
           // without the columns ignores them.
@@ -92,7 +94,10 @@ class FolderSyncService {
       // Upload to backend
       final response = await _apiService.syncFolders(folders: foldersData);
 
-      final syncedCount = response['synced_count'] ?? 0;
+      // The response carries the folders it now holds; there is no
+      // 'synced_count' field (reading it always gave 0).
+      final syncedCount = (response['folders'] as List?)?.length ??
+          foldersData.length;
       debugPrint('✅ [FolderSync] Uploaded $syncedCount folders successfully');
 
       return SyncResult(
@@ -136,8 +141,8 @@ class FolderSyncService {
         try {
           final uuid = serverFolder['uuid'] as String;
           final title = serverFolder['title'] as String;
-          final createdAt = DateTime.parse(serverFolder['created_at']);
-          final updatedAt = DateTime.parse(serverFolder['updated_at']);
+          final createdAt = _parseServerTime(serverFolder['created_at']);
+          final updatedAt = _parseServerTime(serverFolder['updated_at']);
           // Absent on a server without the Sketchbook columns: keep local.
           final hasColor = serverFolder.containsKey('color');
           final hasOrder = serverFolder.containsKey('sort_order');
@@ -207,5 +212,13 @@ class FolderSyncService {
         message: 'Folder download failed: ${e.toString()}',
       );
     }
+  }
+
+  /// Server folder timestamps are UTC but sent without a 'Z'; Dart would
+  /// read them as local time and skew last-write-wins by the UTC offset.
+  static DateTime _parseServerTime(Object? raw) {
+    final s = raw as String;
+    final hasZone = s.endsWith('Z') || RegExp(r'[+-]\d\d:?\d\d$').hasMatch(s);
+    return DateTime.parse(hasZone ? s : '${s}Z').toLocal();
   }
 }

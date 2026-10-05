@@ -8,7 +8,11 @@ import '../components/home_screen/home_screen_recent_notes.dart';
 import '../models/note_with_details.dart';
 import '../screen_arguments/create_note_screen_arguments.dart';
 import '../screens/create_note_screen_v2.dart';
+import 'package:provider/provider.dart';
+
 import '../dev/demo_seed.dart';
+import '../services/theme_controller.dart';
+import '../sync/preferences_sync_service.dart';
 import '../navigation/new_note.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
@@ -65,6 +69,11 @@ class _HomeScreenState extends State<HomeScreen>
 
     // Debug-only demo content (needs --dart-define=PINPOINT_SEED_DEMO=true).
     await DemoSeed.runOnceIfEnabled();
+
+    // Appearance follows the account across devices (offline-safe).
+    if (mounted) {
+      PreferencesSyncService.instance.start(context.read<ThemeController>());
+    }
 
     // Run all background tasks in parallel for speed
     await Future.wait([
