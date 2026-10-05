@@ -168,7 +168,7 @@ class NoteCard extends StatelessWidget {
       if (isPinned) {
         children.add(Align(
           alignment: AlignmentDirectional.centerStart,
-          child: SketchTag(label: l10n.noteCardPinned),
+          child: SketchTag(label: l10n.noteCardPinned, onPastel: onPastel),
         ));
       }
     }
@@ -178,7 +178,8 @@ class NoteCard extends StatelessWidget {
         spacing: 6,
         runSpacing: 6,
         children: [
-          for (final tag in tags!.take(3)) SketchTag(label: tag.label),
+          for (final tag in tags!.take(3))
+            SketchTag(label: tag.label, onPastel: onPastel),
         ],
       ));
     }
@@ -220,7 +221,8 @@ class NoteCard extends StatelessWidget {
                     color: s.inverse,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.check_rounded, size: 16, color: s.onInverse),
+                  child:
+                      Icon(Icons.check_rounded, size: 16, color: s.onInverse),
                 ),
               ),
             ],
@@ -259,8 +261,7 @@ class NoteCard extends StatelessWidget {
           Container(
             width: 8,
             height: 8,
-            decoration:
-                const BoxDecoration(color: ink, shape: BoxShape.circle),
+            decoration: const BoxDecoration(color: ink, shape: BoxShape.circle),
           ),
         ],
       ),
@@ -280,7 +281,8 @@ class NoteCard extends StatelessWidget {
             style: t.caption.copyWith(color: ink)),
       Align(
         alignment: AlignmentDirectional.centerStart,
-        child: SketchTag(label: AppL10n.of(context).noteCardPinned),
+        child: SketchTag(
+            label: AppL10n.of(context).noteCardPinned, onPastel: true),
       ),
     ];
   }
@@ -289,9 +291,8 @@ class NoteCard extends StatelessWidget {
     final s = context.sketch;
     final t = context.type;
     final l10n = AppL10n.of(context);
-    final mutedColor = onPastel
-        ? SketchPastels.onPastel.withValues(alpha: 0.72)
-        : s.muted;
+    final mutedColor =
+        onPastel ? SketchPastels.onPastel.withValues(alpha: 0.72) : s.muted;
 
     // Checklist preview.
     final items = checklist;
@@ -348,8 +349,8 @@ class NoteCard extends StatelessWidget {
     if (!hasTitle) {
       return Text(
         l10n.dsEmptyNote,
-        style: t.caption
-            .copyWith(fontStyle: FontStyle.italic, color: mutedColor),
+        style:
+            t.caption.copyWith(fontStyle: FontStyle.italic, color: mutedColor),
       );
     }
     return null;
@@ -379,8 +380,8 @@ class _Waveform extends StatelessWidget {
               width: 3,
               height: heights[(i + offset) % heights.length],
               decoration: BoxDecoration(
-                color: SketchPastels.onPastel
-                    .withValues(alpha: i < 5 ? 1 : 0.35),
+                color:
+                    SketchPastels.onPastel.withValues(alpha: i < 5 ? 1 : 0.35),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

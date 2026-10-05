@@ -263,8 +263,7 @@ class SettingsSignInCard extends StatelessWidget {
                           fontSize: 16, color: SketchPastels.onPastel)),
                   const SizedBox(height: 2),
                   Text(l10n.stSignInBody,
-                      style:
-                          t.caption.copyWith(color: SketchPastels.onPastel)),
+                      style: t.caption.copyWith(color: SketchPastels.onPastel)),
                 ],
               ),
             ),
@@ -373,11 +372,9 @@ class _SettingsAccountSectionState extends State<SettingsAccountSection> {
             final String text;
             if (syncing) {
               state = AccountSyncState.syncing;
-              text = pending > 0
-                  ? l10n.stSyncingChanges(pending)
-                  : l10n.stSyncing;
-            } else if (_lastManualFailed ||
-                _sync.status == SyncStatus.error) {
+              text =
+                  pending > 0 ? l10n.stSyncingChanges(pending) : l10n.stSyncing;
+            } else if (_lastManualFailed || _sync.status == SyncStatus.error) {
               state = AccountSyncState.failed;
               text = l10n.stSyncFailedRetry;
             } else if (last != null) {

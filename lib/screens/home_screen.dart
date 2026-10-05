@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../design_system/design_system.dart';
 import '../components/home_screen/home_folders_section.dart';
@@ -13,12 +12,12 @@ import 'package:provider/provider.dart';
 import '../dev/demo_seed.dart';
 import '../services/theme_controller.dart';
 import '../sync/preferences_sync_service.dart';
+import '../navigation/app_shell_scope.dart';
 import '../navigation/new_note.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/api_service.dart';
 import '../services/encryption_service.dart';
-import '../services/notification_service.dart';
 import '../services/subscription_service.dart';
 import '../services/premium_service.dart';
 import '../services/firebase_notification_service.dart';
@@ -77,9 +76,6 @@ class _HomeScreenState extends State<HomeScreen>
 
     // Run all background tasks in parallel for speed
     await Future.wait([
-      // 1. Request notification permission (only once)
-      _requestNotificationPermissionIfNeeded(),
-
       // 2. Initialize Subscription and Premium Services
       _initializeSubscriptionServices(),
 
@@ -236,59 +232,6 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
-  /// Request basic notification permission on first app launch after login
-  Future<void> _requestNotificationPermissionIfNeeded() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final hasAskedBefore =
-          prefs.getBool('notification_permission_requested') ?? false;
-
-      if (!hasAskedBefore && mounted) {
-        // Small delay to let the home screen render first
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        if (!mounted) return;
-
-        // Show explanation dialog
-        final shouldRequest = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: Text(AppL10n.of(context).homeEnableNotifTitle),
-            content: Text(
-              AppL10n.of(context).homeEnableNotifBody,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(AppL10n.of(context).homeNotNow),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(AppL10n.of(context).homeEnable),
-              ),
-            ],
-          ),
-        );
-
-        // Mark as asked regardless of user choice
-        await prefs.setBool('notification_permission_requested', true);
-
-        // Request permission if user agreed
-        if (shouldRequest == true) {
-          await NotificationService.requestBasicNotificationPermission();
-          getIt<AnalyticsFacade>()
-              .trackNotificationPermissionResult(granted: true);
-        } else {
-          getIt<AnalyticsFacade>()
-              .trackNotificationPermissionResult(granted: false);
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ Error requesting notification permission: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
@@ -320,10 +263,10 @@ class _HomeScreenState extends State<HomeScreen>
 
   /// Header, folders and the notes grid, scrolling as one.
   Widget _buildFeed({bool masterDetail = false}) {
-    final bottomPad =
-        masterDetail || context.windowSizeClass != WindowSizeClass.compact
-            ? 32.0
-            : SketchSpace.dockClearance + MediaQuery.paddingOf(context).bottom;
+    final showsDock = AppShellScope.maybeOf(context)?.showsDock ?? true;
+    final bottomPad = masterDetail || !showsDock
+        ? 32.0
+        : SketchSpace.dockClearance + MediaQuery.paddingOf(context).bottom;
 
     return DoodleBackground(
       top: DoodleBackground.homeTop,

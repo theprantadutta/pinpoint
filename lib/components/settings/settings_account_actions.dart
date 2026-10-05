@@ -395,8 +395,8 @@ class _SettingsAccountActionsState extends State<SettingsAccountActions> {
             SketchRow(
               icon: Icons.mail_outline_rounded,
               label: l10n.setProviderEmail,
-              subtitle: widget.backendAuth.userEmail ??
-                  l10n.setProviderEmailSubtitle,
+              subtitle:
+                  widget.backendAuth.userEmail ?? l10n.setProviderEmailSubtitle,
               trailing: SketchTag(
                 label: l10n.setLinkedBadge,
                 pastel: SketchPastels.mint,
@@ -513,8 +513,8 @@ class _SettingsAccountActionsState extends State<SettingsAccountActions> {
                                   _isDeleting
                                       ? l10n.setDeletingAccount
                                       : l10n.stDeleteAccount,
-                                  style: t.body.copyWith(
-                                      color: SketchFunctional.error),
+                                  style: t.body
+                                      .copyWith(color: SketchFunctional.error),
                                 ),
                                 Text(
                                   _isDeleting

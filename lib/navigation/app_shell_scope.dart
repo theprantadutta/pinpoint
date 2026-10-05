@@ -13,6 +13,7 @@ class AppShellScope extends InheritedWidget {
     required this.goBranch,
     required this.openDrawer,
     required this.hasPermanentDrawer,
+    required this.showsDock,
     required super.child,
   });
 
@@ -21,8 +22,12 @@ class AppShellScope extends InheritedWidget {
   final void Function(int branch) goBranch;
   final VoidCallback openDrawer;
 
-  /// True on tablets, where the drawer is pinned open as a sidebar.
+  /// True on wide screens, where the drawer is pinned open as a sidebar.
   final bool hasPermanentDrawer;
+
+  /// True when the floating dock (and its Create button) is on screen.
+  /// When it is not, screens offer their own New note affordance.
+  final bool showsDock;
 
   static AppShellScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<AppShellScope>();
@@ -30,5 +35,6 @@ class AppShellScope extends InheritedWidget {
   @override
   bool updateShouldNotify(AppShellScope old) =>
       currentBranch != old.currentBranch ||
-      hasPermanentDrawer != old.hasPermanentDrawer;
+      hasPermanentDrawer != old.hasPermanentDrawer ||
+      showsDock != old.showsDock;
 }

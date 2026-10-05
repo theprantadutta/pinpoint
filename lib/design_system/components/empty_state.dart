@@ -44,17 +44,23 @@ class EmptyState extends StatelessWidget {
           StickerCluster(
             stickers: [
               const StickerTile(
-                  color: SketchPastels.lavender, size: 44, angle: -12, icon: Icons.star_rounded),
-              StickerTile(
-                  color: s.highlight, size: 76, angle: -6, icon: icon),
+                  color: SketchPastels.lavender,
+                  size: 44,
+                  angle: -12,
+                  icon: Icons.star_rounded),
+              StickerTile(color: s.highlight, size: 76, angle: -6, icon: icon),
               const StickerTile(
-                  color: SketchPastels.mint, size: 42, angle: 12, icon: Icons.check_rounded),
+                  color: SketchPastels.mint,
+                  size: 42,
+                  angle: 12,
+                  icon: Icons.check_rounded),
             ],
           ),
           const SizedBox(height: 22),
           Semantics(
             header: true,
-            child: Text(title, style: t.emptyTitle, textAlign: TextAlign.center),
+            child:
+                Text(title, style: t.emptyTitle, textAlign: TextAlign.center),
           ),
           if (message != null) ...[
             const SizedBox(height: 8),
@@ -84,8 +90,8 @@ class EmptyState extends StatelessWidget {
         curve: SketchMotion.enter,
         builder: (_, v, child) => Opacity(
           opacity: v,
-          child: Transform.translate(
-              offset: Offset(0, 8 * (1 - v)), child: child),
+          child:
+              Transform.translate(offset: Offset(0, 8 * (1 - v)), child: child),
         ),
         child: content,
       ),

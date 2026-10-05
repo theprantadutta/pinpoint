@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 import '../../components/onboarding/whats_new_sheet.dart';
+import '../../components/shared/notification_prompt.dart';
 import '../../design_system/design_system.dart';
 import '../../screens/settings_screen.dart';
 import '../../services/walkthrough_service.dart';
@@ -14,11 +15,10 @@ import '../new_note.dart';
 
 /// The app shell around the Home / Notes / Todos branches.
 ///
-/// Phones get the floating Sketchbook dock (Home, Notes, Create, Todos,
-/// Settings) and a modal drawer. Tablets pin the drawer open as a sidebar —
-/// which carries its own New note button — and drop the dock, since the
-/// sidebar already holds every destination and a dock floating over a
-/// two-pane editor would sit on top of the editor's own toolbar.
+/// Under 840dp (phones, tablets in portrait) the floating Sketchbook dock
+/// (Home, Notes, Create, Todos, Settings) and a modal drawer. Wider, the dock
+/// gives way to the list | editor split; from 1200dp the drawer is pinned as
+/// a sidebar with its own New note button.
 class BottomNavigationLayout extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -42,12 +42,14 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
 
   /// First-frame intros, strictly one after the other so they never stack:
   /// the one-time What's-new sheet (people upgrading from an older
-  /// onboarding) and then the walkthrough (whose service persists its own
+  /// onboarding), the one-time notification ask, and then the walkthrough (whose service persists its own
   /// completion). A brand-new install records the current onboarding
   /// version as it finishes onboarding, so it only ever gets the walkthrough.
   Future<void> _runIntros() async {
     if (!mounted) return;
     await WhatsNewSheet.showIfNeeded(context);
+    if (!mounted) return;
+    await NotificationPrompt.showIfNeeded(context);
     if (!mounted) return;
     await WalkthroughService().showWalkthroughIfNeeded(context);
   }
@@ -94,7 +96,13 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final tablet = context.windowSizeClass != WindowSizeClass.compact;
+    // Phones and small tablets (< 840dp, e.g. a tablet in portrait) get the
+    // dock and a modal drawer. Wider screens switch to the list | editor
+    // split, where a floating dock would sit on the editor's toolbar; the
+    // sidebar is pinned only once there is room for it beside both panes.
+    final width = MediaQuery.sizeOf(context).width;
+    final showDock = width < 840;
+    final pinnedDrawer = width >= 1200;
     final branch = widget.navigationShell.currentIndex;
 
     final dock = SketchDock(
@@ -134,7 +142,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
       ],
     );
 
-    final body = tablet
+    final body = pinnedDrawer
         ? Row(
             children: [
               const KeepDrawer(permanent: true),
@@ -144,13 +152,14 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
         : Stack(
             children: [
               Positioned.fill(child: widget.navigationShell),
-              PositionedDirectional(
-                start: 0,
-                end: 0,
-                bottom: SketchSpace.dockBottom +
-                    MediaQuery.paddingOf(context).bottom,
-                child: Center(child: dock),
-              ),
+              if (showDock)
+                PositionedDirectional(
+                  start: 0,
+                  end: 0,
+                  bottom: SketchSpace.dockBottom +
+                      MediaQuery.paddingOf(context).bottom,
+                  child: Center(child: dock),
+                ),
             ],
           );
 
@@ -160,13 +169,14 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
         currentBranch: branch,
         goBranch: _goBranch,
         openDrawer: () => _scaffoldKey.currentState?.openDrawer(),
-        hasPermanentDrawer: tablet,
+        hasPermanentDrawer: pinnedDrawer,
+        showsDock: showDock,
         child: Scaffold(
           key: _scaffoldKey,
           resizeToAvoidBottomInset: false,
           backgroundColor: context.sketch.bg,
-          drawer: tablet ? null : const KeepDrawer(),
-          drawerEnableOpenDragGesture: !tablet,
+          drawer: pinnedDrawer ? null : const KeepDrawer(),
+          drawerEnableOpenDragGesture: !pinnedDrawer,
           body: body,
         ),
       ),

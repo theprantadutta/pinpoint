@@ -101,7 +101,8 @@ class _SecretInputSheetState extends State<_SecretInputSheet> {
               textInputAction: i == _controllers.length - 1
                   ? TextInputAction.done
                   : TextInputAction.next,
-              onSubmitted: i == _controllers.length - 1 ? (_) => _submit() : null,
+              onSubmitted:
+                  i == _controllers.length - 1 ? (_) => _submit() : null,
               decoration: InputDecoration(
                 labelText: widget.fieldLabels[i],
                 errorText: i == _controllers.length - 1 ? _error : null,
