@@ -567,121 +567,56 @@ class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final s = context.sketch;
+    final t = context.type;
     return PopScope(
       canPop: false, // Prevent back button from dismissing
       child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF1a1a2e),
-                Color(0xFF16213e),
-              ],
-            ),
-          ),
+        backgroundColor: s.bg,
+        body: DoodleBackground(
+          top: DoodleBackground.settingsTop,
           child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Update icon
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(60),
-                      border: Border.all(
-                        color: Colors.amber.withValues(alpha: 0.5),
-                        width: 3,
-                      ),
+            child: SketchContentWidth(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    StickerTile(
+                      color: s.highlight,
+                      size: 104,
+                      angle: -7,
+                      shadowOffset: 4,
+                      icon: Icons.system_update_rounded,
                     ),
-                    child: const Icon(
-                      Icons.system_update,
-                      size: 64,
-                      color: Colors.amber,
+                    const SizedBox(height: 36),
+                    Text(
+                      l10n.updateRequiredTitle,
+                      style: t.pageTitle,
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  // Title
-                  Text(
-                    AppL10n.of(context).updateRequiredTitle,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    const SizedBox(height: 14),
+                    Text(
+                      l10n.updateRequiredBody,
+                      style: t.bodyRegular.copyWith(color: s.muted),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Description
-                  Text(
-                    AppL10n.of(context).updateRequiredBody,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withValues(alpha: 0.8),
-                      height: 1.5,
+                    const SizedBox(height: 10),
+                    Text(
+                      l10n.updateRequiredNote,
+                      style: t.bodySmall,
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    AppL10n.of(context).updateRequiredNote,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 48),
-
-                  // Update button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
+                    const SizedBox(height: 40),
+                    PillButton(
+                      label: l10n.updateNow,
+                      icon: Icons.download_rounded,
+                      loading: _isUpdating,
                       onPressed: _isUpdating ? null : _retryUpdate,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                        foregroundColor: Colors.black,
-                        disabledBackgroundColor:
-                            Colors.amber.withValues(alpha: 0.5),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isUpdating
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.black,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.download_rounded, size: 24),
-                                const SizedBox(width: 12),
-                                Text(
-                                  AppL10n.of(context).updateNow,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
