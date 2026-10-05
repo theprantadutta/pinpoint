@@ -7,26 +7,45 @@ import '../constants/shared_preference_keys.dart';
 import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
+import '../util/show_a_toast.dart';
 import 'auth_screen.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
+enum _LegalDoc { terms, privacy }
+
 /// Terms and Privacy acceptance screen
 /// Shows terms of service and privacy policy with acceptance requirement
+///
+/// Sketchbook: a sheet-style panel holding a Terms / Privacy switch, the
+/// scrollable legal card and — unless [isViewOnly] — the agreement checkbox
+/// and an inverse "I agree" pill.
 class TermsAcceptanceScreen extends StatefulWidget {
-  const TermsAcceptanceScreen({super.key, this.isViewOnly = false});
+  const TermsAcceptanceScreen({
+    super.key,
+    this.isViewOnly = false,
+    this.startInSignUp = false,
+  });
 
   static const String kRouteName = '/terms-acceptance';
 
+  /// The query flag the onboarding's "Get started" passes through to the
+  /// sign-in screen, so it opens in sign-up mode.
+  static const String signUpQuery = 'mode';
+  static const String signUpValue = 'signup';
+  static const String signUpLocation = '$kRouteName?$signUpQuery=$signUpValue';
+
   /// If true, shows in view-only mode (no acceptance required, for settings)
   final bool isViewOnly;
+
+  /// Open the sign-in screen in sign-up mode after accepting.
+  final bool startInSignUp;
 
   @override
   State<TermsAcceptanceScreen> createState() => _TermsAcceptanceScreenState();
 }
 
-class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen> {
+  _LegalDoc _doc = _LegalDoc.terms;
   bool _hasAccepted = false;
   String _termsContent = '';
   String _privacyContent = '';
@@ -36,17 +55,16 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
   void initState() {
     super.initState();
     getIt<AnalyticsFacade>().trackScreenView(screenName: 'Terms');
-    _tabController = TabController(length: 2, vsync: this);
     _loadLegalDocuments();
   }
 
   Future<void> _loadLegalDocuments() async {
     try {
-      final termsData =
-          await rootBundle.loadString('assets/legal/terms.md');
+      final termsData = await rootBundle.loadString('assets/legal/terms.md');
       final privacyData =
           await rootBundle.loadString('assets/legal/privacy.md');
 
+      if (!mounted) return;
       setState(() {
         _termsContent = termsData;
         _privacyContent = privacyData;
@@ -54,6 +72,7 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
       });
     } catch (e) {
       debugPrint('Error loading legal documents: $e');
+      if (!mounted) return;
       setState(() {
         _termsContent = '# Error\n\nFailed to load terms of service.';
         _privacyContent = '# Error\n\nFailed to load privacy policy.';
@@ -78,217 +97,261 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen>
       if (!mounted) return;
 
       // Navigate to auth screen
-      context.go(AuthScreen.kRouteName);
+      context.go(widget.startInSignUp
+          ? AuthScreen.signUpLocation
+          : AuthScreen.kRouteName);
     } catch (e) {
       debugPrint('Error saving terms acceptance: $e');
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppL10n.of(context).termsSaveFailed),
-          backgroundColor: Colors.red,
-        ),
+      showSketchToast(
+        context: context,
+        message: AppL10n.of(context).termsSaveFailed,
+        tone: ToastTone.error,
       );
     }
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    final s = context.sketch;
+    final t = context.type;
+    final l10n = AppL10n.of(context);
+
+    final header = widget.isViewOnly
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(SketchSpace.screenX - 1,
+                SketchSpace.headerTop, SketchSpace.screenX, 0),
+            child: Row(
+              children: [
+                CircleIconButton.back(context, onPressed: () => context.pop()),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(l10n.setTermsPrivacy,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: t.sheetTitle),
+                  ),
+                ),
+              ],
+            ),
+          )
+        : Padding(
+            padding: const EdgeInsets.fromLTRB(
+                SketchSpace.screenX, 16, SketchSpace.screenX, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const BrandSticker(size: 44),
+                const SizedBox(height: 16),
+                Semantics(
+                  header: true,
+                  child: HighlightedText(l10n.auTermsTitle, style: t.pageTitle),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l10n.auTermsBody,
+                  style: t.bodyRegular
+                      .copyWith(fontSize: 14, height: 1.5, color: s.muted),
+                ),
+              ],
+            ),
+          );
+
+    return Scaffold(
+      backgroundColor: s.bg,
+      body: DoodleBackground(
+        top: DoodleBackground.settingsTop,
+        child: SafeArea(
+          bottom: false,
+          child: SketchContentWidth(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                header,
+                const SizedBox(height: 18),
+                Expanded(child: _buildPanel(context)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
+
+  /// The sheet-style panel: surface, top radius 34, 1.5px top outline and a
+  /// grab handle, like a [SketchSheet] docked to the bottom of the screen.
+  Widget _buildPanel(BuildContext context) {
+    final s = context.sketch;
+    final l10n = AppL10n.of(context);
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: s.surface,
+        borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(SketchRadius.sheet)),
+        border: Border(
+          top: BorderSide(color: s.outline, width: SketchStroke.outline),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(18, 12, 18, 16 + bottomInset),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: s.hairline,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SketchSegmentedControl<_LegalDoc>(
+              segments: [
+                SketchSegment(
+                    value: _LegalDoc.terms, label: l10n.termsTabTerms),
+                SketchSegment(
+                    value: _LegalDoc.privacy, label: l10n.termsTabPrivacy),
+              ],
+              selected: _doc,
+              onChanged: (d) => setState(() => _doc = d),
+            ),
+            const SizedBox(height: 14),
+            Expanded(
+              child: _isLoading
+                  ? Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2.2, color: s.ink),
+                      ),
+                    )
+                  : _LegalCard(
+                      key: ValueKey(_doc),
+                      content: _doc == _LegalDoc.terms
+                          ? _termsContent
+                          : _privacyContent,
+                    ),
+            ),
+            if (!widget.isViewOnly && !_isLoading) ...[
+              const SizedBox(height: 14),
+              _AgreeRow(
+                checked: _hasAccepted,
+                label: l10n.termsAgreeCheckbox,
+                onChanged: (v) => setState(() => _hasAccepted = v),
+              ),
+              const SizedBox(height: 12),
+              PillButton(
+                label: l10n.auTermsAgree,
+                onPressed: _hasAccepted ? _acceptTerms : null,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The scrollable legal text in an outlined card (radius 18).
+class _LegalCard extends StatelessWidget {
+  const _LegalCard({super.key, required this.content});
+
+  final String content;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final s = context.sketch;
+    final t = context.type;
+    final body =
+        t.bodyRegular.copyWith(fontSize: 14, height: 1.6, color: s.ink);
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text(widget.isViewOnly ? AppL10n.of(context).setTermsPrivacy : AppL10n.of(context).termsReviewAccept),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: widget.isViewOnly
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.pop(),
-              )
-            : null,
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: AppL10n.of(context).termsTabTerms),
-            Tab(text: AppL10n.of(context).termsTabPrivacy),
-          ],
-          indicatorColor: colorScheme.primary,
-          labelColor: colorScheme.primary,
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: s.bg,
+        borderRadius: BorderRadius.circular(SketchRadius.card),
+        border: Border.all(color: s.outline, width: SketchStroke.outline),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: isDark
-              ? PinpointGradients.crescentInk
-              : PinpointGradients.oceanQuartz,
-        ),
-        child: SafeArea(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Column(
-                  children: [
-                    // Tab view
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildMarkdownView(_termsContent, isDark),
-                          _buildMarkdownView(_privacyContent, isDark),
-                        ],
-                      ),
-                    ),
-
-                    // Acceptance section (only if not view-only mode)
-                    if (!widget.isViewOnly)
-                      _buildAcceptanceSection(colorScheme, isDark),
-                  ],
-                ),
+      clipBehavior: Clip.antiAlias,
+      child: Markdown(
+        data: content,
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
+        styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+          h1: t.emptyTitle,
+          h2: t.sectionTitle,
+          h3: t.cardTitle,
+          h4: t.cardTitle,
+          p: body,
+          listBullet: body,
+          strong: body.copyWith(fontWeight: FontWeight.w800),
+          em: body.copyWith(fontStyle: FontStyle.italic),
+          a: body.copyWith(
+            decoration: TextDecoration.underline,
+            decorationColor: s.ink,
+          ),
+          blockquote: body.copyWith(color: s.muted),
+          blockquoteDecoration: BoxDecoration(
+            color: s.soft,
+            borderRadius: BorderRadius.circular(SketchRadius.bullet),
+          ),
+          code: t.caption.copyWith(color: s.ink, backgroundColor: s.soft),
+          horizontalRuleDecoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: s.hairline, width: SketchStroke.outline),
+            ),
+          ),
+          h1Padding: const EdgeInsets.only(bottom: 4),
+          h2Padding: const EdgeInsets.only(top: 12, bottom: 2),
         ),
       ),
     );
   }
+}
 
-  Widget _buildMarkdownView(String content, bool isDark) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.black.withValues(alpha: 0.3)
-            : Colors.white.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.black.withValues(alpha: 0.1),
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Markdown(
-          data: content,
-          padding: const EdgeInsets.all(20),
-          styleSheet: MarkdownStyleSheet(
-            h1: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: isDark
-                  ? PinpointColors.darkTextPrimary
-                  : PinpointColors.lightTextPrimary,
-            ),
-            h2: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: isDark
-                  ? PinpointColors.darkTextPrimary
-                  : PinpointColors.lightTextPrimary,
-            ),
-            h3: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: isDark
-                  ? PinpointColors.darkTextPrimary
-                  : PinpointColors.lightTextPrimary,
-            ),
-            p: TextStyle(
-              fontSize: 14,
-              height: 1.6,
-              color: isDark
-                  ? PinpointColors.darkTextSecondary
-                  : PinpointColors.lightTextSecondary,
-            ),
-            listBullet: TextStyle(
-              color: isDark
-                  ? PinpointColors.darkTextSecondary
-                  : PinpointColors.lightTextSecondary,
-            ),
-            strong: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isDark
-                  ? PinpointColors.darkTextPrimary
-                  : PinpointColors.lightTextPrimary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+/// "I have read and agree…" — the whole row toggles the checkbox.
+class _AgreeRow extends StatelessWidget {
+  const _AgreeRow({
+    required this.checked,
+    required this.label,
+    required this.onChanged,
+  });
 
-  Widget _buildAcceptanceSection(ColorScheme colorScheme, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.black.withValues(alpha: 0.4)
-            : Colors.white.withValues(alpha: 0.4),
-        border: Border(
-          top: BorderSide(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.1),
-          ),
-        ),
-      ),
-      // Transparent Material gives the CheckboxListTile a Material ancestor to
-      // paint its ink/selection on (the surrounding DecoratedBox would hide it).
-      child: Material(
-        type: MaterialType.transparency,
-        child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Acceptance checkbox
-          CheckboxListTile(
-            value: _hasAccepted,
-            onChanged: (value) {
-              setState(() {
-                _hasAccepted = value ?? false;
-              });
-            },
-            title: Text(
-              AppL10n.of(context).termsAgreeCheckbox,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark
-                    ? PinpointColors.darkTextPrimary
-                    : PinpointColors.lightTextPrimary,
-              ),
-            ),
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: EdgeInsets.zero,
-          ),
+  final bool checked;
+  final String label;
+  final ValueChanged<bool> onChanged;
 
-          const SizedBox(height: 12),
-
-          // Accept button
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: FilledButton(
-              onPressed: _hasAccepted ? _acceptTerms : null,
-              style: FilledButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      checked: checked,
+      child: SketchPressable(
+        onTap: () => onChanged(!checked),
+        scale: 0.99,
+        semanticLabel: label,
+        child: ExcludeSemantics(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: SketchSpace.minTap),
+            child: Row(
+              children: [
+                SketchCheckbox(checked: checked),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: context.type.bodyRegular.copyWith(fontSize: 14),
+                  ),
                 ),
-              ),
-              child: Text(
-                AppL10n.of(context).termsAcceptContinue,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              ],
             ),
           ),
-        ],
         ),
       ),
     );
