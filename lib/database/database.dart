@@ -61,7 +61,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration {
@@ -168,6 +168,21 @@ class AppDatabase extends _$AppDatabase {
             );
           }
         }
+
+        if (from < 12 && to >= 12) {
+          // V11 → V12: Sketchbook folder colour and manual folder order.
+          // Both nullable; existing folders resolve a colour at display time.
+          // Idempotent: an interrupted upgrade, or a test fixture built from
+          // the current schema, may already have either column.
+          debugPrint('🔄 [Database] Adding folder colour and sort order');
+          if (!await _hasColumn('note_folders', 'color')) {
+            await m.addColumn(noteFolders, noteFolders.color);
+          }
+          if (!await _hasColumn('note_folders', 'sort_order')) {
+            await m.addColumn(noteFolders, noteFolders.sortOrder);
+          }
+          debugPrint('✅ [Database] Migration to v12 completed');
+        }
       },
       // Enforcement itself. SQLite defaults foreign keys to OFF on every new
       // connection, which is why years of `onDelete: KeyAction.cascade`
@@ -176,6 +191,11 @@ class AppDatabase extends _$AppDatabase {
         await customStatement('PRAGMA foreign_keys = ON');
       },
     );
+  }
+
+  Future<bool> _hasColumn(String table, String column) async {
+    final rows = await customSelect('PRAGMA table_info("$table")').get();
+    return rows.any((r) => r.data['name'] == column);
   }
 
   /// Deletes every row that points at a parent which no longer exists.

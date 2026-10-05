@@ -13,7 +13,11 @@ class SketchDockItem {
     required this.icon,
     required this.label,
     this.activeIcon,
+    this.targetKey,
   });
+
+  /// Attached to the slot so a walkthrough can point at it.
+  final GlobalKey? targetKey;
 
   final IconData icon;
   final IconData? activeIcon;
@@ -36,6 +40,7 @@ class SketchDock extends StatelessWidget {
     required this.onCreate,
     required this.createLabel,
     this.onCreateLongPress,
+    this.createKey,
   }) : assert(items.length == 4, 'Two slots each side of Create');
 
   final List<SketchDockItem> items;
@@ -46,6 +51,9 @@ class SketchDock extends StatelessWidget {
   final VoidCallback onCreate;
   final VoidCallback? onCreateLongPress;
   final String createLabel;
+
+  /// Attached to the Create button (walkthrough target).
+  final GlobalKey? createKey;
 
   static const double width = 300;
   static const double height = 62;
@@ -60,6 +68,7 @@ class SketchDock extends StatelessWidget {
     final s = context.sketch;
 
     Widget slot(int i) => _DockSlot(
+          key: items[i].targetKey,
           item: items[i],
           active: i == currentIndex,
           onTap: () => onSelect(i),
@@ -83,6 +92,7 @@ class SketchDock extends StatelessWidget {
             slot(0),
             slot(1),
             _CreateButton(
+              key: createKey,
               label: createLabel,
               onTap: onCreate,
               onLongPress: onCreateLongPress,
@@ -98,6 +108,7 @@ class SketchDock extends StatelessWidget {
 
 class _DockSlot extends StatelessWidget {
   const _DockSlot({
+    super.key,
     required this.item,
     required this.active,
     required this.onTap,
@@ -152,6 +163,7 @@ class _DockSlot extends StatelessWidget {
 
 class _CreateButton extends StatelessWidget {
   const _CreateButton({
+    super.key,
     required this.label,
     required this.onTap,
     this.onLongPress,

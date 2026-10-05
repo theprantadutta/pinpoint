@@ -136,14 +136,20 @@ String? _messageForCode(AppL10n l10n, String code) {
   final l10n = AppL10n.of(context);
   switch (error.type) {
     case ApiErrorType.network:
-      return (message: l10n.errCannotConnect, suggestion: l10n.errCheckConnection);
+      return (
+        message: l10n.errCannotConnect,
+        suggestion: l10n.errCheckConnection
+      );
     case ApiErrorType.timeout:
       return (
         message: l10n.errNetworkTimeout,
         suggestion: l10n.errNetworkTimeoutHint,
       );
     case ApiErrorType.serverError:
-      return (message: l10n.errServerProblem, suggestion: l10n.errTryAgainLater);
+      return (
+        message: l10n.errServerProblem,
+        suggestion: l10n.errTryAgainLater
+      );
     case ApiErrorType.maintenance:
       return (
         message: l10n.errServerUnavailable,

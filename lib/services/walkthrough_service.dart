@@ -3,7 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 import '../constants/shared_preference_keys.dart';
+import '../design_system/design_system.dart';
 import '../walkthrough/walkthrough_config.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Service responsible for managing the app walkthrough/tutorial.
 /// Uses singleton pattern consistent with other services in the app.
@@ -92,62 +94,30 @@ class WalkthroughService {
 
     _isShowing = true;
 
-    final accent = Theme.of(context).colorScheme.primary;
+    final sketch = context.sketch;
+    final skipLabel = AppL10n.of(context).obSkip;
 
     _tutorialCoachMark = TutorialCoachMark(
       targets: validTargets,
-      colorShadow: Colors.black,
-      opacityShadow: 0.85,
+      colorShadow: SketchPastels.onPastel,
+      opacityShadow: 0.82,
       hideSkip: false,
-      textSkip: "SKIP",
-      textStyleSkip: const TextStyle(
-        color: Colors.white,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.5,
-      ),
+      textSkip: skipLabel,
+      // Sketchbook: an inverse stadium, no gradient or glow.
       skipWidget: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          // Follows the theme rather than a fixed hex. The accent is
-          // user-selectable, so a hardcoded value would drift out of step with
-          // whatever the user actually picked — which is how this button ended
-          // up mint while the rest of the app had moved on.
-          //
-          // begin/end deliberately do not mirror in RTL, matching the rest of
-          // the design system's gradients.
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [accent, _shade(accent)],
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+        decoration: ShapeDecoration(
+          color: sketch.surface,
+          shape: StadiumBorder(
+            side: BorderSide(color: sketch.outline, width: SketchStroke.outline),
           ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: accent.withValues(alpha: 0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.close_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
-            SizedBox(width: 6),
-            Text(
-              'Skip',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
-              ),
-            ),
+            Icon(Icons.close_rounded, color: sketch.ink, size: 18),
+            const SizedBox(width: 6),
+            Text(skipLabel, style: context.type.chip.copyWith(fontSize: 14)),
           ],
         ),
       ),
@@ -187,15 +157,4 @@ class WalkthroughService {
 
   /// Check if walkthrough is currently showing
   bool get isShowing => _isShowing;
-
-  /// A slightly darker companion to [color], for the Skip button's gradient.
-  ///
-  /// Derived rather than paired with a second constant, because the accent is
-  /// user-selectable and every accent would otherwise need its own hand-picked
-  /// shade. Working in HSL keeps the hue and saturation intact, so the result
-  /// reads as the same colour rather than a muddier one.
-  static Color _shade(Color color) {
-    final hsl = HSLColor.fromColor(color);
-    return hsl.withLightness((hsl.lightness - 0.12).clamp(0.0, 1.0)).toColor();
-  }
 }

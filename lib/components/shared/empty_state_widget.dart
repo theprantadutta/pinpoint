@@ -19,7 +19,8 @@ class EmptyStateWidget extends StatelessWidget {
         iconData: Icons.note_add,
       );
 
-  factory EmptyStateWidget.searchNoResults(BuildContext context, String query) =>
+  factory EmptyStateWidget.searchNoResults(
+          BuildContext context, String query) =>
       EmptyStateWidget(
         message: AppL10n.of(context).emptyNoSearchResults(query),
         iconData: Icons.search_off,
@@ -31,8 +32,7 @@ class EmptyStateWidget extends StatelessWidget {
         iconData: Icons.archive_outlined,
       );
 
-  factory EmptyStateWidget.trashEmpty(BuildContext context) =>
-      EmptyStateWidget(
+  factory EmptyStateWidget.trashEmpty(BuildContext context) => EmptyStateWidget(
         message: AppL10n.of(context).trashEmpty,
         iconData: Icons.delete_outline,
       );

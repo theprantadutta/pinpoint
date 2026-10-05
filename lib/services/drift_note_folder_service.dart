@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,7 +8,9 @@ import 'package:uuid/uuid.dart';
 import '../constants/shared_preference_keys.dart';
 import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
+import '../models/folder_summary.dart';
 import '../service_locators/init_service_locators.dart';
+import '../util/folder_palette.dart';
 
 /// Thrown when a folder title is already taken.
 ///
@@ -68,7 +72,8 @@ class DriftNoteFolderService {
     // CRITICAL: Use deterministic UUIDs based on folder name
     // This ensures the same folder name always gets the same UUID across devices/reinstalls
     // Using UUID v5 with a namespace ensures consistency
-    const folderNamespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; // UUID namespace for folders
+    const folderNamespace =
+        '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; // UUID namespace for folders
 
     await database.batch(
       (batch) {
@@ -76,7 +81,8 @@ class DriftNoteFolderService {
           database.noteFolders,
           _noteFolders.map(
             (folder) => NoteFoldersCompanion(
-              uuid: Value(uuid.v5(folderNamespace, folder)), // Deterministic UUID from folder name
+              uuid: Value(uuid.v5(folderNamespace,
+                  folder)), // Deterministic UUID from folder name
               noteFolderTitle: Value(folder),
               createdAt: now,
               updatedAt: now,
@@ -158,11 +164,14 @@ class DriftNoteFolderService {
 
     final now = Value(DateTime.now());
     const uuid = Uuid();
+    final existing = await database.select(database.noteFolders).get();
     final noteFolder = NoteFoldersCompanion(
       uuid: Value(uuid.v4()),
       noteFolderTitle: Value(text),
       createdAt: now,
       updatedAt: now,
+      // New folders take the next pastel in the round-robin.
+      color: Value(FolderPalette.nameForNewFolder(existing.length)),
     );
 
     try {
@@ -191,7 +200,12 @@ class DriftNoteFolderService {
     try {
       await (database.update(database.noteFolders)
             ..where((tbl) => tbl.noteFolderId.equals(folderId)))
-          .write(NoteFoldersCompanion(noteFolderTitle: Value(newTitle)));
+          .write(NoteFoldersCompanion(
+        noteFolderTitle: Value(newTitle),
+        // Folder sync is last-write-wins on updatedAt; without the bump a
+        // rename never reached the server.
+        updatedAt: Value(DateTime.now()),
+      ));
     } catch (e) {
       if (_isDuplicateTitle(e)) throw FolderTitleTakenException(newTitle);
       rethrow;
@@ -280,4 +294,182 @@ class DriftNoteFolderService {
       return false;
     }
   }
+
+  // ============================================
+  // Sketchbook: live folders, colours, order
+  // ============================================
+
+  /// Every folder, re-emitted on each change (unlike
+  /// [watchAllNoteFoldersStream], which reads once).
+  static Stream<List<NoteFolder>> watchFolders() {
+    final database = getIt<AppDatabase>();
+    return database.select(database.noteFolders).watch();
+  }
+
+  /// Sets a folder's pastel ('yellow' | 'lavender' | 'mint' | 'sky' | 'pink').
+  static Future<void> setFolderColor(int folderId, String colorName) async {
+    final database = getIt<AppDatabase>();
+    await (database.update(database.noteFolders)
+          ..where((tbl) => tbl.noteFolderId.equals(folderId)))
+        .write(NoteFoldersCompanion(
+      color: Value(colorName),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
+  /// Persists a manual order: [orderedIds] first to last.
+  static Future<void> setFolderOrder(List<int> orderedIds) async {
+    final database = getIt<AppDatabase>();
+    final now = DateTime.now();
+    await database.batch((batch) {
+      for (var i = 0; i < orderedIds.length; i++) {
+        batch.update(
+          database.noteFolders,
+          NoteFoldersCompanion(sortOrder: Value(i), updatedAt: Value(now)),
+          where: (tbl) => tbl.noteFolderId.equals(orderedIds[i]),
+        );
+      }
+    });
+  }
+
+  /// One row per (folder, live note). Text and reminder notes fall back to
+  /// the start of their body when they have no title.
+  static const String _folderNotesSql = '''
+      SELECT r.folder_id AS folder_id, n.id AS note_id, 'text' AS type,
+             COALESCE(NULLIF(TRIM(n.title), ''), SUBSTR(n.content, 1, 80)) AS title,
+             n.color AS color, n.updated_at AS updated_at
+        FROM text_note_folder_relations_v2 r
+        JOIN text_notes_v2 n ON n.id = r.text_note_id
+       WHERE n.is_archived = 0 AND n.is_deleted = 0
+      UNION ALL
+      SELECT r.folder_id, n.id, 'voice', COALESCE(n.title, ''), n.color, n.updated_at
+        FROM voice_note_folder_relations_v2 r
+        JOIN voice_notes_v2 n ON n.id = r.voice_note_id
+       WHERE n.is_archived = 0 AND n.is_deleted = 0
+      UNION ALL
+      SELECT r.folder_id, n.id, 'todo', COALESCE(n.title, ''), n.color, n.updated_at
+        FROM todo_list_note_folder_relations_v2 r
+        JOIN todo_list_notes_v2 n ON n.id = r.todo_list_note_id
+       WHERE n.is_archived = 0 AND n.is_deleted = 0
+      UNION ALL
+      SELECT r.folder_id, n.id, 'reminder',
+             COALESCE(NULLIF(TRIM(n.title), ''), SUBSTR(n.description, 1, 80)),
+             n.color, n.updated_at
+        FROM reminder_note_folder_relations_v2 r
+        JOIN reminder_notes_v2 n ON n.id = r.reminder_note_id
+       WHERE n.is_archived = 0 AND n.is_deleted = 0
+      ORDER BY updated_at DESC
+  ''';
+
+  /// Folders in display order, each with its colour, live note counts and
+  /// its most recently edited notes. Re-emits whenever a folder, a note or a
+  /// folder membership changes.
+  static Stream<List<FolderSummary>> watchFolderSummaries() {
+    final database = getIt<AppDatabase>();
+
+    final rows = database.customSelect(_folderNotesSql, readsFrom: {
+      database.textNotesV2,
+      database.voiceNotesV2,
+      database.todoListNotesV2,
+      database.reminderNotesV2,
+      database.textNoteFolderRelationsV2,
+      database.voiceNoteFolderRelationsV2,
+      database.todoListNoteFolderRelationsV2,
+      database.reminderNoteFolderRelationsV2,
+    }).watch();
+    final folders = watchFolders();
+
+    // Combine the two live queries: recompute when either emits.
+    late StreamController<List<FolderSummary>> controller;
+    List<NoteFolder>? latestFolders;
+    List<QueryRow>? latestRows;
+    StreamSubscription<List<NoteFolder>>? folderSub;
+    StreamSubscription<List<QueryRow>>? rowSub;
+
+    void emit() {
+      final f = latestFolders, r = latestRows;
+      if (f == null || r == null) return;
+      controller.add(buildSummaries(f, r.map(FolderNoteRow.fromQueryRow)));
+    }
+
+    controller = StreamController<List<FolderSummary>>(
+      onListen: () {
+        folderSub = folders.listen((v) {
+          latestFolders = v;
+          emit();
+        }, onError: controller.addError);
+        rowSub = rows.listen((v) {
+          latestRows = v;
+          emit();
+        }, onError: controller.addError);
+      },
+      onCancel: () async {
+        await folderSub?.cancel();
+        await rowSub?.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
+  /// Groups [rows] (newest first) under [folders]. Pure, for testing.
+  @visibleForTesting
+  static List<FolderSummary> buildSummaries(
+      List<NoteFolder> folders, Iterable<FolderNoteRow> rows) {
+    final colors = FolderPalette.resolve(folders);
+    final counts = <int, int>{};
+    final voices = <int, int>{};
+    final recent = <int, List<FolderNotePreview>>{};
+
+    for (final row in rows) {
+      counts[row.folderId] = (counts[row.folderId] ?? 0) + 1;
+      if (row.type == 'voice') {
+        voices[row.folderId] = (voices[row.folderId] ?? 0) + 1;
+      }
+      final list = recent.putIfAbsent(row.folderId, () => []);
+      if (list.length < FolderSummary.previewLimit) {
+        list.add(FolderNotePreview(
+          noteId: row.noteId,
+          type: row.type,
+          title: row.title.split('\n').first.trim(),
+          color: FolderPalette.forNote(colorName: row.color, type: row.type),
+        ));
+      }
+    }
+
+    return [
+      for (final f in FolderPalette.ordered(folders))
+        FolderSummary(
+          folder: f,
+          color: colors[f.noteFolderId]!,
+          noteCount: counts[f.noteFolderId] ?? 0,
+          voiceCount: voices[f.noteFolderId] ?? 0,
+          recent: recent[f.noteFolderId] ?? const [],
+        ),
+    ];
+  }
+}
+
+/// A row of [DriftNoteFolderService._folderNotesSql].
+class FolderNoteRow {
+  const FolderNoteRow({
+    required this.folderId,
+    required this.noteId,
+    required this.type,
+    required this.title,
+    this.color,
+  });
+
+  factory FolderNoteRow.fromQueryRow(QueryRow row) => FolderNoteRow(
+        folderId: row.read<int>('folder_id'),
+        noteId: row.read<int>('note_id'),
+        type: row.read<String>('type'),
+        title: row.readNullable<String>('title') ?? '',
+        color: row.readNullable<String>('color'),
+      );
+
+  final int folderId;
+  final int noteId;
+  final String type;
+  final String title;
+  final String? color;
 }

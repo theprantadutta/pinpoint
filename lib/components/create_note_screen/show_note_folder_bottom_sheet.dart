@@ -90,7 +90,8 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                             showErrorToast(
                               context: context,
                               title: AppL10n.of(context).foldersAlreadyExists,
-                              description: AppL10n.of(context).foldersChooseUniqueName,
+                              description:
+                                  AppL10n.of(context).foldersChooseUniqueName,
                             );
                             return;
                           }
@@ -100,8 +101,9 @@ class _ShowNoteFolderBottomSheetState extends State<ShowNoteFolderBottomSheet> {
                           // the database has the final say.
                           final NoteFolderDto noteFolder;
                           try {
-                            noteFolder = await DriftNoteFolderService
-                                .insertNoteFolder(text);
+                            noteFolder =
+                                await DriftNoteFolderService.insertNoteFolder(
+                                    text);
                           } on FolderTitleTakenException {
                             if (!context.mounted) return;
                             showErrorToast(

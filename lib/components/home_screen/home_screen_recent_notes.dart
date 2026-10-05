@@ -1,207 +1,207 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pinpoint/constants/shared_preference_keys.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen_v2.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../design_system/design_system.dart';
 import '../../models/note_with_details.dart';
+import '../../navigation/new_note.dart';
 import '../../services/drift_note_service.dart';
 import '../../services/filter_service.dart';
+import '../../util/localized_dates.dart';
+import '../../util/note_query.dart';
 import '../../util/note_utils.dart';
-import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import '../../widgets/filter_bottom_sheet.dart';
 
-class HomeScreenRecentNotes extends StatefulWidget {
+/// "Recent notes" plus the current sort, as a sliver. The sort label opens
+/// the Filters sheet.
+class RecentNotesHeader extends StatelessWidget {
+  const RecentNotesHeader({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final s = context.sketch;
+    final filters = context.watch<FilterService>();
+    final sortLabel = switch (filters.sort) {
+      NoteSort.lastEdited => l10n.sortLastEdited,
+      NoteSort.dateCreated => l10n.sortDateCreated,
+      NoteSort.titleAz => l10n.sortTitleAz,
+    };
+    final active = filters.activeFilterCount;
+
+    return SketchSectionHeader(
+      title: l10n.homeRecentNotes,
+      action: SketchPressable(
+        onTap: () => FilterBottomSheet.show(context),
+        semanticLabel: '${l10n.filterTitle}, $sortLabel',
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SketchSpace.minTap),
+          child: ExcludeSemantics(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (active > 0) ...[
+                  SketchTag(label: '$active', inverse: true),
+                  const SizedBox(width: 8),
+                ],
+                Text(sortLabel,
+                    style: context.type.chip.copyWith(color: s.muted)),
+                Icon(Icons.arrow_drop_down_rounded, color: s.muted, size: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The notes grid as a sliver: a 2-column masonry of [NoteCard]s (one column
+/// in the tablet master–detail list), filtered and sorted by [FilterService].
+class RecentNotesSliver extends StatefulWidget {
+  const RecentNotesSliver({
+    super.key,
+    required this.searchQuery,
+    this.onNoteSelected,
+    this.selectedNoteId,
+  });
+
   final String searchQuery;
-  final ScrollController? scrollController;
 
   /// When provided (tablet master–detail), tapping a note reports it here
   /// instead of pushing the full-screen editor route.
   final void Function(NoteWithDetails note)? onNoteSelected;
 
-  /// The currently open note in the detail pane, for highlighting the list.
+  /// The note open in the detail pane, highlighted in the list.
   final int? selectedNoteId;
 
-  const HomeScreenRecentNotes({
-    super.key,
-    required this.searchQuery,
-    this.scrollController,
-    this.onNoteSelected,
-    this.selectedNoteId,
-  });
-
   @override
-  State<HomeScreenRecentNotes> createState() => _HomeScreenRecentNotesState();
+  State<RecentNotesSliver> createState() => _RecentNotesSliverState();
 }
 
-class _HomeScreenRecentNotesState extends State<HomeScreenRecentNotes>
-    with AutomaticKeepAliveClientMixin {
-  String _viewType = 'grid'; // Keep-style masonry by default
-  String _sortType = 'updatedAt';
-  String _sortDirection = 'desc';
-  SharedPreferences? _preferences;
+class _RecentNotesSliverState extends State<RecentNotesSliver> {
+  // Last data, to avoid a loading flash when the query changes.
+  List<NoteWithDetails>? _cached;
+  Stream<List<NoteWithDetails>>? _stream;
+  String? _streamQuery;
+  bool? _streamArchived;
 
-  // Cache for last loaded data to avoid loading flash
-  List<NoteWithDetails>? _cachedNotes;
-
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    _preferences = await SharedPreferences.getInstance();
-    setState(() {
-      _viewType = _preferences?.getString(kHomeScreenViewTypeKey) ?? 'grid';
-      _sortType =
-          _preferences?.getString(kHomeScreenSortTypeKey) ?? 'updatedAt';
-      _sortDirection =
-          _preferences?.getString(kHomeScreenSortDirectionKey) ?? 'desc';
-    });
+  Stream<List<NoteWithDetails>> _streamFor(String query, bool archived) {
+    if (_stream == null ||
+        query != _streamQuery ||
+        archived != _streamArchived) {
+      _streamQuery = query;
+      _streamArchived = archived;
+      _stream = DriftNoteService.watchNotesWithDetailsV2(
+        searchQuery: query,
+        includeArchived: archived,
+      );
+    }
+    return _stream!;
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    final l10n = AppL10n.of(context);
+    final filters = context.watch<FilterService>();
+    final options = filters.filterOptions;
 
-    // The master–detail list is a narrow pane, so keep its gutters tight; the
-    // full-width grid gets the larger tablet edge padding.
-    final horizontalPad = (widget.onNoteSelected == null && context.isTablet)
-        ? PinpointSpacing.screenEdgeLarge
-        : 16.0;
+    return StreamBuilder<List<NoteWithDetails>>(
+      stream: _streamFor(widget.searchQuery, options.includeArchived),
+      builder: (context, snapshot) {
+        final raw = snapshot.data ?? _cached;
+        if (snapshot.hasData) _cached = snapshot.data;
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPad),
-      child: Consumer<FilterService>(
-        builder: (context, filterService, _) {
-          return StreamBuilder<List<NoteWithDetails>>(
-            stream: DriftNoteService.watchNotesWithDetailsV2(
-              searchQuery: widget.searchQuery,
-              sortType: _sortType,
-              sortDirection: _sortDirection,
-            ),
-            builder: (context, snapshot) {
-              // Use cached data while waiting to avoid loading flash
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                if (_cachedNotes != null && _cachedNotes!.isNotEmpty) {
-                  return _buildNotesList(_cachedNotes!);
-                }
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return EmptyState(
-                  icon: Icons.error_outline_rounded,
-                  title: AppL10n.of(context).foldersSomethingWrong,
-                  message: AppL10n.of(context).commonTryAgainLater,
-                );
-              }
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return EmptyState(
-                  icon: Icons.note_add_rounded,
-                  title: AppL10n.of(context).notesNoneFound,
-                  message: AppL10n.of(context).notesCreateFirst,
-                );
-              }
-
-              final data = snapshot.data!;
-              _cachedNotes = data;
-
-              return _buildNotesList(data);
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  /// Builds the notes view, split into PINNED / OTHERS sections (Keep-style).
-  Widget _buildNotesList(List<NoteWithDetails> data) {
-    final pinned = data.where((n) => n.note.isPinned).toList();
-    final others = data.where((n) => !n.note.isPinned).toList();
-    final hasPinned = pinned.isNotEmpty;
-
-    final slivers = <Widget>[];
-
-    if (hasPinned) {
-      slivers.add(_sectionHeaderSliver(AppL10n.of(context).sectionPinned));
-      slivers.add(_notesSliver(pinned));
-      if (others.isNotEmpty) slivers.add(_sectionHeaderSliver(AppL10n.of(context).sectionOthers));
-    }
-    if (others.isNotEmpty) {
-      slivers.add(_notesSliver(others));
-    }
-
-    return CustomScrollView(
-      controller: widget.scrollController,
-      slivers: [
-        const SliverToBoxAdapter(child: SizedBox(height: 8)),
-        ...slivers,
-        const SliverToBoxAdapter(child: SizedBox(height: 100)),
-      ],
-    );
-  }
-
-  Widget _sectionHeaderSliver(String label) {
-    return SliverToBoxAdapter(
-      child: Builder(
-        builder: (context) {
-          final cs = Theme.of(context).colorScheme;
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.0,
-                color: cs.onSurfaceVariant,
-              ),
+        if (snapshot.hasError) {
+          return SliverToBoxAdapter(
+            child: EmptyState(
+              icon: Icons.error_outline_rounded,
+              title: l10n.foldersSomethingWrong,
+              message: l10n.commonTryAgainLater,
             ),
           );
-        },
-      ),
-    );
-  }
+        }
+        if (raw == null) {
+          return const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(48),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
 
-  Widget _notesSliver(List<NoteWithDetails> items) {
-    // In master–detail mode the list is the narrow middle pane, so it reads
-    // best as a single column (Apple Notes/Mail style).
-    final columns = widget.onNoteSelected != null ? 1 : context.noteGridColumns;
+        final notes = NoteQuery.apply(raw, options, sort: filters.sort);
 
-    if (_viewType == 'grid' && columns > 1) {
-      return SliverMasonryGrid.count(
-        crossAxisCount: columns,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        childCount: items.length,
-        itemBuilder: (context, i) => _buildItem(items[i]),
-      );
-    }
-    return SliverList.separated(
-      itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (context, i) => _buildItem(items[i]),
-    );
-  }
+        if (notes.isEmpty) {
+          final Widget empty;
+          if (widget.searchQuery.isNotEmpty) {
+            empty = EmptyState(
+              icon: Icons.search_off_rounded,
+              title: l10n.homeNoMatches(widget.searchQuery),
+            );
+          } else if (raw.isNotEmpty && options.hasActiveFilters) {
+            empty = EmptyState(
+              icon: Icons.filter_alt_off_outlined,
+              title: l10n.homeNoFilterMatches,
+              actionLabel: l10n.homeClearFilters,
+              onAction: () => filters.clearFilters(),
+            );
+          } else {
+            empty = EmptyState(
+              icon: Icons.edit_rounded,
+              title: l10n.homeEmptyTitle,
+              actionLabel: l10n.homeEmptyAction,
+              onAction: () => NewNote.open(context),
+            );
+          }
+          return SliverToBoxAdapter(child: empty);
+        }
 
-  Widget _buildItem(NoteWithDetails note) {
-    return NoteListItem(
-      note: note,
-      showActions: true,
-      onOpen: widget.onNoteSelected,
-      isSelected: widget.selectedNoteId != null &&
-          widget.selectedNoteId == note.note.id,
+        final columns =
+            widget.onNoteSelected != null ? 1 : context.noteGridColumns;
+        Widget item(int i) => NoteListItem(
+              note: notes[i],
+              onOpen: widget.onNoteSelected,
+              isSelected: widget.selectedNoteId == notes[i].note.id,
+            );
+
+        final padding = EdgeInsets.symmetric(
+          horizontal: widget.onNoteSelected == null && context.isTablet
+              ? PinpointSpacing.screenEdgeLarge
+              : SketchSpace.screenX,
+        );
+
+        if (columns > 1) {
+          return SliverPadding(
+            padding: padding,
+            sliver: SliverMasonryGrid.count(
+              crossAxisCount: columns,
+              mainAxisSpacing: SketchSpace.grid,
+              crossAxisSpacing: SketchSpace.grid,
+              childCount: notes.length,
+              itemBuilder: (context, i) => item(i),
+            ),
+          );
+        }
+        return SliverPadding(
+          padding: padding,
+          sliver: SliverList.separated(
+            itemCount: notes.length,
+            separatorBuilder: (_, __) =>
+                const SizedBox(height: SketchSpace.grid),
+            itemBuilder: (context, i) => item(i),
+          ),
+        );
+      },
     );
   }
 }
 
+/// A [NoteCard] for one note, wired to open it in the editor.
 class NoteListItem extends StatelessWidget {
   final NoteWithDetails note;
   final bool isArchivedView;
@@ -227,138 +227,57 @@ class NoteListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
     final n = note.note;
     final hasTitle = n.noteTitle != null && n.noteTitle!.trim().isNotEmpty;
-    final bgColor = PinpointColors.noteColor(note.color, theme.brightness);
+    final isVoice = NoteQuery.typeKey(n.noteType) == 'voice';
 
-    final card = TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.98, end: 1),
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      builder: (context, scale, child) => AnimatedOpacity(
-        duration: const Duration(milliseconds: 220),
-        opacity: 1.0,
-        child: Transform.scale(scale: scale, child: child),
-      ),
-      child: NoteCard(
-        title: getNoteTitleOrPreview(n.noteTitle, note.textContent),
-        excerpt: hasTitle ? note.textContent : null,
-        lastModified: n.updatedAt,
-        isPinned: n.isPinned,
-        noteType: n.noteType,
-        backgroundColor: bgColor,
-        checklist: n.noteType == 'todo'
-            ? note.todoItems
-                .map((item) => NoteChecklistItem(
-                      label: item.todoTitle,
-                      isDone: item.isDone,
-                    ))
-                .toList()
-            : null,
-        totalTasks: n.noteType == 'todo' ? note.todoItems.length : null,
-        completedTasks: n.noteType == 'todo'
-            ? note.todoItems.where((item) => item.isDone).length
-            : null,
-        tags: [
-          if (note.folders.isNotEmpty)
-            CardNoteTag(
-              label: note.folders.first.title,
-              color: cs.primary,
+    return NoteCard(
+      title: getNoteTitleOrPreview(n.noteTitle, note.textContent),
+      // Voice previews are a generated "Voice recording 1m 2s" line; the card
+      // shows a waveform and the duration instead.
+      excerpt: hasTitle && !isVoice ? note.textContent : null,
+      lastModified: n.updatedAt,
+      isPinned: n.isPinned,
+      noteType: NoteQuery.typeKey(n.noteType),
+      backgroundColor: PinpointColors.noteColor(note.color, Brightness.light),
+      isSelected: isSelected,
+      muted: isArchivedView || isTrashView || n.isArchived,
+      voiceDuration: isVoice
+          ? LocalizedDates.duration(context, note.voiceDurationSeconds ?? 0)
+          : null,
+      reminderLabel: note.reminderAt == null
+          ? null
+          : LocalizedDates.relativeDayTime(context, note.reminderAt!),
+      checklist: n.noteType == 'todo'
+          ? note.todoItems
+              .map((item) => NoteChecklistItem(
+                    label: item.todoTitle,
+                    isDone: item.isDone,
+                  ))
+              .toList()
+          : null,
+      totalTasks: n.noteType == 'todo' ? note.todoItems.length : null,
+      completedTasks: n.noteType == 'todo'
+          ? note.todoItems.where((item) => item.isDone).length
+          : null,
+      onTap: () {
+        PinpointHaptics.light();
+        if (onOpen != null) {
+          onOpen!(note);
+        } else {
+          context.push(
+            CreateNoteScreenV2.kRouteName,
+            extra: CreateNoteScreenArguments(
+              noticeType: n.noteType,
+              existingNote: note,
             ),
-        ],
-        onTap: () {
-          PinpointHaptics.medium();
-          if (onOpen != null) {
-            onOpen!(note);
-          } else {
-            context.push(
-              CreateNoteScreenV2.kRouteName,
-              extra: CreateNoteScreenArguments(
-                noticeType: n.noteType,
-                existingNote: note,
-              ),
-            );
-          }
-        },
-        onPinToggle: () {
-          PinpointHaptics.light();
-          DriftNoteService.togglePinStatus(n.id, !n.isPinned);
-        },
-      ),
-    );
-
-    if (!isSelected) return card;
-
-    // Ring the note that's currently open in the detail pane.
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: cs.primary, width: 2),
-      ),
-      child: card,
-    );
-  }
-}
-
-class _MiniActionPro extends StatefulWidget {
-  final String tooltip;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _MiniActionPro({
-    required this.tooltip,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  State<_MiniActionPro> createState() => _MiniActionProState();
-}
-
-class _MiniActionProState extends State<_MiniActionPro>
-    with SingleTickerProviderStateMixin {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return Tooltip(
-      message: widget.tooltip,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _pressed ? 0.96 : 1.0,
-          duration: const Duration(milliseconds: 100),
-          curve: Curves.easeOutCubic,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 140),
-            curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: widget.color.withAlpha(dark ? 30 : 20),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: (dark ? Colors.white : Colors.black).withAlpha(25),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(dark ? 70 : 25),
-                  blurRadius: _pressed ? 6 : 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(widget.icon, size: 18, color: widget.color),
-          ),
-        ),
-      ),
+          );
+        }
+      },
+      onPinToggle: () {
+        PinpointHaptics.light();
+        DriftNoteService.togglePinStatus(n.id, !n.isPinned);
+      },
     );
   }
 }

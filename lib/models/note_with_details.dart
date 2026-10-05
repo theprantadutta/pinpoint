@@ -10,8 +10,14 @@ class NoteWithDetails {
   final List<NoteTodoItem> todoItems;
   final String? textContent; // Content from TextNotes table
 
-  /// Keep-style color swatch name (e.g. 'storm'); null = default card color.
+  /// Note colour name (a pastel, or a legacy Keep name); null = no colour.
   final String? color;
+
+  /// Voice notes: recording length, for the "Voice · 0:42" card caption.
+  final int? voiceDurationSeconds;
+
+  /// Reminder notes: when it fires, for the reminder chip.
+  final DateTime? reminderAt;
 
   NoteWithDetails({
     required this.note,
@@ -20,5 +26,7 @@ class NoteWithDetails {
     required this.todoItems,
     this.textContent,
     this.color,
+    this.voiceDurationSeconds,
+    this.reminderAt,
   });
 }
