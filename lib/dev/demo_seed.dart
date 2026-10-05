@@ -1,10 +1,17 @@
 import 'dart:io';
 
+import 'dart:convert';
+
+import 'package:drift/drift.dart' hide Column;
+import 'package:fleather/fleather.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
+import '../service_locators/init_service_locators.dart';
+import '../widgets/markdown_toolbar.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/drift_note_service.dart';
 import '../services/reminder_note_service.dart';
@@ -23,7 +30,7 @@ class DemoSeed {
 
   static const bool enabled =
       kDebugMode && bool.fromEnvironment('PINPOINT_SEED_DEMO');
-  static const String _doneKey = 'dev_demo_seed_done_v1';
+  static const String _doneKey = 'dev_demo_seed_done_v2';
 
   static Future<void> runOnceIfEnabled() async {
     if (!enabled) return;
@@ -55,16 +62,44 @@ class DemoSeed {
     final office = await _folder('Office');
     final sports = await _folder('Sports');
 
+    final db = getIt<AppDatabase>();
+
+    // Idempotent by title: re-running updates the body and colour of an
+    // existing demo note instead of duplicating it.
     Future<void> text(String title, String body, List<NoteFolderDto> folders,
         {String? color, bool pinned = false}) async {
-      final id = await TextNoteService.createTextNote(
-          title: title, content: body, folders: folders, isPinned: pinned);
+      final existing = await (db.select(db.textNotesV2)
+            ..where((t) => t.title.equals(title) & t.isDeleted.equals(false)))
+          .getSingleOrNull();
+      final int id;
+      if (existing != null) {
+        id = existing.id;
+        await TextNoteService.updateTextNote(
+            noteId: id, content: body, isPinned: pinned);
+      } else {
+        id = await TextNoteService.createTextNote(
+            title: title, content: body, folders: folders, isPinned: pinned);
+      }
       if (color != null) await DriftNoteService.setNoteColor(id, 'text', color);
     }
+
+    Future<bool> exists(String title) async =>
+        await (db.select(db.todoListNotesV2)
+                  ..where((t) => t.title.equals(title)))
+                .getSingleOrNull() !=
+            null ||
+        await (db.select(db.voiceNotesV2)..where((t) => t.title.equals(title)))
+                .getSingleOrNull() !=
+            null ||
+        await (db.select(db.reminderNotesV2)
+                  ..where((t) => t.title.equals(title)))
+                .getSingleOrNull() !=
+            null;
 
     Future<void> todo(String title, List<String> open, List<String> done,
         List<NoteFolderDto> folders,
         {String? color}) async {
+      if (await exists(title)) return;
       final id = await TodoListNoteService.createTodoListNote(
           title: title, folders: folders, initialItems: [...open, ...done]);
       final items = await TodoListNoteService.watchTodoItems(id).first;
@@ -76,30 +111,79 @@ class DemoSeed {
       if (color != null) await DriftNoteService.setNoteColor(id, 'todo', color);
     }
 
-    await text('Essay outline',
-        '# Intro\n- Hook with a question\n- Thesis in one line\n# Body\n- Three arguments',
+    await text(
+        'Essay outline',
+        _rich([
+          _h1('Intro'),
+          _li('Hook with a question'),
+          _li('Thesis in one line'),
+          _h1('Body'),
+          _li('Three arguments, one per paragraph'),
+        ]),
         [homework],
         color: 'yellow');
     await todo('Calculus set', ['Problems 1–10', 'Review limits'],
         ['Read chapter 4'], [homework]);
-    await text('Match schedule', 'Saturday 10:00 vs Rovers\nBring the blue kit',
+    await text(
+        'Match schedule',
+        _rich([
+          _p([_s('Saturday 10:00', bold: true), _s(' vs Rovers')]),
+          _p([_s('Bring the blue kit')]),
+        ]),
         [sports],
         color: 'pink');
-    await text('Q4 planning',
-        'Ship the redesign\nHire a designer\nCut the backlog in half', [office]);
+    await text(
+        'Q4 planning',
+        _rich([
+          _li('Ship the redesign'),
+          _li('Hire a designer'),
+          _li('Cut the backlog in half'),
+        ]),
+        [office]);
     await todo('Groceries', ['Buy Milk', 'Eggs, a dozen'],
         ['Bread', 'Coffee beans'], [random]);
-    await text('Spider-Man', 'Watch Across the Spider-Verse again this weekend.',
+    await text(
+        'Spider-Man',
+        _rich([
+          _p([
+            _s('Watch '),
+            _s('Across the Spider-Verse', italic: true),
+            _s(' again this weekend.'),
+          ]),
+        ]),
         [random],
         color: 'sky');
     await todo('Todos', ['Buy Milk'], ['Bread'], [random]);
-    await text('Important Address', '221B Baker Street, London', [random],
-        color: 'lavender', pinned: true);
+    await text(
+        'Important Address',
+        _rich([
+          _p([_s('221B Baker Street, London')])
+        ]),
+        [random],
+        color: 'lavender',
+        pinned: true);
     await text(
         'Random Note',
-        '- Progress is often invisible\n- Most projects look like a mess\n- Keep shipping',
+        _rich([
+          _p([
+            _s('Some letters are '),
+            _s('bold', bold: true),
+            _s(' and some are '),
+            _s('italic', italic: true),
+            _s(' and '),
+            _s('some', highlight: true),
+            _s(' are '),
+            _s('both', bold: true, italic: true),
+            _s('.'),
+          ]),
+          _h2('Key points'),
+          _li("Progress is often invisible while you're making it."),
+          _li('Most projects look like a mess until they work.'),
+          _li('Keep shipping.'),
+        ]),
         [random]);
 
+    if (await exists('Leg day')) return;
     final audio = await _silentWav();
     await VoiceNoteService.createVoiceNote(
       title: 'Leg day',
@@ -119,6 +203,45 @@ class DemoSeed {
       folders: [office],
     );
   }
+
+  // ---- Fleather delta builders (the editor stores bodies as delta JSON) ----
+
+  static String _rich(List<List<Map<String, dynamic>>> lines) =>
+      jsonEncode([for (final l in lines) ...l]);
+
+  static Map<String, dynamic> _op(String text, [Map<String, dynamic>? attrs]) =>
+      {
+        'insert': text,
+        if (attrs != null && attrs.isNotEmpty) 'attributes': attrs
+      };
+
+  static Map<String, dynamic> _s(String text,
+      {bool bold = false, bool italic = false, bool highlight = false}) {
+    final a = <String, dynamic>{};
+    if (bold) a.addAll(ParchmentAttribute.bold.toJson());
+    if (italic) a.addAll(ParchmentAttribute.italic.toJson());
+    if (highlight) {
+      a.addAll(ParchmentAttribute.backgroundColor
+          .withColor(MarkdownToolbar.highlightBackground)
+          .toJson());
+      a.addAll(ParchmentAttribute.foregroundColor
+          .withColor(MarkdownToolbar.highlightForeground)
+          .toJson());
+    }
+    return _op(text, a);
+  }
+
+  static List<Map<String, dynamic>> _p(List<Map<String, dynamic>> spans) =>
+      [...spans, _op('\n')];
+
+  static List<Map<String, dynamic>> _h1(String t) =>
+      [_op(t), _op('\n', ParchmentAttribute.h1.toJson())];
+
+  static List<Map<String, dynamic>> _h2(String t) =>
+      [_op(t), _op('\n', ParchmentAttribute.h2.toJson())];
+
+  static List<Map<String, dynamic>> _li(String t) =>
+      [_op(t), _op('\n', ParchmentAttribute.ul.toJson())];
 
   /// One second of 8 kHz mono silence, so the voice note has a real file.
   static Future<String> _silentWav() async {

@@ -214,6 +214,7 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen> {
             ),
             const SizedBox(height: 16),
             SketchSegmentedControl<_LegalDoc>(
+              expand: true,
               segments: [
                 SketchSegment(
                     value: _LegalDoc.terms, label: l10n.termsTabTerms),

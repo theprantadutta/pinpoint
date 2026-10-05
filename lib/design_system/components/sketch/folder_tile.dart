@@ -193,11 +193,17 @@ class FolderTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: t.caption,
                     ),
-                    const Spacer(),
-                    PastelStack(colors: noteColors),
                   ],
                 ),
               ),
+            ),
+            // Anchored to the bottom rather than laid out under the text, so
+            // a short tile (the 120px folder hero) or large text never
+            // overflows the column.
+            PositionedDirectional(
+              start: 14,
+              bottom: 14,
+              child: PastelStack(colors: noteColors),
             ),
             if (menu != null)
               PositionedDirectional(

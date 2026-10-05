@@ -163,8 +163,17 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
             ],
           );
 
-    return BackButtonListener(
-      onBackButtonPressed: _onBackButtonPressed,
+    // PopScope rather than BackButtonListener: with predictive back
+    // (enableOnBackInvokedCallback, Android 14+) the OS only routes a back
+    // press to Flutter when a route declares it handles it. A listener alone
+    // declared nothing, so back at the shell — even with the drawer open —
+    // dropped the user out of the app. The drawer still closes first: the
+    // Scaffold registers it as local history on this route.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _onBackButtonPressed();
+      },
       child: AppShellScope(
         currentBranch: branch,
         goBranch: _goBranch,
