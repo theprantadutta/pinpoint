@@ -1,3 +1,4 @@
+import '../util/server_time.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -1458,7 +1459,9 @@ class ApiSyncService extends SyncService {
           final notificationContent = reminderData['notification_content'] as String?;
           final description = reminderData['description'] as String?;
           final reminderTimeStr = reminderData['reminder_time'] as String;
-          final reminderTime = DateTime.parse(reminderTimeStr);
+          // Zone-less UTC from the server; parsed as local it lands hours
+          // off in any non-UTC timezone.
+          final reminderTime = parseServerUtc(reminderTimeStr);
           final recurrenceType = reminderData['recurrence_type'] as String? ?? 'once';
           final recurrenceInterval = reminderData['recurrence_interval'] as int? ?? 1;
           final recurrenceEndType = reminderData['recurrence_end_type'] as String? ?? 'never';
