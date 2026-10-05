@@ -15,7 +15,7 @@ Future<T?> showSketchSheet<T>({
   bool isScrollControlled = true,
   bool isDismissible = true,
   bool enableDrag = true,
-  bool useRootNavigator = false,
+  bool useRootNavigator = true,
   RouteSettings? routeSettings,
 }) {
   final s = context.sketch;
