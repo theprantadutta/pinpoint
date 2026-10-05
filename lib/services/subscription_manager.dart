@@ -6,6 +6,8 @@ import 'dart:io';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/services/api_service.dart';
+import 'package:pinpoint/util/server_time.dart';
+import 'package:uuid/uuid.dart';
 
 /// How a purchase verification actually ended.
 ///
@@ -194,8 +196,13 @@ class SubscriptionManager extends ChangeNotifier {
 
     try {
       if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        return androidInfo.id; // Android ID
+        // NOT androidInfo.id: that is Build.ID, the firmware build number
+        // (e.g. "BP4A.251205.006"), identical on every phone running the
+        // same firmware. Keyed on it, one purchase showed as premium on
+        // strangers' phones and two users collided on one device row. A
+        // random id is unique per install; it is persisted by the caller,
+        // and existing installs keep the id they already stored.
+        return 'android-${const Uuid().v4()}';
       } else if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
         return iosInfo.identifierForVendor ?? _generateFallbackId();
@@ -370,6 +377,14 @@ class SubscriptionManager extends ChangeNotifier {
         _cancelledAt = null;
       }
 
+      // The device record only knows purchases made on THIS device. A
+      // signed-in user who bought Pro elsewhere — or was granted it — is
+      // premium at the account level; honour that too, so Pro follows the
+      // account to every device it signs in on.
+      // Token check rather than BackendAuthService state: this can run
+      // before that service has initialised on launch.
+      if (!_isPremium) await _applyAccountEntitlement();
+
       // Update cache timestamp
       _lastFetchTime = DateTime.now();
 
@@ -378,6 +393,30 @@ class SubscriptionManager extends ChangeNotifier {
     } catch (e) {
       debugPrint('Subscription status check error: $e');
       // Continue with local cache if backend fails
+    }
+  }
+
+  /// Overlays the signed-in account's entitlement when it is premium.
+  /// Never downgrades: a device-level purchase stays authoritative.
+  Future<void> _applyAccountEntitlement() async {
+    try {
+      if (!await _apiService.hasToken()) return; // signed out
+      final account = await _apiService.getSubscriptionStatus();
+      if (account['is_premium'] != true) return;
+
+      _isPremium = true;
+      _isInGracePeriod = account['is_in_grace_period'] ?? false;
+      _subscriptionTier = account['tier'] ?? _subscriptionTier;
+      _subscriptionType = account['subscription_type'] ?? _subscriptionType;
+      _productId = account['product_id'] ?? _productId;
+      _autoRenewing = account['auto_renewing'] ?? _autoRenewing;
+      final expires = account['expires_at'];
+      _subscriptionExpiresAt =
+          expires is String ? parseServerUtc(expires) : null;
+      debugPrint('💎 Premium via the signed-in account');
+    } catch (e) {
+      // Offline or an older server: keep the device's answer.
+      debugPrint('Account entitlement check skipped: $e');
     }
   }
 
