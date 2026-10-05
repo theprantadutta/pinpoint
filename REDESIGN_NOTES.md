@@ -57,6 +57,10 @@ header. From 1200dp the drawer is pinned as a sidebar.
 **Icons & splash** — launcher icons for every platform regenerated from the recoloured pin
 (`branding/`, `flutter_launcher_icons.yaml`), native splash light/dark incl. Android 12
 (`flutter_native_splash.yaml`), and a proper white status-bar notification icon.
+`branding/build_icons.py` draws what the icon tool cannot: the brand sticker for macOS and
+Android 7 (neither masks icons), the round and status-bar icons, a multi-size Windows `.ico`, a
+32px favicon, and the backend pages' icons. Run it after `dart run flutter_launcher_icons`.
+The Play listing icon is `store/play-icon-512.png`.
 
 **Data & sync**
 - Folders get a colour and manual order (Drift schema v12, idempotent migration + test).
