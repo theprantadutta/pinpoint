@@ -299,14 +299,20 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
             borderRadius: BorderRadius.circular(SketchRadius.checkboxSmall + 1),
           ),
         ),
-        child: FleatherTheme(
-          data: MarkdownEditor.sketchTheme(context),
-          child: FleatherEditor(
-            controller: widget.controller,
-            focusNode: widget.focusNode,
-            scrollable: false,
-            padding: EdgeInsets.zero,
-            autofocus: false,
+        // Fleather's checklist boxes assert a package:material_ui Material
+        // ancestor; the app's Scaffold is package:flutter's, a different
+        // type, so provide a transparent one.
+        child: material_ui.Material(
+          type: material_ui.MaterialType.transparency,
+          child: FleatherTheme(
+            data: MarkdownEditor.sketchTheme(context),
+            child: FleatherEditor(
+              controller: widget.controller,
+              focusNode: widget.focusNode,
+              scrollable: false,
+              padding: EdgeInsets.zero,
+              autofocus: false,
+            ),
           ),
         ),
       ),

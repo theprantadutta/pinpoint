@@ -375,6 +375,29 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
     });
 
+    testWidgets('checklist lines in the body render (material_ui Material)',
+        (tester) async {
+      // Fleather's checkbox asserts a package:material_ui Material ancestor,
+      // which the app's (package:flutter) Scaffold is not.
+      final controller = FleatherController(
+        document: ParchmentDocument.fromJson([
+          {'insert': 'Open task'},
+          {
+            'insert': '\n',
+            'attributes': {'block': 'cl'}
+          },
+        ]),
+      );
+      await tester
+          .pumpWidget(sketchApp(MarkdownEditor(controller: controller)));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+          find.byWidgetPredicate(
+              (w) => w.runtimeType.toString() == 'FleatherCheckbox'),
+          findsOneWidget);
+    });
+
     testWidgets('add bar adds on Enter, clears and keeps focus',
         (tester) async {
       final added = <String>[];
