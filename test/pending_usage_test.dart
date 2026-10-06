@@ -43,5 +43,8 @@ void main() {
     expect(readProjectFile('lib/services/logout_service.dart'), contains('PendingUsage.prefsKey'));
     expect(readProjectFile('lib/sync/sync_manager.dart'), contains('flushPendingUsage()'),
         reason: 'a sync reports offline usage even while stats are fresh');
+    expect(readProjectFile('lib/sync/api_sync_service.dart'),
+        contains("applyUsageFromSync(response['usage'])"),
+        reason: 'the plan card takes the counts returned with each note sync');
   });
 }

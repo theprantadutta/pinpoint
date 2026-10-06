@@ -181,6 +181,13 @@ class PremiumService extends ChangeNotifier {
     }
   }
 
+  /// Take the usage the server returns with a note sync, counted after the
+  /// sync landed. Without this the plan card kept its old number (it showed
+  /// "0 of 50" with a note already in the cloud) until the hourly refresh.
+  Future<void> applyUsageFromSync(Object? usage) async {
+    if (usage is Map<String, dynamic>) await _cacheUsageStats(usage);
+  }
+
   /// Cache usage stats from backend response
   Future<void> _cacheUsageStats(Map<String, dynamic> stats) async {
     if (_prefs == null) return;

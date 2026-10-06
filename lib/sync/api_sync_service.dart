@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../services/api_service.dart';
 import '../services/audio_upload_queue.dart';
+import '../services/premium_service.dart';
 import '../services/encryption_service.dart';
 import 'sync_service.dart';
 import 'folder_sync_service.dart';
@@ -355,6 +356,9 @@ class ApiSyncService extends SyncService {
       if (overLimit > 0) {
         debugPrint('⚠️ [ApiSync] $overLimit new notes held back by the free plan limit');
       }
+
+      // The server's counts after this sync, so the plan card is current.
+      await PremiumService().applyUsageFromSync(response['usage']);
       debugPrint('🔼 [ApiSync] ========== UPLOAD COMPLETE ==========\n');
 
       return SyncResult(
