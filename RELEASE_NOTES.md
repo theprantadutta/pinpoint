@@ -1,45 +1,36 @@
-# Release notes — 3.4.0 (build 35)
+# Release notes — What's new
 
 **Play Console caps release notes at 500 characters per language.** Every block
-is under it — counts are tabulated at the end.
+is under it — counts are tabulated at the end. No version number appears in the
+copy, by design: the store already shows it.
 
 ---
 
-## What shipped since 3.2.2
+## What shipped
 
-The headline change is invisible: in-app purchases moved to Google Play Billing
-9.1 and StoreKit 2, ahead of Google's cutoff for app updates. Nothing to
-announce there — but the rewrite closed three gaps that users *can* feel, and
-those are what the copy below covers.
+The headline is the Sketchbook redesign, which touches every screen. Alongside it:
 
 New:
 
-- A deferred payment — a slow card, a parental approval — now unlocks premium
-  when it clears, instead of never
-- A purchase that completed while the app was closed is picked up on the next
-  open, rather than being lost until the next purchase attempt
-- Restore Purchases reports what it actually found, instead of guessing after a
-  fixed three-second wait
+- Google Drive backups for every signed-in account, free and premium: every
+  note, folder and voice recording, encrypted with the account key
+- Voice recordings are queued and retried, so one made offline uploads later;
+  recordings are kept out of the cache directory Android can clear
+- PDF export flows over pages and keeps formatting; Markdown export is real
+  Markdown
+- Play in-app updates download in the background (flexible by default)
+- A full-screen launch screen and a signing-out screen
 
 Fixed:
 
-- Premium granted while the server could not reach the store could not be taken
-  away again, so a cancellation or refund left it running until its invented
-  expiry. Subscription state now follows the store.
+- Deleted folders came back from the server on other devices
+- Switching accounts without restarting read notes with the previous key
+- A sync could skip notes for good, and device clocks decided what downloaded
+- At the free cap, edits and deletions of synced notes stopped syncing
 
-Also in this build, and also invisible: R8 is switched back on (Play Console
-flagged obfuscation at 2%, under its 25% threshold), and the system bars are
-now transparent with insets handled, which Android 15 forces on any app
-targeting SDK 35+. The second one is mildly visible — content runs under the
-status and gesture bars instead of sitting inside a black band — but it is not
-a feature anyone asked for, so it stays out of the copy.
-
-3.3.0 was never uploaded; these notes carried over to 3.4.0 unchanged because
-nothing user-facing was added in between.
-
-Deliberately not in the copy: the billing-library migration itself, and the fact
-that the entitlement fix *removes* access for anyone who was holding an
-unrevokable grant. Neither is something to advertise.
+Deliberately not in the copy: the purchase and entitlement hardening from the
+premium audit, the server-time sync change and the folder cap enforcement. They
+matter, but none is something a user would recognise from a sentence.
 
 ---
 
@@ -47,102 +38,129 @@ unrevokable grant. Neither is something to advertise.
 
 ```text
 <en-US>
-Purchases that keep up with you.
+A fresh new look, and backups in your own Google Drive.
 
-• A payment waiting for approval unlocks as soon as it clears
-• A purchase finished while the app was closed is picked up next time
-• Restore Purchases now tells you exactly what it found
+• A brand-new design, in light and dark
+• Back up everything to Google Drive, encrypted and free for everyone
+• Voice notes recorded offline upload once you're back online
+• Cleaner PDF and Markdown exports, even for long notes
+• Updates download in the background while you keep writing
 
 Fixed:
-• Subscription status now follows the store, including when you cancel
+• Deleted folders no longer come back on your other devices
+• Switching accounts now loads the right notes
 </en-US>
 
 <es-ES>
-Compras que van a tu ritmo.
+Un diseño totalmente nuevo y copias en tu propio Google Drive.
 
-• Un pago pendiente de aprobación se activa en cuanto se confirma
-• Una compra hecha con la app cerrada se recupera al volver a abrirla
-• Restaurar compras ahora te dice exactamente qué ha encontrado
+• Diseño renovado, en modo claro y oscuro
+• Copia todo en Google Drive, cifrado y gratis para todos
+• Las notas de voz grabadas sin conexión se suben al reconectarte
+• Exportaciones a PDF y Markdown más limpias, incluso en notas largas
+• Las actualizaciones se descargan mientras sigues escribiendo
 
 Corregido:
-• El estado de tu suscripción sigue a la tienda, también al cancelar
+• Las carpetas eliminadas ya no vuelven en otros dispositivos
+• Al cambiar de cuenta se cargan las notas correctas
 </es-ES>
 
 <pt-BR>
-Compras que acompanham você.
+Um visual totalmente novo e backups no seu próprio Google Drive.
 
-• Um pagamento aguardando aprovação é liberado assim que é confirmado
-• Uma compra feita com o app fechado é recuperada ao abri-lo de novo
-• Restaurar compras agora informa exatamente o que encontrou
+• Design renovado, nos modos claro e escuro
+• Faça backup de tudo no Google Drive, criptografado e grátis para todos
+• Notas de voz gravadas offline são enviadas ao reconectar
+• Exportações em PDF e Markdown mais limpas
+• As atualizações são baixadas enquanto você continua escrevendo
 
 Corrigido:
-• O status da assinatura segue a loja, inclusive quando você cancela
+• Pastas excluídas não voltam mais em outros aparelhos
+• Ao trocar de conta, as notas certas são carregadas
 </pt-BR>
 
 <it-IT>
-Acquisti al tuo passo.
+Un aspetto tutto nuovo e backup nel tuo Google Drive.
 
-• Un pagamento in attesa di approvazione si attiva appena è confermato
-• Un acquisto completato con l'app chiusa viene recuperato alla riapertura
-• Ripristina acquisti ora indica esattamente cosa ha trovato
+• Design completamente rinnovato, in chiaro e scuro
+• Backup di tutto su Google Drive, crittografato e gratis per tutti
+• Le note vocali registrate offline si caricano appena torni online
+• Esportazioni PDF e Markdown più pulite
+• Gli aggiornamenti si scaricano mentre continui a scrivere
 
 Corretto:
-• Lo stato dell'abbonamento segue lo store, anche quando disdici
+• Le cartelle eliminate non ricompaiono più sugli altri dispositivi
+• Cambiando account vengono caricate le note giuste
 </it-IT>
 
 <fr-FR>
-Des achats qui vous suivent.
+Un tout nouveau look et des sauvegardes dans votre Google Drive.
 
-• Un paiement en attente de validation s'active dès qu'il est confirmé
-• Un achat terminé app fermée est récupéré à la prochaine ouverture
-• Restaurer les achats indique désormais ce qui a été trouvé
+• Un design entièrement repensé, en clair et en sombre
+• Sauvegardez tout sur Google Drive, chiffré et gratuit pour tous
+• Les notes vocales enregistrées hors ligne s'envoient au retour du réseau
+• Des exports PDF et Markdown plus propres
+• Les mises à jour se téléchargent pendant que vous écrivez
 
 Corrigé :
-• L'état de l'abonnement suit la boutique, y compris en cas de résiliation
+• Les dossiers supprimés ne reviennent plus sur vos autres appareils
+• Changer de compte charge désormais les bonnes notes
 </fr-FR>
 
 <th>
-การซื้อที่ตามทันคุณ
+โฉมใหม่ทั้งหมด พร้อมสำรองข้อมูลไว้ใน Google Drive ของคุณเอง
 
-• การชำระเงินที่รออนุมัติจะปลดล็อกทันทีที่ได้รับการยืนยัน
-• การซื้อที่เสร็จขณะปิดแอปจะถูกดึงกลับมาเมื่อเปิดแอปครั้งถัดไป
-• กู้คืนการซื้อจะบอกคุณอย่างชัดเจนว่าพบอะไรบ้าง
+• ดีไซน์ใหม่ทั้งหมด ทั้งโหมดสว่างและมืด
+• สำรองทุกอย่างไปยัง Google Drive แบบเข้ารหัส ใช้ได้ฟรีสำหรับทุกคน
+• โน้ตเสียงที่บันทึกตอนออฟไลน์จะอัปโหลดเมื่อกลับมาออนไลน์
+• ส่งออก PDF และ Markdown ได้เรียบร้อยขึ้น แม้โน้ตยาว
+• อัปเดตดาวน์โหลดเบื้องหลังระหว่างที่คุณเขียนต่อ
 
-แก้ไข:
-• สถานะการสมัครสมาชิกเป็นไปตามสโตร์ รวมถึงเมื่อคุณยกเลิก
+แก้ไขแล้ว:
+• โฟลเดอร์ที่ลบแล้วจะไม่กลับมาบนอุปกรณ์อื่นอีก
+• การสลับบัญชีจะโหลดโน้ตที่ถูกต้อง
 </th>
 
 <bn-BD>
-কেনাকাটা এবার আপনার সঙ্গে তাল মিলিয়ে।
+একদম নতুন চেহারা, আর আপনার নিজের Google Drive-এ ব্যাকআপ।
 
-• অনুমোদনের অপেক্ষায় থাকা পেমেন্ট নিশ্চিত হওয়ামাত্র চালু হবে
-• অ্যাপ বন্ধ থাকা অবস্থায় সম্পন্ন কেনা পরেরবার খুললেই ফিরে পাবেন
-• কেনাকাটা পুনরুদ্ধার এখন ঠিক কী পাওয়া গেছে তা জানাবে
+• সম্পূর্ণ নতুন ডিজাইন, লাইট ও ডার্ক মোডে
+• সবকিছু Google Drive-এ ব্যাকআপ নিন, এনক্রিপ্টেড ও সবার জন্য ফ্রি
+• অফলাইনে রেকর্ড করা ভয়েস নোট অনলাইনে ফিরলেই আপলোড হয়
+• PDF ও Markdown এক্সপোর্ট আরও পরিচ্ছন্ন, লম্বা নোটেও
+• লেখার সময়েই পেছনে আপডেট ডাউনলোড হয়
 
-সংশোধন:
-• সাবস্ক্রিপশনের অবস্থা এখন স্টোর অনুসরণ করে, বাতিল করলেও
+ঠিক করা হয়েছে:
+• মুছে ফেলা ফোল্ডার আর অন্য ডিভাইসে ফিরে আসে না
+• অ্যাকাউন্ট বদলালে এখন সঠিক নোট লোড হয়
 </bn-BD>
 
 <ar>
-‏عمليات شراء تواكبك.
+مظهر جديد كليًا، ونسخ احتياطية في Google Drive الخاص بك.
 
-• الدفعة التي تنتظر الموافقة تُفعَّل فور تأكيدها
-• الشراء الذي اكتمل والتطبيق مغلق يُستعاد عند فتحه مرة أخرى
-• استعادة المشتريات تخبرك الآن بما عُثر عليه بالضبط
+• تصميم جديد بالكامل، بالوضعين الفاتح والداكن
+• انسخ كل شيء احتياطيًا إلى Google Drive، مشفّرًا ومجانًا للجميع
+• تُرفع الملاحظات الصوتية المسجلة دون اتصال فور عودتك إلى الإنترنت
+• تصدير أنظف إلى PDF وMarkdown، حتى للملاحظات الطويلة
+• تُنزَّل التحديثات في الخلفية بينما تواصل الكتابة
 
 تم الإصلاح:
-• حالة الاشتراك تتبع المتجر، بما في ذلك عند الإلغاء
+• لم تعد المجلدات المحذوفة تعود على أجهزتك الأخرى
+• تبديل الحساب يحمّل الآن الملاحظات الصحيحة
 </ar>
 
 <fa>
-‏خریدهایی که همراه شما هستند.
+ظاهری کاملاً تازه، و پشتیبان در Google Drive خودتان.
 
-• پرداختی که منتظر تأیید است، به‌محض تأیید فعال می‌شود
-• خریدی که هنگام بسته بودن برنامه کامل شده، بار بعد بازیابی می‌شود
-• بازیابی خریدها اکنون دقیقاً می‌گوید چه چیزی پیدا شده است
+• طراحی کاملاً نو، در حالت روشن و تیره
+• از همه‌چیز در Google Drive پشتیبان بگیرید، رمزگذاری‌شده و رایگان برای همه
+• یادداشت‌های صوتی ضبط‌شده در حالت آفلاین با آنلاین شدن بارگذاری می‌شوند
+• خروجی PDF و Markdown تمیزتر، حتی برای یادداشت‌های طولانی
+• به‌روزرسانی‌ها در پس‌زمینه دانلود می‌شوند و شما به نوشتن ادامه می‌دهید
 
-رفع اشکال:
-• وضعیت اشتراک از فروشگاه پیروی می‌کند، از جمله هنگام لغو
+رفع شد:
+• پوشه‌های حذف‌شده دیگر روی دستگاه‌های دیگرتان برنمی‌گردند
+• تعویض حساب اکنون یادداشت‌های درست را بارگذاری می‌کند
 </fa>
 ```
 
@@ -152,27 +170,23 @@ Corrigé :
 
 | Locale | Characters |
 | --- | --- |
-| `en-US` | 300 |
-| `es-ES` | 309 |
-| `pt-BR` | 310 |
-| `it-IT` | 306 |
-| `fr-FR` | 315 |
-| `th` | 254 |
-| `bn-BD` | 290 |
-| `ar` | 247 |
-| `fa` | 281 |
+| `en-US` | 459 |
+| `es-ES` | 489 |
+| `pt-BR` | 470 |
+| `it-IT` | 474 |
+| `fr-FR` | 498 |
+| `th` | 422 |
+| `bn-BD` | 420 |
+| `ar` | 447 |
+| `fa` | 496 |
 
 ---
 
 ## Notes on the translations
 
 - **No numerals appear in this copy**, so the native-digit convention (৯ / ٩ /
-  ۹) does not arise. In particular no trial length is named: eligibility is per
-  user, so any specific number would be wrong for someone.
-- **RTL blocks** open with U+200F. Invisible but load bearing: it stops Play's
-  preview flipping paragraph direction on a line starting with punctuation.
-  Preserve it when copying.
-- **"Restore Purchases"** is translated rather than left in English, matching
-  the in-app button a user will actually find on the subscription screen.
-- **"the store" is kept generic** rather than named as Google Play, because the
-  same copy ships to users on both stores.
+  ۹) does not arise.
+- "Google Drive", "PDF" and "Markdown" are product and format names and stay
+  untranslated in every locale.
+- "Free for everyone" is accurate: Drive backup needs a signed-in account but
+  no premium plan.
