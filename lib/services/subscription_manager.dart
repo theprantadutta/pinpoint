@@ -203,6 +203,13 @@ class SubscriptionManager extends ChangeNotifier {
     }
   }
 
+  /// This install's id, loading (and if needed migrating) it first. Shared
+  /// with push registration so both identify the install the same way.
+  Future<String?> installId() async {
+    if (_deviceId == null) await _loadDeviceId();
+    return _deviceId;
+  }
+
   static const String legacyDeviceIdKey = 'legacy_device_id';
   static const String reverifyOwnedPurchasesKey = 'reverify_owned_purchases';
 
