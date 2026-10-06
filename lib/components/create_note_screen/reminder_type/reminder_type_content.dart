@@ -191,6 +191,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
             title: l10n.remPreciseTitle,
             scrollable: false,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(l10n.remPreciseBody,

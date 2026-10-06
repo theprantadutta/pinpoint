@@ -5,7 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pinpoint/services/api_service.dart';
-import 'package:device_info_plus/device_info_plus.dart';
+import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/firebase_options.dart';
 import 'dart:io';
 import 'package:pinpoint/services/locale_controller.dart';
@@ -186,15 +186,11 @@ class FirebaseNotificationService {
   /// Get device ID
   Future<void> _getDeviceId() async {
     try {
-      final deviceInfo = DeviceInfoPlugin();
-
-      if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        _deviceId = androidInfo.id;
-      } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        _deviceId = iosInfo.identifierForVendor;
-      }
+      // The same per-install id the subscription records use. Not
+      // androidInfo.id: that is Build.ID, the firmware build number, shared
+      // by every phone on that firmware, so two of one user's phones
+      // overwrote each other's push token.
+      _deviceId = await SubscriptionManager().installId();
 
       debugPrint('📱 Device ID: $_deviceId');
     } catch (e) {

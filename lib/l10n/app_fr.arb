@@ -1042,5 +1042,12 @@
   "updateLater": "Plus tard",
   "updateOpenStoreFailed": "Impossible d'ouvrir l'App Store. Ouvrez-le vous-même et mettez Pinpoint à jour depuis celui-ci.",
   "updateReadyTitle": "Mise à jour téléchargée",
-  "updateReadyRestart": "Redémarrer"
+  "updateReadyRestart": "Redémarrer",
+  "notifPromptTitle": "Ne manquez plus aucun [[rappel]]",
+  "notifPromptBody": "Activez les notifications pour recevoir vos rappels à l'heure, même quand Pinpoint est fermé.",
+  "notifPromptPointOnly": "Uniquement les rappels que vous créez",
+  "notifPromptPointSettings": "Modifiable à tout moment dans les Réglages",
+  "notifPromptPreviewTitle": "Appeler le dentiste",
+  "notifPromptPreviewNow": "maintenant",
+  "notifPromptEnable": "Activer les notifications"
 }

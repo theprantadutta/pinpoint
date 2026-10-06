@@ -516,6 +516,9 @@ class ApiService {
         data: {
           'notes': notes,
           'device_id': deviceId,
+          // We mark as synced only what the server echoes back, so it may
+          // accept part of a batch when a free account reaches its cap.
+          'allow_partial': true,
         },
       );
 

@@ -1,3 +1,5 @@
+import 'package:pinpoint/services/subscription_manager.dart';
+import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -378,15 +380,32 @@ class LogoutService {
 
       final prefs = await SharedPreferences.getInstance();
 
-      // Keys to preserve (UI preferences)
-      const keysToKeep = {
-        'is_dark_mode_key',
-        'is_flex_scheme_key',
-        'biometric_key',
-        'selected-font-key',
-        'home_screen_view_type_key',
-        'home_screen_sort_type_key',
-        'home_screen_sort_direction_key',
+      // Keys that describe this install or the person holding it, not the
+      // account. Everything else goes: tokens, profile, sync state, usage
+      // counters. Keep in step with the keys the app writes — when this list
+      // was stale, signing out reset onboarding, terms, theme and language,
+      // and dropped the device id, which detached a purchase made on this
+      // phone from its subscription record.
+      final keysToKeep = <String>{
+        // Appearance and language
+        kIsDarkModeKey, kThemeModeKey, kAccentColorKey, kHighContrastKey,
+        kFlexSchemeKey, kSelectedFontKey, kDoodlesEnabledKey,
+        kAppearanceUpdatedAtKey, kLocaleKey, kHighRefreshRateKey,
+        kBiometricKey,
+        kHomeScreenViewTypeKey, kHomeScreenSortTypeKey, kHomeScreenSortDirectionKey,
+        // First-run state
+        kHasCompletedOnboardingKey, kOnboardingVersionKey, kHasCompletedWalkthroughKey,
+        kHasAcceptedTermsKey, kTermsAcceptedDateKey,
+        kDidPopulatedNoteType, kDidPopulatedNoteFolder,
+        'notification_permission_requested',
+        // This install's identity and its store purchases. A purchase made
+        // on this phone belongs to the phone's store account, not to the
+        // Pinpoint account that just signed out.
+        'device_id', SubscriptionManager.legacyDeviceIdKey,
+        SubscriptionManager.reverifyOwnedPurchasesKey,
+        'iap_delivered_purchase_ids', 'subscription_pending_verification',
+        // Update prompts this device has snoozed
+        'in_app_update_declined_ms', 'app_release_declined_ms',
       };
 
       // Get all keys

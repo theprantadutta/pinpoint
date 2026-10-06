@@ -12,6 +12,25 @@ import 'sync_service.dart';
 import 'folder_sync_service.dart';
 
 /// Wrapper class for V2 notes (different note types are in separate tables)
+
+/// The uuids the server says it stored, from a `/notes/sync` response.
+///
+/// `updated_notes` lists every note the server wrote. A response without the
+/// list (an error body, or a server too old to send it) confirms nothing, so
+/// nothing is marked synced and the notes are offered again next time. Pure,
+/// for testing.
+@visibleForTesting
+Set<String> acceptedUuids(Map<String, dynamic> response, Iterable<String> sent) {
+  final updated = response['updated_notes'];
+  if (updated is! List) return <String>{};
+  final stored = updated
+      .whereType<Map>()
+      .map((n) => n['client_note_uuid'])
+      .whereType<String>()
+      .toSet();
+  return sent.where(stored.contains).toSet();
+}
+
 class _V2NoteWrapper {
   final String type; // 'text', 'voice', 'todo', 'reminder'
   final dynamic note; // TextNoteEntity, VoiceNoteEntity, TodoListNoteEntity, or ReminderNoteEntity
@@ -230,6 +249,7 @@ class ApiSyncService extends SyncService {
         tagsSynced: noteResult.tagsSynced,
         remindersSynced: remindersSynced,
         notesFailed: noteResult.notesFailed,
+        notesOverLimit: noteResult.notesOverLimit,
         errors: noteResult.errors,
         decryptionErrors: noteResult.decryptionErrors,
       );
@@ -263,6 +283,7 @@ class ApiSyncService extends SyncService {
 
       // Convert notes to encrypted format
       final encryptedNotes = <Map<String, dynamic>>[];
+      final sentByUuid = <String, _V2NoteWrapper>{};
       int failedCount = 0;
 
       for (final noteWrapper in notesToSync) {
@@ -280,6 +301,8 @@ class ApiSyncService extends SyncService {
               '🔼 [ApiSync] Encrypting note $noteId (${noteWrapper.type}): "$noteTitle"');
           final encryptedNote = await _serializeAndEncryptNoteV2(noteWrapper);
           encryptedNotes.add(encryptedNote);
+          final uuid = encryptedNote['client_note_uuid'];
+          if (uuid is String) sentByUuid[uuid] = noteWrapper;
           debugPrint('✅ [ApiSync] Note $noteId encrypted successfully');
         } catch (e) {
           failedCount++;
@@ -310,22 +333,34 @@ class ApiSyncService extends SyncService {
       final syncedCount = response['synced_count'] ?? 0;
       debugPrint('✅ [ApiSync] Uploaded $syncedCount notes successfully');
 
-      // Mark all uploaded notes as synced in their respective V2 tables
-      for (final noteWrapper in notesToSync) {
+      // Mark as synced only the notes the server stored. A free account at
+      // its cap gets new notes held back (rejected_uuids); those stay pending
+      // here and go up on a later sync, instead of being marked synced and
+      // silently never reaching the cloud.
+      final accepted = acceptedUuids(response, sentByUuid.keys);
+      final overLimit =
+          (response['rejected_uuids'] as List?)?.whereType<String>().length ?? 0;
+
+      for (final entry in sentByUuid.entries) {
+        if (!accepted.contains(entry.key)) continue;
         try {
-          await _markNoteAsSyncedV2(noteWrapper);
+          await _markNoteAsSyncedV2(entry.value);
         } catch (e) {
           debugPrint('⚠️ [ApiSync] Failed to mark note as synced: $e');
         }
       }
 
+      if (overLimit > 0) {
+        debugPrint('⚠️ [ApiSync] $overLimit new notes held back by the free plan limit');
+      }
       debugPrint('🔼 [ApiSync] ========== UPLOAD COMPLETE ==========\n');
 
       return SyncResult(
         success: true,
-        message: 'Uploaded $syncedCount notes',
+        message: response['message'] as String? ?? 'Uploaded $syncedCount notes',
         notesSynced: syncedCount,
         notesFailed: failedCount,
+        notesOverLimit: overLimit,
       );
     } catch (e) {
       debugPrint('❌ [ApiSync] Upload failed: $e');

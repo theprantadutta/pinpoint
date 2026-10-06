@@ -1042,5 +1042,12 @@
   "updateLater": "لاحقًا",
   "updateOpenStoreFailed": "تعذّر فتح App Store. افتحه بنفسك وحدّث Pinpoint من هناك.",
   "updateReadyTitle": "تم تنزيل التحديث",
-  "updateReadyRestart": "إعادة التشغيل"
+  "updateReadyRestart": "إعادة التشغيل",
+  "notifPromptTitle": "لا تفوّت أي [[تذكير]]",
+  "notifPromptBody": "فعّل الإشعارات لتصلك تذكيراتك في وقتها، حتى عندما يكون Pinpoint مغلقًا.",
+  "notifPromptPointOnly": "فقط التذكيرات التي تضبطها",
+  "notifPromptPointSettings": "يمكنك تغييره في أي وقت من الإعدادات",
+  "notifPromptPreviewTitle": "الاتصال بطبيب الأسنان",
+  "notifPromptPreviewNow": "الآن",
+  "notifPromptEnable": "تفعيل الإشعارات"
 }

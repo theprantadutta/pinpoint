@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:pinpoint/services/api_service.dart';
+import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/services/connectivity_service.dart';
 
 /// Keys for caching auth state locally
@@ -22,6 +23,23 @@ class BackendAuthService extends ChangeNotifier {
   final ApiService _apiService = ApiService();
 
   bool _isAuthenticated = false;
+
+  /// The account entitlement was last refreshed for. Compared on every
+  /// notification so a sign-in, sign-out or account switch re-reads Pro
+  /// straight away instead of waiting for the next status-cache expiry.
+  String? _entitlementUserId;
+
+  @override
+  void notifyListeners() {
+    super.notifyListeners();
+    final current = _isAuthenticated ? _userId : null;
+    if (current != _entitlementUserId) {
+      _entitlementUserId = current;
+      SubscriptionManager().onAccountChanged().catchError((Object e) {
+        debugPrint('Entitlement refresh after account change failed: $e');
+      });
+    }
+  }
   bool _isPremium = false;
   String? _userEmail;
   String? _userId;
