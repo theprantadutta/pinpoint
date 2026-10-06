@@ -1042,5 +1042,12 @@
   "updateLater": "পরে",
   "updateOpenStoreFailed": "App Store খোলা যায়নি। নিজে খুলে সেখান থেকে Pinpoint আপডেট করুন।",
   "updateReadyTitle": "আপডেট ডাউনলোড হয়েছে",
-  "updateReadyRestart": "রিস্টার্ট"
+  "updateReadyRestart": "রিস্টার্ট",
+  "notifPromptTitle": "কোনো [[রিমাইন্ডার]] আর মিস হবে না",
+  "notifPromptBody": "নোটিফিকেশন চালু করুন, যাতে Pinpoint বন্ধ থাকলেও আপনার রিমাইন্ডার সময়মতো আসে।",
+  "notifPromptPointOnly": "শুধু আপনার সেট করা রিমাইন্ডার",
+  "notifPromptPointSettings": "যেকোনো সময় সেটিংসে বদলাতে পারবেন",
+  "notifPromptPreviewTitle": "ডেন্টিস্টকে ফোন করা",
+  "notifPromptPreviewNow": "এখন",
+  "notifPromptEnable": "নোটিফিকেশন চালু করুন"
 }

@@ -27,4 +27,14 @@ void main() {
     final manager = readProjectFile('lib/services/subscription_manager.dart');
     expect(manager, isNot(contains("DateTime.parse(status['expires_at'])")));
   });
+
+  test('signing out keeps the install identity, first-run state and appearance', () {
+    final logout = readProjectFile('lib/services/logout_service.dart');
+    for (final key in [
+      'kHasCompletedOnboardingKey', 'kHasAcceptedTermsKey', 'kThemeModeKey',
+      'kLocaleKey', "'device_id'", "'iap_delivered_purchase_ids'",
+    ]) {
+      expect(logout, contains(key), reason: key);
+    }
+  });
 }

@@ -1042,5 +1042,12 @@
   "updateLater": "Mais tarde",
   "updateOpenStoreFailed": "Não foi possível abrir a App Store. Abra-a você mesmo e atualize o Pinpoint por lá.",
   "updateReadyTitle": "Atualização baixada",
-  "updateReadyRestart": "Reiniciar"
+  "updateReadyRestart": "Reiniciar",
+  "notifPromptTitle": "Nunca perca um [[lembrete]]",
+  "notifPromptBody": "Ative as notificações para que seus lembretes cheguem na hora, mesmo com o Pinpoint fechado.",
+  "notifPromptPointOnly": "Apenas os lembretes que você criar",
+  "notifPromptPointSettings": "Altere quando quiser em Configurações",
+  "notifPromptPreviewTitle": "Ligar para o dentista",
+  "notifPromptPreviewNow": "agora",
+  "notifPromptEnable": "Ativar notificações"
 }

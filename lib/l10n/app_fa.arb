@@ -1042,5 +1042,12 @@
   "updateLater": "بعداً",
   "updateOpenStoreFailed": "App Store باز نشد. خودتان آن را باز کنید و Pinpoint را از آنجا به‌روز کنید.",
   "updateReadyTitle": "به‌روزرسانی دانلود شد",
-  "updateReadyRestart": "راه‌اندازی مجدد"
+  "updateReadyRestart": "راه‌اندازی مجدد",
+  "notifPromptTitle": "هیچ [[یادآوری]] را از دست ندهید",
+  "notifPromptBody": "اعلان‌ها را روشن کنید تا یادآوری‌هایتان سر وقت برسند، حتی وقتی Pinpoint بسته است.",
+  "notifPromptPointOnly": "فقط یادآوری‌هایی که خودتان تنظیم می‌کنید",
+  "notifPromptPointSettings": "هر وقت خواستید در تنظیمات تغییرش دهید",
+  "notifPromptPreviewTitle": "تماس با دندانپزشک",
+  "notifPromptPreviewNow": "اکنون",
+  "notifPromptEnable": "روشن کردن اعلان‌ها"
 }

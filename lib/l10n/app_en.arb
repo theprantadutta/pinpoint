@@ -4934,5 +4934,33 @@
   "updateReadyRestart": "Restart",
   "@updateReadyRestart": {
     "description": "Android only. Button on the 'Update downloaded' pill. Restarts the app to install the update. Keep it very short."
+  },
+  "notifPromptTitle": "Never miss a [[reminder]]",
+  "@notifPromptTitle": {
+    "description": "Title of the one-time sheet asking the user to turn on notifications. The part in [[double brackets]] gets a yellow marker highlight: keep the brackets around the most important word(s) of your translation."
+  },
+  "notifPromptBody": "Turn on notifications so your reminders arrive on time, even when Pinpoint is closed.",
+  "@notifPromptBody": {
+    "description": "Body of the notification permission sheet, under the title. 'Pinpoint' is the app name: do not translate it."
+  },
+  "notifPromptPointOnly": "Only the reminders you set",
+  "@notifPromptPointOnly": {
+    "description": "Short reassurance line on the notification permission sheet: the app only notifies about reminders the user created."
+  },
+  "notifPromptPointSettings": "Change it any time in Settings",
+  "@notifPromptPointSettings": {
+    "description": "Short reassurance line on the notification permission sheet: the choice can be changed later in the app's Settings screen."
+  },
+  "notifPromptPreviewTitle": "Call the dentist",
+  "@notifPromptPreviewTitle": {
+    "description": "Example reminder title shown inside a mock notification on the permission sheet. Any short everyday task works."
+  },
+  "notifPromptPreviewNow": "now",
+  "@notifPromptPreviewNow": {
+    "description": "Tiny timestamp in the mock notification on the permission sheet, as phones show for a notification that just arrived."
+  },
+  "notifPromptEnable": "Turn on notifications",
+  "@notifPromptEnable": {
+    "description": "Primary button on the notification permission sheet. Opens the system permission prompt."
   }
 }

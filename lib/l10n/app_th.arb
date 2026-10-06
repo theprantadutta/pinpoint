@@ -1042,5 +1042,12 @@
   "updateLater": "ภายหลัง",
   "updateOpenStoreFailed": "เปิด App Store ไม่ได้ โปรดเปิดเองแล้วอัปเดต Pinpoint จากที่นั่น",
   "updateReadyTitle": "ดาวน์โหลดอัปเดตแล้ว",
-  "updateReadyRestart": "รีสตาร์ต"
+  "updateReadyRestart": "รีสตาร์ต",
+  "notifPromptTitle": "ไม่พลาด[[การเตือนความจำ]]อีกต่อไป",
+  "notifPromptBody": "เปิดการแจ้งเตือนเพื่อให้การเตือนความจำมาตรงเวลา แม้ Pinpoint จะปิดอยู่",
+  "notifPromptPointOnly": "เฉพาะการเตือนที่คุณตั้งไว้เท่านั้น",
+  "notifPromptPointSettings": "เปลี่ยนได้ทุกเมื่อในการตั้งค่า",
+  "notifPromptPreviewTitle": "โทรหาหมอฟัน",
+  "notifPromptPreviewNow": "ตอนนี้",
+  "notifPromptEnable": "เปิดการแจ้งเตือน"
 }
