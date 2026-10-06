@@ -16,15 +16,20 @@ class GoogleSignInService {
   FirebaseAuth get _auth => FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
+  /// Completes once GoogleSignIn is initialized; anything using it outside
+  /// this class (Drive backups) waits on it, as the plugin requires.
+  late final Future<void> ready;
+
   GoogleSignInService._internal() {
     // Initialize Google Sign-In with client ID from environment
     final webClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID'];
     if (webClientId != null && webClientId.isNotEmpty) {
-      _googleSignIn.initialize(
+      ready = _googleSignIn.initialize(
         serverClientId: webClientId,
       );
       log.i('Google Sign-In initialized with Web Client ID');
     } else {
+      ready = _googleSignIn.initialize();
       log.w('GOOGLE_WEB_CLIENT_ID not found in environment variables');
     }
   }

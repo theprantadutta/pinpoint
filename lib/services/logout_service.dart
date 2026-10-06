@@ -1,3 +1,4 @@
+import 'package:pinpoint/services/backup/google_drive_authorization.dart';
 import 'package:pinpoint/services/encryption_service.dart';
 import 'package:pinpoint/services/pending_usage.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
@@ -287,6 +288,14 @@ class LogoutService {
 
       // 4. Clear SharedPreferences (selective - keep UI prefs)
       await _clearSharedPreferences();
+
+      // 5. Drop Google Drive backup access, so the next account to sign in
+      // here does not inherit this one's Drive. Its backups stay in Drive.
+      try {
+        await const GoogleDriveAuthorization().revoke().timeout(const Duration(seconds: 5));
+      } catch (e) {
+        debugPrint('ℹ️ [LogoutService] Drive access not revoked: $e');
+      }
 
       debugPrint('✅ [LogoutService] Local data cleanup completed');
     } catch (e) {

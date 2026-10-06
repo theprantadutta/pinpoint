@@ -4993,5 +4993,236 @@
   "signOutStepDevice": "Removing notes from this device",
   "@signOutStepDevice": {
     "description": "Third step in the signing-out progress list: the account's notes and data are being deleted from this phone or tablet (they stay in the cloud)."
+  },
+  "bkTitle": "Google Drive backup",
+  "@bkTitle": {
+    "description": "Title of the screen (and its Settings row) where the user backs up their notes to their own Google Drive. 'Google Drive' is a product name; do not translate it."
+  },
+  "bkRowSubtitle": "Encrypted copies of your notes in your Drive",
+  "@bkRowSubtitle": {
+    "description": "Subtitle under the 'Google Drive backup' row in Settings."
+  },
+  "bkStatusNever": "No backup yet",
+  "@bkStatusNever": {
+    "description": "Status heading on the backup screen when no backup has been made from this device."
+  },
+  "bkStatusDone": "Backed up",
+  "@bkStatusDone": {
+    "description": "Status heading on the backup screen once a backup exists."
+  },
+  "bkStatusLast": "Last backup {when}",
+  "@bkStatusLast": {
+    "description": "Line under the status heading saying when the last backup was made, e.g. 'Last backup 5 minutes ago'.",
+    "placeholders": {
+      "when": {
+        "type": "String",
+        "example": "5 minutes ago"
+      }
+    }
+  },
+  "bkStatusNotConnected": "Connect Google Drive to back up your notes",
+  "@bkStatusNotConnected": {
+    "description": "Line on the backup screen before the user has given Pinpoint access to their Google Drive."
+  },
+  "bkConnect": "Connect Google Drive",
+  "@bkConnect": {
+    "description": "Button that asks the user to let Pinpoint store backups in their Google Drive (opens Google's permission screen)."
+  },
+  "bkBackupNow": "Back up now",
+  "@bkBackupNow": {
+    "description": "Button that makes a backup immediately and uploads it to Google Drive."
+  },
+  "bkBackingUp": "Backing up…",
+  "@bkBackingUp": {
+    "description": "Shown while a backup is being made and uploaded."
+  },
+  "bkRestoring": "Restoring…",
+  "@bkRestoring": {
+    "description": "Shown while a backup is being downloaded and merged into the phone."
+  },
+  "bkHowTitle": "How backups work",
+  "@bkHowTitle": {
+    "description": "Section heading above the explanation of backups."
+  },
+  "bkHowEncrypted": "Every backup is encrypted on this phone with your Pinpoint account's key before it leaves. Google can't read your notes.",
+  "@bkHowEncrypted": {
+    "description": "Explanation bullet: backups are encrypted on the device with the account's encryption key before upload."
+  },
+  "bkHowAccountOnly": "Only this Pinpoint account can restore them. To get your notes back, sign in as {email}. If you sign in with a different account, or lose access to this one, these backups can't be opened.",
+  "@bkHowAccountOnly": {
+    "description": "Explanation bullet warning that backups can only be restored by signing in to the same Pinpoint account (shown with its email). This is the important limitation; keep it explicit.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "you@example.com"
+      }
+    }
+  },
+  "bkHowEverything": "Each backup holds all your notes, checklists, reminders, folders and voice recordings, archived and trashed notes too.",
+  "@bkHowEverything": {
+    "description": "Explanation bullet listing what a backup contains."
+  },
+  "bkHowMerge": "Restoring adds what's missing and updates notes that are older on this phone. Nothing on the phone is deleted.",
+  "@bkHowMerge": {
+    "description": "Explanation bullet: restoring merges the backup into the phone without deleting anything."
+  },
+  "bkHowWhere": "Backups are kept in a \"Pinpoint Backups\" folder in your Drive. Pinpoint can only see the files it created.",
+  "@bkHowWhere": {
+    "description": "Explanation bullet: where backups are stored in Google Drive and that the app cannot see the user's other files. 'Pinpoint Backups' is the literal folder name; keep it in English."
+  },
+  "bkAutoTitle": "Automatic backups",
+  "@bkAutoTitle": {
+    "description": "Section heading above the choice of how often backups run on their own."
+  },
+  "bkFreqManual": "Off",
+  "@bkFreqManual": {
+    "description": "Chip: automatic backups turned off (only when the user presses Back up now)."
+  },
+  "bkFreqDaily": "Daily",
+  "@bkFreqDaily": {
+    "description": "Chip: back up automatically every day."
+  },
+  "bkFreqWeekly": "Weekly",
+  "@bkFreqWeekly": {
+    "description": "Chip: back up automatically every week."
+  },
+  "bkFreqMonthly": "Monthly",
+  "@bkFreqMonthly": {
+    "description": "Chip: back up automatically every month."
+  },
+  "bkAutoNote": "Runs when you open Pinpoint and a backup is due.",
+  "@bkAutoNote": {
+    "description": "Note under the automatic backup choices explaining when an automatic backup actually runs."
+  },
+  "bkKeepLabel": "Keep the latest",
+  "@bkKeepLabel": {
+    "description": "Label before chips (3, 5, 10, 20) choosing how many backups to keep in Drive; older ones are removed."
+  },
+  "bkListTitle": "Your backups",
+  "@bkListTitle": {
+    "description": "Section heading above the list of backups stored in Google Drive."
+  },
+  "bkListEmpty": "No backups in your Drive yet",
+  "@bkListEmpty": {
+    "description": "Shown in the backup list when Google Drive holds none."
+  },
+  "bkItemNotes": "{count, plural, =1{1 note} other{{count} notes}}",
+  "@bkItemNotes": {
+    "description": "How many notes a backup in the list holds, e.g. '42 notes'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bkItemSize": "{size} MB",
+  "@bkItemSize": {
+    "description": "File size of a backup in megabytes, e.g. '12.4 MB'. 'MB' is megabytes.",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "12.4"
+      }
+    }
+  },
+  "bkItemOtherAccount": "Made by another account, can't be restored here",
+  "@bkItemOtherAccount": {
+    "description": "Line on a backup in the list that was made by a different Pinpoint account, so it cannot be restored while signed in to this one."
+  },
+  "bkRestore": "Restore",
+  "@bkRestore": {
+    "description": "Action on a backup: merge it into this phone."
+  },
+  "bkRestoreConfirmTitle": "Restore this backup?",
+  "@bkRestoreConfirmTitle": {
+    "description": "Title of the confirmation before restoring a backup."
+  },
+  "bkRestoreConfirmBody": "Notes from {when} are merged into this phone: missing ones are added and older ones updated. Nothing here is deleted.",
+  "@bkRestoreConfirmBody": {
+    "description": "Body of the restore confirmation; {when} is the backup's date and time.",
+    "placeholders": {
+      "when": {
+        "type": "String",
+        "example": "Oct 6, 2026, 3:30 PM"
+      }
+    }
+  },
+  "bkDeleteConfirmTitle": "Delete this backup?",
+  "@bkDeleteConfirmTitle": {
+    "description": "Title of the confirmation before deleting a backup from Google Drive."
+  },
+  "bkDeleteConfirmBody": "It's removed from your Google Drive for good. Your notes on this phone aren't affected.",
+  "@bkDeleteConfirmBody": {
+    "description": "Body of the delete-backup confirmation."
+  },
+  "bkBackupDone": "{count, plural, =1{1 note backed up to Google Drive} other{{count} notes backed up to Google Drive}}",
+  "@bkBackupDone": {
+    "description": "Toast after a successful backup, with how many notes it holds.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bkRestoreDone": "{count, plural, =0{Nothing to restore: this phone is already up to date} =1{1 note restored} other{{count} notes restored}}",
+  "@bkRestoreDone": {
+    "description": "Toast after a restore, with how many notes were added or updated.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bkDeleted": "Backup deleted",
+  "@bkDeleted": {
+    "description": "Toast after deleting a backup from Google Drive."
+  },
+  "bkErrNeedsAuth": "Pinpoint needs access to your Google Drive. Connect it and try again.",
+  "@bkErrNeedsAuth": {
+    "description": "Error when Google Drive access is missing, revoked or expired."
+  },
+  "bkErrOffline": "You're offline. Try again once you're connected.",
+  "@bkErrOffline": {
+    "description": "Error when a backup action fails for lack of internet."
+  },
+  "bkErrStorageFull": "Your Google Drive is full. Free up space, or keep fewer backups.",
+  "@bkErrStorageFull": {
+    "description": "Error when the user's Google Drive has no space left."
+  },
+  "bkErrFailed": "Google Drive didn't accept that. Try again in a moment.",
+  "@bkErrFailed": {
+    "description": "Generic error when Google Drive refuses a backup action for another reason."
+  },
+  "bkErrOtherAccount": "This backup belongs to a different Pinpoint account. Sign in to that account to restore it.",
+  "@bkErrOtherAccount": {
+    "description": "Error when trying to restore a backup made (and encrypted) by another Pinpoint account."
+  },
+  "bkErrNotABackup": "This file isn't a Pinpoint backup.",
+  "@bkErrNotABackup": {
+    "description": "Error when a downloaded file cannot be read as a backup."
+  },
+  "bkErrTooNew": "This backup was made by a newer version of Pinpoint. Update the app to restore it.",
+  "@bkErrTooNew": {
+    "description": "Error when a backup was written by a newer app version than this one."
+  },
+  "bkAutoFailed": "The last automatic backup didn't run.",
+  "@bkAutoFailed": {
+    "description": "Heading of a warning on the backup screen when the scheduled backup was skipped; the reason follows on the next line."
+  },
+  "bkSignedOutTitle": "Sign in to back up",
+  "@bkSignedOutTitle": {
+    "description": "Heading on the backup screen when the user is not signed in to Pinpoint."
+  },
+  "bkSignedOutBody": "Backups are encrypted with your Pinpoint account's key, so they need an account, and only that account can restore them. Free and Premium accounts can both back up.",
+  "@bkSignedOutBody": {
+    "description": "Explains to a signed-out user why backups need a Pinpoint account; the feature is free."
+  },
+  "bkDisconnect": "Disconnect Google Drive",
+  "@bkDisconnect": {
+    "description": "Row that removes Pinpoint's access to Google Drive. Existing backups stay in Drive."
+  },
+  "bkDisconnected": "Google Drive disconnected. Your backups stay in your Drive.",
+  "@bkDisconnected": {
+    "description": "Toast after disconnecting Google Drive."
   }
 }
