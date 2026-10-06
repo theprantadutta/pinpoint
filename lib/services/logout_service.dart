@@ -1,3 +1,4 @@
+import 'package:pinpoint/services/encryption_service.dart';
 import 'package:pinpoint/services/pending_usage.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
@@ -370,6 +371,9 @@ class LogoutService {
       await _secureStorage.delete(key: 'auth_token');
       await _secureStorage.delete(key: 'refresh_token');
       await _secureStorage.delete(key: 'encryption_key');
+      // And from memory, or the next account to sign in this session would
+      // read its notes with this one's key.
+      SecureEncryptionService.forgetKey();
 
       debugPrint('✅ [LogoutService] Secure storage cleared');
     } catch (e) {

@@ -234,9 +234,10 @@ class ApiSyncService extends SyncService {
       debugPrint('\n🚀 [ApiSync] ========== SYNC COMPLETE ==========');
       debugPrint('📊 [ApiSync] Folders: ${folderResult.foldersSynced}, Notes: ${noteResult.notesSynced}, Reminders: $remindersSynced');
 
-      // Save last sync time
-      _lastSyncTime = DateTime.now().millisecondsSinceEpoch;
-      await _saveLastSyncTime();
+      // The last-sync time is advanced by downloadChanges alone. Setting it
+      // here moved it past changes that were never downloaded: an upload-only
+      // sync (after every edit) skipped other devices' edits made meanwhile,
+      // and a download where notes failed skipped those notes for good.
 
       updateProgress(SyncProgress.completed(
         message: 'Synced ${noteResult.notesSynced} notes, ${folderResult.foldersSynced} folders',
@@ -419,6 +420,10 @@ class ApiSyncService extends SyncService {
       debugPrint('\n🔽 [ApiSync] ========== STARTING DOWNLOAD ==========');
       debugPrint('🔽 [ApiSync] Last sync time: $_lastSyncTime');
 
+      // Taken before asking, so a change landing while this runs is fetched
+      // next time rather than skipped.
+      final requestedAt = DateTime.now().millisecondsSinceEpoch;
+
       // Fetch notes from backend (only those updated since last sync)
       final response = await _apiService.getNotes(
         since: _lastSyncTime,
@@ -426,6 +431,8 @@ class ApiSyncService extends SyncService {
       );
 
       if (response.isEmpty) {
+        _lastSyncTime = requestedAt;
+        await _saveLastSyncTime();
         debugPrint('✅ [ApiSync] No new notes to download');
         debugPrint('🔽 [ApiSync] ========== DOWNLOAD COMPLETE ==========\n');
         return SyncResult(
@@ -552,9 +559,15 @@ class ApiSyncService extends SyncService {
         }
       }
 
-      // Update last sync time and persist to SharedPreferences
-      _lastSyncTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-      await _saveLastSyncTime();
+      // Advance only when every note came down. The next sync asks just for
+      // what changed after this point, so a note that failed here (a wrong
+      // key, a bad payload) would otherwise never be fetched again.
+      if (failedCount == 0) {
+        _lastSyncTime = requestedAt;
+        await _saveLastSyncTime();
+      } else {
+        debugPrint('⚠️ [ApiSync] Keeping last sync time: $failedCount note(s) to retry');
+      }
 
       final messageParts = <String>[];
       if (successCount > 0) messageParts.add('$successCount notes restored');
