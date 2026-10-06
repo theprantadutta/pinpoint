@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:fleather/fleather.dart';
@@ -34,6 +33,7 @@ import '../constants/premium_limits.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/text_note_service.dart';
 import '../services/voice_note_service.dart';
+import '../services/voice_recording_files.dart';
 import '../services/todo_list_note_service.dart';
 import '../services/reminder_note_service.dart';
 import '../services/premium_service.dart';
@@ -1507,10 +1507,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         return;
       }
 
-      // Get temporary directory for audio file
-      final tempDir = await getTemporaryDirectory();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final audioPath = '${tempDir.path}/voice_note_$timestamp.m4a';
+      // Not the cache directory, which Android may clear at any time.
+      final audioPath = await VoiceRecordingFiles.newRecordingPath();
 
       // Start recording
       await _audioRecorder.start(

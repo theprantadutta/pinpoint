@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pinpoint/components/create_note_screen/record_audio_type/voice_note_body.dart';
 import 'package:pinpoint/services/audio_upload_queue.dart';
+import 'package:pinpoint/services/voice_recording_files.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/project_source.dart';
@@ -74,5 +75,17 @@ void main() {
     await tester.pumpWidget(body(tooLarge: 25));
     expect(find.byIcon(Icons.cloud_off_rounded), findsOneWidget);
     expect(find.textContaining('Over 25 MB'), findsOneWidget);
+  });
+
+  test('recordings are kept out of the cache directory, which Android may clear', () async {
+    const cache = '/data/user/0/com.pranta.pinpoint/cache';
+    expect(VoiceRecordingFiles.isInCache('$cache/voice_note_1.m4a', cache), isTrue);
+    expect(VoiceRecordingFiles.isInCache('/data/user/0/com.pranta.pinpoint/app_flutter/audio/x.m4a', cache), isFalse);
+    expect(VoiceRecordingFiles.isInCache('${cache}2/x.m4a', cache), isFalse);
+    expect(readProjectFile('lib/screens/create_note_screen_v2.dart'), isNot(contains('getTemporaryDirectory')));
+
+    await AudioUploadQueue.enqueue('n1', '$cache/voice_note_1.m4a');
+    await AudioUploadQueue.relocate('$cache/voice_note_1.m4a', '/docs/audio/voice_note_1.m4a');
+    expect((await AudioUploadQueue.pending()).single['path'], '/docs/audio/voice_note_1.m4a');
   });
 }

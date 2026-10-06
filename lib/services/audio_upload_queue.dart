@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../service_locators/init_service_locators.dart';
 import 'api_service.dart';
+import 'voice_recording_files.dart';
 
 /// Voice recordings waiting to reach the server, and where each one landed.
 ///
@@ -97,11 +98,21 @@ class AudioUploadQueue {
     }
   }
 
+  /// Point queued uploads of [from] at [to], after the file moved.
+  static Future<void> relocate(String from, String to) async {
+    final items = await pending();
+    if (!items.any((e) => e['path'] == from)) return;
+    await _save([
+      for (final e in items) e['path'] == from ? {...e, 'path': to} : e,
+    ]);
+  }
+
   /// Upload whatever is queued. Safe to call often: concurrent calls share
   /// one run, and failures stay queued for the next one.
   static Future<void> process() => _running ??= _process().whenComplete(() => _running = null);
 
   static Future<void> _process() async {
+    await VoiceRecordingFiles.moveOutOfCacheOnce();
     await _queueRecordingsThatNeverUploaded();
     final items = await pending();
     if (items.isEmpty) return;
