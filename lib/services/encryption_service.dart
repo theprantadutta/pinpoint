@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 
+import 'backend_auth_service.dart';
+
 class SecureEncryptionService {
   static const _storage = FlutterSecureStorage();
   static const String _keyStorageKey = 'encryption_key';
@@ -21,6 +23,23 @@ class SecureEncryptionService {
   static enc.Encrypter? _gcm;
   static enc.Encrypter? _cbc;
   static bool _keySyncedThisSession = false;
+
+  /// The account whose key was synced, so another account signing in during
+  /// the same app session fetches its own instead of skipping.
+  static String? _keySyncedForAccount;
+
+  /// Drop the data key from memory and allow the next account to fetch its
+  /// own. Called on sign-out, which also deletes the stored key.
+  ///
+  /// Without this the ciphers outlived sign-out: the next account signing in
+  /// without an app restart skipped its key sync ("already synced this
+  /// session") and tried to read its notes with the previous account's key.
+  static void forgetKey() {
+    _gcm = null;
+    _cbc = null;
+    _keySyncedThisSession = false;
+    _keySyncedForAccount = null;
+  }
 
   // Initialize the encryption service
   // apiService is optional - if provided, will sync key with cloud
@@ -140,8 +159,9 @@ class SecureEncryptionService {
   /// Includes fast retry logic for reliability
   /// Only syncs once per session unless [force] is true
   static Future<bool> syncKeyFromCloud(dynamic apiService, {int maxRetries = 2, bool force = false}) async {
-    // Skip if already synced this session (unless forced)
-    if (_keySyncedThisSession && !force) {
+    // Skip if already synced this session for this same account (unless forced)
+    final account = BackendAuthService().userId;
+    if (_keySyncedThisSession && _keySyncedForAccount == account && !force) {
       debugPrint('⏭️ [Encryption] Key already synced this session, skipping');
       return true;
     }
@@ -162,6 +182,7 @@ class SecureEncryptionService {
           _applyKey(enc.Key.fromBase64(cloudKey));
 
           _keySyncedThisSession = true;
+          _keySyncedForAccount = account;
           debugPrint('✅ [Encryption] Successfully synced key from cloud');
           return true;
         } else {
@@ -173,6 +194,7 @@ class SecureEncryptionService {
             debugPrint('☁️ [Encryption] Uploading local key to cloud...');
             await apiService.storeEncryptionKey(localKey);
             _keySyncedThisSession = true;
+            _keySyncedForAccount = account;
             debugPrint('✅ [Encryption] Local key uploaded to cloud');
             return true;
           }
