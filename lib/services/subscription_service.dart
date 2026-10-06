@@ -177,6 +177,29 @@ class SubscriptionService {
     // can prompt for an Apple ID password, which must only ever happen when
     // the user explicitly asks to restore.
     await reconcileStoreState();
+    await reverifyOwnedPurchasesIfNeeded();
+  }
+
+  /// After the device id changed (SubscriptionManager left a shared legacy
+  /// id), verify everything the store says is owned again, under the new id.
+  /// The delivered set is cleared first: those purchases were delivered to
+  /// the old device row, which this device no longer uses. Never syncs with
+  /// the App Store, so it cannot prompt for a password. The flag is cleared
+  /// only on success, so a failure (offline) retries next launch.
+  Future<void> reverifyOwnedPurchasesIfNeeded() async {
+    if (!_isAvailable) return;
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      if (preferences.getBool(SubscriptionManager.reverifyOwnedPurchasesKey) != true) return;
+
+      _delivered = <String>{};
+      await preferences.remove(_deliveredKey);
+      final count = await _processOwnedPurchases(source: 'restore');
+      await preferences.remove(SubscriptionManager.reverifyOwnedPurchasesKey);
+      log.i('Re-verified $count owned purchase(s) under the new device id');
+    } catch (e) {
+      log.w('Re-verifying owned purchases failed; will retry: $e');
+    }
   }
 
   void _attachListeners() {

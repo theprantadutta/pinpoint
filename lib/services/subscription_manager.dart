@@ -187,8 +187,31 @@ class SubscriptionManager extends ChangeNotifier {
     if (_deviceId == null) {
       _deviceId = await _generateDeviceId();
       await preferences.setString(_deviceIdKey, _deviceId!);
+    } else if (Platform.isAndroid && isLegacyAndroidDeviceId(_deviceId!)) {
+      // Installs before 4.0.0 stored Build.ID, the firmware build number,
+      // which every phone on that firmware shares — so the backend could not
+      // tell their purchases apart. Move to a per-install id, and have the
+      // store's owned purchases verified again under it (see
+      // SubscriptionService.reverifyOwnedPurchasesIfNeeded) so a guest who
+      // paid keeps Pro.
+      final legacy = _deviceId!;
+      _deviceId = await _generateDeviceId();
+      await preferences.setString(_deviceIdKey, _deviceId!);
+      await preferences.setString(legacyDeviceIdKey, legacy);
+      await preferences.setBool(reverifyOwnedPurchasesKey, true);
+      debugPrint('🔑 Moved off the shared legacy device id');
     }
   }
+
+  static const String legacyDeviceIdKey = 'legacy_device_id';
+  static const String reverifyOwnedPurchasesKey = 'reverify_owned_purchases';
+
+  /// A device id written by builds before 4.0.0 from Build.ID (e.g.
+  /// "BP4A.251205.006"). Current ids are `android-<uuid>`; the fallback id is
+  /// all digits. Pure, for testing.
+  @visibleForTesting
+  static bool isLegacyAndroidDeviceId(String id) =>
+      !id.startsWith('android-') && RegExp(r'[A-Za-z]').hasMatch(id);
 
   /// Generate unique device identifier
   Future<String> _generateDeviceId() async {
@@ -359,23 +382,13 @@ class SubscriptionManager extends ChangeNotifier {
       _autoRenewing = status['auto_renewing'] ?? true;
       _cancellationReason = status['cancellation_reason'];
 
-      if (status['expires_at'] != null) {
-        _subscriptionExpiresAt = DateTime.parse(status['expires_at']);
-      } else {
-        _subscriptionExpiresAt = null;
-      }
-
-      if (status['grace_period_ends_at'] != null) {
-        _gracePeriodEndsAt = DateTime.parse(status['grace_period_ends_at']);
-      } else {
-        _gracePeriodEndsAt = null;
-      }
-
-      if (status['cancelled_at'] != null) {
-        _cancelledAt = DateTime.parse(status['cancelled_at']);
-      } else {
-        _cancelledAt = null;
-      }
+      // The server writes UTC without a zone suffix; DateTime.parse would
+      // read it as local time and move the expiry by the UTC offset.
+      DateTime? utc(Object? raw) => raw is String ? parseServerUtc(raw) : null;
+      _subscriptionExpiresAt = utc(status['expires_at']);
+      _gracePeriodEndsAt = utc(status['grace_period_ends_at']);
+      _cancelledAt = utc(status['cancelled_at']);
+      _premiumFromAccount = false;
 
       // The device record only knows purchases made on THIS device. A
       // signed-in user who bought Pro elsewhere — or was granted it — is
@@ -396,6 +409,27 @@ class SubscriptionManager extends ChangeNotifier {
     }
   }
 
+  /// Whether the current premium came from the signed-in account rather
+  /// than a purchase on this device — so signing out can take it away.
+  bool _premiumFromAccount = false;
+
+  /// Re-read entitlement after the signed-in account changes (sign-in,
+  /// sign-out, switching accounts). Signing in can unlock Pro bought or
+  /// granted elsewhere; signing out must not leave the old account's Pro on
+  /// this device. Device-level purchases are unaffected either way.
+  Future<void> onAccountChanged() async {
+    if (_premiumFromAccount && !await _apiService.hasToken()) {
+      _isPremium = false;
+      _premiumFromAccount = false;
+      _subscriptionTier = 'free';
+      _subscriptionType = null;
+      _subscriptionExpiresAt = null;
+      await _saveLocalSubscriptionStatus();
+      notifyListeners();
+    }
+    await checkSubscriptionStatus(forceRefresh: true);
+  }
+
   /// Overlays the signed-in account's entitlement when it is premium.
   /// Never downgrades: a device-level purchase stays authoritative.
   Future<void> _applyAccountEntitlement() async {
@@ -405,9 +439,11 @@ class SubscriptionManager extends ChangeNotifier {
       if (account['is_premium'] != true) return;
 
       _isPremium = true;
+      _premiumFromAccount = true;
       _isInGracePeriod = account['is_in_grace_period'] ?? false;
       _subscriptionTier = account['tier'] ?? _subscriptionTier;
-      _subscriptionType = account['subscription_type'] ?? _subscriptionType;
+      _subscriptionType = account['subscription_type'] ??
+          (account['tier'] == 'lifetime' ? 'lifetime' : _subscriptionType);
       _productId = account['product_id'] ?? _productId;
       _autoRenewing = account['auto_renewing'] ?? _autoRenewing;
       final expires = account['expires_at'];
