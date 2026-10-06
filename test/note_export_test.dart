@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parchment/parchment.dart';
-import 'package:parchment_delta/parchment_delta.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pinpoint/components/create_note_screen/note_export_actions.dart';
 import 'package:share_plus/share_plus.dart';
