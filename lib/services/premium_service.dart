@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/premium_limits.dart';
 import 'subscription_manager.dart';
 import 'api_service.dart';
+import 'backend_auth_service.dart';
+import 'pending_usage.dart';
 
 /// Service for managing premium features and usage limits
 class PremiumService extends ChangeNotifier {
@@ -156,6 +158,7 @@ class PremiumService extends ChangeNotifier {
   /// Fetch and cache usage stats from backend
   Future<Map<String, dynamic>?> fetchUsageStatsFromBackend() async {
     try {
+      await flushPendingUsage();
       final apiService = ApiService();
       final stats = await apiService.getUsageStats();
 
@@ -193,11 +196,14 @@ class PremiumService extends ChangeNotifier {
       }
 
       // Update OCR scans count from backend
+      // Usage the server has not been told about yet is added on top, so a
+      // fetch never erases what was done offline.
+      final pending = _pendingUsage();
       final ocrScans = stats['ocr_scans'];
       if (ocrScans != null && ocrScans['current'] != null) {
         await _prefs!.setInt(
           UsageTrackingKeys.ocrScansThisMonth,
-          ocrScans['current'] as int,
+          PendingUsage.merge(ocrScans['current'] as int, pending?.ocr ?? 0),
         );
       }
 
@@ -206,7 +212,7 @@ class PremiumService extends ChangeNotifier {
       if (exports != null && exports['current'] != null) {
         await _prefs!.setInt(
           UsageTrackingKeys.exportsThisMonth,
-          exports['current'] as int,
+          PendingUsage.merge(exports['current'] as int, pending?.exports ?? 0),
         );
       }
 
@@ -430,36 +436,9 @@ class PremiumService extends ChangeNotifier {
     return scans < PremiumLimits.maxOcrScansPerMonthForFree;
   }
 
-  /// Increment OCR scan count (locally and on backend)
-  Future<void> incrementOcrScans() async {
-    if (_prefs == null) return;
-
-    // 1. Increment locally first (for offline support and immediate UI update)
-    final current = getOcrScansThisMonth();
-    await _prefs!.setInt(UsageTrackingKeys.ocrScansThisMonth, current + 1);
-
-    debugPrint(
-        '📊 [PremiumService] OCR scans: ${current + 1}/${PremiumLimits.maxOcrScansPerMonthForFree}');
-
-    // 2. Sync to backend (fire and forget - don't block the user)
-    try {
-      final response = await ApiService().incrementOcrScans();
-      debugPrint('✅ [PremiumService] OCR scan synced to backend: $response');
-
-      // Update local count from backend response (authoritative source)
-      if (response['current'] != null) {
-        await _prefs!.setInt(
-          UsageTrackingKeys.ocrScansThisMonth,
-          response['current'] as int,
-        );
-      }
-    } catch (e) {
-      debugPrint('⚠️ [PremiumService] Failed to sync OCR scan to backend: $e');
-      // Continue anyway - local count is already updated
-    }
-
-    notifyListeners();
-  }
+  /// Count an OCR scan: locally at once, then on the server, replaying later
+  /// if the server cannot be reached now.
+  Future<void> incrementOcrScans() => _recordUsage(_Metered.ocr);
 
   /// Get remaining OCR scans this month
   int getRemainingOcrScans() {
@@ -488,35 +467,118 @@ class PremiumService extends ChangeNotifier {
     return exports < PremiumLimits.maxExportsPerMonthForFree;
   }
 
-  /// Increment export count (locally and on backend)
-  Future<void> incrementExports() async {
+  /// Count an export: locally at once, then on the server, replaying later
+  /// if the server cannot be reached now.
+  Future<void> incrementExports() => _recordUsage(_Metered.export);
+
+  // ============================================
+  // Usage replay
+  // ============================================
+
+  String? get _accountId {
+    final auth = BackendAuthService();
+    return auth.isAuthenticated ? auth.userId : null;
+  }
+
+  /// The pending usage for the signed-in account this month, or null.
+  PendingUsage? _pendingUsage() {
+    final pending = PendingUsage.decode(_prefs?.getString(PendingUsage.prefsKey));
+    final period = quotaPeriodOf(DateTime.now());
+    return pending != null && pending.appliesTo(_accountId, period) ? pending : null;
+  }
+
+  Future<void> _savePending(PendingUsage pending) =>
+      _prefs!.setString(PendingUsage.prefsKey, pending.encode());
+
+  Future<void> _recordUsage(_Metered kind) async {
     if (_prefs == null) return;
 
-    // 1. Increment locally first (for offline support and immediate UI update)
-    final current = getExportsThisMonth();
-    await _prefs!.setInt(UsageTrackingKeys.exportsThisMonth, current + 1);
+    final key = kind == _Metered.ocr
+        ? UsageTrackingKeys.ocrScansThisMonth
+        : UsageTrackingKeys.exportsThisMonth;
+    final current = kind == _Metered.ocr ? getOcrScansThisMonth() : getExportsThisMonth();
+    await _prefs!.setInt(key, current + 1);
+    debugPrint('📊 [PremiumService] ${kind.name}: ${current + 1} this month');
 
-    debugPrint(
-        '📊 [PremiumService] Exports: ${current + 1}/${PremiumLimits.maxExportsPerMonthForFree}');
+    // Signed in: queue it for the account. A guest has no server counter.
+    final owner = _accountId;
+    if (owner != null) {
+      final pending = PendingUsage.decode(_prefs!.getString(PendingUsage.prefsKey))
+              ?.forScope(owner, quotaPeriodOf(DateTime.now())) ??
+          PendingUsage(owner: owner, period: quotaPeriodOf(DateTime.now()));
+      await _savePending(kind == _Metered.ocr
+          ? pending.copyWith(ocr: pending.ocr + 1)
+          : pending.copyWith(exports: pending.exports + 1));
+    }
+    notifyListeners();
+    await flushPendingUsage();
+  }
 
-    // 2. Sync to backend (fire and forget - don't block the user)
+  Future<void>? _flushing;
+
+  /// Tell the server about queued usage. Safe to call often: concurrent calls
+  /// share one run, and whatever cannot be sent stays queued.
+  Future<void> flushPendingUsage() =>
+      _flushing ??= _flushPendingUsage().whenComplete(() => _flushing = null);
+
+  Future<void> _flushPendingUsage() async {
+    if (_prefs == null) return;
+    var pending = _pendingUsage();
+    if (pending == null) {
+      // Last month's can never be sent. Another account's waits for it.
+      final stored = PendingUsage.decode(_prefs!.getString(PendingUsage.prefsKey));
+      if (stored != null && stored.period != quotaPeriodOf(DateTime.now())) {
+        await _prefs!.remove(PendingUsage.prefsKey);
+      }
+      return;
+    }
+    if (pending.isEmpty) return;
+
+    final api = ApiService();
+    int? ocrServer, exportsServer;
     try {
-      final response = await ApiService().incrementExports();
-      debugPrint('✅ [PremiumService] Export synced to backend: $response');
-
-      // Update local count from backend response (authoritative source)
-      if (response['current'] != null) {
-        await _prefs!.setInt(
-          UsageTrackingKeys.exportsThisMonth,
-          response['current'] as int,
-        );
+      while (pending!.ocr > 0) {
+        final sent = await _sendOne(api.incrementOcrScans);
+        pending = pending.copyWith(ocr: pending.ocr - 1);
+        await _savePending(pending);
+        ocrServer = sent ?? ocrServer;
+      }
+      while (pending!.exports > 0) {
+        final sent = await _sendOne(api.incrementExports);
+        pending = pending.copyWith(exports: pending.exports - 1);
+        await _savePending(pending);
+        exportsServer = sent ?? exportsServer;
       }
     } catch (e) {
-      debugPrint('⚠️ [PremiumService] Failed to sync export to backend: $e');
-      // Continue anyway - local count is already updated
+      debugPrint('⚠️ [PremiumService] Usage replay deferred: $e');
     }
 
-    notifyListeners();
+    // The server's answer is authoritative for what it has counted.
+    if (ocrServer != null) {
+      await _prefs!.setInt(UsageTrackingKeys.ocrScansThisMonth,
+          PendingUsage.merge(ocrServer, pending!.ocr));
+    }
+    if (exportsServer != null) {
+      await _prefs!.setInt(UsageTrackingKeys.exportsThisMonth,
+          PendingUsage.merge(exportsServer, pending!.exports));
+    }
+    if (ocrServer != null || exportsServer != null) notifyListeners();
+  }
+
+  /// Send one queued use. Returns the server's new count, or null when the
+  /// outcome is unknown; throws to keep it queued.
+  ///
+  /// A timeout may have been counted before the reply was lost. That one is
+  /// treated as sent: undercounting a quota is the user-friendly error, and a
+  /// retry could count it twice.
+  static Future<int?> _sendOne(Future<Map<String, dynamic>> Function() send) async {
+    try {
+      final response = await send();
+      return response['current'] as int?;
+    } on ApiError catch (e) {
+      if (e.type == ApiErrorType.timeout) return null;
+      rethrow;
+    }
   }
 
   /// Get remaining exports this month
@@ -661,3 +723,5 @@ class PremiumService extends ChangeNotifier {
     }
   }
 }
+
+enum _Metered { ocr, export }

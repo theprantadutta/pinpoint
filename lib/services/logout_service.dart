@@ -1,3 +1,4 @@
+import 'package:pinpoint/services/pending_usage.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'dart:io';
@@ -407,6 +408,9 @@ class LogoutService {
         'iap_delivered_purchase_ids', 'subscription_pending_verification',
         // Update prompts this device has snoozed
         'in_app_update_declined_ms', 'app_release_declined_ms',
+        // Offline usage not yet reported. Tagged with its account, so it is
+        // replayed only if that account signs back in this month.
+        PendingUsage.prefsKey,
       };
 
       // Get all keys
