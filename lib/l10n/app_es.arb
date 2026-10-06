@@ -1049,5 +1049,11 @@
   "notifPromptPointSettings": "Cámbialo cuando quieras en Ajustes",
   "notifPromptPreviewTitle": "Llamar al dentista",
   "notifPromptPreviewNow": "ahora",
-  "notifPromptEnable": "Activar notificaciones"
+  "notifPromptEnable": "Activar notificaciones",
+  "edVoiceTooLargeToSync": "Supera los {megabytes} MB, así que esta grabación se queda en este dispositivo y no se sincronizará. Graba notas más cortas para guardarlas en la nube.",
+  "signOutTitle": "Cerrando tu sesión",
+  "signOutBody": "Mantén Pinpoint abierta. Solo tardará unos segundos.",
+  "signOutStepSave": "Guardando tus notas en la nube",
+  "signOutStepAccount": "Cerrando la sesión de tu cuenta",
+  "signOutStepDevice": "Quitando las notas de este dispositivo"
 }

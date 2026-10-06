@@ -1049,5 +1049,11 @@
   "notifPromptPointSettings": "هر وقت خواستید در تنظیمات تغییرش دهید",
   "notifPromptPreviewTitle": "تماس با دندانپزشک",
   "notifPromptPreviewNow": "اکنون",
-  "notifPromptEnable": "روشن کردن اعلان‌ها"
+  "notifPromptEnable": "روشن کردن اعلان‌ها",
+  "edVoiceTooLargeToSync": "بیشتر از {megabytes} مگابایت است، پس این ضبط فقط روی همین دستگاه می‌ماند و همگام‌سازی نمی‌شود. برای پشتیبان‌گیری، یادداشت‌های کوتاه‌تری ضبط کنید.",
+  "signOutTitle": "در حال خروج از حساب",
+  "signOutBody": "Pinpoint را باز نگه دارید. فقط چند ثانیه طول می‌کشد.",
+  "signOutStepSave": "در حال ذخیرهٔ یادداشت‌ها در فضای ابری",
+  "signOutStepAccount": "در حال خروج از حساب شما",
+  "signOutStepDevice": "در حال حذف یادداشت‌ها از این دستگاه"
 }

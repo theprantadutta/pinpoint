@@ -64,4 +64,7 @@ class UsageTrackingKeys {
   static const String ocrScansThisMonth = 'usage_ocr_scans_month';
   static const String exportsThisMonth = 'usage_exports_month';
   static const String lastMonthlyReset = 'usage_last_monthly_reset';
+
+  /// The UTC calendar month ("2026-10") the monthly counters belong to.
+  static const String quotaPeriod = 'usage_quota_period';
 }

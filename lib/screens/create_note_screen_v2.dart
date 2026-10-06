@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:fleather/fleather.dart';
 
 import '../service_locators/init_service_locators.dart';
+import '../services/audio_upload_queue.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../components/create_note_screen/editor_chrome.dart';
 import '../components/create_note_screen/editor_overflow_menu.dart';
@@ -33,6 +33,7 @@ import '../constants/premium_limits.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/text_note_service.dart';
 import '../services/voice_note_service.dart';
+import '../services/voice_recording_files.dart';
 import '../services/todo_list_note_service.dart';
 import '../services/reminder_note_service.dart';
 import '../services/premium_service.dart';
@@ -99,6 +100,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
   // Voice note fields
   String? _audioFilePath;
+  bool _audioTooLargeForCloud = false;
   int? _audioDurationSeconds;
   String? _audioTranscription;
   final AudioRecorder _audioRecorder = AudioRecorder();
@@ -321,6 +323,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         final voiceNote = await VoiceNoteService.getVoiceNote(note.id);
         if (voiceNote != null) {
           _audioFilePath = voiceNote.audioFilePath;
+          _audioTooLargeForCloud =
+              await AudioUploadQueue.tooLargeForCloud(voiceNote.audioFilePath);
           _audioDurationSeconds = voiceNote.durationSeconds ?? 0;
           _audioTranscription = voiceNote.transcription;
         }
@@ -444,7 +448,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       if (selectedFolders.isEmpty) {
         await _initializeFolders();
         if (selectedFolders.isEmpty) {
-          throw Exception('No folders available');
+          // No folders at all: never lose the note over it.
+          final fallback = await DriftNoteFolderService.ensureDefaultFolder();
+          if (mounted) setState(() => selectedFolders = [fallback]);
         }
       }
 
@@ -978,6 +984,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   : Duration(seconds: _audioDurationSeconds ?? 0),
               seed: _audioFilePath?.hashCode ?? 0,
               freeCapSeconds: cap > 0 ? cap : null,
+              tooLargeToSyncMegabytes: _audioTooLargeForCloud
+                  ? AudioUploadQueue.cloudLimitMegabytes
+                  : null,
               onRecord: _startRecording,
               onPlay: _startPlayback,
               onPause: _pausePlayback,
@@ -1419,8 +1428,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         await NoteExportActions.exportMarkdown(
           context,
           title: _titleController.text.trim(),
-          content:
-              MarkdownEditor.controllerToMarkdown(_fleatherController).trim(),
+          document: _fleatherController.document,
         );
         break;
       case 'export_pdf':
@@ -1428,8 +1436,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         await NoteExportActions.exportPdf(
           context,
           title: _titleController.text.trim(),
-          content:
-              MarkdownEditor.controllerToMarkdown(_fleatherController).trim(),
+          document: _fleatherController.document,
         );
         break;
       case 'ocr_scan':
@@ -1502,10 +1509,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         return;
       }
 
-      // Get temporary directory for audio file
-      final tempDir = await getTemporaryDirectory();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final audioPath = '${tempDir.path}/voice_note_$timestamp.m4a';
+      // Not the cache directory, which Android may clear at any time.
+      final audioPath = await VoiceRecordingFiles.newRecordingPath();
 
       // Start recording
       await _audioRecorder.start(
@@ -1564,9 +1569,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       final path = await _audioRecorder.stop();
       _recordingTimer?.cancel();
 
+      final tooLarge =
+          path != null && await AudioUploadQueue.tooLargeForCloud(path);
       if (path != null && mounted) {
         setState(() {
           _audioFilePath = path;
+          _audioTooLargeForCloud = tooLarge;
           _audioDurationSeconds = _recordedDuration.inSeconds;
           _isRecording = false;
         });
@@ -1660,6 +1668,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       // Clear audio state
       setState(() {
         _audioFilePath = null;
+        _audioTooLargeForCloud = false;
         _audioDurationSeconds = null;
         _recordedDuration = Duration.zero;
         _playbackPosition = Duration.zero;

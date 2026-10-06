@@ -1049,5 +1049,11 @@
   "notifPromptPointSettings": "เปลี่ยนได้ทุกเมื่อในการตั้งค่า",
   "notifPromptPreviewTitle": "โทรหาหมอฟัน",
   "notifPromptPreviewNow": "ตอนนี้",
-  "notifPromptEnable": "เปิดการแจ้งเตือน"
+  "notifPromptEnable": "เปิดการแจ้งเตือน",
+  "edVoiceTooLargeToSync": "เกิน {megabytes} MB การบันทึกนี้จึงเก็บไว้ในอุปกรณ์นี้เท่านั้นและจะไม่ซิงค์ บันทึกโน้ตที่สั้นลงเพื่อสำรองข้อมูล",
+  "signOutTitle": "กำลังออกจากระบบ",
+  "signOutBody": "เปิด Pinpoint ไว้ก่อน ใช้เวลาเพียงไม่กี่วินาที",
+  "signOutStepSave": "กำลังบันทึกโน้ตของคุณไปยังคลาวด์",
+  "signOutStepAccount": "กำลังออกจากบัญชีของคุณ",
+  "signOutStepDevice": "กำลังลบโน้ตออกจากอุปกรณ์นี้"
 }

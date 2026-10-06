@@ -1,3 +1,4 @@
+import 'signing_out_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
@@ -230,58 +231,69 @@ class _SettingsAccountActionsState extends State<SettingsAccountActions> {
       backendAuthService: widget.backendAuth,
       googleSignInService: GoogleSignInService(),
     );
-    _logoutService!.onPhaseChanged = (phase) {
-      if (mounted) setState(() => _logoutStatus = _phaseMessage(phase));
-    };
+    final phase = ValueNotifier(LogoutPhase.validating);
+    _logoutService!.onPhaseChanged = (p) => phase.value = p;
 
     setState(() {
       _isLoggingOut = true;
       _logoutStatus = l10n.setLogoutValidating;
     });
 
+    // Covers the app from here until the sign-in screen replaces it, so
+    // nothing is seen emptying out behind it.
+    var closeOverlay = SigningOutOverlay.show(context, phase);
+    final shownAt = DateTime.now();
+
+    Future<void> finish({required bool forced}) async {
+      // Long enough to read, even when there was nothing to sync.
+      final shown = DateTime.now().difference(shownAt);
+      const minimum = Duration(milliseconds: 900);
+      if (shown < minimum) await Future<void>.delayed(minimum - shown);
+
+      forced ? PinpointHaptics.warning() : PinpointHaptics.success();
+      // Toast first: the overlay lives on the root navigator and survives
+      // the route change below.
+      if (mounted) {
+        forced
+            ? showWarningToast(
+                context: context,
+                title: l10n.setSignedOut,
+                description: l10n.setSignedOutUnsynced,
+              )
+            : showSuccessToast(
+                context: context,
+                title: l10n.setSignedOut,
+                description: l10n.setSignedOutBody,
+              );
+      }
+      AppNavigation.router.go('/auth');
+      WidgetsBinding.instance.addPostFrameCallback((_) => closeOverlay());
+    }
+
     try {
       final validation = await _logoutService!.validateLogout();
       if (!validation.canProceed) {
-        if (mounted) {
-          await _showValidationError(validation);
-          if (mounted) setState(() => _isLoggingOut = false);
-        }
+        closeOverlay();
+        if (mounted) await _showValidationError(validation);
         return;
       }
 
-      final unsyncedCount = await _logoutService!.getUnsyncedNotesCount();
-      // Guarded: this runs after an await, and the status string reads
-      // Localizations off the context.
-      if (unsyncedCount > 0 && mounted) {
-        setState(() =>
-            _logoutStatus = AppL10n.of(context).syncingNotes(unsyncedCount));
-      }
-
-      final success = await _logoutService!.performLogout();
-
-      if (success) {
-        PinpointHaptics.success();
-        // Toast first: the overlay lives on the root navigator and survives
-        // the route change below.
+      if (await _logoutService!.performLogout()) {
+        await finish(forced: false);
+      } else {
+        // Validation passed above, so this should not happen.
+        closeOverlay();
+        PinpointHaptics.error();
         if (mounted) {
-          showSuccessToast(
+          showErrorToast(
             context: context,
-            title: l10n.setSignedOut,
-            description: l10n.setSignedOutBody,
+            title: l10n.setSignOutFailed,
+            description: l10n.setSignOutFailedBody,
           );
         }
-        AppNavigation.router.go('/auth');
-      } else if (mounted) {
-        // This shouldn't normally happen since validation is done before
-        // performLogout(), but handle it for safety
-        PinpointHaptics.error();
-        showErrorToast(
-          context: context,
-          title: l10n.setSignOutFailed,
-          description: l10n.setSignOutFailedBody,
-        );
       }
     } catch (e) {
+      closeOverlay();
       if (!mounted) return;
       final text = e.toString();
       if (text.contains('Sync failed') ||
@@ -295,16 +307,26 @@ class _SettingsAccountActionsState extends State<SettingsAccountActions> {
           confirmLabel: l10n.setForceSignOut,
           cancelLabel: l10n.commonCancel,
         );
-        if (forceLogout) {
-          PinpointHaptics.warning();
+        if (!forceLogout || !mounted) return;
+
+        // Force still signs out and clears this device; it only gives up on
+        // the notes that would not sync. (It used to just open the sign-in
+        // screen, leaving the account signed in underneath.)
+        phase.value = LogoutPhase.signingOut;
+        closeOverlay = SigningOutOverlay.show(context, phase);
+        try {
+          await _logoutService!.performLogout(skipSync: true);
+          await finish(forced: true);
+        } catch (_) {
+          closeOverlay();
+          PinpointHaptics.error();
           if (mounted) {
-            showWarningToast(
+            showErrorToast(
               context: context,
-              title: l10n.setSignedOut,
-              description: l10n.setSignedOutUnsynced,
+              title: l10n.setSignOutFailed,
+              description: l10n.setSignOutFailedBody,
             );
           }
-          AppNavigation.router.go('/auth');
         }
       } else {
         PinpointHaptics.error();
@@ -315,6 +337,7 @@ class _SettingsAccountActionsState extends State<SettingsAccountActions> {
         );
       }
     } finally {
+      _logoutService!.onPhaseChanged = null;
       if (mounted) {
         setState(() {
           _isLoggingOut = false;
@@ -322,17 +345,6 @@ class _SettingsAccountActionsState extends State<SettingsAccountActions> {
         });
       }
     }
-  }
-
-  String _phaseMessage(LogoutPhase phase) {
-    final l10n = AppL10n.of(context);
-    return switch (phase) {
-      LogoutPhase.validating => l10n.setLogoutValidating,
-      LogoutPhase.syncing => l10n.setLogoutSyncing,
-      LogoutPhase.signingOut => l10n.setLogoutServer,
-      LogoutPhase.cleaningData => l10n.setLogoutClearing,
-      LogoutPhase.completed => l10n.setLogoutCompleted,
-    };
   }
 
   Future<void> _showValidationError(LogoutValidationResult validation) {

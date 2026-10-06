@@ -1,3 +1,4 @@
+import 'package:pinpoint/services/pending_usage.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'dart:io';
@@ -79,7 +80,10 @@ class LogoutService {
   LogoutPhase get currentPhase => _currentPhase;
 
   /// Main logout method - validates, syncs, and cleans up
-  Future<bool> performLogout() async {
+  /// With [skipSync] (the user chose "Force sign out" after the sync failed)
+  /// unsynced notes are given up, but the account is still signed out and
+  /// this device still cleared.
+  Future<bool> performLogout({bool skipSync = false}) async {
     try {
       // Track analytics
       final analytics = getIt<AnalyticsFacade>();
@@ -98,7 +102,7 @@ class LogoutService {
 
       // Phase 2: Sync unsynced notes
       _updatePhase(LogoutPhase.syncing);
-      final syncSuccess = await _syncUnsyncedNotes();
+      final syncSuccess = skipSync || await _syncUnsyncedNotes();
 
       if (!syncSuccess) {
         debugPrint('❌ [LogoutService] Sync failed - cannot proceed with logout');
@@ -297,8 +301,9 @@ class LogoutService {
   /// editor goes to `voice_notes_v2`, so looking only at the old table left
   /// every voice recording on disk after a sign-out or an account deletion.
   ///
-  /// A [VoiceNotesV2] row whose audio has been uploaded stores the server path
-  /// instead of a local one; those simply do not exist on disk and are skipped.
+  /// A [VoiceNotesV2] row keeps its local path even once uploaded; one synced
+  /// down before its audio arrived may hold a server path, which simply does
+  /// not exist on disk and is skipped.
   Future<void> _deleteAudioFiles() async {
     try {
       final paths = <String>{
@@ -396,7 +401,9 @@ class LogoutService {
         // First-run state
         kHasCompletedOnboardingKey, kOnboardingVersionKey, kHasCompletedWalkthroughKey,
         kHasAcceptedTermsKey, kTermsAcceptedDateKey,
-        kDidPopulatedNoteType, kDidPopulatedNoteFolder,
+        // (Not the "default folders created" flags: they describe the
+        // database cleared below. Kept, they stopped the default folders being
+        // recreated for the next account, and every note save then failed.)
         'notification_permission_requested',
         // This install's identity and its store purchases. A purchase made
         // on this phone belongs to the phone's store account, not to the
@@ -406,6 +413,9 @@ class LogoutService {
         'iap_delivered_purchase_ids', 'subscription_pending_verification',
         // Update prompts this device has snoozed
         'in_app_update_declined_ms', 'app_release_declined_ms',
+        // Offline usage not yet reported. Tagged with its account, so it is
+        // replayed only if that account signs back in this month.
+        PendingUsage.prefsKey,
       };
 
       // Get all keys

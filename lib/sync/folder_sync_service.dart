@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../database/database.dart';
 import '../services/api_service.dart';
+import '../services/drift_note_folder_service.dart';
 import 'sync_service.dart';
 
 /// Service for syncing folders with the backend
@@ -62,11 +63,13 @@ class FolderSyncService {
     try {
       debugPrint('🔼 [FolderSync] Uploading local folders...');
 
-      // Get all local folders
+      // Get all local folders, and the deletions not yet sent
       final localFolders = await _database.select(_database.noteFolders).get();
-      debugPrint('🔼 [FolderSync] Found ${localFolders.length} local folders');
+      final tombstones = await FolderTombstones.pending();
+      debugPrint('🔼 [FolderSync] Found ${localFolders.length} local folders, '
+          '${tombstones.length} deletions to send');
 
-      if (localFolders.isEmpty) {
+      if (localFolders.isEmpty && tombstones.isEmpty) {
         debugPrint('✅ [FolderSync] No folders to upload');
         return SyncResult(
           success: true,
@@ -90,10 +93,23 @@ class FolderSyncService {
           'color': folder.color,
           'sort_order': folder.sortOrder,
         };
-      }).toList();
+      }).toList()
+        ..addAll(tombstones.map((t) => {
+              'uuid': t['uuid'],
+              'title': t['title'],
+              'updated_at': t['deleted_at'],
+              'is_deleted': true,
+            }));
 
       // Upload to backend
       final response = await _apiService.syncFolders(folders: foldersData);
+      await FolderTombstones.clear(tombstones.map((t) => t['uuid'] as String));
+
+      final rejected = (response['rejected_uuids'] as List?)?.length ?? 0;
+      if (rejected > 0) {
+        // A free account at its folder cap: the folders stay on this device.
+        debugPrint('⚠️ [FolderSync] $rejected new folders over the free plan limit');
+      }
 
       // The response carries the folders it now holds; there is no
       // 'synced_count' field (reading it always gave 0).
@@ -121,8 +137,8 @@ class FolderSyncService {
     try {
       debugPrint('🔽 [FolderSync] Downloading folders from server...');
 
-      // Fetch all folders from backend
-      final response = await _apiService.getAllFolders();
+      // Fetch all folders from backend, with deletions made elsewhere
+      final response = await _apiService.getAllFolders(includeDeleted: true);
 
       if (response.isEmpty) {
         debugPrint('✅ [FolderSync] No folders on server');
@@ -156,6 +172,19 @@ class FolderSyncService {
           final existingFolder = await (_database.select(_database.noteFolders)
                 ..where((t) => t.uuid.equals(uuid)))
               .getSingleOrNull();
+
+          // Deleted on another device. Remove it here unless this device
+          // edited it after the deletion (that edit will revive it on upload).
+          final deletedAtRaw = serverFolder['deleted_at'];
+          if (deletedAtRaw is String) {
+            final deletedAt = parseServerUtc(deletedAtRaw);
+            if (existingFolder != null && !existingFolder.updatedAt.isAfter(deletedAt)) {
+              debugPrint('  ✗ Deleted on another device');
+              await DriftNoteFolderService.removeLocally(existingFolder.noteFolderId);
+              upsertedCount++;
+            }
+            continue;
+          }
 
           if (existingFolder != null) {
             // Update existing folder if server version is newer
