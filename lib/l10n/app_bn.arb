@@ -1049,5 +1049,6 @@
   "notifPromptPointSettings": "যেকোনো সময় সেটিংসে বদলাতে পারবেন",
   "notifPromptPreviewTitle": "ডেন্টিস্টকে ফোন করা",
   "notifPromptPreviewNow": "এখন",
-  "notifPromptEnable": "নোটিফিকেশন চালু করুন"
+  "notifPromptEnable": "নোটিফিকেশন চালু করুন",
+  "edVoiceTooLargeToSync": "{megabytes} MB-এর বেশি, তাই এই রেকর্ডিং শুধু এই ডিভাইসে থাকবে এবং সিঙ্ক হবে না। ব্যাকআপ রাখতে ছোট ছোট নোট রেকর্ড করুন।"
 }

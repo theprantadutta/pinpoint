@@ -4962,5 +4962,16 @@
   "notifPromptEnable": "Turn on notifications",
   "@notifPromptEnable": {
     "description": "Primary button on the notification permission sheet. Opens the system permission prompt."
+  },
+  "edVoiceTooLargeToSync": "Over {megabytes} MB, so this recording stays on this device and won't sync. Record shorter notes to back them up.",
+  "@edVoiceTooLargeToSync": {
+    "description": "Muted line under a recorded voice note whose audio file is larger than the cloud upload limit. Explains the recording is kept only on this phone and how to get it backed up (record shorter notes). 'MB' is megabytes.",
+    "placeholders": {
+      "megabytes": {
+        "type": "int",
+        "format": "decimalPattern",
+        "example": "25"
+      }
+    }
   }
 }

@@ -297,8 +297,9 @@ class LogoutService {
   /// editor goes to `voice_notes_v2`, so looking only at the old table left
   /// every voice recording on disk after a sign-out or an account deletion.
   ///
-  /// A [VoiceNotesV2] row whose audio has been uploaded stores the server path
-  /// instead of a local one; those simply do not exist on disk and are skipped.
+  /// A [VoiceNotesV2] row keeps its local path even once uploaded; one synced
+  /// down before its audio arrived may hold a server path, which simply does
+  /// not exist on disk and is skipped.
   Future<void> _deleteAudioFiles() async {
     try {
       final paths = <String>{

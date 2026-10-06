@@ -1049,5 +1049,6 @@
   "notifPromptPointSettings": "Altere quando quiser em Configurações",
   "notifPromptPreviewTitle": "Ligar para o dentista",
   "notifPromptPreviewNow": "agora",
-  "notifPromptEnable": "Ativar notificações"
+  "notifPromptEnable": "Ativar notificações",
+  "edVoiceTooLargeToSync": "Passa de {megabytes} MB, então esta gravação fica neste aparelho e não será sincronizada. Grave notas mais curtas para fazer backup."
 }

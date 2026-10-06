@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:fleather/fleather.dart';
 
 import '../service_locators/init_service_locators.dart';
+import '../services/audio_upload_queue.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../components/create_note_screen/editor_chrome.dart';
 import '../components/create_note_screen/editor_overflow_menu.dart';
@@ -99,6 +100,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
   // Voice note fields
   String? _audioFilePath;
+  bool _audioTooLargeForCloud = false;
   int? _audioDurationSeconds;
   String? _audioTranscription;
   final AudioRecorder _audioRecorder = AudioRecorder();
@@ -321,6 +323,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         final voiceNote = await VoiceNoteService.getVoiceNote(note.id);
         if (voiceNote != null) {
           _audioFilePath = voiceNote.audioFilePath;
+          _audioTooLargeForCloud =
+              await AudioUploadQueue.tooLargeForCloud(voiceNote.audioFilePath);
           _audioDurationSeconds = voiceNote.durationSeconds ?? 0;
           _audioTranscription = voiceNote.transcription;
         }
@@ -978,6 +982,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
                   : Duration(seconds: _audioDurationSeconds ?? 0),
               seed: _audioFilePath?.hashCode ?? 0,
               freeCapSeconds: cap > 0 ? cap : null,
+              tooLargeToSyncMegabytes: _audioTooLargeForCloud
+                  ? AudioUploadQueue.cloudLimitMegabytes
+                  : null,
               onRecord: _startRecording,
               onPlay: _startPlayback,
               onPause: _pausePlayback,
@@ -1562,9 +1569,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       final path = await _audioRecorder.stop();
       _recordingTimer?.cancel();
 
+      final tooLarge =
+          path != null && await AudioUploadQueue.tooLargeForCloud(path);
       if (path != null && mounted) {
         setState(() {
           _audioFilePath = path;
+          _audioTooLargeForCloud = tooLarge;
           _audioDurationSeconds = _recordedDuration.inSeconds;
           _isRecording = false;
         });
@@ -1658,6 +1668,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       // Clear audio state
       setState(() {
         _audioFilePath = null;
+        _audioTooLargeForCloud = false;
         _audioDurationSeconds = null;
         _recordedDuration = Duration.zero;
         _playbackPosition = Duration.zero;

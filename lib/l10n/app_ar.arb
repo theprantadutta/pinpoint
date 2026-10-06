@@ -1049,5 +1049,6 @@
   "notifPromptPointSettings": "يمكنك تغييره في أي وقت من الإعدادات",
   "notifPromptPreviewTitle": "الاتصال بطبيب الأسنان",
   "notifPromptPreviewNow": "الآن",
-  "notifPromptEnable": "تفعيل الإشعارات"
+  "notifPromptEnable": "تفعيل الإشعارات",
+  "edVoiceTooLargeToSync": "يتجاوز {megabytes} ميغابايت، لذا يبقى هذا التسجيل على هذا الجهاز ولن تتم مزامنته. سجّل ملاحظات أقصر لنسخها احتياطيًا."
 }

@@ -31,6 +31,7 @@ class VoiceNoteBody extends StatelessWidget {
     required this.onReplace,
     required this.onSeek,
     this.freeCapSeconds,
+    this.tooLargeToSyncMegabytes,
     this.seed = 0,
   });
 
@@ -49,6 +50,10 @@ class VoiceNoteBody extends StatelessWidget {
 
   /// The free plan's recording cap in seconds; null for premium.
   final int? freeCapSeconds;
+
+  /// Set when the recording is over the cloud upload limit (that limit, in
+  /// MB): it plays here but will not sync, and the body says so.
+  final int? tooLargeToSyncMegabytes;
 
   /// Seeds the decorative waveform so a note always draws the same shape.
   final int seed;
@@ -191,6 +196,22 @@ class VoiceNoteBody extends StatelessWidget {
             ],
           ),
         ),
+        if (tooLargeToSyncMegabytes != null) ...[
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.cloud_off_rounded, size: 16, color: s.muted),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.edVoiceTooLargeToSync(tooLargeToSyncMegabytes!),
+                  style: t.caption.copyWith(color: s.muted),
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 14),
         PillButton.secondary(
           label: l10n.edRecordAgain,

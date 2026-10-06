@@ -29,6 +29,26 @@ class AudioUploadQueue {
 
   static Future<void>? _running;
 
+  /// The server refuses uploads over 25 MiB (AudioController). The encrypted
+  /// envelope and multipart framing add a little, so leave headroom. At the
+  /// recorder's 128 kbit/s this is roughly 25 minutes of audio.
+  static const int cloudLimitMegabytes = 25;
+  static const int maxUploadBytes = cloudLimitMegabytes * 1024 * 1024 - 64 * 1024;
+
+  /// Whether a recording of [bytes] can be backed up. Pure, for testing.
+  static bool fitsCloud(int bytes) => bytes <= maxUploadBytes;
+
+  /// Whether the recording at [localPath] is too large to back up, so the
+  /// editor can say so. False for a missing file.
+  static Future<bool> tooLargeForCloud(String localPath) async {
+    try {
+      final file = File(localPath);
+      return await file.exists() && !fitsCloud(await file.length());
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Server paths look like `<user-id>/<file-id>.<ext>`; anything else is a
   /// file on some device. Pure, for testing.
   static bool isServerPath(String path) =>
@@ -95,6 +115,12 @@ class AudioUploadQueue {
       final path = item['path']!;
       if (!await File(path).exists()) {
         debugPrint('⚠️ [AudioUpload] $uuid: local file is gone, dropping');
+        continue;
+      }
+      // Would only be refused after uploading 25 MB. The editor tells the
+      // user it stays on this device.
+      if (await tooLargeForCloud(path)) {
+        debugPrint('⚠️ [AudioUpload] $uuid: over the cloud limit, kept on device');
         continue;
       }
       try {

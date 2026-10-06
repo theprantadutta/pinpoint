@@ -1049,5 +1049,6 @@
   "notifPromptPointSettings": "هر وقت خواستید در تنظیمات تغییرش دهید",
   "notifPromptPreviewTitle": "تماس با دندانپزشک",
   "notifPromptPreviewNow": "اکنون",
-  "notifPromptEnable": "روشن کردن اعلان‌ها"
+  "notifPromptEnable": "روشن کردن اعلان‌ها",
+  "edVoiceTooLargeToSync": "بیشتر از {megabytes} مگابایت است، پس این ضبط فقط روی همین دستگاه می‌ماند و همگام‌سازی نمی‌شود. برای پشتیبان‌گیری، یادداشت‌های کوتاه‌تری ضبط کنید."
 }
