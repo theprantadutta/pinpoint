@@ -52,6 +52,7 @@ class NotificationPrompt {
             ],
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PillButton(
