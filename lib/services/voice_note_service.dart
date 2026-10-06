@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,7 @@ import '../dtos/note_folder_dto.dart';
 import '../service_locators/init_service_locators.dart';
 import '../sync/sync_manager.dart';
 import 'api_service.dart';
+import 'audio_upload_queue.dart';
 import 'drift_note_folder_service.dart';
 
 /// Service for managing voice/audio notes
@@ -27,59 +29,6 @@ class VoiceNoteService {
       } catch (e) {
         debugPrint('⚠️ [VoiceNoteService] Background sync failed: $e');
         // Don't rethrow - sync failures shouldn't affect note operations
-      }
-    });
-  }
-
-  /// Upload audio file to backend and return server path
-  static Future<String?> _uploadAudioToBackend(String localFilePath) async {
-    try {
-      // Check if file exists
-      final file = File(localFilePath);
-      if (!await file.exists()) {
-        debugPrint('⚠️ [VoiceNoteService] Audio file not found: $localFilePath');
-        return null;
-      }
-
-      final apiService = ApiService();
-      debugPrint('📤 [VoiceNoteService] Uploading audio file: $localFilePath');
-      final serverPath = await apiService.uploadAudioFile(localFilePath);
-      debugPrint('✅ [VoiceNoteService] Audio uploaded to server: $serverPath');
-      return serverPath;
-    } catch (e) {
-      debugPrint('❌ [VoiceNoteService] Failed to upload audio: $e');
-      return null;
-    }
-  }
-
-  /// Upload audio file in background and update voice note with server path
-  static void _uploadAudioInBackground(int noteId, String localFilePath) {
-    Future.microtask(() async {
-      try {
-        // Upload audio to backend
-        final serverPath = await _uploadAudioToBackend(localFilePath);
-
-        if (serverPath == null) {
-          debugPrint('⚠️ [VoiceNoteService] Audio upload failed for note $noteId');
-          return;
-        }
-
-        // Update voice note with server path
-        final database = getIt<AppDatabase>();
-        await (database.update(database.voiceNotesV2)
-              ..where((t) => t.id.equals(noteId)))
-            .write(VoiceNotesV2Companion(
-          audioFilePath: Value(serverPath),
-          isSynced: const Value(false), // Mark for sync to upload metadata
-          updatedAt: Value(DateTime.now()),
-        ));
-
-        debugPrint('✅ [VoiceNoteService] Updated note $noteId with server path: $serverPath');
-
-        // Trigger sync to upload the updated metadata
-        _triggerBackgroundSync();
-      } catch (e) {
-        debugPrint('❌ [VoiceNoteService] Background audio upload failed: $e');
       }
     });
   }
@@ -108,9 +57,10 @@ class VoiceNoteService {
       }
 
       // Create voice note
+      final noteUuid = uuid.v4();
       final voiceNoteId = await database.into(database.voiceNotesV2).insert(
         VoiceNotesV2Companion(
-          uuid: Value(uuid.v4()),
+          uuid: Value(noteUuid),
           title: Value(title),
           audioFilePath: Value(audioFilePath),
           durationSeconds: Value(durationSeconds),
@@ -130,8 +80,10 @@ class VoiceNoteService {
 
       debugPrint('✅ [VoiceNoteService] Created voice note: $voiceNoteId with ${folders.length} folders');
 
-      // Upload audio file to backend in background
-      _uploadAudioInBackground(voiceNoteId, audioFilePath);
+      // Queued, not fired once: an upload that fails (offline, server down)
+      // is retried at every sync until the recording is on the server.
+      await AudioUploadQueue.enqueue(noteUuid, audioFilePath);
+      unawaited(AudioUploadQueue.process());
 
       // Trigger background sync
       _triggerBackgroundSync();
@@ -173,6 +125,17 @@ class VoiceNoteService {
       await (database.update(database.voiceNotesV2)
             ..where((t) => t.id.equals(noteId)))
           .write(companion);
+
+      // A new recording replaces the server copy too.
+      if (audioFilePath != null) {
+        final note = await (database.select(database.voiceNotesV2)
+              ..where((t) => t.id.equals(noteId)))
+            .getSingleOrNull();
+        if (note != null) {
+          await AudioUploadQueue.enqueue(note.uuid, audioFilePath);
+          unawaited(AudioUploadQueue.process());
+        }
+      }
 
       // Update folder relations if provided
       if (folders != null) {
@@ -258,12 +221,13 @@ class VoiceNoteService {
         throw Exception('Voice note not found: $noteId');
       }
 
-      // Delete audio file from backend if it exists on server
-      if (note.audioFilePath.isNotEmpty &&
-          !note.audioFilePath.startsWith('/data/')) {
+      // Delete the server's copy, wherever this phone recorded it.
+      final serverPath = (await AudioUploadQueue.remotePaths())[note.uuid] ??
+          (AudioUploadQueue.isServerPath(note.audioFilePath) ? note.audioFilePath : null);
+      if (serverPath != null) {
         try {
-          await ApiService().deleteAudioFile(note.audioFilePath);
-          debugPrint('✅ [VoiceNoteService] Deleted audio file from backend: ${note.audioFilePath}');
+          await ApiService().deleteAudioFile(serverPath);
+          debugPrint('✅ [VoiceNoteService] Deleted audio file from backend: $serverPath');
         } catch (e) {
           debugPrint('⚠️ [VoiceNoteService] Failed to delete audio from backend: $e');
           // Continue with local deletion

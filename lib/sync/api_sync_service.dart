@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../services/api_service.dart';
+import '../services/audio_upload_queue.dart';
 import '../services/encryption_service.dart';
 import 'sync_service.dart';
 import 'folder_sync_service.dart';
@@ -655,7 +656,8 @@ class ApiSyncService extends SyncService {
         noteData = _serializeTextNoteV2(noteWrapper.note as TextNoteEntity);
         break;
       case 'voice':
-        noteData = _serializeVoiceNoteV2(noteWrapper.note as VoiceNoteEntity);
+        noteData = _serializeVoiceNoteV2(
+            noteWrapper.note as VoiceNoteEntity, await AudioUploadQueue.remotePaths());
         break;
       case 'todo':
         noteData = _serializeTodoNoteV2(
@@ -717,12 +719,15 @@ class ApiSyncService extends SyncService {
   }
 
   /// Serialize voice note V2
-  Map<String, dynamic> _serializeVoiceNoteV2(VoiceNoteEntity note) {
+  Map<String, dynamic> _serializeVoiceNoteV2(VoiceNoteEntity note, Map<String, String> remotePaths) {
     return {
       'uuid': note.uuid,
       'noteTitle': note.title ?? '',
       'noteType': 'audio', // Backend expects 'audio'
-      'audioFilePath': note.audioFilePath,
+      // The server's copy, never this phone's file path. Empty until the
+      // recording has uploaded; the note syncs again once it has.
+      'audioFilePath': remotePaths[note.uuid] ??
+          (AudioUploadQueue.isServerPath(note.audioFilePath) ? note.audioFilePath : ''),
       'audioDuration': note.durationSeconds,
       'transcription': note.transcription,
       'recordedAt': note.recordedAt?.toIso8601String(),
@@ -1113,7 +1118,9 @@ class ApiSyncService extends SyncService {
             .write(
           VoiceNotesV2Companion(
             title: Value(title),
-            audioFilePath: Value(serverAudioPath),
+            // The local file stays; _downloadAudioFile swaps it only when the
+            // server holds a different recording.
+            audioFilePath: const Value.absent(),
             durationSeconds: Value(noteData['audioDuration'] as int?),
             transcription: Value(noteData['transcription'] as String?),
             color: Value(color),
@@ -1126,7 +1133,7 @@ class ApiSyncService extends SyncService {
         );
 
         // Download audio file if it's a server path
-        if (serverAudioPath.isNotEmpty && !serverAudioPath.startsWith('/data/')) {
+        if (AudioUploadQueue.isServerPath(serverAudioPath)) {
           await _downloadAudioFile(serverAudioPath, uuid);
         }
 
@@ -1278,7 +1285,7 @@ class ApiSyncService extends SyncService {
           debugPrint('✅ [ApiSync] Created voice note V2: $clientNoteUuid');
 
           // Download audio file if it's a server path
-          if (serverAudioPath.isNotEmpty && !serverAudioPath.startsWith('/data/')) {
+          if (AudioUploadQueue.isServerPath(serverAudioPath)) {
             await _downloadAudioFile(serverAudioPath, clientNoteUuid);
           }
 
@@ -1379,22 +1386,23 @@ class ApiSyncService extends SyncService {
       final localFileName = '$noteUuid.$extension';
       final localFilePath = '${audioDir.path}/$localFileName';
 
-      // Check if file already exists
-      final localFile = File(localFilePath);
-      if (await localFile.exists()) {
-        debugPrint('ℹ️ [ApiSync] Audio file already exists locally: $localFilePath');
-
-        // Update voice note with local path
-        await (_database.update(_database.voiceNotesV2)
-              ..where((tbl) => tbl.uuid.equals(noteUuid)))
-            .write(VoiceNotesV2Companion(
-          audioFilePath: Value(localFilePath),
-        ));
+      // Already have this recording (made here, or fetched before): keep
+      // the local file. A different server path means it was re-recorded on
+      // another device, so fetch the new one over the old.
+      final known = (await AudioUploadQueue.remotePaths())[noteUuid];
+      final note = await (_database.select(_database.voiceNotesV2)
+            ..where((tbl) => tbl.uuid.equals(noteUuid)))
+          .getSingleOrNull();
+      final current = note?.audioFilePath ?? '';
+      if (known == serverFilePath && current.isNotEmpty &&
+          !AudioUploadQueue.isServerPath(current) && await File(current).exists()) {
+        debugPrint('ℹ️ [ApiSync] Audio already on this device: $current');
         return;
       }
 
       // Download audio file
       await _apiService.downloadAudioFile(serverFilePath, localFilePath);
+      await AudioUploadQueue.setRemotePath(noteUuid, serverFilePath);
       debugPrint('✅ [ApiSync] Audio downloaded to: $localFilePath');
 
       // Update voice note with local path

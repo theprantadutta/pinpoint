@@ -1,3 +1,4 @@
+import 'package:pinpoint/services/audio_upload_queue.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -106,6 +107,16 @@ class SyncManager with ChangeNotifier {
       // No client-side gate on the free 50-note cap: the server admits new
       // notes up to the cap and holds back the rest (SyncResult.notesOverLimit),
       // while edits, deletions and downloads always go through.
+      // Recordings that have not reached the server yet go first, so the
+      // notes uploaded next can carry their server paths.
+      if (direction != SyncDirection.download) {
+        try {
+          await AudioUploadQueue.process();
+        } catch (e) {
+          debugPrint('⚠️ [SyncManager] Audio uploads deferred: $e');
+        }
+      }
+
       // Perform the actual sync
       final result = await _syncService!.sync(direction: direction);
 
