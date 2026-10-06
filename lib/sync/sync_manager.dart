@@ -144,6 +144,9 @@ class SyncManager with ChangeNotifier {
         await premiumService.syncUsageWithBackend();
         debugPrint('✅ [SyncManager] Synced usage stats with backend');
       } else {
+        // Stats are fresh, but OCR scans and exports made offline still
+        // need reporting now that the server answered.
+        await premiumService.flushPendingUsage();
         debugPrint(
             '⏭️ [SyncManager] Usage stats still fresh, skipping sync');
       }

@@ -41,5 +41,7 @@ void main() {
     expect(premium, contains('PendingUsage.merge(ocrScans['));
     expect(premium, contains('PendingUsage.merge(exports['));
     expect(readProjectFile('lib/services/logout_service.dart'), contains('PendingUsage.prefsKey'));
+    expect(readProjectFile('lib/sync/sync_manager.dart'), contains('flushPendingUsage()'),
+        reason: 'a sync reports offline usage even while stats are fresh');
   });
 }

@@ -401,7 +401,9 @@ class LogoutService {
         // First-run state
         kHasCompletedOnboardingKey, kOnboardingVersionKey, kHasCompletedWalkthroughKey,
         kHasAcceptedTermsKey, kTermsAcceptedDateKey,
-        kDidPopulatedNoteType, kDidPopulatedNoteFolder,
+        // (Not the "default folders created" flags: they describe the
+        // database cleared below. Kept, they stopped the default folders being
+        // recreated for the next account, and every note save then failed.)
         'notification_permission_requested',
         // This install's identity and its store purchases. A purchase made
         // on this phone belongs to the phone's store account, not to the

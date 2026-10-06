@@ -448,7 +448,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       if (selectedFolders.isEmpty) {
         await _initializeFolders();
         if (selectedFolders.isEmpty) {
-          throw Exception('No folders available');
+          // No folders at all: never lose the note over it.
+          final fallback = await DriftNoteFolderService.ensureDefaultFolder();
+          if (mounted) setState(() => selectedFolders = [fallback]);
         }
       }
 

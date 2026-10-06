@@ -49,6 +49,39 @@ class DriftNoteFolderService {
     'Sports',
   ];
 
+  /// The folder a note goes in when it has none: "Random", created if it
+  /// is missing (an account with no folders yet, or all of them deleted).
+  /// Same deterministic uuid as the prepopulated one, so devices agree on it.
+  ///
+  /// Saving a note must never fail for want of a folder — it used to throw,
+  /// and autosave swallowed the error, so the note was silently never kept.
+  static Future<NoteFolderDto> ensureDefaultFolder() async {
+    final database = getIt<AppDatabase>();
+    final title = _noteFolders.first;
+    Future<NoteFolder?> find() => (database.select(database.noteFolders)
+          ..where((f) => f.noteFolderTitle.lower().equals(title.toLowerCase())))
+        .getSingleOrNull();
+
+    var folder = await find();
+    if (folder == null) {
+      final now = DateTime.now();
+      await database.into(database.noteFolders).insert(
+            NoteFoldersCompanion(
+              uuid: Value(const Uuid().v5(_folderUuidNamespace, title)),
+              noteFolderTitle: Value(title),
+              createdAt: Value(now),
+              updatedAt: Value(now),
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+      folder = await find();
+    }
+    return NoteFolderDto(id: folder!.noteFolderId, title: folder.noteFolderTitle);
+  }
+
+  /// UUID v5 namespace for folder uuids derived from their name.
+  static const _folderUuidNamespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+
   static NoteFolderDto get firstNoteFolder {
     return NoteFolderDto(
       id: 1,
@@ -73,8 +106,7 @@ class DriftNoteFolderService {
     // CRITICAL: Use deterministic UUIDs based on folder name
     // This ensures the same folder name always gets the same UUID across devices/reinstalls
     // Using UUID v5 with a namespace ensures consistency
-    const folderNamespace =
-        '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; // UUID namespace for folders
+    const folderNamespace = _folderUuidNamespace;
 
     await database.batch(
       (batch) {
