@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
@@ -213,6 +214,22 @@ class DriftNoteFolderService {
   }
 
   static Future<void> deleteFolder(int folderId) async {
+    final database = getIt<AppDatabase>();
+    final folder = await (database.select(database.noteFolders)
+          ..where((f) => f.noteFolderId.equals(folderId)))
+        .getSingleOrNull();
+    if (folder != null) {
+      // Remembered until the next sync tells the server, so the deletion
+      // reaches the user's other devices instead of their copies bringing
+      // the folder back.
+      await FolderTombstones.add(folder.uuid, folder.noteFolderTitle, DateTime.now());
+    }
+    await removeLocally(folderId);
+  }
+
+  /// Delete a folder on this device only — for a deletion that came from
+  /// another device, which must not be recorded and sent back.
+  static Future<void> removeLocally(int folderId) async {
     final database = getIt<AppDatabase>();
     await database.transaction(() async {
       await (database.delete(database.noteFolderRelations)
@@ -472,4 +489,41 @@ class FolderNoteRow {
   final String type;
   final String title;
   final String? color;
+}
+
+/// Folders deleted on this device that the server has not been told about yet.
+///
+/// Kept in SharedPreferences rather than the database: it is a short-lived
+/// outbox, emptied by the next successful folder sync, and it is account data
+/// that sign-out clears with everything else.
+class FolderTombstones {
+  FolderTombstones._();
+
+  static const String _key = 'pending_folder_deletions';
+
+  static Future<List<Map<String, dynamic>>> pending() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_key);
+    if (raw == null) return [];
+    try {
+      return (jsonDecode(raw) as List).whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<void> add(String uuid, String title, DateTime deletedAt) async {
+    final items = (await pending()).where((t) => t['uuid'] != uuid).toList()
+      ..add({'uuid': uuid, 'title': title, 'deleted_at': deletedAt.toUtc().toIso8601String()});
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, jsonEncode(items));
+  }
+
+  /// Forget the ones the server has now recorded.
+  static Future<void> clear(Iterable<String> uuids) async {
+    final done = uuids.toSet();
+    final items = (await pending()).where((t) => !done.contains(t['uuid'])).toList();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, jsonEncode(items));
+  }
 }

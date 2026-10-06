@@ -568,9 +568,12 @@ class ApiService {
   }
 
   /// Get all folders for the user
-  Future<List<Map<String, dynamic>>> getAllFolders() async {
+  Future<List<Map<String, dynamic>>> getAllFolders({bool includeDeleted = false}) async {
     try {
-      final response = await _dio.get('/folders/all');
+      final response = await _dio.get(
+        '/folders/all',
+        queryParameters: includeDeleted ? {'include_deleted': true} : null,
+      );
 
       // Backend returns list directly, not wrapped in 'folders' key
       return List<Map<String, dynamic>>.from(response.data);
