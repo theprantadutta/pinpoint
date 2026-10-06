@@ -1419,8 +1419,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         await NoteExportActions.exportMarkdown(
           context,
           title: _titleController.text.trim(),
-          content:
-              MarkdownEditor.controllerToMarkdown(_fleatherController).trim(),
+          document: _fleatherController.document,
         );
         break;
       case 'export_pdf':
@@ -1428,8 +1427,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         await NoteExportActions.exportPdf(
           context,
           title: _titleController.text.trim(),
-          content:
-              MarkdownEditor.controllerToMarkdown(_fleatherController).trim(),
+          document: _fleatherController.document,
         );
         break;
       case 'ocr_scan':
