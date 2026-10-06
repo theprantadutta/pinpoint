@@ -328,44 +328,41 @@ class PremiumService extends ChangeNotifier {
     }
   }
 
-  /// Check if monthly limits need to be reset
+  /// The quota month, in UTC like the server's reset ("2026-10").
+  @visibleForTesting
+  static String quotaPeriodOf(DateTime when) {
+    final utc = when.toUtc();
+    return '${utc.year}-${utc.month.toString().padLeft(2, '0')}';
+  }
+
+  /// Tag existing counters with their month on first run of this version, so
+  /// counts made earlier this month are not wiped, then roll over if needed.
   Future<void> _checkMonthlyReset() async {
     if (_prefs == null) return;
 
-    final lastResetString =
-        _prefs!.getString(UsageTrackingKeys.lastMonthlyReset);
-    final now = DateTime.now();
-
-    if (lastResetString == null) {
-      // First time, set last reset to now
-      await _prefs!.setString(
-        UsageTrackingKeys.lastMonthlyReset,
-        now.toIso8601String(),
-      );
-      return;
+    if (_prefs!.getString(UsageTrackingKeys.quotaPeriod) == null) {
+      final lastReset = _prefs!.getString(UsageTrackingKeys.lastMonthlyReset);
+      final since = lastReset == null ? DateTime.now() : DateTime.tryParse(lastReset) ?? DateTime.now();
+      await _prefs!.setString(UsageTrackingKeys.quotaPeriod, quotaPeriodOf(since));
     }
-
-    final lastReset = DateTime.parse(lastResetString);
-
-    // Check if we're in a new month
-    if (now.year > lastReset.year || now.month > lastReset.month) {
-      debugPrint('🔄 [PremiumService] Resetting monthly limits');
-      await _resetMonthlyLimits();
-      await _prefs!.setString(
-        UsageTrackingKeys.lastMonthlyReset,
-        now.toIso8601String(),
-      );
-    }
+    _rollQuotaPeriodIfNeeded();
   }
 
-  /// Reset monthly usage counters
-  Future<void> _resetMonthlyLimits() async {
-    if (_prefs == null) return;
+  /// Zero the monthly counters when the month has changed. Called from every
+  /// read, not only at start-up: an app left open across midnight at the end
+  /// of the month, or used offline, must not stay blocked by last month's
+  /// usage until it is restarted.
+  void _rollQuotaPeriodIfNeeded() {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    final current = quotaPeriodOf(DateTime.now());
+    if (prefs.getString(UsageTrackingKeys.quotaPeriod) == current) return;
 
-    await _prefs!.setInt(UsageTrackingKeys.ocrScansThisMonth, 0);
-    await _prefs!.setInt(UsageTrackingKeys.exportsThisMonth, 0);
-
-    debugPrint('✅ [PremiumService] Monthly limits reset');
+    debugPrint('🔄 [PremiumService] New quota month $current: resetting monthly limits');
+    prefs.setInt(UsageTrackingKeys.ocrScansThisMonth, 0);
+    prefs.setInt(UsageTrackingKeys.exportsThisMonth, 0);
+    prefs.setString(UsageTrackingKeys.quotaPeriod, current);
+    prefs.setString(UsageTrackingKeys.lastMonthlyReset, DateTime.now().toIso8601String());
   }
 
   // ============================================
@@ -421,6 +418,7 @@ class PremiumService extends ChangeNotifier {
 
   /// Get OCR scans used this month
   int getOcrScansThisMonth() {
+    _rollQuotaPeriodIfNeeded();
     return _prefs?.getInt(UsageTrackingKeys.ocrScansThisMonth) ?? 0;
   }
 
@@ -478,6 +476,7 @@ class PremiumService extends ChangeNotifier {
 
   /// Get exports used this month
   int getExportsThisMonth() {
+    _rollQuotaPeriodIfNeeded();
     return _prefs?.getInt(UsageTrackingKeys.exportsThisMonth) ?? 0;
   }
 
