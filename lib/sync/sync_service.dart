@@ -105,6 +105,13 @@ class SyncResult {
   final List<String> errors;
   final int decryptionErrors;
 
+  /// New notes the server held back because a free account is at its cap.
+  /// They stay unsynced on this device and go up once there is room (or the
+  /// account upgrades). Everything else in the sync still went through.
+  final int notesOverLimit;
+
+  bool get limitReached => notesOverLimit > 0;
+
   SyncResult({
     required this.success,
     required this.message,
@@ -115,6 +122,7 @@ class SyncResult {
     this.notesFailed = 0,
     this.errors = const [],
     this.decryptionErrors = 0,
+    this.notesOverLimit = 0,
   });
 
   /// Get a user-friendly summary of the sync result
@@ -200,6 +208,7 @@ abstract class SyncService {
             success: true,
             message: 'Sync completed successfully',
             notesSynced: uploadResult.notesSynced + downloadResult.notesSynced,
+            notesOverLimit: uploadResult.notesOverLimit,
             foldersSynced:
                 uploadResult.foldersSynced + downloadResult.foldersSynced,
             tagsSynced: uploadResult.tagsSynced + downloadResult.tagsSynced,

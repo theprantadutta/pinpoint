@@ -10,6 +10,7 @@ import '../../services/user_profile.dart';
 import '../../sync/sync_manager.dart';
 import '../../sync/sync_service.dart';
 import '../../util/show_a_toast.dart';
+import '../../widgets/premium_gate_dialog.dart';
 import 'settings_format.dart';
 
 /// Where the account card's status line stands.
@@ -315,7 +316,10 @@ class _SettingsAccountSectionState extends State<SettingsAccountSection> {
       final result = await _sync.sync();
       if (!mounted) return;
 
-      if (result.success) {
+      if (result.success && result.limitReached) {
+        PinpointHaptics.success();
+        PremiumGateDialog.showSyncLimit(context, 0);
+      } else if (result.success) {
         PinpointHaptics.success();
         final total =
             result.notesSynced + result.foldersSynced + result.remindersSynced;

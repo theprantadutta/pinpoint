@@ -68,11 +68,16 @@ class _SyncScreenState extends State<SyncScreen> {
         if (result.success) {
           analytics.trackSyncCompleted();
           PinpointHaptics.success();
-          showSuccessToast(
-            context: context,
-            title: AppL10n.of(context).setSyncComplete,
-            description: result.message,
-          );
+          if (result.limitReached) {
+            // Everything else synced; some new notes are over the free cap.
+            PremiumGateDialog.showSyncLimit(context, 0);
+          } else {
+            showSuccessToast(
+              context: context,
+              title: AppL10n.of(context).setSyncComplete,
+              description: result.message,
+            );
+          }
         } else {
           analytics.trackSyncFailed(error: result.message);
           PinpointHaptics.error();

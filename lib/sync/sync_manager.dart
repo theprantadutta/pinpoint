@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:pinpoint/sync/sync_service.dart';
 import 'package:pinpoint/services/premium_service.dart';
-import 'package:pinpoint/services/drift_note_service.dart';
 import 'package:pinpoint/services/connectivity_service.dart';
 
 /// Sync manager to handle sync operations throughout the app
@@ -104,14 +103,9 @@ class SyncManager with ChangeNotifier {
       _isSyncing = true;
       notifyListeners();
 
-      // Check premium limits before syncing
-      if (direction == SyncDirection.upload || direction == SyncDirection.both) {
-        final limitCheck = await _checkSyncLimits();
-        if (!limitCheck.success) {
-          return limitCheck;
-        }
-      }
-
+      // No client-side gate on the free 50-note cap: the server admits new
+      // notes up to the cap and holds back the rest (SyncResult.notesOverLimit),
+      // while edits, deletions and downloads always go through.
       // Perform the actual sync
       final result = await _syncService!.sync(direction: direction);
 
@@ -148,39 +142,6 @@ class SyncManager with ChangeNotifier {
     } catch (e) {
       debugPrint('⚠️ [SyncManager] Could not sync usage stats: $e');
       // Don't fail the sync if usage stats sync fails
-    }
-  }
-
-  /// Check if user can sync based on premium limits
-  Future<SyncResult> _checkSyncLimits() async {
-    final premiumService = PremiumService();
-
-    // Premium users have no limits
-    if (premiumService.isPremium) {
-      return SyncResult(success: true, message: 'Premium - no limits');
-    }
-
-    // Get total note count (excludes todos AND reminders)
-    // Reminders are a special free feature and don't count toward the 50-note limit
-    try {
-      final allNotes = await DriftNoteService.watchNotesWithDetails().first;
-      final totalNotes = allNotes.length;
-
-      // Check if exceeds free tier limit (50 notes, excluding reminders)
-      if (!premiumService.canSyncNote() || totalNotes > 50) {
-        return SyncResult(
-          success: false,
-          message:
-              'Sync limit reached: Free plan allows up to 50 notes. Upgrade to Premium for unlimited sync.',
-        );
-      }
-
-      return SyncResult(success: true, message: 'Within limits');
-    } catch (e) {
-      debugPrint('Error checking sync limits: $e');
-      // If we can\'t check, allow sync to proceed
-      return SyncResult(
-          success: true, message: 'Limit check failed, proceeding');
     }
   }
 
