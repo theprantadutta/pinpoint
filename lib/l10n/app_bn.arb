@@ -1050,5 +1050,10 @@
   "notifPromptPreviewTitle": "ডেন্টিস্টকে ফোন করা",
   "notifPromptPreviewNow": "এখন",
   "notifPromptEnable": "নোটিফিকেশন চালু করুন",
-  "edVoiceTooLargeToSync": "{megabytes} MB-এর বেশি, তাই এই রেকর্ডিং শুধু এই ডিভাইসে থাকবে এবং সিঙ্ক হবে না। ব্যাকআপ রাখতে ছোট ছোট নোট রেকর্ড করুন।"
+  "edVoiceTooLargeToSync": "{megabytes} MB-এর বেশি, তাই এই রেকর্ডিং শুধু এই ডিভাইসে থাকবে এবং সিঙ্ক হবে না। ব্যাকআপ রাখতে ছোট ছোট নোট রেকর্ড করুন।",
+  "signOutTitle": "আপনাকে সাইন আউট করা হচ্ছে",
+  "signOutBody": "Pinpoint খোলা রাখুন। এতে মাত্র কয়েক সেকেন্ড লাগবে।",
+  "signOutStepSave": "আপনার নোট ক্লাউডে সংরক্ষণ করা হচ্ছে",
+  "signOutStepAccount": "আপনার অ্যাকাউন্ট থেকে সাইন আউট করা হচ্ছে",
+  "signOutStepDevice": "এই ডিভাইস থেকে নোট সরানো হচ্ছে"
 }

@@ -1050,5 +1050,10 @@
   "notifPromptPreviewTitle": "Chiamare il dentista",
   "notifPromptPreviewNow": "ora",
   "notifPromptEnable": "Attiva le notifiche",
-  "edVoiceTooLargeToSync": "Supera i {megabytes} MB, quindi questa registrazione resta su questo dispositivo e non verrà sincronizzata. Registra note più brevi per salvarle nel cloud."
+  "edVoiceTooLargeToSync": "Supera i {megabytes} MB, quindi questa registrazione resta su questo dispositivo e non verrà sincronizzata. Registra note più brevi per salvarle nel cloud.",
+  "signOutTitle": "Disconnessione in corso",
+  "signOutBody": "Tieni aperta Pinpoint. Ci vorranno solo pochi secondi.",
+  "signOutStepSave": "Salvataggio delle note nel cloud",
+  "signOutStepAccount": "Uscita dal tuo account",
+  "signOutStepDevice": "Rimozione delle note da questo dispositivo"
 }

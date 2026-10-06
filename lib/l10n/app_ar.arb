@@ -1050,5 +1050,10 @@
   "notifPromptPreviewTitle": "الاتصال بطبيب الأسنان",
   "notifPromptPreviewNow": "الآن",
   "notifPromptEnable": "تفعيل الإشعارات",
-  "edVoiceTooLargeToSync": "يتجاوز {megabytes} ميغابايت، لذا يبقى هذا التسجيل على هذا الجهاز ولن تتم مزامنته. سجّل ملاحظات أقصر لنسخها احتياطيًا."
+  "edVoiceTooLargeToSync": "يتجاوز {megabytes} ميغابايت، لذا يبقى هذا التسجيل على هذا الجهاز ولن تتم مزامنته. سجّل ملاحظات أقصر لنسخها احتياطيًا.",
+  "signOutTitle": "جارٍ تسجيل خروجك",
+  "signOutBody": "أبقِ Pinpoint مفتوحًا. لن يستغرق ذلك سوى بضع ثوانٍ.",
+  "signOutStepSave": "جارٍ حفظ ملاحظاتك في السحابة",
+  "signOutStepAccount": "جارٍ تسجيل الخروج من حسابك",
+  "signOutStepDevice": "جارٍ إزالة الملاحظات من هذا الجهاز"
 }

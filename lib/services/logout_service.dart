@@ -80,7 +80,10 @@ class LogoutService {
   LogoutPhase get currentPhase => _currentPhase;
 
   /// Main logout method - validates, syncs, and cleans up
-  Future<bool> performLogout() async {
+  /// With [skipSync] (the user chose "Force sign out" after the sync failed)
+  /// unsynced notes are given up, but the account is still signed out and
+  /// this device still cleared.
+  Future<bool> performLogout({bool skipSync = false}) async {
     try {
       // Track analytics
       final analytics = getIt<AnalyticsFacade>();
@@ -99,7 +102,7 @@ class LogoutService {
 
       // Phase 2: Sync unsynced notes
       _updatePhase(LogoutPhase.syncing);
-      final syncSuccess = await _syncUnsyncedNotes();
+      final syncSuccess = skipSync || await _syncUnsyncedNotes();
 
       if (!syncSuccess) {
         debugPrint('❌ [LogoutService] Sync failed - cannot proceed with logout');

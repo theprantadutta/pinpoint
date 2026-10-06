@@ -4973,5 +4973,25 @@
         "example": "25"
       }
     }
+  },
+  "signOutTitle": "Signing you out",
+  "@signOutTitle": {
+    "description": "Title of the card that covers the app while the user is being signed out, after they confirmed Sign out."
+  },
+  "signOutBody": "Keep Pinpoint open. This only takes a few seconds.",
+  "@signOutBody": {
+    "description": "Line under 'Signing you out', asking the user not to close the app while sign-out finishes. 'Pinpoint' is the app name; do not translate it."
+  },
+  "signOutStepSave": "Saving your notes to the cloud",
+  "@signOutStepSave": {
+    "description": "First step in the signing-out progress list: notes not yet uploaded are being synced before sign-out."
+  },
+  "signOutStepAccount": "Signing out of your account",
+  "@signOutStepAccount": {
+    "description": "Second step in the signing-out progress list: the account session is being ended on the server."
+  },
+  "signOutStepDevice": "Removing notes from this device",
+  "@signOutStepDevice": {
+    "description": "Third step in the signing-out progress list: the account's notes and data are being deleted from this phone or tablet (they stay in the cloud)."
   }
 }
