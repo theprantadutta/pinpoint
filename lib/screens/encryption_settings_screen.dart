@@ -15,8 +15,8 @@ import 'package:pinpoint/generated/l10n/app_localizations.dart';
 /// Standard until they choose otherwise.
 ///
 /// The copy is deliberately plain about the trade-offs: Standard keeps a
-/// usable key on our server, and in either mode cloud voice recordings and
-/// reminder text are not end-to-end encrypted.
+/// usable key on our server, and in either mode reminder text is not
+/// end-to-end encrypted, nor are voice recordings synced before June 2026.
 class EncryptionSettingsScreen extends StatefulWidget {
   const EncryptionSettingsScreen({super.key});
 

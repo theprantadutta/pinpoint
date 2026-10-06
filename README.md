@@ -57,7 +57,7 @@ Pinpoint is a feature-rich, privacy-first note-taking application that combines 
   - **Standard mode (default):** a copy of your data key is kept on our server so you can recover your notes on a new device. Convenient, but it means **we hold a key that can decrypt your notes**.
   - **Zero-knowledge mode (opt-in):** your data key is wrapped with a key derived from your passphrase (Argon2id) plus a recovery code. The server stores only the wrapped blob, so **only your passphrase protects your notes and we cannot read them** — and if you lose both the passphrase and the recovery code, neither can we recover them.
 - **What is not end-to-end encrypted** - Be aware of these before you rely on them:
-  - **Voice recordings synced to the cloud** are stored on our servers without end-to-end encryption.
+  - **Voice recordings synced before June 2026** may still be stored without end-to-end encryption. Recordings uploaded since then are encrypted on the device with the same key as notes.
   - **Reminder title, body and schedule** are stored in readable form, because our server has to render and send the push notification at the right time.
 - **Diagnostics, not surveillance — but not anonymous** - Release builds use Firebase Analytics and Crashlytics for crash reports and product-usage events. When you are signed in these are **tied to your account ID**, so they are not anonymous. Note content, titles, search terms, transcripts, purchase tokens, passphrases, recovery codes and encryption keys are never sent to them. See [`assets/legal/privacy.md`](assets/legal/privacy.md)
 
@@ -95,7 +95,7 @@ difference; they are enforced in `lib/services/premium_service.dart` against
 ### 🔄 Cloud Sync
 
 - **Firebase Authentication** - Google Sign-In with secure token management
-- **Encrypted before upload** - Note text is encrypted on the device before it is synced. In standard mode a recovery copy of the key is held server-side; zero-knowledge mode keeps the key off our servers. Cloud voice recordings and reminder text are not end-to-end encrypted
+- **Encrypted before upload** - Note text is encrypted on the device before it is synced. In standard mode a recovery copy of the key is held server-side; zero-knowledge mode keeps the key off our servers. Voice recordings are encrypted the same way (except ones synced before June 2026); reminder text is not end-to-end encrypted
 - **Real-time Sync** - Changes sync instantly across devices
 - **Offline Support** - Full functionality without internet
 - **Usage Tracking** - Cloud-based limits prevent bypass

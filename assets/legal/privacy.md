@@ -49,7 +49,8 @@ We use the collected information to:
 - **How your key is held — please read this part:**
   - **Standard mode (the default):** we keep a recovery copy of your encryption key on our servers so that you can restore your notes on a new device. This means that we hold a key capable of decrypting your synced notes.
   - **Zero-knowledge mode (optional):** your encryption key is wrapped using a key derived from a passphrase that you choose, plus a recovery code. We store only the wrapped result, so only your passphrase can unlock your notes and we cannot read them. If you lose both your passphrase and your recovery code, we cannot recover your notes either.
-- **What is not end-to-end encrypted:** Voice recordings that you sync to the cloud are stored on our servers without end-to-end encryption. Reminder titles, reminder text and reminder times are also stored in readable form, because our servers must read them in order to send you the notification at the scheduled time.
+- **Voice Recordings:** Recordings are encrypted on your device with the same key as your notes before they are uploaded, so they are protected in the same way as your notes in each of the two key modes described below.
+- **What is not end-to-end encrypted:** Reminder titles, reminder text and reminder times are stored in readable form, because our servers must read them in order to send you the notification at the scheduled time. Voice recordings synced by versions of the app released before June 2026 were uploaded without this encryption and may still be stored that way; recording them again replaces them with an encrypted copy.
 - **Third-Party Services:** We use Firebase for authentication and cloud storage, which is governed by Google's privacy policies
 
 ### Google Drive Backups (optional)

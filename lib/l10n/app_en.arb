@@ -3614,9 +3614,9 @@
   "@obPrivateBody": {
     "description": "Line under the headline of onboarding page 3. Must stay accurate: notes are encrypted on the device; only the optional zero-knowledge mode keeps the key away from the server. 'AES-256' is a technical name, do not translate it. Use the same term for 'zero-knowledge mode' and 'passphrase' as the encryption settings screen."
   },
-  "obPrivateFootnote": "Cloud voice recordings and reminder text are not end-to-end encrypted.",
+  "obPrivateFootnote": "Reminder text isn't end-to-end encrypted, and neither are voice recordings synced before June 2026.",
   "@obPrivateFootnote": {
-    "description": "Small honest caveat under the privacy text on onboarding page 3. Must stay accurate: voice recordings synced to the cloud and reminder text are readable by the server."
+    "description": "Small honest caveat under the privacy text on onboarding page 3. Must stay accurate: reminder text is readable by the server, and so are voice recordings uploaded by app versions before June 2026 (newer recordings are encrypted on the device like notes)."
   },
   "obLogIn": "Log in",
   "@obLogIn": {
@@ -4099,9 +4099,9 @@
   "@stEncStdPoint2": {
     "description": "Second trade-off bullet on the Standard encryption card. Must stay honest: the server holds a usable key."
   },
-  "stEncNotE2ee": "Cloud voice recordings and reminder text are not end-to-end encrypted in either mode.",
+  "stEncNotE2ee": "Reminder text isn't end-to-end encrypted in either mode, and neither are voice recordings synced before June 2026.",
   "@stEncNotE2ee": {
-    "description": "Trade-off bullet shown on both encryption cards. Must stay honest: voice recordings and reminder text are readable by the server."
+    "description": "Trade-off bullet shown on both encryption cards. Must stay honest: reminder text is readable by the server in both modes, and so are voice recordings uploaded by app versions before June 2026."
   },
   "stEncZkPoint1": "Your key is locked with a passphrase only you know, so we can't read your notes.",
   "@stEncZkPoint1": {
@@ -4619,9 +4619,9 @@
   "@edEncZkBody": {
     "description": "Body of the encryption sheet in the note editor when zero-knowledge ('Maximum Privacy') mode is on."
   },
-  "edEncExceptions": "Reminders and cloud voice recordings are the exceptions: our server reads a reminder's title, text and time to deliver it, and voice recordings are not end-to-end encrypted.",
+  "edEncExceptions": "Reminders are the exception: our server reads a reminder's title, text and time to deliver it. Voice recordings synced before June 2026 may also still be stored without end-to-end encryption.",
   "@edEncExceptions": {
-    "description": "Second paragraph of the encryption sheet in the note editor. Honest list of what is NOT end-to-end encrypted. Keep the meaning exact."
+    "description": "Second paragraph of the encryption sheet in the note editor. Honest list of what is NOT end-to-end encrypted: reminder title, text and time; and voice recordings uploaded by app versions before June 2026. Keep the meaning exact."
   },
   "edEncManage": "Encryption settings",
   "@edEncManage": {
