@@ -636,12 +636,43 @@ class ApiSyncService extends SyncService {
   }
 
   /// Get all V2 notes that need to be uploaded (not yet synced)
-  Future<List<_V2NoteWrapper>> _getNotesToUpload() async {
+  // ============================================================
+  // Backups (services/backup): the same note format sync uses
+  // ============================================================
+
+  /// Every note on this device, archived and trashed included, as the
+  /// plaintext maps sync encrypts. A backup therefore holds exactly what the
+  /// cloud would, and reads back through the same code.
+  Future<List<Map<String, dynamic>>> exportAllNotesForBackup() async {
+    final notes = await _getNotesV2(onlyUnsynced: false);
+    return [for (final note in notes) await _noteDataV2(note)];
+  }
+
+  /// Merge one note from a backup: added if this device lacks it, updated if
+  /// the backup's copy is newer, left alone otherwise. A note taken in is
+  /// marked for upload so the cloud gets it too. Returns whether it was taken.
+  Future<bool> importNoteFromBackup(Map<String, dynamic> noteData) async {
+    final uuid = noteData['uuid'] as String;
+    final backupEditedAt = editedAt(noteData, null);
+    final local = await _getNoteByUuidV2(uuid);
+    if (local != null) {
+      final localEditedAt = (local.note as dynamic).updatedAt as DateTime;
+      if (!backupEditedAt.isAfter(localEditedAt)) return false;
+    }
+    await _applyNoteToDatabase(uuid, noteData, backupEditedAt);
+    await _markNoteForReupload(uuid);
+    return true;
+  }
+
+  Future<List<_V2NoteWrapper>> _getNotesToUpload() => _getNotesV2(onlyUnsynced: true);
+
+  /// Every V2 note, or only those waiting to upload.
+  Future<List<_V2NoteWrapper>> _getNotesV2({required bool onlyUnsynced}) async {
     final notesToUpload = <_V2NoteWrapper>[];
 
     // Get unsynced text notes
     final textNotes = await (_database.select(_database.textNotesV2)
-          ..where((tbl) => tbl.isSynced.equals(false)))
+          ..where((tbl) => onlyUnsynced ? tbl.isSynced.equals(false) : const Constant(true)))
         .get();
     for (final textNote in textNotes) {
       notesToUpload.add(_V2NoteWrapper(type: 'text', note: textNote));
@@ -649,7 +680,7 @@ class ApiSyncService extends SyncService {
 
     // Get unsynced voice notes
     final voiceNotes = await (_database.select(_database.voiceNotesV2)
-          ..where((tbl) => tbl.isSynced.equals(false)))
+          ..where((tbl) => onlyUnsynced ? tbl.isSynced.equals(false) : const Constant(true)))
         .get();
     for (final voiceNote in voiceNotes) {
       notesToUpload.add(_V2NoteWrapper(type: 'voice', note: voiceNote));
@@ -657,7 +688,7 @@ class ApiSyncService extends SyncService {
 
     // Get unsynced todo notes (with their items)
     final todoNotes = await (_database.select(_database.todoListNotesV2)
-          ..where((tbl) => tbl.isSynced.equals(false)))
+          ..where((tbl) => onlyUnsynced ? tbl.isSynced.equals(false) : const Constant(true)))
         .get();
     for (final todoNote in todoNotes) {
       // Get todo items for this note
@@ -674,7 +705,7 @@ class ApiSyncService extends SyncService {
 
     // Get unsynced reminder notes
     final reminderNotes = await (_database.select(_database.reminderNotesV2)
-          ..where((tbl) => tbl.isSynced.equals(false)))
+          ..where((tbl) => onlyUnsynced ? tbl.isSynced.equals(false) : const Constant(true)))
         .get();
     for (final reminderNote in reminderNotes) {
       notesToUpload.add(_V2NoteWrapper(type: 'reminder', note: reminderNote));
@@ -691,6 +722,13 @@ class ApiSyncService extends SyncService {
 
   /// Serialize V2 note and encrypt for upload
   Future<Map<String, dynamic>> _serializeAndEncryptNoteV2(_V2NoteWrapper noteWrapper) async {
+    final noteData = await _noteDataV2(noteWrapper);
+    return _encryptForUpload(noteWrapper, noteData);
+  }
+
+  /// A note as the plaintext map that sync encrypts: the one format a note is
+  /// written in for the cloud, and for backups.
+  Future<Map<String, dynamic>> _noteDataV2(_V2NoteWrapper noteWrapper) async {
     // Build complete note data structure based on type
     final Map<String, dynamic> noteData;
 
@@ -717,7 +755,11 @@ class ApiSyncService extends SyncService {
 
     // Add folder UUIDs for all note types
     await _addFolderUuidsToNoteData(noteData, noteWrapper);
+    return noteData;
+  }
 
+  Map<String, dynamic> _encryptForUpload(
+      _V2NoteWrapper noteWrapper, Map<String, dynamic> noteData) {
     // Convert to JSON string
     final jsonString = jsonEncode(noteData);
 

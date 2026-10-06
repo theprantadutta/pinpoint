@@ -71,6 +71,10 @@ dependencies:
   firebase_core: ^4.0.0
   firebase_auth: ^6.0.1
   google_sign_in: ^7.1.1
+  # Google Drive backups: the REST calls (drive_backup_client.dart) and the
+  # backup archive (backup_archive.dart). Both were already transitive.
+  http: ^1.6.0
+  archive: ^4.0.9
   firebase_analytics: ^12.1.2
   firebase_messaging: ^16.0.4
   firebase_crashlytics: ^5.0.8

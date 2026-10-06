@@ -49,8 +49,16 @@ We use the collected information to:
 - **How your key is held — please read this part:**
   - **Standard mode (the default):** we keep a recovery copy of your encryption key on our servers so that you can restore your notes on a new device. This means that we hold a key capable of decrypting your synced notes.
   - **Zero-knowledge mode (optional):** your encryption key is wrapped using a key derived from a passphrase that you choose, plus a recovery code. We store only the wrapped result, so only your passphrase can unlock your notes and we cannot read them. If you lose both your passphrase and your recovery code, we cannot recover your notes either.
-- **What is not end-to-end encrypted:** Voice recordings that you sync to the cloud are stored on our servers without end-to-end encryption. Reminder titles, reminder text and reminder times are also stored in readable form, because our servers must read them in order to send you the notification at the scheduled time.
+- **Voice Recordings:** Recordings are encrypted on your device with the same key as your notes before they are uploaded, so they are protected in the same way as your notes in each of the two key modes described below.
+- **What is not end-to-end encrypted:** Reminder titles, reminder text and reminder times are stored in readable form, because our servers must read them in order to send you the notification at the scheduled time. Voice recordings synced by versions of the app released before June 2026 were uploaded without this encryption and may still be stored that way; recording them again replaces them with an encrypted copy.
 - **Third-Party Services:** We use Firebase for authentication and cloud storage, which is governed by Google's privacy policies
+
+### Google Drive Backups (optional)
+
+- **Your Drive, not our servers:** If you turn on Google Drive backup, Pinpoint saves backup files to a "Pinpoint Backups" folder in **your own** Google Drive. They are never sent to our servers.
+- **Encrypted with your account key:** Each backup (your notes, checklists, reminders, folders and voice recordings) is encrypted on your device with your Pinpoint account's encryption key before it is uploaded, so Google cannot read it. Only a few plain details are attached so the list can be shown: when it was made, the device name, the number of notes, and your Pinpoint account identifier.
+- **Only the same account can restore it:** Because the key belongs to your Pinpoint account, a backup can only be restored while signed in to that same account. If you lose access to that account (and, in zero-knowledge mode, your passphrase and recovery code), the backups cannot be opened by anyone.
+- **Limited access:** Pinpoint asks only for permission to the files it creates itself (the `drive.file` permission). It cannot see any other file in your Drive. You can disconnect Drive in the app, or delete the backups yourself in Google Drive at any time.
 
 ## Data Sharing
 
@@ -84,6 +92,7 @@ Our app integrates with the following third-party services, each governed by its
 - **Firebase (Google):** Authentication, optional cloud storage/sync, push notifications (Firebase Cloud Messaging), analytics (Firebase Analytics), and crash reporting (Firebase Crashlytics). Analytics and crash reporting are **not anonymous**: when you are signed in, we set your account identifier on them, so the events and crash reports are associated with your account. They never receive your note content, note titles, search terms, transcripts, purchase tokens, passphrases, recovery codes or encryption keys.
 - **Apple App Store & Google Play Billing:** Processing and managing in-app purchases and subscriptions
 - **Google ML Kit:** On-device OCR text recognition (processing stays on your device and is not sent to us)
+- **Google Drive:** Optional encrypted backups, stored in your own Google Drive (see "Google Drive Backups" above)
 
 ## Children's Privacy
 

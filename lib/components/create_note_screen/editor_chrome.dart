@@ -212,7 +212,8 @@ class EditorMetaRow extends StatelessWidget {
   final DateTime? editedAt;
 
   /// Text and checklist notes only: reminders are readable by the server,
-  /// and cloud voice recordings are not end-to-end encrypted.
+  /// and a voice note's recording may have been synced before June 2026,
+  /// when recordings were uploaded without encryption.
   final bool showEncrypted;
 
   @override

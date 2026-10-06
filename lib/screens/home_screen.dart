@@ -1,3 +1,4 @@
+import '../services/backup/drive_backup_service.dart';
 import 'package:flutter/material.dart';
 import '../database/database.dart';
 import '../design_system/design_system.dart';
@@ -89,6 +90,10 @@ class _HomeScreenState extends State<HomeScreen>
     // After initial services are ready, run data sync in background
     // This is a separate step because it depends on encryption being ready
     _runBackgroundDataSync();
+
+    // A scheduled Google Drive backup, if one is due. Never prompts; waits so
+    // it does not compete with the first sync for the connection.
+    DriveBackupService().scheduleAutomaticRun();
 
     // Maybe ask for an in-app review (self-gated: only after enough returning
     // launches and past the cooldown; the OS decides if the prompt shows).

@@ -1,3 +1,4 @@
+import '../../screens/backup_screen.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -201,6 +202,12 @@ class SettingsNotesGroup extends StatelessWidget {
           icon: Icons.sync_rounded,
           label: l10n.syncTitle,
           onTap: () => go(SyncScreen.kRouteName),
+        ),
+        SketchRow(
+          icon: Icons.add_to_drive_rounded,
+          label: l10n.bkTitle,
+          subtitle: l10n.bkRowSubtitle,
+          onTap: () => go(BackupScreen.kRouteName),
         ),
         SketchRow(
           icon: Icons.file_upload_outlined,

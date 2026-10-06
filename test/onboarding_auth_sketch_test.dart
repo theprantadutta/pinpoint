@@ -160,8 +160,8 @@ void main() {
       expect(find.bySemanticsLabel('Private by default.'), findsOneWidget);
       // The privacy page states the limits of end-to-end encryption.
       expect(
-          find.text('Cloud voice recordings and reminder text are not '
-              'end-to-end encrypted.'),
+          find.text("Reminder text isn't end-to-end encrypted, and neither "
+              'are voice recordings synced before June 2026.'),
           findsOneWidget);
       expect(find.text('Log in'), findsOneWidget);
       expect(find.text('Get started'), findsOneWidget);

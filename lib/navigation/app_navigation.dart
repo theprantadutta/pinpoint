@@ -1,3 +1,4 @@
+import '../screens/backup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'safe_back_button_dispatcher.dart';
@@ -285,6 +286,15 @@ class AppNavigation {
           child: SyncScreen(
             key: state.pageKey,
           ),
+        ),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: BackupScreen.kRouteName,
+        name: "Backup Screen",
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const BackupScreen(),
         ),
       ),
       GoRoute(
