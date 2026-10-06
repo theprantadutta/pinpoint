@@ -22,6 +22,26 @@ import 'folder_sync_service.dart';
 /// nothing is marked synced and the notes are offered again next time. Pure,
 /// for testing.
 @visibleForTesting
+/// When a downloaded note was last edited, as its author's device recorded
+/// it. Read from inside the decrypted note: current clients write UTC with a
+/// 'Z' and older ones local time, and both parse to the right instant. The
+/// server's copy of the time carries no zone (and from older clients was
+/// local time stored as if UTC), so it is only a fallback.
+DateTime editedAt(Map<String, dynamic> noteData, String? serverUpdatedAt) {
+  final inside = DateTime.tryParse(noteData['updatedAt'] as String? ?? '');
+  if (inside != null) return inside;
+  return DateTime.tryParse(serverUpdatedAt ?? '') ?? DateTime.now();
+}
+
+/// Where the next download resumes. In the server's clock when the server
+/// says (server_updated_ms), less a margin so a write stamped just before the
+/// newest one but committed after it is still fetched; fetching a note twice
+/// is harmless. Falls back to this device's clock for a server that does not.
+int nextSyncPoint(int? maxServerMs, int requestedAt) =>
+    maxServerMs != null ? maxServerMs - syncPointMarginMs : requestedAt;
+
+const int syncPointMarginMs = 5000;
+
 Set<String> acceptedUuids(Map<String, dynamic> response, Iterable<String> sent) {
   final updated = response['updated_notes'];
   if (updated is! List) return <String>{};
@@ -435,8 +455,8 @@ class ApiSyncService extends SyncService {
       );
 
       if (response.isEmpty) {
-        _lastSyncTime = requestedAt;
-        await _saveLastSyncTime();
+        // Nothing new: keep the point as it is. It is in the server's time,
+        // and this device's clock is no substitute.
         debugPrint('✅ [ApiSync] No new notes to download');
         debugPrint('🔽 [ApiSync] ========== DOWNLOAD COMPLETE ==========\n');
         return SyncResult(
@@ -455,6 +475,7 @@ class ApiSyncService extends SyncService {
       int decryptionErrorCount = 0;
       int legacyMigrationCount = 0;
       final List<String> errors = [];
+      int? maxServerMs;
 
       final int totalToProcess = response.length;
       int processedIndex = 0;
@@ -475,7 +496,17 @@ class ApiSyncService extends SyncService {
           final clientNoteUuid = encryptedNote['client_note_uuid'] as String;
           final encryptedData = encryptedNote['encrypted_data'] as String;
           final isDeleted = encryptedNote['is_deleted'] as bool? ?? false;
-          final serverUpdatedAt = DateTime.parse(encryptedNote['updated_at']);
+          final serverMs = (encryptedNote['server_updated_ms'] as num?)?.toInt();
+          if (serverMs != null && (maxServerMs == null || serverMs > maxServerMs)) {
+            maxServerMs = serverMs;
+          }
+
+          // Decrypt first: the edit time inside the note is the reliable one.
+          debugPrint('🔓 [ApiSync] Decrypting note data...');
+          final noteData = await _decryptAndDeserializeNote(encryptedData);
+          debugPrint('✅ [ApiSync] Decryption successful');
+          final serverUpdatedAt =
+              editedAt(noteData, encryptedNote['updated_at'] as String?);
 
           debugPrint(
               '\n🔽 [ApiSync] Processing note $clientNoteUuid (deleted: $isDeleted)');
@@ -506,11 +537,6 @@ class ApiSyncService extends SyncService {
             debugPrint(
                 '📝 [ApiSync] Note does not exist locally - will create new');
           }
-
-          // Decrypt and deserialize note
-          debugPrint('🔓 [ApiSync] Decrypting note data...');
-          final noteData = await _decryptAndDeserializeNote(encryptedData);
-          debugPrint('✅ [ApiSync] Decryption successful');
 
           if (isDeleted) {
             // Soft-delete the note locally (mark as deleted but keep record)
@@ -567,7 +593,7 @@ class ApiSyncService extends SyncService {
       // what changed after this point, so a note that failed here (a wrong
       // key, a bad payload) would otherwise never be fetched again.
       if (failedCount == 0) {
-        _lastSyncTime = requestedAt;
+        _lastSyncTime = nextSyncPoint(maxServerMs, requestedAt);
         await _saveLastSyncTime();
       } else {
         debugPrint('⚠️ [ApiSync] Keeping last sync time: $failedCount note(s) to retry');
@@ -730,8 +756,8 @@ class ApiSyncService extends SyncService {
       'isPinned': note.isPinned,
       'isArchived': note.isArchived,
       'isDeleted': note.isDeleted,
-      'createdAt': note.createdAt.toIso8601String(),
-      'updatedAt': note.updatedAt.toIso8601String(),
+      'createdAt': note.createdAt.toUtc().toIso8601String(),
+      'updatedAt': note.updatedAt.toUtc().toIso8601String(),
     };
   }
 
@@ -747,13 +773,13 @@ class ApiSyncService extends SyncService {
           (AudioUploadQueue.isServerPath(note.audioFilePath) ? note.audioFilePath : ''),
       'audioDuration': note.durationSeconds,
       'transcription': note.transcription,
-      'recordedAt': note.recordedAt?.toIso8601String(),
+      'recordedAt': note.recordedAt?.toUtc().toIso8601String(),
       'color': note.color,
       'isPinned': note.isPinned,
       'isArchived': note.isArchived,
       'isDeleted': note.isDeleted,
-      'createdAt': note.createdAt.toIso8601String(),
-      'updatedAt': note.updatedAt.toIso8601String(),
+      'createdAt': note.createdAt.toUtc().toIso8601String(),
+      'updatedAt': note.updatedAt.toUtc().toIso8601String(),
     };
   }
 
@@ -778,8 +804,8 @@ class ApiSyncService extends SyncService {
       'isPinned': note.isPinned,
       'isArchived': note.isArchived,
       'isDeleted': note.isDeleted,
-      'createdAt': note.createdAt.toIso8601String(),
-      'updatedAt': note.updatedAt.toIso8601String(),
+      'createdAt': note.createdAt.toUtc().toIso8601String(),
+      'updatedAt': note.updatedAt.toUtc().toIso8601String(),
     };
   }
 
@@ -793,7 +819,7 @@ class ApiSyncService extends SyncService {
       'notificationTitle': note.notificationTitle ?? note.title ?? '',
       'notificationContent': note.notificationContent,
       'reminderDescription': note.description, // For backward compatibility
-      'reminderTime': note.reminderTime.toIso8601String(),
+      'reminderTime': note.reminderTime.toUtc().toIso8601String(),
       'recurrenceType': note.recurrenceType,
       'recurrenceInterval': note.recurrenceInterval,
       'recurrenceEndType': note.recurrenceEndType,
@@ -805,8 +831,8 @@ class ApiSyncService extends SyncService {
       'isPinned': note.isPinned,
       'isArchived': note.isArchived,
       'isDeleted': note.isDeleted,
-      'createdAt': note.createdAt.toIso8601String(),
-      'updatedAt': note.updatedAt.toIso8601String(),
+      'createdAt': note.createdAt.toUtc().toIso8601String(),
+      'updatedAt': note.updatedAt.toUtc().toIso8601String(),
     };
   }
 
