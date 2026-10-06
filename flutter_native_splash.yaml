@@ -1,19 +1,38 @@
 # Native launch screens (Android incl. the 12+ SplashScreen API, iOS):
+#   python branding/build_icons.py   (draws the glyphs below)
 #   dart run flutter_native_splash:create
-# Paper background with the ink pin; dark mode inverts to ink + yellow pin.
+#
+# The launch screen is the launcher icon grown to fill the screen: the tile's
+# yellow edge to edge with its ink pin centred, so tapping the icon reads as
+# the icon opening rather than a jump to a different screen. The ground is the
+# same in light and dark mode for that reason: the Android adaptive icon's
+# background is a fixed yellow.
+#
+# iOS dark mode is the exception. Its home-screen icon is the yellow pin on
+# dark (image_path_ios_dark_transparent in flutter_launcher_icons.yaml), so
+# the iOS dark splash is that: dark ground, yellow pin.
+#
+# Sizes fail silently here — the tool stretches rather than erroring. The
+# glyphs are 4x assets (px / 4 = dp), drawn by build_icons.py at 130dp.
 flutter_native_splash:
-  color: "#F5F3EC"
-  image: "branding/adaptive-foreground-ink-1024.png"
-  color_dark: "#131312"
-  image_dark: "branding/adaptive-foreground-yellow-1024.png"
+  color: "#F6E27A"
+  image: "branding/splash-glyph-ink.png"
+  color_dark: "#F6E27A"
+  image_dark: "branding/splash-glyph-ink.png"
 
+  color_dark_ios: "#131312"
+  image_dark_ios: "branding/splash-glyph-yellow.png"
+
+  # 1152x1152 with every pixel inside the centred 768px circle: Android 12
+  # crops to it rather than scaling. The icon background matches the ground,
+  # so no tile is drawn behind the pin.
   android_12:
-    color: "#F5F3EC"
-    image: "branding/adaptive-foreground-ink-1024.png"
+    color: "#F6E27A"
+    image: "branding/android12-glyph-ink.png"
     icon_background_color: "#F6E27A"
-    color_dark: "#131312"
-    image_dark: "branding/adaptive-foreground-yellow-1024.png"
-    icon_background_color_dark: "#1D1D1B"
+    color_dark: "#F6E27A"
+    image_dark: "branding/android12-glyph-ink.png"
+    icon_background_color_dark: "#F6E27A"
 
   android: true
   ios: true

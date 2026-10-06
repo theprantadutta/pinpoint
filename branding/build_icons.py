@@ -131,8 +131,41 @@ def status_bar_icon(px_per_dp: float) -> Image.Image:
 DENSITIES = {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}
 
 
+# Native splash glyph height, in px at the 4x density flutter_native_splash
+# treats its images as: 520px renders at 130dp, the weight of the launcher
+# tile's pin seen full screen.
+SPLASH_PIN_PX = 520
+
+
+def splash_glyph(colour) -> Image.Image:
+    """The pin alone on transparent, for the pre-Android-12 and iOS splash."""
+    scale = SPLASH_PIN_PX / PIN.height
+    size = (round(PIN.width * scale), SPLASH_PIN_PX)
+    canvas = Image.new("RGBA", size, (0, 0, 0, 0))
+    paste_pin(canvas, colour, SPLASH_PIN_PX, (size[0] / 2, size[1] / 2))
+    return canvas
+
+
+def android12_glyph(colour) -> Image.Image:
+    """Android 12+ splash icon: 1152px square, every pixel inside the centred
+    768px circle, because the system crops to it rather than scaling. Drawn
+    at the same 130dp as splash_glyph (1152px is 288dp)."""
+    canvas = Image.new("RGBA", (1152, 1152), (0, 0, 0, 0))
+    paste_pin(canvas, colour, SPLASH_PIN_PX, (576, 576))
+    return canvas
+
+
+def splash():
+    """Masters for flutter_native_splash.yaml."""
+    splash_glyph(INK).save(BRANDING / "splash-glyph-ink.png")
+    splash_glyph(YELLOW).save(BRANDING / "splash-glyph-yellow.png")
+    android12_glyph(INK).save(BRANDING / "android12-glyph-ink.png")
+
+
 def main():
     res = ROOT / "android" / "app" / "src" / "main" / "res"
+
+    splash()
 
     sticker(1024, margin=100 / 1024).save(BRANDING / "app-icon-sticker-1024.png")
     sticker(1024, margin=0.04).save(BRANDING / "app-icon-legacy-1024.png")
