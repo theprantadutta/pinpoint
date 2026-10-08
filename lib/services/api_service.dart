@@ -915,7 +915,12 @@ class ApiService {
   // ============================================================================
 
   /// Create a new reminder (schedules backend notification)
-  Future<Map<String, dynamic>> createReminder({
+  /// Returns every row the server holds for the note. The .NET backend has
+  /// answered with a list since the port (one entry per stored occurrence);
+  /// declaring a Map here threw a TypeError on every call, after the server had
+  /// already saved the reminder. Not used by the app's own scheduling any more
+  /// — that goes through [syncReminders] — but kept correct for the API.
+  Future<List<Map<String, dynamic>>> createReminder({
     required String noteUuid,
     required String title,
     required String notificationTitle,
@@ -946,7 +951,11 @@ class ApiService {
         '/reminders',
         data: data,
       );
-      return response.data;
+      final body = response.data;
+      if (body is List) {
+        return body.cast<Map<String, dynamic>>();
+      }
+      return [body as Map<String, dynamic>];
     } on DioException catch (e) {
       throw _handleError(e);
     }

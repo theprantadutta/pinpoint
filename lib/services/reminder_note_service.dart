@@ -6,6 +6,7 @@ import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
 import '../service_locators/init_service_locators.dart';
 import '../sync/sync_manager.dart';
+import '../models/reminder_dto.dart';
 import 'api_service.dart';
 import 'drift_note_folder_service.dart';
 
@@ -329,21 +330,33 @@ class ReminderNoteService {
 
       // Schedule on backend
       try {
-        // Create new backend reminder with all recurrence fields
-        final response = await ApiService().createReminder(
-          noteUuid: note.uuid,
-          title: note.title!,
-          notificationTitle: note.notificationTitle ?? note.title!,
-          notificationContent: note.notificationContent,
-          reminderTime: note.reminderTime,
-          recurrenceType: note.recurrenceType,
-          recurrenceInterval: note.recurrenceInterval,
-          recurrenceEndType: note.recurrenceEndType,
-          recurrenceEndValue: note.recurrenceEndValue,
-        );
+        // Through the bulk-sync endpoint, one occurrence at a time, rather
+        // than POST /reminders. Create expanded a recurring rule into a whole
+        // series server-side, but every local occurrence is already its own
+        // note and was sent with the rule attached — so each one grew an
+        // overlapping series and day k of a daily reminder was pushed about k
+        // times. Sync upserts exactly this occurrence, keyed on its uuid and
+        // occurrence number, and carries the series id so "update all future"
+        // still finds its siblings. It is also idempotent, so a retry is safe.
+        await ApiService().syncReminders([
+          ReminderDto.fromLocal(
+            noteUuid: note.uuid,
+            title: note.title!,
+            notificationTitle: note.notificationTitle ?? note.title!,
+            notificationContent: note.notificationContent,
+            description: note.description,
+            reminderTime: note.reminderTime,
+            recurrenceType: note.recurrenceType,
+            recurrenceInterval: note.recurrenceInterval,
+            recurrenceEndType: note.recurrenceEndType,
+            recurrenceEndValue: note.recurrenceEndValue,
+            parentReminderId: note.parentReminderId,
+            occurrenceNumber: note.occurrenceNumber,
+            seriesId: note.seriesId,
+          ).toJsonSync(),
+        ]);
 
         debugPrint('✅ [ReminderNoteService] Created backend reminder for: ${note.uuid}');
-        debugPrint('   Backend response: $response');
 
         // Mark as synced
         await (database.update(database.reminderNotesV2)

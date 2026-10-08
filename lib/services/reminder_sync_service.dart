@@ -113,17 +113,25 @@ class ReminderSyncService {
 
     for (final note in reminders) {
       try {
-        await ApiService().createReminder(
-          noteUuid: note.uuid,
-          title: note.title!,
-          notificationTitle: note.notificationTitle ?? note.title!,
-          notificationContent: note.notificationContent,
-          reminderTime: note.reminderTime,
-          recurrenceType: note.recurrenceType,
-          recurrenceInterval: note.recurrenceInterval,
-          recurrenceEndType: note.recurrenceEndType,
-          recurrenceEndValue: note.recurrenceEndValue,
-        );
+        // One item through the same idempotent sync endpoint, not
+        // POST /reminders — see ReminderNoteService.scheduleReminderOnBackend.
+        await ApiService().syncReminders([
+          ReminderDto.fromLocal(
+            noteUuid: note.uuid,
+            title: note.title!,
+            notificationTitle: note.notificationTitle ?? note.title!,
+            notificationContent: note.notificationContent,
+            description: note.description,
+            reminderTime: note.reminderTime,
+            recurrenceType: note.recurrenceType,
+            recurrenceInterval: note.recurrenceInterval,
+            recurrenceEndType: note.recurrenceEndType,
+            recurrenceEndValue: note.recurrenceEndValue,
+            parentReminderId: note.parentReminderId,
+            occurrenceNumber: note.occurrenceNumber,
+            seriesId: note.seriesId,
+          ).toJsonSync(),
+        ]);
 
         // Mark as synced
         await (database.update(database.reminderNotesV2)
