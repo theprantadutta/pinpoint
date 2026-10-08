@@ -77,3 +77,6 @@ firebase_admin_key.json
 .claude/settings.local.json
 # Agent git worktrees (local scratch checkouts, never part of the repo).
 .claude/worktrees/
+
+# Golden-test failure diffs written by flutter test
+test/failures/
