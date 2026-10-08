@@ -147,13 +147,39 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   Timer? _autoSaveTimer; // Auto-save timer
   DateTime? _editedAt; // "Edited {date}"
 
-  /// Title + body of the text note as last loaded or saved. The editor
-  /// notifies on every cursor move, so auto-save compares against this
-  /// rather than re-saving (and re-dating) an unchanged note.
-  String? _savedTextSignature;
+  /// [_contentSignature] as last loaded or saved. The editor notifies on
+  /// every cursor move, and leaving the editor used to save unconditionally,
+  /// so merely opening a note re-dated it and jumped it up "Last edited".
+  /// Auto-save and the leave paths compare against this instead. Null until
+  /// the note exists, so a new note always counts as changed.
+  String? _savedSignature;
 
-  String _textSignature() =>
-      '${_titleController.text.trim()}\n${MarkdownEditor.controllerToMarkdown(_fleatherController)}';
+  /// Everything [_saveNote] writes for the current type. Pin, archive and
+  /// colour are left out — they persist the moment they change — and so are
+  /// checklist items, which are written row by row as they are edited.
+  String _contentSignature() {
+    final folders = selectedFolders.map((f) => f.id).toList()..sort();
+    final body = switch (selectedNoteType) {
+      'Title Content' =>
+        MarkdownEditor.controllerToMarkdown(_fleatherController),
+      'Record Audio' =>
+        '$_audioFilePath|$_audioDurationSeconds|$_audioTranscription',
+      'Reminder' => [
+          _reminderTime?.toIso8601String(),
+          _reminderNotificationTitleController.text,
+          _reminderNotificationContentController.text,
+          _recurrenceType,
+          _recurrenceInterval,
+          _recurrenceEndType,
+          _recurrenceEndValue,
+        ].join('|'),
+      _ => '',
+    };
+    return '${_titleController.text.trim()}\n$folders\n$body';
+  }
+
+  bool get _hasUnsavedChanges =>
+      _savedSignature == null || _contentSignature() != _savedSignature;
 
   /// Drives the checklist's "Auto-saved" / "Saving…" chip. Held true for at
   /// least [_savingMinVisible] so a fast local write still reads as a flash.
@@ -359,9 +385,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
 
       // Loading set the fields; that is not an edit worth an auto-save.
       _autoSaveTimer?.cancel();
-      if (selectedNoteType == 'Title Content') {
-        _savedTextSignature = _textSignature();
-      }
+      _savedSignature = _contentSignature();
 
       if (mounted) {
         setState(() {});
@@ -439,6 +463,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     }
     _isSaving = true;
     _setSaving(true);
+    // Taken before the writes, so an edit made while they run still counts
+    // as unsaved afterwards.
+    final signature = _contentSignature();
 
     try {
       final title = _titleController.text.trim();
@@ -478,6 +505,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       }
 
       _currentNoteId = noteId;
+      _savedSignature = signature;
 
       // Track analytics: always track creates, only track explicit updates
       final analytics = getIt<AnalyticsFacade>();
@@ -543,7 +571,6 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         folders: selectedFolders,
       );
     }
-    _savedTextSignature = '$title\n$content';
     return noteId;
   }
 
@@ -686,8 +713,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
       case 'Title Content':
         final content =
             MarkdownEditor.controllerToMarkdown(_fleatherController).trim();
-        hasContent = (title.isNotEmpty || content.isNotEmpty) &&
-            _textSignature() != _savedTextSignature;
+        hasContent = title.isNotEmpty || content.isNotEmpty;
         break;
 
       case 'Record Audio':
@@ -699,8 +725,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
         break;
     }
 
-    if (!hasContent) {
-      debugPrint('⏭️ [CreateNoteV2] Auto-save skipped: No content');
+    if (!hasContent || !_hasUnsavedChanges) {
+      debugPrint('⏭️ [CreateNoteV2] Auto-save skipped: Nothing to save');
       return;
     }
 
@@ -1496,7 +1522,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
     final hasReminder = _reminderTime != null;
     final hasAudio = _audioFilePath != null;
 
-    return hasTitle || hasContent || hasTodos || hasReminder || hasAudio;
+    return (hasTitle || hasContent || hasTodos || hasReminder || hasAudio) &&
+        _hasUnsavedChanges;
   }
 
   // Voice Note Recording Methods
