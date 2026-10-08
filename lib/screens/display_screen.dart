@@ -187,7 +187,7 @@ class _RateCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  info == null
+                  info == null || info.currentRate <= 0
                       ? l10n.displayUnknownRate
                       : _formatRate(context, info.currentRate),
                   style: t.displayNumber
@@ -196,7 +196,10 @@ class _RateCard extends StatelessWidget {
               ],
             ),
           ),
-          if (info != null)
+          // refresh_rate 2.0 reports an unknown rate as 0 rather than a
+          // fabricated 60 Hz, so a non-positive value means "the platform could
+          // not say" and must not render as "0 Hz".
+          if (info != null && info.maxRate > 0)
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [

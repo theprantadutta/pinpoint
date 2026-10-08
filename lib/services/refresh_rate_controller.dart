@@ -85,11 +85,17 @@ class RefreshRateController extends ChangeNotifier {
   /// never recovers until the next cold start.
   Future<void> apply() async {
     try {
+      // Awaited, not fired and forgotten. refresh_rate 2.0 turned these from
+      // void into Future<RateRequestResult>, so a failure now arrives as a
+      // rejected future — which a bare call would leave unhandled, past this
+      // catch, into PlatformDispatcher.onError and a fatal Crashlytics report.
+      // Awaiting also means refreshInfo() below reads the rate after the
+      // request has settled rather than racing it. enable() is preferMax() in
+      // 2.0, so the old pair of calls collapses to one.
       if (_enabled) {
-        RefreshRate.enable();
-        RefreshRate.preferMax();
+        await RefreshRate.preferMax();
       } else {
-        RefreshRate.disable();
+        await RefreshRate.disable();
       }
     } catch (e) {
       // Refresh rate is a nicety, and OEMs reject or under-report modes in
