@@ -632,8 +632,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         // non-consumable, not a subscription, so its CTA must not say
         // "Subscribe" (accurate purchase labeling — App Store 3.1.2), and it
         // can never carry a trial, whatever the store reports.
+        // Nor is a trial offered to someone already on Premium: whatever the
+        // store says about intro-offer eligibility (a grant, or a purchase
+        // made on another platform, leaves it eligible), "Start free trial"
+        // under a "Current plan" badge reads as a mistake.
         final isOneTime = chosen == SubscriptionService.premiumLifetime;
-        final trialDays = isOneTime ? null : _trialDays[chosen];
+        final trialDays =
+            isOneTime || manager.isPremium ? null : _trialDays[chosen];
         final hasTrial = trialDays != null && trialDays > 0;
         final chosenPrice = _subscriptionService
             .getDisplayPrice(_subscriptionService.getProduct(chosen)!);
