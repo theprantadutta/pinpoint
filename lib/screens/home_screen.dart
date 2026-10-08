@@ -303,7 +303,7 @@ class _HomeScreenState extends State<HomeScreen>
               onNoteSelected: masterDetail
                   ? (note) => setState(() => _selectedNote = note)
                   : null,
-              selectedNoteId: masterDetail ? _selectedNote?.note.id : null,
+              selectedNoteUuid: masterDetail ? _selectedNote?.note.uuid : null,
             ),
             SliverToBoxAdapter(child: SizedBox(height: bottomPad)),
           ],

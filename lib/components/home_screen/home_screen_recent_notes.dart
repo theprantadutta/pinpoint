@@ -67,7 +67,7 @@ class RecentNotesSliver extends StatefulWidget {
     super.key,
     required this.searchQuery,
     this.onNoteSelected,
-    this.selectedNoteId,
+    this.selectedNoteUuid,
   });
 
   final String searchQuery;
@@ -76,8 +76,10 @@ class RecentNotesSliver extends StatefulWidget {
   /// instead of pushing the full-screen editor route.
   final void Function(NoteWithDetails note)? onNoteSelected;
 
-  /// The note open in the detail pane, highlighted in the list.
-  final int? selectedNoteId;
+  /// The note open in the detail pane, highlighted in the list. Matched by
+  /// uuid: the integer id is per note-type table, so a checklist and a text
+  /// note can share one, and both cards lit up as selected.
+  final String? selectedNoteUuid;
 
   @override
   State<RecentNotesSliver> createState() => _RecentNotesSliverState();
@@ -166,7 +168,7 @@ class _RecentNotesSliverState extends State<RecentNotesSliver> {
         Widget item(int i) => NoteListItem(
               note: notes[i],
               onOpen: widget.onNoteSelected,
-              isSelected: widget.selectedNoteId == notes[i].note.id,
+              isSelected: widget.selectedNoteUuid == notes[i].note.uuid,
             );
 
         final padding = EdgeInsets.symmetric(
