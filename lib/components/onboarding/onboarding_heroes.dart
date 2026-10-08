@@ -5,13 +5,22 @@ import '../../design_system/design_system.dart';
 
 /// The sticker-and-doodle illustrations at the top of each onboarding page.
 ///
-/// Each is laid out on a fixed 300×280 canvas and scaled down to fit the hero
-/// area, so the composition holds on a small phone and does not sprawl on a
-/// tablet. All of it is decorative: screen readers get the page headline.
+/// Each is laid out on a fixed 300×280 canvas and scaled to fit the hero
+/// area — up as well as down — so the composition fills a tall phone or a
+/// tablet instead of sitting at phone size in an empty field. All of it is
+/// decorative: screen readers get the page headline.
 class _HeroCanvas extends StatelessWidget {
   const _HeroCanvas({required this.children});
 
   static const Size size = Size(300, 280);
+
+  /// Upper bound on the scale. It used to be an accidental 1.0: the canvas sat
+  /// in a FittedBox under a Center, and Center hands down loose constraints, so
+  /// BoxFit.contain only ever shrank it. The art was therefore 300pt wide on
+  /// every device, which read as lost on a 13-inch iPad and left the space
+  /// above the headline to grow with screen height on tall phones. Capped so a
+  /// very large window does not blow the stickers up past the copy.
+  static const double maxScale = 2.2;
 
   final List<Widget> children;
 
@@ -19,14 +28,30 @@ class _HeroCanvas extends StatelessWidget {
   Widget build(BuildContext context) {
     return ExcludeSemantics(
       child: IgnorePointer(
-        child: Center(
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: SizedBox.fromSize(
-              size: size,
-              child: Stack(clipBehavior: Clip.none, children: children),
-            ),
-          ),
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final scale = [
+              box.maxWidth / size.width,
+              box.maxHeight / size.height,
+              maxScale,
+            ].reduce((a, b) => a < b ? a : b);
+            // heightFactor 1: take the art's own height rather than the whole
+            // region, so the page can centre the art and the copy as one
+            // group instead of the art floating in all the leftover space.
+            return Center(
+              heightFactor: 1,
+              child: SizedBox(
+                width: size.width * scale,
+                height: size.height * scale,
+                child: FittedBox(
+                  child: SizedBox.fromSize(
+                    size: size,
+                    child: Stack(clipBehavior: Clip.none, children: children),
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

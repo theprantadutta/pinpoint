@@ -31,6 +31,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   static const int _pageCount = 3;
 
+  // Where the doodle band sits. It used to be computed from hard-coded guesses
+  // about the layout (`(height - 300) / 2 - 110`), but the band scales with
+  // screen width while those numbers assumed a phone, so on a tablet it slid
+  // below the illustration and ran behind the copy. It is now measured from
+  // where the current page's hero actually landed.
+  final _backgroundKey = GlobalKey();
+  final _heroKeys = List.generate(_pageCount, (_) => GlobalKey());
+  double? _bandTop;
 
   @override
   void initState() {
@@ -45,21 +53,49 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return [
       OnboardingPageView(
         hero: const WriteItDownHero(),
+        heroKey: _heroKeys[0],
         title: l10n.obWriteTitle,
         body: l10n.obWriteBody,
       ),
       OnboardingPageView(
         hero: const OrganizedHero(),
+        heroKey: _heroKeys[1],
         title: l10n.obOrganizedTitle,
         body: l10n.obOrganizedBody,
       ),
       OnboardingPageView(
         hero: const PrivateHero(),
+        heroKey: _heroKeys[2],
         title: l10n.obPrivateTitle,
         body: l10n.obPrivateBody,
         footnote: l10n.obPrivateFootnote,
       ),
     ];
+  }
+
+  /// DoodlePainter draws a band 200 units tall on a 390-unit-wide canvas,
+  /// scaled by screen width; its centre runs 10 units above the hero's, as in
+  /// the mocks.
+  void _measureBand(Duration _) {
+    if (!mounted) return;
+    final background =
+        _backgroundKey.currentContext?.findRenderObject() as RenderBox?;
+    final hero = _heroKeys[_currentPage].currentContext?.findRenderObject()
+        as RenderBox?;
+    if (background == null ||
+        hero == null ||
+        !background.hasSize ||
+        !hero.hasSize) {
+      return;
+    }
+    final centre = hero
+        .localToGlobal(hero.size.center(Offset.zero), ancestor: background)
+        .dy;
+    final scale = background.size.width / 390;
+    final top = centre - 110 * scale;
+    if (_bandTop == null || (top - _bandTop!).abs() > 0.5) {
+      setState(() => _bandTop = top);
+    }
   }
 
   void _onPageChanged(int page) {
@@ -114,58 +150,80 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final pages = _buildPages(context);
     final isLast = _currentPage == pages.length - 1;
 
+    // Re-measured after every layout, so a rotation, a page with longer copy
+    // or a text-scale change all keep the band behind the hero.
+    WidgetsBinding.instance.addPostFrameCallback(_measureBand);
+    final measured = _bandTop;
+
     return Scaffold(
       backgroundColor: context.sketch.bg,
-      body: DoodleBackground(
-        // The 200px doodle band runs behind the hero, which centres in the
-        // space above the copy, dots and buttons (~300px).
-        top: (MediaQuery.sizeOf(context).height - 300) / 2 - 110,
-        squiggle: true,
-        animate: true,
-        child: SafeArea(
-          child: SketchContentWidth(
-            maxWidth: 560,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: _onPageChanged,
-                    itemCount: pages.length,
-                    itemBuilder: (context, index) => pages[index],
+      body: KeyedSubtree(
+        key: _backgroundKey,
+        child: TweenAnimationBuilder<double>(
+          // Rough first-frame estimate; the band is still drawing in when the
+          // measurement replaces it, so the snap is not visible. After that it
+          // eases rather than jumping when the hero moves.
+          tween: Tween<double>(
+              end: measured ??
+                  (MediaQuery.sizeOf(context).height - 300) / 2 - 110),
+          duration: measured == null
+              ? Duration.zero
+              : SketchMotion.of(context, SketchMotion.base),
+          curve: SketchMotion.enter,
+          builder: (context, top, child) => DoodleBackground(
+            top: top,
+            squiggle: true,
+            animate: true,
+            child: child!,
+          ),
+          child: SafeArea(
+            child: SketchContentWidth(
+              // Wider on a tablet: at the phone's 560 the art could only reach
+              // about half the width of a 13-inch iPad.
+              maxWidth:
+                  MediaQuery.sizeOf(context).shortestSide >= 600 ? 720 : 560,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: PageView.builder(
+                      controller: _pageController,
+                      onPageChanged: _onPageChanged,
+                      itemCount: pages.length,
+                      itemBuilder: (context, index) => pages[index],
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                      SketchSpace.screenX, 8, SketchSpace.screenX, 0),
-                  child: OnboardingDots(
-                    count: pages.length,
-                    current: _currentPage,
+                  Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                        SketchSpace.screenX, 8, SketchSpace.screenX, 0),
+                    child: OnboardingDots(
+                      count: pages.length,
+                      current: _currentPage,
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                      SketchSpace.screenX, 20, SketchSpace.screenX, 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: PillButton.secondary(
-                          label: isLast ? l10n.obLogIn : l10n.obSkip,
-                          onPressed: _skipOnboarding,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                        SketchSpace.screenX, 20, SketchSpace.screenX, 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: PillButton.secondary(
+                            label: isLast ? l10n.obLogIn : l10n.obSkip,
+                            onPressed: _skipOnboarding,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: SketchSpace.grid),
-                      Expanded(
-                        child: PillButton(
-                          label: isLast ? l10n.obGetStarted : l10n.obNext,
-                          onPressed: _nextPage,
+                        const SizedBox(width: SketchSpace.grid),
+                        Expanded(
+                          child: PillButton(
+                            label: isLast ? l10n.obGetStarted : l10n.obNext,
+                            onPressed: _nextPage,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -174,8 +232,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-/// One onboarding page: the hero illustration in the top 55%, then the
-/// highlighted headline and a 14/1.5 muted line (plus an optional caveat).
+/// One onboarding page: the hero illustration above the highlighted headline
+/// and a 14/1.5 muted line (plus an optional caveat), centred as one group.
 class OnboardingPageView extends StatelessWidget {
   const OnboardingPageView({
     super.key,
@@ -183,6 +241,7 @@ class OnboardingPageView extends StatelessWidget {
     required this.title,
     required this.body,
     this.footnote,
+    this.heroKey,
   });
 
   final Widget hero;
@@ -192,53 +251,76 @@ class OnboardingPageView extends StatelessWidget {
   final String body;
   final String? footnote;
 
+  /// Lets the screen find where the hero landed, so the doodle band behind
+  /// it can follow instead of guessing.
+  final Key? heroKey;
+
+  /// How much to enlarge the copy on a tablet. At phone sizes the headline
+  /// read as a caption on a 13-inch screen.
+  static const double tabletTypeScale = 1.3;
+
   @override
   Widget build(BuildContext context) {
     final s = context.sketch;
     final t = context.type;
+    final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+    final k = tablet ? tabletTypeScale : 1.0;
+
+    TextStyle scaled(TextStyle style, double fallback) =>
+        style.copyWith(fontSize: (style.fontSize ?? fallback) * k);
 
     final copy = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Semantics(
           header: true,
-          child: HighlightedText(title, style: t.screenTitle),
+          child: HighlightedText(title, style: scaled(t.screenTitle, 28)),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12 * k),
         Text(
           body,
-          style:
-              t.bodyRegular.copyWith(fontSize: 14, height: 1.5, color: s.muted),
+          style: t.bodyRegular
+              .copyWith(fontSize: 14 * k, height: 1.5, color: s.muted),
         ),
         if (footnote != null) ...[
-          const SizedBox(height: 10),
-          Text(footnote!, style: t.caption),
+          SizedBox(height: 10 * k),
+          Text(footnote!, style: scaled(t.caption, 12)),
         ],
       ],
     );
 
-    // The hero takes the space the copy leaves (at least the top 55%) and
-    // centres in it; the copy sits right above the dots and only scrolls if
-    // a large text scale makes it taller than its 45% band.
+    // The hero and the copy are one group, centred in the page, with a fixed
+    // gap between them. Previously the copy was pinned to the bottom and the
+    // hero centred in everything left over, so the gap between illustration
+    // and headline grew with screen height — a dead band on tall phones and a
+    // chasm on a tablet. Spare height now goes above and below the group
+    // instead of into the middle of it. The hero is Flexible, so on a short
+    // phone it shrinks rather than pushing the copy off screen; the copy only
+    // scrolls if a large text scale makes it taller than its 45% band.
     return LayoutBuilder(
-      builder: (context, box) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(28, 24, 28, 8),
-              child: hero,
+      builder: (context, box) => Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: KeyedSubtree(key: heroKey, child: hero),
+              ),
             ),
-          ),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: box.maxHeight * 0.45),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                  SketchSpace.screenX + 4, 12, SketchSpace.screenX + 4, 8),
-              child: copy,
+            SizedBox(height: tablet ? 40 : 28),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: box.maxHeight * 0.45),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: SketchSpace.screenX + 4),
+                child: copy,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
