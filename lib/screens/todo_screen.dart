@@ -10,6 +10,7 @@ import '../components/shared/note_grid.dart';
 import '../database/database.dart';
 import '../design_system/design_system.dart';
 import '../navigation/new_note.dart';
+import '../navigation/shell_menu_button.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/todo_list_note_service.dart';
@@ -81,6 +82,7 @@ class _TodoScreenState extends State<TodoScreen>
       largeTitle: true,
       title: l10n.todosTitle,
       showBack: false,
+      leading: shellMenuButton(context),
       doodleTop: DoodleBackground.todoTop,
       actions: [
         CircleIconButton(
