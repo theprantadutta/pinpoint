@@ -62,17 +62,22 @@ class DoodleBackground extends StatelessWidget {
           ),
         );
 
+    // Clipped: the strokes start left of x=0, run past the right edge and
+    // are 16 wide, so unclipped they bleed into whatever sits beside this
+    // background — on a tablet, the neighbouring pane of the split layout.
     final layer = Positioned.fill(
       child: IgnorePointer(
-        child: RepaintBoundary(
-          child: animate
-              ? TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: SketchMotion.doodleDraw,
-                  curve: SketchMotion.enter,
-                  builder: (_, v, __) => paint(v),
-                )
-              : paint(1),
+        child: ClipRect(
+          child: RepaintBoundary(
+            child: animate
+                ? TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: SketchMotion.doodleDraw,
+                    curve: SketchMotion.enter,
+                    builder: (_, v, __) => paint(v),
+                  )
+                : paint(1),
+          ),
         ),
       ),
     );
