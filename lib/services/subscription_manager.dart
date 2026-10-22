@@ -43,6 +43,20 @@ abstract final class PurchaseVerificationReasons {
   /// or revoked. Authoritative, and the opposite of the two above: it grants
   /// nothing and withdraws anything granted provisionally.
   static const String storeRejected = 'store_rejected';
+
+  /// The purchase belongs to a different Pinpoint account — the one that
+  /// bought it. Grants nothing here; the user must sign in to that account.
+  static const String ownedByAnotherAccount = 'owned_by_another_account';
+
+  /// Purchases need a signed-in account. Nothing is granted or finished; the
+  /// purchase is verified again once the user signs in.
+  static const String signInRequired = 'sign_in_required';
+
+  /// What was sent is not a genuine purchase for this app. Authoritative.
+  static const String purchaseInvalid = 'purchase_invalid';
+
+  /// The store has not been paid yet (cash, carrier billing, approval).
+  static const String paymentPending = 'payment_pending';
 }
 
 /// Stable codes the backend sends alongside a failed verification.
@@ -63,6 +77,19 @@ abstract final class PurchaseVerificationCodes {
   /// Transient: the store could not be reached or did not answer.
   static const String verificationUnavailable =
       'PURCHASE_VERIFICATION_UNAVAILABLE';
+
+  /// Authoritative: not a genuine purchase for this app.
+  static const String purchaseInvalid = 'PURCHASE_INVALID';
+
+  /// The purchase belongs to another Pinpoint account.
+  static const String ownedByAnotherAccount =
+      'PURCHASE_OWNED_BY_ANOTHER_ACCOUNT';
+
+  /// The caller is not signed in; purchases need an account.
+  static const String signInRequired = 'ANONYMOUS_ACCOUNT_PURCHASE_BLOCKED';
+
+  /// The store has not been paid yet.
+  static const String purchasePending = 'PURCHASE_PENDING';
 }
 
 /// The outcome of [SubscriptionManager.verifyPurchase].
@@ -527,6 +554,17 @@ class SubscriptionManager extends ChangeNotifier {
             PurchaseVerificationReasons.storeRejected);
       }
 
+      // Answers about the purchase itself, not a failure to get one: none of
+      // these may fall through to the provisional grant below.
+      final refusal = _refusalReason(response);
+      if (refusal != null) {
+        debugPrint('❌ Purchase not granted here: $refusal');
+        // Only a sign-in can change a "sign in first" answer; keep nothing
+        // queued either way — the store sweep after sign-in verifies again.
+        await _clearPendingVerification();
+        return PurchaseVerificationResult.failed(refusal);
+      }
+
       // Otherwise the store already charged the user and the backend just
       // couldn't confirm it (service unavailable, misconfiguration, ...).
       // Never leave a paid user locked out: grant premium provisionally and
@@ -663,8 +701,12 @@ class SubscriptionManager extends ChangeNotifier {
       // returned early, and the self-granted premium survived every launch
       // until its invented expiry — up to a year of free premium that no
       // cancellation, refund or chargeback could remove.
-      if (_storeRejected(response)) {
-        debugPrint('❌ Store reports the pending purchase is not active '
+      if (_storeRejected(response) ||
+          _refusalReason(response) ==
+              PurchaseVerificationReasons.ownedByAnotherAccount ||
+          _refusalReason(response) ==
+              PurchaseVerificationReasons.purchaseInvalid) {
+        debugPrint('❌ The pending purchase is not this account\'s to use '
             '— withdrawing the provisional entitlement');
         await _withdrawProvisionalEntitlement();
         return false;
@@ -686,6 +728,23 @@ class SubscriptionManager extends ChangeNotifier {
   /// than revoke it on a response it does not understand.
   static bool _storeRejected(Map<String, dynamic> response) =>
       response['code'] == PurchaseVerificationCodes.subscriptionNotActive;
+
+  /// The [PurchaseVerificationReasons] for a refusal that is an answer about
+  /// the purchase — owned elsewhere, sign in first, invalid, unpaid — or null
+  /// for anything else. Like [_storeRejected], an unknown code is not a
+  /// refusal.
+  static String? _refusalReason(Map<String, dynamic> response) =>
+      switch (response['code']) {
+        PurchaseVerificationCodes.ownedByAnotherAccount =>
+          PurchaseVerificationReasons.ownedByAnotherAccount,
+        PurchaseVerificationCodes.signInRequired =>
+          PurchaseVerificationReasons.signInRequired,
+        PurchaseVerificationCodes.purchaseInvalid =>
+          PurchaseVerificationReasons.purchaseInvalid,
+        PurchaseVerificationCodes.purchasePending =>
+          PurchaseVerificationReasons.paymentPending,
+        _ => null,
+      };
 
   /// Undo a provisional grant the store has since disowned.
   ///

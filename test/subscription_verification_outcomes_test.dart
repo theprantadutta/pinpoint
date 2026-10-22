@@ -130,6 +130,60 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
     });
   });
 
+  group('answers about the purchase itself', () {
+    // Each of these is the backend's verdict on THIS purchase for THIS
+    // account — not a failure to ask. None may fall through to the
+    // provisional grant, or a purchase owned by someone else would unlock
+    // premium here for a year.
+    const refusals = {
+      'PURCHASE_OWNED_BY_ANOTHER_ACCOUNT':
+          PurchaseVerificationReasons.ownedByAnotherAccount,
+      'ANONYMOUS_ACCOUNT_PURCHASE_BLOCKED':
+          PurchaseVerificationReasons.signInRequired,
+      'PURCHASE_INVALID': PurchaseVerificationReasons.purchaseInvalid,
+      'PURCHASE_PENDING': PurchaseVerificationReasons.paymentPending,
+    };
+
+    for (final MapEntry(key: code, value: reason) in refusals.entries) {
+      test('$code grants nothing and queues nothing', () async {
+        api.verifyResponse = {
+          'success': false,
+          'message': 'refused',
+          'code': code,
+        };
+
+        final result = await SubscriptionManager().verifyPurchase(
+          purchaseToken: 'token',
+          productId: yearly,
+          platform: 'ios',
+        );
+
+        expect(result.grantsEntitlement, isFalse);
+        expect(result.reason, reason);
+        expect(SubscriptionManager().isPremium, isFalse);
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getString(pendingKey), isNull);
+      });
+    }
+
+    test('a queued receipt that turns out to be another account\'s is withdrawn',
+        () async {
+      await grantProvisionally();
+
+      api.verifyResponse = {
+        'success': false,
+        'message': 'This purchase belongs to another Pinpoint account',
+        'code': 'PURCHASE_OWNED_BY_ANOTHER_ACCOUNT',
+      };
+      api.statusResponse = {'is_premium': false, 'tier': 'free'};
+      await SubscriptionManager().checkSubscriptionStatus(forceRefresh: true);
+
+      expect(SubscriptionManager().isPremium, isFalse);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(pendingKey), isNull);
+    });
+  });
+
   group('retrying the queued receipt', () {
     test('a cancelled subscription withdraws the provisional premium',
         () async {

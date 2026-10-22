@@ -74,6 +74,9 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
 
     SubscriptionService().resetForTesting();
     SubscriptionService().debugIapClient = fake;
+    // Purchases need an account; every launch here is a signed-in one.
+    SubscriptionService().debugAccountId =
+        '00000000-0000-4000-8000-000000000001';
   });
 
   tearDown(() async {

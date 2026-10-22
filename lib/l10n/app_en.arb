@@ -1796,6 +1796,30 @@
   "@subRestore": {
     "description": "Button that restores previously bought subscriptions."
   },
+  "subSignInToBuyTitle": "Sign in to subscribe",
+  "@subSignInToBuyTitle": {
+    "description": "Dialog title asking a signed-out user to sign in before buying Premium."
+  },
+  "subSignInToBuyBody": "Premium belongs to your Pinpoint account, so it follows you to every device you sign in on. Sign in or create a free account first.",
+  "@subSignInToBuyBody": {
+    "description": "Dialog body explaining that Premium is tied to the Pinpoint account, so signing in comes first."
+  },
+  "subSignInAction": "Sign in",
+  "@subSignInAction": {
+    "description": "Button that opens the sign-in screen from the paywall."
+  },
+  "subOwnedElsewhereTitle": "Bought on another account",
+  "@subOwnedElsewhereTitle": {
+    "description": "Dialog title when a restored purchase belongs to a different Pinpoint account."
+  },
+  "subOwnedElsewhereBody": "This purchase belongs to a different Pinpoint account. Sign in with the account you bought it on to use it.",
+  "@subOwnedElsewhereBody": {
+    "description": "Dialog body telling the user to sign in with the account that made the purchase."
+  },
+  "subAccountOwnershipNote": "Purchases belong to the Pinpoint account that bought them. To restore, sign in with that account.",
+  "@subAccountOwnershipNote": {
+    "description": "Small note under the Restore button explaining that purchases belong to the buying account."
+  },
   "subHeroTitle": "Pinpoint Premium",
   "@subHeroTitle": {
     "description": "Heading on the paywall. \"Pinpoint\" is the app name."

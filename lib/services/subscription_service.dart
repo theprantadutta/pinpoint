@@ -42,6 +42,18 @@ class _MissingOfferException implements Exception {
 /// Testing: the plugin singleton has no public setter, so [IapClient] is the
 /// seam — assign [debugIapClient] before touching this singleton, and call
 /// [resetForTesting] between cases because this is process-global.
+/// Something about a purchase the user has to act on, published on
+/// [SubscriptionService.notices] for whichever screen is showing.
+enum PurchaseNotice {
+  /// The purchase belongs to the Pinpoint account that bought it, and this
+  /// is a different one. The user must sign in with that account.
+  ownedByAnotherAccount,
+
+  /// Purchases need a signed-in account. The purchase is kept and verified
+  /// again as soon as the user signs in.
+  signInRequired,
+}
+
 class SubscriptionService {
   static final SubscriptionService _instance = SubscriptionService._internal();
   factory SubscriptionService() => _instance;
@@ -52,6 +64,12 @@ class SubscriptionService {
   /// Swap in a fake store. TESTS ONLY.
   @visibleForTesting
   set debugIapClient(IapClient client) => _client = client;
+
+  /// Stands in for the signed-in account. TESTS ONLY: [BackendAuthService]
+  /// is a singleton with no way to sign a test user in. Cleared by
+  /// [resetForTesting].
+  @visibleForTesting
+  String? debugAccountId;
 
   // Product IDs (must match Google Play Console / App Store Connect)
   static const String premiumMonthly = 'pinpoint_premium_monthly';
@@ -124,6 +142,19 @@ class SubscriptionService {
   /// Identities already delivered, loaded once from disk.
   Set<String>? _delivered;
 
+  final StreamController<PurchaseNotice> _notices =
+      StreamController<PurchaseNotice>.broadcast();
+
+  /// Purchase outcomes the user must act on. Nothing is buffered: a notice
+  /// raised by the background sweep with no screen listening is dropped, so
+  /// the user is only interrupted where they are dealing with purchases.
+  Stream<PurchaseNotice> get notices => _notices.stream;
+
+  /// Whether the account was signed in last time we looked, so only the
+  /// signed-out → signed-in transition triggers a store sweep.
+  bool? _wasSignedIn;
+  bool _authListenerAttached = false;
+
   /// Analytics sink, or null when the locator has not been initialized (tests).
   AnalyticsFacade? get _analytics =>
       getIt.isRegistered<AnalyticsFacade>() ? getIt<AnalyticsFacade>() : null;
@@ -149,6 +180,7 @@ class SubscriptionService {
     // from a previous session the moment it completes, and OpenIAP drops
     // events that arrive with nothing attached.
     _attachListeners();
+    _attachAuthListener();
 
     try {
       _isAvailable = await _client.initConnection();
@@ -200,6 +232,23 @@ class SubscriptionService {
     } catch (e) {
       log.w('Re-verifying owned purchases failed; will retry: $e');
     }
+  }
+
+  /// Verifies owned purchases again right after the user signs in. A
+  /// purchase that met "sign in first" was neither granted nor finished, so
+  /// this sweep is what delivers it — to the account now signed in.
+  void _attachAuthListener() {
+    if (_authListenerAttached) return;
+    _authListenerAttached = true;
+
+    final auth = BackendAuthService();
+    _wasSignedIn = auth.isAuthenticated;
+    auth.addListener(() {
+      final signedIn = auth.isAuthenticated;
+      final justSignedIn = signedIn && _wasSignedIn == false;
+      _wasSignedIn = signedIn;
+      if (justSignedIn) unawaited(reconcileStoreState());
+    });
   }
 
   void _attachListeners() {
@@ -267,6 +316,16 @@ class SubscriptionService {
   /// from the paywall because this is the only place that can tell the failure
   /// modes apart.
   Future<bool> purchase(String productId) async {
+    // Purchases belong to an account; the paywall asks the user to sign in
+    // before it gets here. This is the backstop.
+    if (_accountId() == null) {
+      log.w('Purchase refused: not signed in');
+      _analytics?.trackCheckoutLaunchFailed(
+          productId: productId, reason: PurchaseReasonCodes.signInRequired);
+      _notices.add(PurchaseNotice.signInRequired);
+      return false;
+    }
+
     if (!_isAvailable) {
       log.e('In-app purchases not available');
       _analytics?.trackCheckoutLaunchFailed(
@@ -353,6 +412,7 @@ class SubscriptionService {
   /// payment that resolves days later can still be attributed to the account.
   /// Null when signed out — a device-only purchase is still fully supported.
   String? _accountId() {
+    if (debugAccountId != null) return debugAccountId;
     final auth = BackendAuthService();
     return auth.isAuthenticated ? auth.userId : null;
   }
@@ -384,7 +444,9 @@ class SubscriptionService {
   /// purchase stream any more; the owned items come back from
   /// `getAvailablePurchases()` and are fulfilled here.
   ///
-  /// [onComplete] receives the number of owned entitlements found.
+  /// [onComplete] receives the number of owned entitlements now granted to
+  /// this account. Purchases that belong to another account are not counted;
+  /// they raise [PurchaseNotice.ownedByAnotherAccount] instead.
   Future<void> restorePurchases({
     Function(int restoredCount, bool hasError)? onComplete,
   }) async {
@@ -428,8 +490,7 @@ class SubscriptionService {
     var count = 0;
     for (final purchase in owned) {
       if (purchase.purchaseState != PurchaseState.Purchased) continue;
-      count++;
-      await _fulfil(purchase, source: source);
+      if (await _fulfil(purchase, source: source)) count++;
     }
     return count;
   }
@@ -487,12 +548,14 @@ class SubscriptionService {
   /// user already owned, keeping restores out of the conversion count. It is
   /// passed in rather than derived, because OpenIAP has no "restored" state to
   /// read: an owned item looks identical however it reached us.
-  Future<void> _fulfil(Purchase purchase, {required String source}) async {
+  ///
+  /// Returns whether the purchase now grants this account premium.
+  Future<bool> _fulfil(Purchase purchase, {required String source}) async {
     final identity = purchaseIdentity(purchase);
 
     // The billing sheet closing IS an app resume, so the stream event and the
     // resume sweep see the same purchase within a second of each other.
-    if (identity != null && !_fulfilling.add(identity)) return;
+    if (identity != null && !_fulfilling.add(identity)) return false;
 
     try {
       final delivered = await _deliveredIds();
@@ -501,7 +564,7 @@ class SubscriptionService {
         // acknowledgement that failed last time would otherwise have Play
         // refund a purchase the user is still using.
         await _finish(purchase);
-        return;
+        return true;
       }
 
       _analytics?.trackStorePurchaseConfirmed(
@@ -515,24 +578,43 @@ class SubscriptionService {
         _analytics?.trackVerificationFailed(
             productId: purchase.productId,
             reason: PurchaseReasonCodes.noPurchaseToken);
-        return;
+        return false;
       }
 
       final result = await _verify(payload, source: source);
 
       if (!result.grantsEntitlement) {
-        // The backend actively rejected it. Deliver nothing. On Android leave
-        // it unacknowledged so Play refunds the user within three days; on iOS
-        // finish it, or StoreKit replays it on every launch forever.
-        if (purchase is PurchaseIOS) await _finish(purchase);
-        return;
+        switch (result.reason) {
+          case PurchaseVerificationReasons.signInRequired:
+            // Not rejected — waiting for an account. Neither delivered nor
+            // finished, so the sweep after sign-in verifies it again.
+            _notices.add(PurchaseNotice.signInRequired);
+          case PurchaseVerificationReasons.paymentPending:
+            // Not paid yet. Finishing would acknowledge money not taken.
+            break;
+          case PurchaseVerificationReasons.ownedByAnotherAccount:
+            // A genuine purchase, paid for by the account that owns it.
+            // Acknowledge it — leaving it would have Play refund the owner —
+            // but grant nothing here.
+            _notices.add(PurchaseNotice.ownedByAnotherAccount);
+            await _finish(purchase);
+          default:
+            // The backend actively rejected it. Deliver nothing. On Android
+            // leave it unacknowledged so Play refunds the user within three
+            // days; on iOS finish it, or StoreKit replays it on every launch
+            // forever.
+            if (purchase is PurchaseIOS) await _finish(purchase);
+        }
+        return false;
       }
 
       if (identity != null) await _markDelivered(identity);
       await _finish(purchase);
+      return true;
     } catch (e, stackTrace) {
       log.e('❌ Error handling purchase: $e');
       log.e('Stack trace: $stackTrace');
+      return false;
     } finally {
       if (identity != null) _fulfilling.remove(identity);
     }
@@ -725,5 +807,6 @@ class SubscriptionService {
     _isRestoring = false;
     _fulfilling.clear();
     _delivered = null;
+    debugAccountId = null;
   }
 }

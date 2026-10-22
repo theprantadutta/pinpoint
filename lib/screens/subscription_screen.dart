@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -6,7 +7,9 @@ import 'package:pinpoint/components/paywall/paywall_widgets.dart';
 import 'package:pinpoint/design_system/design_system.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
+import 'package:pinpoint/screens/auth_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
+import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/purchases/purchase_mapping.dart';
 import 'package:pinpoint/services/subscription_service.dart';
 import 'package:pinpoint/services/subscription_manager.dart';
@@ -47,10 +50,83 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   /// platform call, so it cannot happen during build.
   final Map<String, int?> _trialDays = {};
 
+  /// Purchase outcomes the user has to act on — raised by the purchase
+  /// listener, which may answer long after the tap that started it.
+  StreamSubscription<PurchaseNotice>? _notices;
+
+  /// Set when a restore turned up a purchase that belongs to another account;
+  /// its dialog then replaces the "nothing found" toast.
+  bool _ownedElsewhereDuringRestore = false;
+
   @override
   void initState() {
     super.initState();
     getIt<AnalyticsFacade>().trackScreenView(screenName: 'Subscription');
+    _notices = SubscriptionService().notices.listen(_onNotice);
+  }
+
+  @override
+  void dispose() {
+    // Only this screen's own listener. The service and its purchase listener
+    // are app-lifetime; see the note below.
+    _notices?.cancel();
+    super.dispose();
+  }
+
+  void _onNotice(PurchaseNotice notice) {
+    if (!mounted) return;
+    switch (notice) {
+      case PurchaseNotice.signInRequired:
+        _promptSignIn();
+      case PurchaseNotice.ownedByAnotherAccount:
+        if (_isRestoring) _ownedElsewhereDuringRestore = true;
+        _showOwnedElsewhere();
+    }
+  }
+
+  /// Purchases belong to an account, so a signed-out user signs in first.
+  Future<void> _promptSignIn() async {
+    final l10n = AppL10n.of(context);
+    final signIn = await showSketchConfirm(
+      context: context,
+      title: l10n.subSignInToBuyTitle,
+      message: l10n.subSignInToBuyBody,
+      confirmLabel: l10n.subSignInAction,
+      cancelLabel: l10n.commonCancel,
+      destructive: false,
+    );
+    if (signIn && mounted) context.push(AuthScreen.kRouteName);
+  }
+
+  /// The restored purchase is someone else's — the account that bought it.
+  Future<void> _showOwnedElsewhere() async {
+    final l10n = AppL10n.of(context);
+    await showSketchSheet<void>(
+      context: context,
+      builder: (ctx) => SketchSheet(
+        scrollable: false,
+        titleWidget: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(l10n.subOwnedElsewhereTitle,
+                  style: ctx.type.emptyTitle),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.subOwnedElsewhereBody,
+              style: ctx.type.bodyRegular
+                  .copyWith(fontSize: 14, color: ctx.sketch.muted),
+            ),
+          ],
+        ),
+        child: PillButton(
+          label: l10n.commonOk,
+          onPressed: () => Navigator.of(ctx).pop(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -104,15 +180,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
   }
 
-  // NOTE: no dispose() override on purpose. SubscriptionService is a
-  // process-wide singleton and owns the app-lifetime purchase listener; this
-  // screen only reads it. Tearing it down here used to kill every subsequent
-  // purchase, restore and deferred payment for the rest of the session.
+  // NOTE: dispose() never touches SubscriptionService. It is a process-wide
+  // singleton and owns the app-lifetime purchase listener; this screen only
+  // reads it. Tearing it down here used to kill every subsequent purchase,
+  // restore and deferred payment for the rest of the session.
 
   Future<void> _handleRestore() async {
     getIt<AnalyticsFacade>().trackRestorePurchaseInitiated();
     setState(() {
       _isRestoring = true;
+      _ownedElsewhereDuringRestore = false;
     });
 
     await _subscriptionService.restorePurchases(
@@ -136,7 +213,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             description:
                 AppL10n.of(context).subRestoredCount(restoredCount),
           );
-        } else {
+        } else if (!_ownedElsewhereDuringRestore) {
           showInfoToast(
             context: context,
             title: AppL10n.of(context).subNoPurchasesFound,
@@ -148,6 +225,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<void> _purchaseSubscription(String productId) async {
+    if (!BackendAuthService().isAuthenticated) {
+      await _promptSignIn();
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _selectedProductId = productId;
@@ -338,6 +420,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     return Column(
       children: [
+        Text(
+          AppL10n.of(context).subAccountOwnershipNote,
+          style: small,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
         Text(
           AppL10n.of(context).subLegalAutoRenew(_storeName),
           style: small,

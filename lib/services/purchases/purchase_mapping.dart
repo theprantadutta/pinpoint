@@ -25,6 +25,7 @@ abstract final class PurchaseReasonCodes {
   static const String noPurchaseToken = 'no_purchase_token';
   static const String verificationRejected = 'verification_rejected';
   static const String noOfferToken = 'no_offer_token';
+  static const String signInRequired = 'sign_in_required';
   static const String unknown = 'unknown';
 
   /// Firebase caps string parameter values at 100 chars; store error codes are
