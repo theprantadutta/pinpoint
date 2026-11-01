@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'encryption_key_errors.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
@@ -780,13 +781,17 @@ class ApiService {
       if (response.statusCode == 200) {
         return response.data['encryption_key'] as String;
       }
-      return null;
+      throw Exception('Unexpected status ${response.statusCode} reading the encryption key');
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        // Key not found in cloud - this is normal for new users
+      final code = _extractErrorCode(e.response?.data);
+      // Null means one thing only: the server confirmed this account has no
+      // key yet. A bare 404 (a proxy, a missing route) is not that, and
+      // treating it so is how a new key used to replace the real one.
+      if (e.response?.statusCode == 404 && code == 'ENCRYPTION_KEY_NOT_FOUND') {
         _logger.d('No encryption key found in cloud (new user)');
         return null;
       }
+      if (code == 'ENCRYPTION_ZERO_KNOWLEDGE') throw const ZeroKnowledgeAccountException();
       _logger.e('Get encryption key error: ${_handleError(e)}');
       throw Exception(_handleError(e));
     }
@@ -802,6 +807,9 @@ class ApiService {
         },
       );
     } on DioException catch (e) {
+      final code = _extractErrorCode(e.response?.data);
+      if (code == 'ENCRYPTION_KEY_EXISTS') throw const EncryptionKeyExistsException();
+      if (code == 'ENCRYPTION_ZERO_KNOWLEDGE') throw const ZeroKnowledgeAccountException();
       _logger.e('Store encryption key error: ${_handleError(e)}');
       throw Exception(_handleError(e));
     }

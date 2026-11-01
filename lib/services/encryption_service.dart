@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 
 import 'backend_auth_service.dart';
+import 'encryption_key_errors.dart';
+import 'zero_knowledge_service.dart';
 
 class SecureEncryptionService {
   static const _storage = FlutterSecureStorage();
@@ -83,55 +85,29 @@ class SecureEncryptionService {
     final key = enc.Key(keyBytes);
     await _storage.write(key: _keyStorageKey, value: key.base64);
     _applyKey(key);
+    _confirm();
   }
 
-  // Get existing key or create a new one
-  // Priority: Local storage > Cloud backup > Generate new
+  // Local key first; otherwise this account's key from the server, or a new
+  // one only once the server has confirmed it has none. Without [apiService]
+  // (signed out) a local key is made and never uploaded from here.
   static Future<enc.Key> _getOrCreateKey({dynamic apiService}) async {
-    // 1. Try to get key from local storage first
-    String? keyString = await _storage.read(key: _keyStorageKey);
-
+    final keyString = await _storage.read(key: _keyStorageKey);
     if (keyString != null) {
       debugPrint('🔑 [Encryption] Using existing local encryption key');
       return enc.Key.fromBase64(keyString);
     }
 
-    // 2. Try to fetch key from cloud if apiService is provided and user is authenticated
     if (apiService != null) {
-      try {
-        debugPrint(
-            '🔑 [Encryption] No local key found, fetching from cloud...');
-        final cloudKey = await apiService.getEncryptionKey();
-        if (cloudKey != null) {
-          debugPrint('✅ [Encryption] Retrieved encryption key from cloud');
-          // Save to local storage for future use
-          await _storage.write(key: _keyStorageKey, value: cloudKey);
-          return enc.Key.fromBase64(cloudKey);
-        }
-      } catch (e) {
-        debugPrint('⚠️ [Encryption] Failed to fetch key from cloud: $e');
-        // Continue to generate new key
+      if (await syncKeyFromCloud(apiService, force: true)) {
+        return enc.Key.fromBase64((await _storage.read(key: _keyStorageKey))!);
       }
+      throw const KeyRecoveryPendingException();
     }
 
-    // 3. Generate a new random key
-    debugPrint('🔑 [Encryption] Generating new encryption key');
+    debugPrint('🔑 [Encryption] Generating a local encryption key');
     final key = enc.Key.fromSecureRandom(32);
-    final keyBase64 = key.base64;
-    await _storage.write(key: _keyStorageKey, value: keyBase64);
-
-    // Upload new key to cloud if apiService is provided
-    if (apiService != null) {
-      try {
-        debugPrint('☁️ [Encryption] Uploading new key to cloud...');
-        await apiService.storeEncryptionKey(keyBase64);
-        debugPrint('✅ [Encryption] Key uploaded to cloud successfully');
-      } catch (e) {
-        debugPrint('⚠️ [Encryption] Failed to upload key to cloud: $e');
-        // Not critical - key is still stored locally
-      }
-    }
-
+    await _storage.write(key: _keyStorageKey, value: key.base64);
     return key;
   }
 
@@ -154,67 +130,87 @@ class SecureEncryptionService {
     }
   }
 
-  /// Force fetch encryption key from cloud and replace local key
-  /// Use this after login to ensure we have the correct key from cloud
-  /// Includes fast retry logic for reliability
-  /// Only syncs once per session unless [force] is true
+  /// Whether this signed-in account's key is the one in use: read from the
+  /// server, registered by this device, or (zero-knowledge) unwrapped.
+  static bool get keyConfirmedForCurrentAccount =>
+      _keySyncedThisSession && _keySyncedForAccount == BackendAuthService().userId && isInitialized;
+
+  static void _confirm() {
+    _keySyncedThisSession = true;
+    _keySyncedForAccount = BackendAuthService().userId;
+  }
+
+  /// Make sure this account's key is the one in use, or report that it is
+  /// not available yet. Sync calls this first: notes encrypted with any
+  /// other key could never be read on another device.
+  static Future<bool> ensureAccountKey(dynamic apiService) async {
+    if (keyConfirmedForCurrentAccount) return true;
+    try {
+      return await syncKeyFromCloud(apiService);
+    } catch (e) {
+      debugPrint('⚠️ [Encryption] Account key not available yet: $e');
+      return false;
+    }
+  }
+
+  /// Bring this account's key in from the server, or register one if the
+  /// server confirms it has none. Returns false when that cannot be settled
+  /// now (offline, server error): nothing is generated or uploaded then.
+  ///
+  /// A zero-knowledge account is never asked for, or given, a raw key; its
+  /// key comes from unwrapping ([applyDataKeyBytes]).
+  ///
+  /// Once per session per account unless [force].
   static Future<bool> syncKeyFromCloud(dynamic apiService, {int maxRetries = 2, bool force = false}) async {
-    // Skip if already synced this session for this same account (unless forced)
-    final account = BackendAuthService().userId;
-    if (_keySyncedThisSession && _keySyncedForAccount == account && !force) {
+    if (keyConfirmedForCurrentAccount && !force) {
       debugPrint('⏭️ [Encryption] Key already synced this session, skipping');
       return true;
     }
 
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+    if (await ZeroKnowledgeService.isZeroKnowledge()) {
+      if (isInitialized) _confirm();
+      return isInitialized;
+    }
+
+    // One extra round for the race where another device registers first.
+    for (int attempt = 1; attempt <= maxRetries + 1; attempt++) {
       try {
-        debugPrint('🔄 [Encryption] Fetching encryption key from cloud (attempt $attempt/$maxRetries)...');
+        debugPrint('🔄 [Encryption] Fetching encryption key from cloud (attempt $attempt)...');
         final cloudKey = await apiService.getEncryptionKey();
 
         if (cloudKey != null) {
-          debugPrint(
-              '✅ [Encryption] Retrieved key from cloud, replacing local key');
-
-          // Replace local key with cloud key
           await _storage.write(key: _keyStorageKey, value: cloudKey);
-
-          // Reinitialize ciphers with new key
           _applyKey(enc.Key.fromBase64(cloudKey));
-
-          _keySyncedThisSession = true;
-          _keySyncedForAccount = account;
-          debugPrint('✅ [Encryption] Successfully synced key from cloud');
+          _confirm();
+          debugPrint('✅ [Encryption] Using the account key from cloud');
           return true;
-        } else {
-          debugPrint('ℹ️ [Encryption] No key found in cloud');
-
-          // Upload current local key to cloud if we have one
-          String? localKey = await _storage.read(key: _keyStorageKey);
-          if (localKey != null) {
-            debugPrint('☁️ [Encryption] Uploading local key to cloud...');
-            await apiService.storeEncryptionKey(localKey);
-            _keySyncedThisSession = true;
-            _keySyncedForAccount = account;
-            debugPrint('✅ [Encryption] Local key uploaded to cloud');
-            return true;
-          }
-
-          return false;
         }
+
+        // Confirmed: this account has no key yet. Register the local one (or
+        // a new one). The server is create-only, so this can never replace a
+        // key another device stored.
+        var local = await _storage.read(key: _keyStorageKey);
+        if (local == null) {
+          local = enc.Key.fromSecureRandom(32).base64;
+          await _storage.write(key: _keyStorageKey, value: local);
+        }
+        await apiService.storeEncryptionKey(local);
+        _applyKey(enc.Key.fromBase64(local));
+        _confirm();
+        debugPrint('✅ [Encryption] Registered this account\'s first key');
+        return true;
+      } on EncryptionKeyExistsException {
+        debugPrint('ℹ️ [Encryption] Another device registered first; reading its key');
+        continue;
+      } on ZeroKnowledgeAccountException {
+        debugPrint('ℹ️ [Encryption] Zero-knowledge account: no raw key to sync');
+        return false;
       } catch (e) {
         debugPrint('❌ [Encryption] Attempt $attempt failed: $e');
-
-        if (attempt < maxRetries) {
-          // Fast retry - only 500ms delay
-          debugPrint('⏳ [Encryption] Retrying in 500ms...');
-          await Future.delayed(const Duration(milliseconds: 500));
-        } else {
-          debugPrint('❌ [Encryption] All $maxRetries attempts failed to sync key from cloud');
-          return false;
-        }
+        if (attempt > maxRetries) return false;
+        await Future.delayed(const Duration(milliseconds: 500));
       }
     }
-
     return false;
   }
 
