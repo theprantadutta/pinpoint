@@ -17,6 +17,7 @@ import 'package:pinpoint/sync/sync_service.dart';
 import 'package:pinpoint/sync/api_sync_service.dart';
 import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
+import 'package:pinpoint/services/encryption_key_errors.dart';
 import 'package:pinpoint/services/encryption_service.dart';
 import 'package:pinpoint/services/zero_knowledge_service.dart';
 import 'package:pinpoint/screens/unlock_screen.dart';
@@ -526,7 +527,7 @@ class _AuthScreenState extends State<AuthScreen> {
           debugPrint(
               '⚠️ [$tag] Cloud key sync returned false, initializing encryption locally...');
           if (!SecureEncryptionService.isInitialized) {
-            await SecureEncryptionService.initialize(apiService: apiService);
+            await _initializeAccountKey(apiService);
             debugPrint('✅ [$tag] Encryption initialized locally as fallback');
           }
         }
@@ -535,7 +536,7 @@ class _AuthScreenState extends State<AuthScreen> {
         if (!SecureEncryptionService.isInitialized) {
           debugPrint(
               '🔑 [$tag] Initializing encryption locally after failure...');
-          await SecureEncryptionService.initialize(apiService: ApiService());
+          await _initializeAccountKey(ApiService());
           debugPrint('✅ [$tag] Encryption initialized locally');
         }
       }
@@ -677,7 +678,7 @@ class _AuthScreenState extends State<AuthScreen> {
           // Fallback: Initialize encryption locally
           // This ensures encryption is initialized even if cloud sync fails
           if (!SecureEncryptionService.isInitialized) {
-            await SecureEncryptionService.initialize(apiService: apiService);
+            await _initializeAccountKey(apiService);
             debugPrint(
                 '✅ [Email Auth] Encryption initialized locally as fallback');
           }
@@ -689,7 +690,7 @@ class _AuthScreenState extends State<AuthScreen> {
         if (!SecureEncryptionService.isInitialized) {
           debugPrint(
               '🔑 [Email Auth] Initializing encryption locally after failure...');
-          await SecureEncryptionService.initialize(apiService: ApiService());
+          await _initializeAccountKey(ApiService());
           debugPrint('✅ [Email Auth] Encryption initialized locally');
         }
       }
@@ -731,6 +732,18 @@ class _AuthScreenState extends State<AuthScreen> {
       _isLogin = !_isLogin;
       _errorMessage = null;
     });
+  }
+
+  /// The account key, from the server or newly registered once the server
+  /// confirms there is none. If that cannot be settled now (offline, server
+  /// error) nothing is generated in its place: sign-in continues, and sync
+  /// waits until the key arrives (it retries on every sync).
+  Future<void> _initializeAccountKey(ApiService apiService) async {
+    try {
+      await SecureEncryptionService.initialize(apiService: apiService);
+    } on KeyRecoveryPendingException {
+      debugPrint('⏳ [Auth] Account key not available yet; sync will wait for it');
+    }
   }
 
   @override

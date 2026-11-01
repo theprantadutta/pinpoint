@@ -1,3 +1,6 @@
+import 'package:pinpoint/services/api_service.dart';
+import 'package:pinpoint/services/backend_auth_service.dart';
+import 'package:pinpoint/services/encryption_service.dart';
 import 'package:pinpoint/services/audio_upload_queue.dart';
 import 'dart:async';
 
@@ -100,6 +103,16 @@ class SyncManager with ChangeNotifier {
       );
     }
 
+    // Signed in: nothing goes up or comes down until this account's key is
+    // the one in use. Notes encrypted with any other key could never be read
+    // on another device, and downloads would fail to decrypt.
+    if (!await _accountKeyReady()) {
+      return SyncResult(
+        success: false,
+        message: 'Your encryption key is not available yet. Check your connection and try again.',
+      );
+    }
+
     try {
       _isSyncing = true;
       notifyListeners();
@@ -181,5 +194,15 @@ class SyncManager with ChangeNotifier {
     _connectivitySub?.cancel();
     _syncService?.dispose();
     super.dispose();
+  }
+
+  Future<bool> _accountKeyReady() async {
+    try {
+      if (!BackendAuthService().isAuthenticated) return true;
+      return await SecureEncryptionService.ensureAccountKey(ApiService());
+    } catch (e) {
+      debugPrint('⚠️ [SyncManager] Account key check failed: $e');
+      return false;
+    }
   }
 }
