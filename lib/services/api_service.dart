@@ -89,9 +89,15 @@ enum ApiErrorType {
 
 class ApiService {
   // Backend API configuration - uses prod URL in release mode, dev URL otherwise
-  static final String baseUrl = kReleaseMode
-      ? dotenv.env['API_BASE_URL_PROD']!
-      : dotenv.env['API_BASE_URL_DEV']!;
+  /// `--dart-define=API_BASE_URL=https://…` points any build at a given
+  /// backend (a debug build at production, say) without editing `.env`.
+  static const String _overrideBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+  static final String baseUrl = _overrideBaseUrl.isNotEmpty
+      ? _overrideBaseUrl
+      : kReleaseMode
+          ? dotenv.env['API_BASE_URL_PROD']!
+          : dotenv.env['API_BASE_URL_DEV']!;
   static const String apiV1 = '/api/v1';
 
   final Dio _dio = Dio();

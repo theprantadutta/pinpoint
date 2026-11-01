@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -112,4 +114,53 @@ void main() {
       });
     }
   }
+
+  // Review 2026-11-01, F10: the other note types are reachable from a blank
+  // new text note, not only by long-pressing Create.
+  Future<void> open(WidgetTester tester, String type) async {
+    tester.view.physicalSize = const Size(390, 844) * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await tester
+        .runAsync(() => DriftNoteFolderService.insertNoteFolder('Random'));
+    await tester.pumpWidget(app(type, Brightness.light));
+    await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pump(const Duration(milliseconds: 500));
+  }
+
+  Future<void> close(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 3));
+  }
+
+  testWidgets('a blank new text note offers checklist, voice and reminder',
+      (tester) async {
+    await open(tester, 'Title Content');
+
+    expect(find.text('Or start a'), findsOneWidget);
+    expect(find.text('Checklist'), findsOneWidget);
+    expect(find.text('Voice'), findsOneWidget);
+    expect(find.text('Reminder'), findsOneWidget);
+
+    // Once there is something to lose, the row goes away.
+    await tester.enterText(find.byType(TextField).first, 'Groceries');
+    await tester.pump();
+    expect(find.text('Or start a'), findsNothing);
+
+    await close(tester);
+  });
+
+  testWidgets('other note types do not show the start-as row', (tester) async {
+    await open(tester, 'Todo List');
+    expect(find.text('Or start a'), findsNothing);
+    await close(tester);
+  });
+
+  test('the editor no longer advertises encrypted sharing', () {
+    // Not built; a disabled "Share Encrypted · SOON" item promised it.
+    final source =
+        File('lib/screens/create_note_screen_v2.dart').readAsStringSync();
+    expect(source.contains("'share_encrypted'"), isFalse);
+  });
 }
