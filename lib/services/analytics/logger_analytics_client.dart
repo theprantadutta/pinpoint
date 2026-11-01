@@ -179,8 +179,8 @@ class LoggerAnalyticsClient implements AnalyticsClient {
   Future<void> trackSyncCompleted() async => _log('sync_completed');
 
   @override
-  Future<void> trackSyncFailed({required String error}) async =>
-      _log('sync_failed', {'error': error});
+  Future<void> trackSyncFailed({required String reason}) async =>
+      _log('sync_failed', {'reason': reason});
 
   @override
   Future<void> trackThemeChanged({required String theme}) async =>

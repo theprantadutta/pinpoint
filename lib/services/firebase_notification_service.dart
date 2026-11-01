@@ -39,9 +39,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
   }
+  // Ids only: titles and bodies are the user's reminder text, and debugPrint
+  // reaches logcat in release builds too.
   debugPrint('📱 Background message received: ${message.messageId}');
-  debugPrint('Title: ${message.notification?.title}');
-  debugPrint('Body: ${message.notification?.body}');
 }
 
 class FirebaseNotificationService {
@@ -256,10 +256,7 @@ class FirebaseNotificationService {
 
   /// Handle messages when app is in foreground
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    debugPrint('📨 Foreground message received: ${message.messageId}');
-    debugPrint('Title: ${message.notification?.title}');
-    debugPrint('Body: ${message.notification?.body}');
-    debugPrint('Data: ${message.data}');
+    debugPrint('📨 Foreground message received: ${message.messageId} (${message.data['type'] ?? 'no type'})');
 
     // Show local notification
     await _showLocalNotification(message);
@@ -267,8 +264,7 @@ class FirebaseNotificationService {
 
   /// Handle notification tap when app is in background
   void _handleNotificationOpened(RemoteMessage message) {
-    debugPrint('🔔 Notification opened: ${message.messageId}');
-    debugPrint('Data: ${message.data}');
+    debugPrint('🔔 Notification opened: ${message.messageId} (${message.data['type'] ?? 'no type'})');
 
     // Navigate to appropriate screen based on data
     _handleNotificationData(message.data);

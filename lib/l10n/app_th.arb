@@ -998,7 +998,7 @@
   "edColorSky": "ฟ้า",
   "edColorPink": "ชมพู",
   "edOcrImage": "รูปที่จะสแกน",
-  "edOcrCaption": "เก็บไว้เฉพาะข้อความ",
+  "edOcrCaption": "เก็บไว้เฉพาะข้อความ อ่านได้เฉพาะตัวอักษรละติน (อังกฤษ สเปน ฝรั่งเศส และอื่น ๆ) ยังอ่านอักษรไทยไม่ได้",
   "edExtractText": "ดึงข้อความ",
   "edExtractTextQuota": "ดึงข้อความ · {used}/{total}",
   "edExtracting": "กำลังอ่าน…",

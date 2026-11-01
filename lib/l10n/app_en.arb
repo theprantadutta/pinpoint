@@ -4687,9 +4687,9 @@
   "@edOcrImage": {
     "description": "Screen-reader label for the picked image shown in the scan card in the note editor, before its text is extracted."
   },
-  "edOcrCaption": "Only the text is kept",
+  "edOcrCaption": "Only the text is kept. Reads Latin-script text (English, Spanish, French and similar).",
   "@edOcrCaption": {
-    "description": "Small caption on the scan card in the note editor: the picked image is not saved with the note, only the text extracted from it."
+    "description": "Caption under the image chosen for text scanning (OCR) in the note editor: only the extracted text is saved, and recognition works for Latin-alphabet languages only (not Bengali, Arabic, Persian or Thai script)."
   },
   "edExtractText": "Extract text",
   "@edExtractText": {

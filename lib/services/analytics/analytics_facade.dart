@@ -309,9 +309,9 @@ class AnalyticsFacade implements AnalyticsClient {
   }
 
   @override
-  Future<void> trackSyncFailed({required String error}) async {
-    unawaited(_logger?.trackSyncFailed(error: error));
-    _trackFirebase((c) => c.trackSyncFailed(error: error));
+  Future<void> trackSyncFailed({required String reason}) async {
+    unawaited(_logger?.trackSyncFailed(reason: reason));
+    _trackFirebase((c) => c.trackSyncFailed(reason: reason));
   }
 
   // Settings

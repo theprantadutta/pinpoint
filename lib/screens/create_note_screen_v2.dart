@@ -79,7 +79,7 @@ class CreateNoteScreenV2 extends StatefulWidget {
   State<CreateNoteScreenV2> createState() => _CreateNoteScreenV2State();
 }
 
-class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
+class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBindingObserver {
   // Note type selection
   String selectedNoteType = kNoteTypes[0]; // Default to 'Title Content'
 
@@ -196,6 +196,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     getIt<AnalyticsFacade>().trackScreenView(screenName: 'CreateNote');
 
     // Set initial note type from arguments if provided
@@ -269,7 +270,24 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> {
   }
 
   @override
+  /// Leaving the app (home, switcher, a call, the OS reclaiming it) saves
+  /// at once instead of waiting out the autosave debounce: a process killed in
+  /// the background gets no further chance (review 2026-11-01, F12).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      if (_autoSaveTimer?.isActive ?? false) {
+        _autoSaveTimer?.cancel();
+        _autoSaveNote();
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _autoSaveTimer?.cancel();
     _savingOffTimer?.cancel();
     _saving.dispose();

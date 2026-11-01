@@ -998,7 +998,7 @@
   "edColorSky": "আকাশি",
   "edColorPink": "গোলাপি",
   "edOcrImage": "স্ক্যান করার ছবি",
-  "edOcrCaption": "শুধু লেখাটি রাখা হয়",
+  "edOcrCaption": "শুধু লেখাটুকু রাখা হয়। শুধু লাতিন বর্ণমালার লেখা পড়তে পারে (ইংরেজি, স্প্যানিশ, ফরাসি ইত্যাদি); বাংলা লিপি এখনো নয়।",
   "edExtractText": "লেখা বের করুন",
   "edExtractTextQuota": "লেখা বের করুন · {used}/{total}",
   "edExtracting": "পড়া হচ্ছে…",
