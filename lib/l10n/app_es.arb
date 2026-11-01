@@ -1075,7 +1075,7 @@
   "bkHowTitle": "Cómo funcionan las copias",
   "bkHowEncrypted": "Cada copia se cifra en este teléfono con la clave de tu cuenta de Pinpoint antes de salir. Google no puede leer tus notas.",
   "bkHowAccountOnly": "Solo esta cuenta de Pinpoint puede restaurarlas. Para recuperar tus notas, inicia sesión como {email}. Si inicias sesión con otra cuenta o pierdes el acceso a esta, estas copias no se podrán abrir.",
-  "bkHowEverything": "Cada copia guarda todas tus notas, listas, recordatorios, carpetas y grabaciones de voz, también las archivadas y las de la papelera.",
+  "bkHowEverything": "Cada copia incluye todas tus notas, listas, recordatorios, carpetas, grabaciones de voz e imágenes y archivos adjuntos, también las notas archivadas y en la papelera.",
   "bkHowMerge": "Al restaurar se añade lo que falta y se actualizan las notas más antiguas de este teléfono. No se borra nada del teléfono.",
   "bkHowWhere": "Las copias se guardan en una carpeta \"Pinpoint Backups\" de tu Drive. Pinpoint solo ve los archivos que creó.",
   "bkAutoTitle": "Copias automáticas",

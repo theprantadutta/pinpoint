@@ -67,7 +67,14 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            // PINPOINT_RELEASE_DEBUG_SIGNED=1 signs a release build with the debug
+            // key, so its R8 output can be tested on a phone that has a debug build
+            // installed, keeping that phone's data. Never set it for a Play build.
+            signingConfig = if (System.getenv("PINPOINT_RELEASE_DEBUG_SIGNED") == "1") {
+                signingConfigs.getByName("debug")
+            } else {
+                signingConfigs.getByName("release")
+            }
 
             // R8 on. Play Console measures "DEX code optimization" and warns
             // when obfuscation falls under 25% — with shrinking disabled it
