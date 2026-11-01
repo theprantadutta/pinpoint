@@ -28,9 +28,9 @@ class AppReviewService {
   static const String _kEngagementCount = 'review_engagement_count';
   static const String _kLastPromptMs = 'review_last_prompt_ms';
 
-  /// iOS App Store ID (fill in once the app is on the App Store). Only needed
-  /// for `openStoreListing` on iOS/macOS; Android ignores it.
-  static const String _appStoreId = '';
+  /// Pinpoint's iOS App Store ID (apps.apple.com/app/id6786222392). Only
+  /// needed for `openStoreListing` on iOS/macOS; Android ignores it.
+  static const String _appStoreId = '6786222392';
 
   /// Record one engagement (e.g. a returning launch or a completed action) and,
   /// once the user has engaged enough and the cooldown has passed, ask the OS
