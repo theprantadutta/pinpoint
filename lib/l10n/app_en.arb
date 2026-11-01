@@ -5328,5 +5328,39 @@
   "remStatusAllowExact": "Allow exact timing",
   "@remStatusAllowExact": {
     "description": "Button next to the 'may ring a few minutes late' reminder status: opens the system setting that lets the app ring reminders at the exact minute."
+  },
+  "noteCardLocalOnly": "Only on this phone",
+  "@noteCardLocalOnly": {
+    "description": "Small label with a cloud-off icon on a note card and in the note editor: the free plan's 50-note sync limit kept this note from backing up to the account, so it exists only on this device."
+  },
+  "localOnlyTitle": "Only on this phone",
+  "@localOnlyTitle": {
+    "description": "Title of the sheet that opens when tapping the 'Only on this phone' marker in the note editor."
+  },
+  "localOnlyBody": "The free plan backs up 50 notes to your account, and this one didn't fit. It's safe on this phone, but it won't appear on your other devices and can't be recovered if you lose the phone. It backs up by itself once there's room, or right away with Pinpoint Pro.",
+  "@localOnlyBody": {
+    "description": "Body of the 'Only on this phone' sheet: explains the free plan's 50-note sync limit, that the note is safe locally but not on other devices or recoverable after losing the phone, and that it backs up automatically when there is room or with Pinpoint Pro (brand name, do not translate 'Pinpoint Pro')."
+  },
+  "localOnlyGoPro": "Go Pro",
+  "@localOnlyGoPro": {
+    "description": "Button on the 'Only on this phone' sheet and home banner that opens the Pinpoint Pro plans screen."
+  },
+  "localOnlyBannerTitle": "{count, plural, =1{1 note is only on this phone} other{{count} notes are only on this phone}}",
+  "@localOnlyBannerTitle": {
+    "description": "Home screen banner title when the free plan's sync limit keeps notes from backing up. {count} is how many notes exist only on this device.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "localOnlyBannerBody": "The free plan backs up 50 notes. Anything over that stays safe on this phone and backs up once there's room.",
+  "@localOnlyBannerBody": {
+    "description": "Home screen banner body under the 'notes are only on this phone' title: the free plan's 50-note backup limit, and that the notes back up automatically once there is room."
+  },
+  "localOnlyDismiss": "Dismiss",
+  "@localOnlyDismiss": {
+    "description": "Spoken label of the × button that hides the 'notes are only on this phone' banner on the home screen."
   }
 }

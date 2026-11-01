@@ -1126,5 +1126,12 @@
   "remStatusInexact": "Toca neste celular, talvez com alguns minutos de atraso.",
   "remStatusBlocked": "As notificações estão desativadas, então este lembrete não pode tocar neste celular.",
   "remStatusTurnOn": "Ativar",
-  "remStatusAllowExact": "Permitir horário exato"
+  "remStatusAllowExact": "Permitir horário exato",
+  "noteCardLocalOnly": "Só neste celular",
+  "localOnlyTitle": "Só neste celular",
+  "localOnlyBody": "O plano gratuito salva 50 notas na sua conta e esta não coube. Ela está segura neste celular, mas não aparece nos seus outros aparelhos e não pode ser recuperada se você perder o celular. Ela é salva sozinha quando houver espaço, ou na hora com o Pinpoint Pro.",
+  "localOnlyGoPro": "Seja Pro",
+  "localOnlyBannerTitle": "{count, plural, =1{1 nota está só neste celular} other{{count} notas estão só neste celular}}",
+  "localOnlyBannerBody": "O plano gratuito salva 50 notas. O que passar disso fica seguro neste celular e é salvo quando houver espaço.",
+  "localOnlyDismiss": "Dispensar"
 }

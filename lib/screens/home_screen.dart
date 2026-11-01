@@ -2,6 +2,7 @@ import '../services/backup/drive_backup_service.dart';
 import 'package:flutter/material.dart';
 import '../database/database.dart';
 import '../design_system/design_system.dart';
+import '../components/home_screen/local_only_banner.dart';
 import '../components/home_screen/home_folders_section.dart';
 import '../components/home_screen/home_header.dart';
 import '../components/home_screen/home_screen_recent_notes.dart';
@@ -293,6 +294,8 @@ class _HomeScreenState extends State<HomeScreen>
                 },
               ),
             ),
+            if (_searchQuery.isEmpty)
+              const SliverToBoxAdapter(child: LocalOnlyBanner()),
             if (_searchQuery.isEmpty)
               const SliverToBoxAdapter(child: HomeFoldersSection()),
             const SliverToBoxAdapter(child: RecentNotesHeader()),

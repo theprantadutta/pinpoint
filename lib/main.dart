@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:pinpoint/sync/held_back_notes.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -237,6 +238,9 @@ Future<void> _initializeCoreServices() async {
   }
 
   initServiceLocators(); // Assuming this is synchronous
+
+  // Which notes the free plan's sync limit kept on this phone only.
+  unawaited(HeldBackNotes.load());
 
   // Initialize notification service (fast, local only)
   await NotificationService.init();

@@ -1126,5 +1126,12 @@
   "remStatusInexact": "Sonnera sur ce téléphone, peut-être avec quelques minutes de retard.",
   "remStatusBlocked": "Les notifications sont désactivées : ce rappel ne peut pas sonner sur ce téléphone.",
   "remStatusTurnOn": "Activer",
-  "remStatusAllowExact": "Autoriser l'heure exacte"
+  "remStatusAllowExact": "Autoriser l'heure exacte",
+  "noteCardLocalOnly": "Uniquement sur ce téléphone",
+  "localOnlyTitle": "Uniquement sur ce téléphone",
+  "localOnlyBody": "Le forfait gratuit sauvegarde 50 notes sur votre compte, et celle-ci n'y tient pas. Elle est en sécurité sur ce téléphone, mais n'apparaîtra pas sur vos autres appareils et ne pourra pas être récupérée si vous perdez le téléphone. Elle sera sauvegardée d'elle-même dès qu'il y aura de la place, ou tout de suite avec Pinpoint Pro.",
+  "localOnlyGoPro": "Passer à Pro",
+  "localOnlyBannerTitle": "{count, plural, =1{1 note est uniquement sur ce téléphone} other{{count} notes sont uniquement sur ce téléphone}}",
+  "localOnlyBannerBody": "Le forfait gratuit sauvegarde 50 notes. Au-delà, elles restent en sécurité sur ce téléphone et sont sauvegardées dès qu'il y a de la place.",
+  "localOnlyDismiss": "Ignorer"
 }

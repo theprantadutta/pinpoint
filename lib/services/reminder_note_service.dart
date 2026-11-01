@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'reminder_local_scheduler.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
@@ -441,22 +443,10 @@ class ReminderNoteService {
       int deletedCount = 0;
 
       for (final noteToDelete in notesToDelete) {
-        // Delete from backend first
-        try {
-          final reminders = await ApiService().getReminders(includeTriggered: false);
-          final backendReminder = reminders.firstWhere(
-            (r) => r['note_uuid'] == noteToDelete.uuid,
-            orElse: () => <String, dynamic>{},
-          );
-
-          if (backendReminder.isNotEmpty && backendReminder['id'] != null) {
-            await ApiService().deleteReminder(backendReminder['id'] as String);
-            debugPrint('✅ [ReminderNoteService] Deleted backend reminder: ${backendReminder['id']}');
-          }
-        } catch (e) {
-          debugPrint('⚠️ [ReminderNoteService] Failed to delete backend reminder: $e');
-          // Continue with local deletion
-        }
+        // Deleted here at once; the server is told in the background. Awaiting
+        // it first made an offline delete wait out the connection timeout
+        // (~25s) before anything happened.
+        unawaited(_deleteBackendReminder(noteToDelete.uuid));
 
         await ReminderLocalScheduler.cancel(noteToDelete.uuid);
 
@@ -484,6 +474,24 @@ class ReminderNoteService {
       debugPrint('❌ [ReminderNoteService] Failed to delete reminder note: $e');
       debugPrint('Stack trace: $st');
       rethrow;
+    }
+  }
+
+  /// Best effort: remove the server's copy of the reminder for [noteUuid] so
+  /// it sends no push. Offline, the deleted note still syncs later.
+  static Future<void> _deleteBackendReminder(String noteUuid) async {
+    try {
+      final reminders = await ApiService().getReminders(includeTriggered: false);
+      final backendReminder = reminders.firstWhere(
+        (r) => r['note_uuid'] == noteUuid,
+        orElse: () => <String, dynamic>{},
+      );
+      if (backendReminder.isNotEmpty && backendReminder['id'] != null) {
+        await ApiService().deleteReminder(backendReminder['id'] as String);
+        debugPrint('✅ [ReminderNoteService] Deleted backend reminder: ${backendReminder['id']}');
+      }
+    } catch (e) {
+      debugPrint('⚠️ [ReminderNoteService] Failed to delete backend reminder: $e');
     }
   }
 

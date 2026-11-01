@@ -62,6 +62,9 @@ class NoteCard extends StatelessWidget {
   /// Dim the card (archive / trash lists).
   final bool muted;
 
+  /// Held back by the free plan's sync limit: "Only on this phone".
+  final bool localOnly;
+
   const NoteCard({
     super.key,
     required this.title,
@@ -84,6 +87,7 @@ class NoteCard extends StatelessWidget {
     this.backgroundColor,
     this.reminderLabel,
     this.muted = false,
+    this.localOnly = false,
   });
 
   /// A short leading token worth showing big: up to 6 characters, at least
@@ -174,6 +178,23 @@ class NoteCard extends StatelessWidget {
       }
     }
 
+    if (localOnly) {
+      final color = onPastel ? SketchPastels.onPastel : s.muted;
+      children.add(Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.cloud_off_outlined, size: 15, color: color),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(l10n.noteCardLocalOnly,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.type.caption.copyWith(color: color)),
+          ),
+        ],
+      ));
+    }
+
     if (tags != null && tags!.isNotEmpty) {
       children.add(Wrap(
         spacing: 6,
@@ -192,7 +213,10 @@ class NoteCard extends StatelessWidget {
       onTap: onTap,
       onLongPress: onLongPress,
       selected: isSelected,
-      semanticLabel: l10n.a11yNoteLabel(hasTitle ? title : l10n.dsEmptyNote),
+      semanticLabel: [
+        l10n.a11yNoteLabel(hasTitle ? title : l10n.dsEmptyNote),
+        if (localOnly) l10n.noteCardLocalOnly,
+      ].join(', '),
       child: ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

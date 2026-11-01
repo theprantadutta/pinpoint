@@ -42,6 +42,7 @@ import '../services/reminder_note_service.dart';
 import '../services/premium_service.dart';
 import '../services/ocr_service.dart';
 import '../services/note_attachments/note_attachment_service.dart';
+import '../sync/held_back_notes.dart';
 import '../util/folder_palette.dart';
 import '../util/show_a_toast.dart';
 import '../widgets/markdown_editor.dart';
@@ -927,9 +928,14 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
               },
             ),
             const SizedBox(height: 2),
-            EditorMetaRow(
-              editedAt: _editedAt,
-              showEncrypted: _isText || _isTodo,
+            ValueListenableBuilder<Set<String>>(
+              valueListenable: HeldBackNotes.notifier,
+              builder: (context, heldBack, _) => EditorMetaRow(
+                editedAt: _editedAt,
+                showEncrypted: _isText || _isTodo,
+                localOnly: heldBack.contains(
+                    widget.arguments?.existingNote?.note.uuid ?? _attachmentNoteUuid),
+              ),
             ),
             if (_isTodo && _currentNoteId != null) ...[
               const SizedBox(height: 4),

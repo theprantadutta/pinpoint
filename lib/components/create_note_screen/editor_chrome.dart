@@ -5,6 +5,7 @@ import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import '../../design_system/design_system.dart';
 import '../../dtos/note_folder_dto.dart';
 import '../../screens/encryption_settings_screen.dart';
+import '../../screens/subscription_screen.dart';
 import '../../services/zero_knowledge_service.dart';
 import '../../util/localized_dates.dart';
 
@@ -206,6 +207,7 @@ class EditorMetaRow extends StatelessWidget {
     super.key,
     this.editedAt,
     this.showEncrypted = true,
+    this.localOnly = false,
   });
 
   /// Null for a note that has not been saved yet.
@@ -215,6 +217,9 @@ class EditorMetaRow extends StatelessWidget {
   /// and a voice note's recording may have been synced before June 2026,
   /// when recordings were uploaded without encryption.
   final bool showEncrypted;
+
+  /// Held back by the free plan's sync limit: shows "Only on this phone".
+  final bool localOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -259,6 +264,33 @@ class EditorMetaRow extends StatelessWidget {
             ),
           ),
         ),
+      if (localOnly) ...[
+        if (editedAt != null || showEncrypted)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Container(
+              width: 3,
+              height: 3,
+              decoration: BoxDecoration(color: s.muted, shape: BoxShape.circle),
+            ),
+          ),
+        SketchPressable(
+          onTap: () => showLocalOnlySheet(context),
+          semanticLabel: l10n.noteCardLocalOnly,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: SketchSpace.minTap),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.cloud_off_outlined, size: 15, color: s.ink),
+                const SizedBox(width: 5),
+                ExcludeSemantics(
+                    child: Text(l10n.noteCardLocalOnly, style: style.copyWith(color: s.ink))),
+              ],
+            ),
+          ),
+        ),
+      ],
     ];
     if (children.isEmpty) return const SizedBox(height: 8);
     return ConstrainedBox(
@@ -270,6 +302,28 @@ class EditorMetaRow extends StatelessWidget {
     );
   }
 }
+
+/// Why a note is "Only on this phone": the free plan's sync limit kept it
+/// back. It is safe here and backs up by itself once there is room.
+Future<void> showLocalOnlySheet(BuildContext context) => showSketchSheet<void>(
+      context: context,
+      builder: (ctx) {
+        final l10n = AppL10n.of(ctx);
+        final s = ctx.sketch;
+        final t = ctx.type;
+        return SketchSheet(
+          title: l10n.localOnlyTitle,
+          footer: PillButton(
+            label: l10n.localOnlyGoPro,
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              context.push(SubscriptionScreen.kRouteName);
+            },
+          ),
+          child: Text(l10n.localOnlyBody, style: t.bodyRegular.copyWith(color: s.ink)),
+        );
+      },
+    );
 
 /// Explains how a note is protected, for the account's actual key mode.
 ///
