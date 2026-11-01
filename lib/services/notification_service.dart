@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -300,6 +301,57 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       payload: payload,
     );
+  }
+
+  /// A reminder's local notification. Exact (allow-while-idle) when the OS
+  /// permits, else inexact; returns whether the exact alarm was set.
+  static Future<bool> scheduleReminderNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime when,
+    required String tag,
+    String? payload,
+  }) async {
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        NotificationChannels.remindersId,
+        NotificationChannels.text.remindersName,
+        channelDescription: NotificationChannels.text.remindersDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        tag: tag,
+      ),
+      iOS: DarwinNotificationDetails(threadIdentifier: tag),
+      macOS: DarwinNotificationDetails(threadIdentifier: tag),
+    );
+    final at = tz.TZDateTime.from(when, tz.local);
+    try {
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: at,
+        notificationDetails: details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: payload,
+      );
+      return true;
+    } on PlatformException catch (e) {
+      // Exact alarms refused (Android 12+ without the permission): ring
+      // inexactly rather than not at all.
+      debugPrint('⚠️ [Notifications] Exact alarm refused ($e); scheduling inexactly');
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: at,
+        notificationDetails: details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: payload,
+      );
+      return false;
+    }
   }
 
   // Schedule recurring notification (daily at specific time)

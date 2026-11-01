@@ -1,3 +1,4 @@
+import 'reminder_local_scheduler.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -205,7 +206,13 @@ class ReminderNoteService {
 
       debugPrint('✅ [ReminderNoteService] Created ${reminderNoteIds.length} reminder note(s) with ${folders.length} folders');
 
-      // Schedule all reminders on backend (this is what actually triggers notifications!)
+      // Ring on this device even offline or with the app closed.
+      for (final noteId in reminderNoteIds) {
+        final note = await getReminderNote(noteId);
+        if (note != null) await ReminderLocalScheduler.schedule(note);
+      }
+
+      // The server pushes the user's other devices.
       debugPrint('🔔 [ReminderNoteService] Scheduling ${reminderNoteIds.length} reminder(s) on backend...');
       for (final noteId in reminderNoteIds) {
         try {
@@ -299,6 +306,11 @@ class ReminderNoteService {
         }
       }
 
+      for (final note in notesToUpdate) {
+        final fresh = await getReminderNote(note.id);
+        if (fresh != null) await ReminderLocalScheduler.schedule(fresh);
+      }
+
       debugPrint('✅ [ReminderNoteService] Updated ${notesToUpdate.length} reminder note(s)');
 
       // Trigger background sync
@@ -338,8 +350,10 @@ class ReminderNoteService {
         // times. Sync upserts exactly this occurrence, keyed on its uuid and
         // occurrence number, and carries the series id so "update all future"
         // still finds its siblings. It is also idempotent, so a retry is safe.
+        final localDeviceId = await ReminderLocalScheduler.localDeviceIdFor(note.uuid);
         await ApiService().syncReminders([
           ReminderDto.fromLocal(
+            localDeviceId: localDeviceId,
             noteUuid: note.uuid,
             title: note.title!,
             notificationTitle: note.notificationTitle ?? note.title!,
@@ -444,6 +458,8 @@ class ReminderNoteService {
           // Continue with local deletion
         }
 
+        await ReminderLocalScheduler.cancel(noteToDelete.uuid);
+
         // Soft delete locally
         await (database.update(database.reminderNotesV2)
               ..where((t) => t.id.equals(noteToDelete.id)))
@@ -493,6 +509,9 @@ class ReminderNoteService {
           updatedAt: Value(now),
         ),
       );
+
+      final restored = await getReminderNote(noteId);
+      if (restored != null) await ReminderLocalScheduler.schedule(restored);
 
       debugPrint('✅ [ReminderNoteService] Restored reminder note: $noteId');
 

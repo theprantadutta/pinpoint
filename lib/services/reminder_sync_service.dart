@@ -1,3 +1,5 @@
+import 'subscription_manager.dart';
+import 'reminder_local_scheduler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 
@@ -45,8 +47,11 @@ class ReminderSyncService {
       debugPrint('📝 [ReminderSyncService] Found ${unsyncedReminders.length} reminders to sync');
 
       // Convert to DTOs for sync
+      final scheduledHere = await ReminderLocalScheduler.scheduledUuids();
+      final deviceId = scheduledHere.isEmpty ? null : await SubscriptionManager().installId();
       final reminderDtos = unsyncedReminders.map((note) {
         return ReminderDto.fromLocal(
+          localDeviceId: scheduledHere.contains(note.uuid) ? deviceId : null,
           noteUuid: note.uuid,
           title: note.title!,
           notificationTitle: note.notificationTitle ?? note.title!,
@@ -115,8 +120,10 @@ class ReminderSyncService {
       try {
         // One item through the same idempotent sync endpoint, not
         // POST /reminders — see ReminderNoteService.scheduleReminderOnBackend.
+        final localDeviceId = await ReminderLocalScheduler.localDeviceIdFor(note.uuid);
         await ApiService().syncReminders([
           ReminderDto.fromLocal(
+            localDeviceId: localDeviceId,
             noteUuid: note.uuid,
             title: note.title!,
             notificationTitle: note.notificationTitle ?? note.title!,

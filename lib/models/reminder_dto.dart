@@ -22,6 +22,10 @@ class ReminderDto {
   final DateTime? createdAt; // Only from backend responses
   final DateTime? updatedAt; // Only from backend responses
 
+  /// Set when this device scheduled the reminder locally: the server then
+  /// does not push it here too.
+  final String? localDeviceId;
+
   ReminderDto({
     this.id,
     required this.noteUuid,
@@ -41,6 +45,7 @@ class ReminderDto {
     this.triggeredAt,
     this.createdAt,
     this.updatedAt,
+    this.localDeviceId,
   });
 
   /// Convert to JSON for API request (create)
@@ -88,6 +93,7 @@ class ReminderDto {
       if (parentReminderId != null) 'parent_reminder_id': parentReminderId,
       'occurrence_number': occurrenceNumber,
       if (seriesId != null) 'series_id': seriesId,
+      if (localDeviceId != null) 'local_device_id': localDeviceId,
     };
   }
 
@@ -136,6 +142,7 @@ class ReminderDto {
     String? parentReminderId,
     int occurrenceNumber = 1,
     String? seriesId,
+    String? localDeviceId,
   }) {
     return ReminderDto(
       noteUuid: noteUuid,
@@ -151,6 +158,7 @@ class ReminderDto {
       parentReminderId: parentReminderId,
       occurrenceNumber: occurrenceNumber,
       seriesId: seriesId,
+      localDeviceId: localDeviceId,
     );
   }
 
