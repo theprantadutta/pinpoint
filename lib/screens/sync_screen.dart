@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
 import 'package:pinpoint/sync/sync_service.dart';
+import 'package:pinpoint/services/analytics/analytics_client.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/widgets/premium_gate_dialog.dart';
@@ -79,7 +80,7 @@ class _SyncScreenState extends State<SyncScreen> {
             );
           }
         } else {
-          analytics.trackSyncFailed(error: result.message);
+          analytics.trackSyncFailed(reason: syncFailureReason(result.message));
           PinpointHaptics.error();
 
           // Check if error is due to premium limit
@@ -97,7 +98,7 @@ class _SyncScreenState extends State<SyncScreen> {
         }
       }
     } catch (e) {
-      analytics.trackSyncFailed(error: e.toString());
+      analytics.trackSyncFailed(reason: syncFailureReason(e));
       if (mounted) {
         PinpointHaptics.error();
         showErrorToast(

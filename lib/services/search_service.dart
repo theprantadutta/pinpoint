@@ -28,11 +28,11 @@ class SearchService extends ChangeNotifier {
     if (_isInitialized) return;
 
     try {
+      // Recent searches live in memory for this session only. A search term
+      // is note content, and SharedPreferences is not encrypted (review
+      // 2026-11-01, F8); remove what older versions stored there.
       final prefs = await SharedPreferences.getInstance();
-      final history = prefs.getStringList(_historyKey);
-      if (history != null) {
-        _searchHistory = history;
-      }
+      await prefs.remove(_historyKey);
       _isInitialized = true;
       debugPrint('✅ [SearchService] Initialized with ${_searchHistory.length} history items');
     } catch (e) {
@@ -108,15 +108,9 @@ class SearchService extends ChangeNotifier {
     }
   }
 
-  /// Save history to SharedPreferences
-  Future<void> _saveHistory() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_historyKey, _searchHistory);
-    } catch (e) {
-      debugPrint('⚠️ [SearchService] Failed to save history: $e');
-    }
-  }
+  /// Recent searches are not persisted: see [initialize].
+  Future<void> _saveHistory() async {}
+
 
   /// Check if a note matches the search query
   /// Returns true if the note title or content matches

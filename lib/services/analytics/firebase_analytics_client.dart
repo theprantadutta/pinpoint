@@ -203,8 +203,8 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
       _analytics.logEvent(name: 'sync_completed');
 
   @override
-  Future<void> trackSyncFailed({required String error}) =>
-      _analytics.logEvent(name: 'sync_failed', parameters: {'error': error});
+  Future<void> trackSyncFailed({required String reason}) =>
+      _analytics.logEvent(name: 'sync_failed', parameters: {'reason': reason});
 
   @override
   Future<void> trackThemeChanged({required String theme}) =>

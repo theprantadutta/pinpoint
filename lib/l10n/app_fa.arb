@@ -998,7 +998,7 @@
   "edColorSky": "آسمانی",
   "edColorPink": "صورتی",
   "edOcrImage": "تصویر برای اسکن",
-  "edOcrCaption": "فقط متن نگه داشته می‌شود",
+  "edOcrCaption": "فقط متن نگه داشته می‌شود. فقط متن با حروف لاتین را می‌خواند (انگلیسی، اسپانیایی، فرانسوی و مانند آن)، هنوز فارسی را نه.",
   "edExtractText": "استخراج متن",
   "edExtractTextQuota": "استخراج متن · {used}/{total}",
   "edExtracting": "در حال خواندن…",

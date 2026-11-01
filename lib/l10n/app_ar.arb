@@ -998,7 +998,7 @@
   "edColorSky": "سماوي",
   "edColorPink": "وردي",
   "edOcrImage": "صورة للمسح",
-  "edOcrCaption": "يُحتفظ بالنص فقط",
+  "edOcrCaption": "يُحفظ النص فقط. يقرأ النصوص بالأحرف اللاتينية فقط (الإنجليزية والإسبانية والفرنسية وما شابه)، وليس العربية بعد.",
   "edExtractText": "استخراج النص",
   "edExtractTextQuota": "استخراج النص · {used}/{total}",
   "edExtracting": "جارٍ القراءة…",

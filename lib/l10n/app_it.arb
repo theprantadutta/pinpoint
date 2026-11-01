@@ -998,7 +998,7 @@
   "edColorSky": "Cielo",
   "edColorPink": "Rosa",
   "edOcrImage": "Immagine da scansionare",
-  "edOcrCaption": "Viene salvato solo il testo",
+  "edOcrCaption": "Viene conservato solo il testo. Riconosce testo in alfabeto latino (italiano, inglese, francese e simili).",
   "edExtractText": "Estrai testo",
   "edExtractTextQuota": "Estrai testo · {used}/{total}",
   "edExtracting": "Lettura…",
