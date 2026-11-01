@@ -1112,5 +1112,19 @@
   "bkDisconnected": "Google Drive সংযোগ বিচ্ছিন্ন হয়েছে। আপনার ব্যাকআপগুলো Drive-এই থাকবে।",
   "syncConflictCopyTitle": "{title} (দ্বন্দ্বপূর্ণ কপি)",
   "syncConflictCopyUntitled": "দ্বন্দ্বপূর্ণ কপি",
-  "edStartAs": "অথবা শুরু করুন"
+  "edStartAs": "অথবা শুরু করুন",
+  "attMenuAdd": "ছবি বা ফাইল যোগ করুন",
+  "attSheetTitle": "নোটে যোগ করুন",
+  "attFromGallery": "গ্যালারি থেকে ছবি",
+  "attTakePhoto": "ছবি তুলুন",
+  "attAnyFile": "যেকোনো ফাইল",
+  "attTooLarge": "{name} অনেক বড়",
+  "attTooLargeBody": "প্রতিটি ফাইল সর্বোচ্চ ৫০ MB হতে পারে।",
+  "attWaitingDownload": "অনলাইনে এলে ডাউনলোড হবে",
+  "attRemove": "সংযুক্তি সরান",
+  "remStatusExact": "সেই সময়ে এই ফোনে বাজবে, অফলাইনেও।",
+  "remStatusInexact": "এই ফোনে বাজবে, হয়তো কয়েক মিনিট দেরিতে।",
+  "remStatusBlocked": "নোটিফিকেশন বন্ধ, তাই এই রিমাইন্ডার এই ফোনে বাজবে না।",
+  "remStatusTurnOn": "চালু করুন",
+  "remStatusAllowExact": "সঠিক সময় চালু করুন"
 }

@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last Updated:** July 1, 2026
+**Last Updated:** November 1, 2026
 
 ## Agreement to Terms
 
@@ -10,8 +10,8 @@ Pinpoint (the "App") is developed and operated by **Pranta Dutta** ("we," "our,"
 
 Pinpoint is a note-taking and organization application that allows you to:
 
-- Create and manage notes with text, images, audio, and drawings
-- Organize content with folders and tags
+- Create and manage notes with text, checklists, voice recordings and reminders, and attach images and other files to them
+- Organize content with folders, colours, pins and the archive
 - Sync notes across devices (optional)
 - Search and export your content
 - Secure your notes with encryption and biometric locks
@@ -139,9 +139,8 @@ We may suspend or terminate your account if you:
 
 We reserve the right to modify these Terms at any time. We will notify you of significant changes by:
 
-- Posting the updated Terms in the App
-- Sending an email notification
-- Requiring you to accept the new Terms
+- Posting the updated Terms in the App and on this page, with a new "Last Updated" date
+- Telling you in the App when a change materially affects you
 
 Continued use of the App after changes constitutes acceptance of the new Terms.
 

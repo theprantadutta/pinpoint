@@ -200,10 +200,30 @@ class NotificationService {
         return granted ?? false;
       }
 
-      // For iOS/macOS, we assume they're enabled if we've requested before
+      final iosPlugin =
+          _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      if (iosPlugin != null) {
+        final options = await iosPlugin.checkPermissions();
+        return options?.isEnabled ?? false;
+      }
       return true;
     } catch (e) {
       debugPrint('❌ Error checking notification status: $e');
+      return false;
+    }
+  }
+
+  /// Whether reminders can ring at their exact minute (Android 12+ asks the
+  /// user for this; elsewhere it is always allowed).
+  static Future<bool> canScheduleExactAlarms() async {
+    try {
+      final androidPlugin =
+          _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin == null) return true;
+      return await androidPlugin.canScheduleExactNotifications() ?? false;
+    } catch (_) {
       return false;
     }
   }

@@ -1112,5 +1112,19 @@
   "bkDisconnected": "Google Drive desconectado. Tus copias siguen en tu Drive.",
   "syncConflictCopyTitle": "{title} (copia en conflicto)",
   "syncConflictCopyUntitled": "Copia en conflicto",
-  "edStartAs": "O empieza un"
+  "edStartAs": "O empieza un",
+  "attMenuAdd": "Añadir imagen o archivo",
+  "attSheetTitle": "Añadir a la nota",
+  "attFromGallery": "Fotos de la galería",
+  "attTakePhoto": "Hacer una foto",
+  "attAnyFile": "Cualquier archivo",
+  "attTooLarge": "{name} es demasiado grande",
+  "attTooLargeBody": "Cada archivo puede ocupar hasta 50 MB.",
+  "attWaitingDownload": "Se descarga cuando tengas conexión",
+  "attRemove": "Quitar adjunto",
+  "remStatusExact": "Sonará en este teléfono a esa hora, incluso sin conexión.",
+  "remStatusInexact": "Sonará en este teléfono, quizá con unos minutos de retraso.",
+  "remStatusBlocked": "Las notificaciones están desactivadas, así que este recordatorio no puede sonar en este teléfono.",
+  "remStatusTurnOn": "Activar",
+  "remStatusAllowExact": "Permitir hora exacta"
 }

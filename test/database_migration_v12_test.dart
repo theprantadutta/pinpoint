@@ -57,7 +57,8 @@ void main() {
     final raw = sqlite3.open(dbFile.path);
     final version = raw.select('PRAGMA user_version').single.values.first;
     raw.close();
-    expect(version, 12);
+    // Upgrades run through to the current schema (v13 added attachments).
+    expect(version, 13);
   });
 
   group('FolderPalette', () {

@@ -107,6 +107,18 @@ class BackupRecording {
   }
 }
 
+/// A note attachment to put in a backup: its record, and its file when this
+/// device has it.
+class BackupAttachment {
+  const BackupAttachment({required this.record, this.file});
+
+  /// uuid, noteUuid, noteType, name, mime, size, order, remoteId.
+  final Map<String, dynamic> record;
+  final File? file;
+
+  String get uuid => record['uuid'] as String;
+}
+
 /// The encryption a backup is written and read with: the account's data key,
 /// the same one cloud sync uses. Injected so the format is testable without a
 /// device keystore.
@@ -129,7 +141,9 @@ class BackupCipher {
 /// - `manifest.json`: [BackupManifest], plaintext;
 /// - `notes.enc`: every folder and note, as one encrypted JSON document;
 /// - `recordings/<note uuid>.<ext>.enc`: each voice recording, encrypted on
-///   its own so neither writing nor reading ever holds them all in memory.
+///   its own so neither writing nor reading ever holds them all in memory;
+/// - `attachments/<attachment uuid>.enc`: each note attachment, likewise. Their
+///   records travel in `notes.enc` under `attachments` (absent before 4.2).
 ///
 /// Entries are stored, not deflated: ciphertext does not compress.
 class BackupArchive {
@@ -139,6 +153,7 @@ class BackupArchive {
   static const String manifestName = 'manifest.json';
   static const String notesName = 'notes.enc';
   static const String recordingsDir = 'recordings/';
+  static const String attachmentsDir = 'attachments/';
   static const String keyCheckText = 'pinpoint-backup';
 
   /// The extension and MIME type a backup goes by in Drive.
@@ -154,14 +169,26 @@ class BackupArchive {
     required List<Map<String, dynamic>> folders,
     required List<Map<String, dynamic>> notes,
     required List<BackupRecording> recordings,
+    List<BackupAttachment> attachments = const [],
     String appVersion = '',
     String device = '',
     DateTime? now,
   }) async {
     final encoder = ZipFileEncoder()..create(out.path);
     try {
-      final body = cipher.encrypt(jsonEncode({'folders': folders, 'notes': notes}));
+      final body = cipher.encrypt(jsonEncode({
+        'folders': folders,
+        'notes': notes,
+        'attachments': [for (final a in attachments) a.record],
+      }));
       encoder.addArchiveFile(_stored(notesName, utf8.encode(body)));
+
+      for (final a in attachments) {
+        final file = a.file;
+        if (file == null || !await file.exists()) continue;
+        encoder.addArchiveFile(
+            _stored('$attachmentsDir${a.uuid}.enc', cipher.encryptBytes(await file.readAsBytes())));
+      }
 
       var written = 0;
       for (final recording in recordings) {
@@ -224,10 +251,13 @@ class BackupArchive {
 
 /// The folders and notes of a backup, decrypted.
 class BackupContents {
-  const BackupContents({required this.folders, required this.notes});
+  const BackupContents({required this.folders, required this.notes, this.attachments = const []});
 
   final List<Map<String, dynamic>> folders;
   final List<Map<String, dynamic>> notes;
+
+  /// Attachment records; empty for backups made before 4.2.
+  final List<Map<String, dynamic>> attachments;
 }
 
 class BackupReader {
@@ -266,7 +296,11 @@ class BackupReader {
             for (final e in v)
               if (e is Map) Map<String, dynamic>.from(e),
         ];
-    return BackupContents(folders: list(json['folders']), notes: list(json['notes']));
+    return BackupContents(
+      folders: list(json['folders']),
+      notes: list(json['notes']),
+      attachments: list(json['attachments']),
+    );
   }
 
   /// The recording stored for [noteUuid] and its file extension, decrypted, or
@@ -282,6 +316,12 @@ class BackupReader {
       return (bytes: cipher.decryptBytes(file.content), extension: extension);
     }
     return null;
+  }
+
+  /// The file stored for attachment [uuid], decrypted, or null.
+  Uint8List? attachment(String uuid, BackupCipher cipher) {
+    final entry = _archive.findFile('${BackupArchive.attachmentsDir}$uuid.enc');
+    return entry == null ? null : cipher.decryptBytes(entry.content);
   }
 
   Future<void> close() async {

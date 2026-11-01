@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated:** October 5, 2026
+**Last Updated:** November 1, 2026
 
 ## Introduction
 
@@ -11,7 +11,7 @@ Pinpoint ("we," "our," or "us") is a mobile application developed and operated b
 ### Information You Provide
 
 - **Account Information:** Email address, name, and password when you create an account
-- **Note Content:** Text, images, audio recordings, drawings, and other content you create in the app
+- **Note Content:** Text, checklists, voice recordings, reminders, and the images and other files you attach to your notes
 - **User Preferences:** App settings, theme preferences, and customization choices
 
 ### Automatically Collected Information
@@ -19,6 +19,7 @@ Pinpoint ("we," "our," or "us") is a mobile application developed and operated b
 - **Device Information:** Device type, operating system version, and unique device identifiers
 - **Usage Data:** App features used, crash reports, and performance data
 - **Activity Data:** When you are signed in, our servers record which days you used the app, how many requests the app made that day, and the app version and platform (Android or iOS). It is kept with your account and used to understand how many people use Pinpoint and which versions are still in use
+- **Sign-in Sessions:** Each time you sign in on a device we keep a session record (when it started and when it was last refreshed) so that signing out really ends it and a stolen sign-in token can be cut off
 - **Authentication Data:** Account information from your chosen sign-in provider — your email address and name when you sign in with Google (Google account) or with Apple (Sign in with Apple). If you use Apple's "Hide My Email" feature, we receive only a private relay email address on Apple's domain
 - **Purchase Information:** A transaction/subscription identifier and status (product purchased, renewal, expiry, cancellation) from the app store when you buy Premium — never your card number or full payment details
 
@@ -49,14 +50,15 @@ We use the collected information to:
 - **How your key is held — please read this part:**
   - **Standard mode (the default):** we keep a recovery copy of your encryption key on our servers so that you can restore your notes on a new device. This means that we hold a key capable of decrypting your synced notes.
   - **Zero-knowledge mode (optional):** your encryption key is wrapped using a key derived from a passphrase that you choose, plus a recovery code. We store only the wrapped result, so only your passphrase can unlock your notes and we cannot read them. If you lose both your passphrase and your recovery code, we cannot recover your notes either.
+- **Attachments:** Images and other files you attach to a note are encrypted on your device with the same key as your notes before they are uploaded. They are stored, as unreadable encrypted files, on file storage that we operate ourselves, and are protected in the same way as your notes in each of the two key modes described below. Attachments stay usable on your device without a connection and upload when you are back online
 - **Voice Recordings:** Recordings are encrypted on your device with the same key as your notes before they are uploaded, so they are protected in the same way as your notes in each of the two key modes described below.
 - **What is not end-to-end encrypted:** Reminder titles, reminder text and reminder times are stored in readable form, because our servers must read them in order to send you the notification at the scheduled time. Voice recordings synced by versions of the app released before June 2026 were uploaded without this encryption and may still be stored that way; recording them again replaces them with an encrypted copy.
-- **Third-Party Services:** We use Firebase for authentication and cloud storage, which is governed by Google's privacy policies
+- **Where it is stored:** Synced notes, folders, reminders, voice recordings and attachments are stored on servers we operate, rented from our hosting provider. Firebase (Google) is used for sign-in, push notifications, analytics and crash reports, not to store your notes
 
 ### Google Drive Backups (optional)
 
 - **Your Drive, not our servers:** If you turn on Google Drive backup, Pinpoint saves backup files to a "Pinpoint Backups" folder in **your own** Google Drive. They are never sent to our servers.
-- **Encrypted with your account key:** Each backup (your notes, checklists, reminders, folders and voice recordings) is encrypted on your device with your Pinpoint account's encryption key before it is uploaded, so Google cannot read it. Only a few plain details are attached so the list can be shown: when it was made, the device name, the number of notes, and your Pinpoint account identifier.
+- **Encrypted with your account key:** Each backup (your notes, checklists, reminders, folders, voice recordings and attachments) is encrypted on your device with your Pinpoint account's encryption key before it is uploaded, so Google cannot read it. Only a few plain details are attached so the list can be shown: when it was made, the device name, the number of notes, and your Pinpoint account identifier.
 - **Only the same account can restore it:** Because the key belongs to your Pinpoint account, a backup can only be restored while signed in to that same account. If you lose access to that account (and, in zero-knowledge mode, your passphrase and recovery code), the backups cannot be opened by anyone.
 - **Limited access:** Pinpoint asks only for permission to the files it creates itself (the `drive.file` permission). It cannot see any other file in your Drive. You can disconnect Drive in the app, or delete the backups yourself in Google Drive at any time.
 
@@ -65,7 +67,7 @@ We use the collected information to:
 We do not sell your personal information. We may share your information only in the following circumstances:
 
 - **With Your Consent:** When you explicitly authorize us to share specific information
-- **Service Providers:** With trusted third-party service providers who assist in operating our app (e.g., Firebase, Google Cloud)
+- **Service Providers:** With trusted third-party service providers who assist in operating our app (e.g., Firebase and Google Cloud, and the hosting provider whose servers we rent). Your synced notes and attachments reach them only in encrypted form
 - **Legal Requirements:** When required by law or to protect our rights and safety
 - **Business Transfers:** In connection with a merger, sale, or acquisition (you will be notified)
 
@@ -89,7 +91,7 @@ Our app integrates with the following third-party services, each governed by its
 
 - **Google Sign-In:** Authentication using your Google account
 - **Sign in with Apple:** Authentication on iOS, including Apple's optional private email relay
-- **Firebase (Google):** Authentication, optional cloud storage/sync, push notifications (Firebase Cloud Messaging), analytics (Firebase Analytics), and crash reporting (Firebase Crashlytics). Analytics and crash reporting are **not anonymous**: when you are signed in, we set your account identifier on them, so the events and crash reports are associated with your account. They never receive your note content, note titles, search terms, transcripts, purchase tokens, passphrases, recovery codes or encryption keys.
+- **Firebase (Google):** Authentication, push notifications (Firebase Cloud Messaging), analytics (Firebase Analytics), and crash reporting (Firebase Crashlytics). Analytics and crash reporting are **not anonymous**: when you are signed in, we set your account identifier on them, so the events and crash reports are associated with your account. They never receive your note content, note titles, search terms, transcripts, purchase tokens, passphrases, recovery codes or encryption keys.
 - **Apple App Store & Google Play Billing:** Processing and managing in-app purchases and subscriptions
 - **Google ML Kit:** On-device OCR text recognition (processing stays on your device and is not sent to us)
 - **Google Drive:** Optional encrypted backups, stored in your own Google Drive (see "Google Drive Backups" above)
@@ -112,9 +114,8 @@ Your information may be transferred to and maintained on servers located outside
 
 We may update this Privacy Policy from time to time. We will notify you of any significant changes by:
 
-- Posting the new Privacy Policy in the app
-- Sending an email notification (if you have an account)
-- Requiring you to accept the updated policy
+- Posting the new Privacy Policy in the app and on this page, with a new "Last Updated" date
+- Telling you in the app when a change affects how your data is handled
 
 ## Contact Us
 

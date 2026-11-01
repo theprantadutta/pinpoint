@@ -1214,6 +1214,67 @@ class ApiService {
   }
 
   // ============================================================================
+  // Note attachments (images and any other file)
+  // ============================================================================
+
+  /// Upload a note attachment, encrypted on this device with the account data
+  /// key: the server and FileRunner only ever hold ciphertext. Returns the
+  /// attachment id that sync sends to the user's other devices.
+  Future<String> uploadAttachment(String localFilePath) async {
+    File? temp;
+    try {
+      final plain = await File(localFilePath).readAsBytes();
+      temp = await File(
+        '${Directory.systemTemp.path}/pp_attachment_${DateTime.now().microsecondsSinceEpoch}.enc',
+      ).writeAsBytes(SecureEncryptionService.encryptBytes(plain), flush: true);
+
+      final response = await _dio.post(
+        '/attachments/upload',
+        data: FormData.fromMap({
+          'file': await MultipartFile.fromFile(temp.path, filename: 'attachment.ppa'),
+        }),
+        options: Options(contentType: 'multipart/form-data'),
+      );
+      final id = response.data['attachment_id'] as String?;
+      if (response.data['success'] != true || id == null) {
+        throw Exception('Attachment upload failed');
+      }
+      return id;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    } finally {
+      try {
+        if (temp != null && await temp.exists()) await temp.delete();
+      } catch (_) {}
+    }
+  }
+
+  /// Download attachment [id], decrypt it and write it to [localSavePath].
+  Future<void> downloadAttachment(String id, String localSavePath) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        '/attachments/$id',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final blob = Uint8List.fromList(response.data ?? const []);
+      await File(localSavePath)
+          .writeAsBytes(SecureEncryptionService.decryptBytes(blob), flush: true);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Delete attachment [id] from the server. Already gone counts as deleted.
+  Future<void> deleteAttachment(String id) async {
+    try {
+      await _dio.delete('/attachments/$id');
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return;
+      throw _handleError(e);
+    }
+  }
+
+  // ============================================================================
   // Error Handling
   // ============================================================================
 
