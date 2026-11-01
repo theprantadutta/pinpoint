@@ -1111,5 +1111,6 @@
   "bkDisconnect": "Google Drive সংযোগ বিচ্ছিন্ন করুন",
   "bkDisconnected": "Google Drive সংযোগ বিচ্ছিন্ন হয়েছে। আপনার ব্যাকআপগুলো Drive-এই থাকবে।",
   "syncConflictCopyTitle": "{title} (দ্বন্দ্বপূর্ণ কপি)",
-  "syncConflictCopyUntitled": "দ্বন্দ্বপূর্ণ কপি"
+  "syncConflictCopyUntitled": "দ্বন্দ্বপূর্ণ কপি",
+  "edStartAs": "অথবা শুরু করুন"
 }

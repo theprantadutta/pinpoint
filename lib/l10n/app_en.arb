@@ -5262,5 +5262,9 @@
   "syncConflictCopyUntitled": "Conflict copy",
   "@syncConflictCopyUntitled": {
     "description": "Title of a conflict copy (see syncConflictCopyTitle) when the note had no title."
+  },
+  "edStartAs": "Or start a",
+  "@edStartAs": {
+    "description": "Muted label before three chips (Checklist, Voice, Reminder) shown under a brand-new, still empty text note; tapping a chip turns the note into that type."
   }
 }

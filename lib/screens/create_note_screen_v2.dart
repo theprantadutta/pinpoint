@@ -28,6 +28,7 @@ import '../design_system/design_system.dart';
 import '../design_system/components/note_color_picker.dart';
 import '../services/drift_note_service.dart';
 import '../dtos/note_folder_dto.dart';
+import '../navigation/new_note.dart';
 import '../screen_arguments/create_note_screen_arguments.dart';
 import '../constants/premium_limits.dart';
 import '../services/drift_note_folder_service.dart';
@@ -961,6 +962,13 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
                 focusNode: _textContentFocusNode,
                 hintText: l10n.edBodyHint,
               ),
+              if (widget.arguments?.existingNote == null && _currentNoteId == null)
+                ListenableBuilder(
+                  listenable: Listenable.merge([_fleatherController, _titleController]),
+                  builder: (context, _) => _isBlankText()
+                      ? _StartAsRow(onPick: _switchNewNoteType)
+                      : const SizedBox.shrink(),
+                ),
               if (_ocrImagePath != null) ...[
                 const SizedBox(height: SketchSpace.section),
                 OcrScanCard(
@@ -986,6 +994,21 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
         ),
       ),
     ];
+  }
+
+  bool _isBlankText() =>
+      _titleController.text.trim().isEmpty &&
+      _fleatherController.document.toPlainText().trim().isEmpty;
+
+  /// A new note that is still blank becomes another type: the one-tap
+  /// Create makes text, and this is where the others are discoverable
+  /// (review 2026-11-01, F10) without the long-press.
+  void _switchNewNoteType(String noticeType) {
+    _autoSaveTimer?.cancel();
+    context.pushReplacement(
+      CreateNoteScreenV2.kRouteName,
+      extra: CreateNoteScreenArguments(noticeType: noticeType),
+    );
   }
 
   void _focusBodyEnd() {
@@ -1419,14 +1442,6 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
         icon: Icons.ios_share_rounded,
         label: l10n.edShare,
         dividerBefore: !_isText,
-      ),
-      // Encrypted sharing is not built yet: shown, disabled, labelled SOON.
-      EditorMenuEntry(
-        value: 'share_encrypted',
-        icon: Icons.lock_outline_rounded,
-        label: l10n.edShareEncrypted,
-        enabled: false,
-        badge: l10n.edSoonBadge,
       ),
       EditorMenuEntry(
           value: 'usage', icon: Icons.analytics_outlined, label: l10n.edUsage),
@@ -2040,6 +2055,39 @@ class _InfoRow extends StatelessWidget {
             child: Text(label, style: t.bodySmall.copyWith(color: s.muted)),
           ),
           Expanded(child: Text(value, style: t.body)),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Or start a: Checklist · Voice · Reminder", under a blank new text note.
+class _StartAsRow extends StatelessWidget {
+  const _StartAsRow({required this.onPick});
+
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    final t = context.type;
+    final s = context.sketch;
+    Widget chip(String label, IconData icon, String type) => SketchChip(
+          label: label,
+          leading: Icon(icon, size: 16, color: s.ink),
+          onTap: () => onPick(type),
+        );
+    return Padding(
+      padding: const EdgeInsets.only(top: 18),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(l10n.edStartAs, style: t.caption.copyWith(color: s.muted)),
+          chip(l10n.noteTypeChecklist, Icons.check_rounded, NewNote.checklist),
+          chip(l10n.noteTypeVoice, Icons.mic_none_rounded, NewNote.voice),
+          chip(l10n.noteTypeReminder, Icons.alarm_rounded, NewNote.reminder),
         ],
       ),
     );

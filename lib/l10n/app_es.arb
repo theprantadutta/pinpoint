@@ -1111,5 +1111,6 @@
   "bkDisconnect": "Desconectar Google Drive",
   "bkDisconnected": "Google Drive desconectado. Tus copias siguen en tu Drive.",
   "syncConflictCopyTitle": "{title} (copia en conflicto)",
-  "syncConflictCopyUntitled": "Copia en conflicto"
+  "syncConflictCopyUntitled": "Copia en conflicto",
+  "edStartAs": "O empieza un"
 }

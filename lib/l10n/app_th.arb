@@ -1111,5 +1111,6 @@
   "bkDisconnect": "ยกเลิกการเชื่อมต่อ Google Drive",
   "bkDisconnected": "ยกเลิกการเชื่อมต่อ Google Drive แล้ว ข้อมูลสำรองยังอยู่ใน Drive ของคุณ",
   "syncConflictCopyTitle": "{title} (สำเนาที่ขัดแย้ง)",
-  "syncConflictCopyUntitled": "สำเนาที่ขัดแย้ง"
+  "syncConflictCopyUntitled": "สำเนาที่ขัดแย้ง",
+  "edStartAs": "หรือเริ่มเป็น"
 }

@@ -1111,5 +1111,6 @@
   "bkDisconnect": "قطع اتصال Google Drive",
   "bkDisconnected": "اتصال Google Drive قطع شد. پشتیبان‌ها در Drive شما می‌مانند.",
   "syncConflictCopyTitle": "{title} (نسخه متعارض)",
-  "syncConflictCopyUntitled": "نسخه متعارض"
+  "syncConflictCopyUntitled": "نسخه متعارض",
+  "edStartAs": "یا شروع کنید با"
 }

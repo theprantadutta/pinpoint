@@ -1111,5 +1111,6 @@
   "bkDisconnect": "Scollega Google Drive",
   "bkDisconnected": "Google Drive scollegato. I tuoi backup restano nel tuo Drive.",
   "syncConflictCopyTitle": "{title} (copia in conflitto)",
-  "syncConflictCopyUntitled": "Copia in conflitto"
+  "syncConflictCopyUntitled": "Copia in conflitto",
+  "edStartAs": "Oppure inizia un"
 }
