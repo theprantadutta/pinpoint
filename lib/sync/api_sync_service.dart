@@ -15,6 +15,7 @@ import '../database/database.dart';
 import '../services/api_service.dart';
 import '../services/audio_upload_queue.dart';
 import '../services/note_attachments/attachment_sync.dart';
+import 'held_back_notes.dart';
 import '../services/premium_service.dart';
 import '../services/encryption_service.dart';
 import 'sync_service.dart';
@@ -378,8 +379,11 @@ class ApiSyncService extends SyncService {
       // here and go up on a later sync, instead of being marked synced and
       // silently never reaching the cloud.
       final accepted = acceptedUuids(response, sentByUuid.keys);
-      final overLimit =
-          (response['rejected_uuids'] as List?)?.whereType<String>().length ?? 0;
+      final rejected =
+          (response['rejected_uuids'] as List?)?.whereType<String>().toList() ?? const <String>[];
+      final overLimit = rejected.length;
+      // Cards and the editor mark held-back notes "Only on this phone".
+      await HeldBackNotes.record(rejected: rejected, accepted: accepted);
 
       for (final entry in sentByUuid.entries) {
         if (!accepted.contains(entry.key)) continue;

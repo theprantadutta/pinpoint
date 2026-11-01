@@ -1126,5 +1126,12 @@
   "remStatusInexact": "Sonará en este teléfono, quizá con unos minutos de retraso.",
   "remStatusBlocked": "Las notificaciones están desactivadas, así que este recordatorio no puede sonar en este teléfono.",
   "remStatusTurnOn": "Activar",
-  "remStatusAllowExact": "Permitir hora exacta"
+  "remStatusAllowExact": "Permitir hora exacta",
+  "noteCardLocalOnly": "Solo en este teléfono",
+  "localOnlyTitle": "Solo en este teléfono",
+  "localOnlyBody": "El plan gratuito guarda 50 notas en tu cuenta y esta no cupo. Está a salvo en este teléfono, pero no aparecerá en tus otros dispositivos y no se podrá recuperar si pierdes el teléfono. Se guardará sola cuando haya espacio, o al instante con Pinpoint Pro.",
+  "localOnlyGoPro": "Hazte Pro",
+  "localOnlyBannerTitle": "{count, plural, =1{1 nota está solo en este teléfono} other{{count} notas están solo en este teléfono}}",
+  "localOnlyBannerBody": "El plan gratuito guarda 50 notas. Lo que pase de ahí sigue a salvo en este teléfono y se guarda cuando haya espacio.",
+  "localOnlyDismiss": "Descartar"
 }

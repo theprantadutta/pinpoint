@@ -404,6 +404,8 @@ class UpgradeBanner extends StatelessWidget {
     required this.actionLabel,
     required this.onAction,
     this.pastel = SketchPastels.yellow,
+    this.onDismiss,
+    this.dismissLabel,
   });
 
   final String title;
@@ -411,6 +413,10 @@ class UpgradeBanner extends StatelessWidget {
   final String actionLabel;
   final VoidCallback onAction;
   final Color pastel;
+
+  /// Shows a × at the end when set; [dismissLabel] is its spoken label.
+  final VoidCallback? onDismiss;
+  final String? dismissLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -457,6 +463,16 @@ class UpgradeBanner extends StatelessWidget {
                       .copyWith(fontWeight: FontWeight.w700, color: pastel)),
             ),
           ),
+          if (onDismiss != null)
+            SketchPressable(
+              onTap: onDismiss,
+              semanticLabel: dismissLabel ?? '',
+              child: const SizedBox(
+                width: 40,
+                height: 40,
+                child: Icon(Icons.close_rounded, size: 18, color: SketchPastels.onPastel),
+              ),
+            ),
         ],
       ),
     );

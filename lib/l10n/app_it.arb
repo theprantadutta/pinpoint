@@ -1126,5 +1126,12 @@
   "remStatusInexact": "Suonerà su questo telefono, forse con qualche minuto di ritardo.",
   "remStatusBlocked": "Le notifiche sono disattivate, quindi questo promemoria non può suonare su questo telefono.",
   "remStatusTurnOn": "Attiva",
-  "remStatusAllowExact": "Consenti orario esatto"
+  "remStatusAllowExact": "Consenti orario esatto",
+  "noteCardLocalOnly": "Solo su questo telefono",
+  "localOnlyTitle": "Solo su questo telefono",
+  "localOnlyBody": "Il piano gratuito salva 50 note nel tuo account e questa non ci è stata. È al sicuro su questo telefono, ma non comparirà sugli altri dispositivi e non si potrà recuperare se perdi il telefono. Verrà salvata da sola quando ci sarà spazio, o subito con Pinpoint Pro.",
+  "localOnlyGoPro": "Passa a Pro",
+  "localOnlyBannerTitle": "{count, plural, =1{1 nota è solo su questo telefono} other{{count} note sono solo su questo telefono}}",
+  "localOnlyBannerBody": "Il piano gratuito salva 50 note. Ciò che va oltre resta al sicuro su questo telefono e viene salvato quando c'è spazio.",
+  "localOnlyDismiss": "Ignora"
 }

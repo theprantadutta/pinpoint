@@ -14,6 +14,7 @@ import '../services/analytics/analytics_facade.dart';
 import '../services/backend_auth_service.dart';
 import '../services/google_sign_in_service.dart';
 import 'note_attachments/note_attachment_service.dart';
+import '../sync/held_back_notes.dart';
 
 /// Result of logout validation
 class LogoutValidationResult {
@@ -280,6 +281,8 @@ class LogoutService {
     try {
       // 1. Delete audio files from filesystem
       await _deleteAudioFiles();
+
+      HeldBackNotes.reset();
 
       // 1b. Attached images and files (the table goes with wipeAllData).
       try {

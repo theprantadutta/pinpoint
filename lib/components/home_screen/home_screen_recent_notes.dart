@@ -15,6 +15,7 @@ import '../../navigation/new_note.dart';
 import '../../service_locators/init_service_locators.dart';
 import '../../services/drift_note_service.dart';
 import '../../services/note_attachments/note_attachment_service.dart';
+import '../../sync/held_back_notes.dart';
 import '../../services/filter_service.dart';
 import '../../util/localized_dates.dart';
 import '../../util/note_query.dart';
@@ -258,11 +259,20 @@ class NoteListItem extends StatelessWidget {
   }
 
   Widget _card(BuildContext context, Widget? thumbnail) {
+    return ValueListenableBuilder<Set<String>>(
+      valueListenable: HeldBackNotes.notifier,
+      builder: (context, heldBack, _) =>
+          _cardWith(context, thumbnail, heldBack.contains(note.note.uuid)),
+    );
+  }
+
+  Widget _cardWith(BuildContext context, Widget? thumbnail, bool localOnly) {
     final n = note.note;
     final hasTitle = n.noteTitle != null && n.noteTitle!.trim().isNotEmpty;
     final isVoice = NoteQuery.typeKey(n.noteType) == 'voice';
 
     return NoteCard(
+      localOnly: localOnly && !isTrashView,
       thumbnail: thumbnail,
       title: getNoteTitleOrPreview(n.noteTitle, note.textContent),
       // Voice previews are a generated "Voice recording 1m 2s" line; the card
