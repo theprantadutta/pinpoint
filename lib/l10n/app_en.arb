@@ -5082,9 +5082,9 @@
       }
     }
   },
-  "bkHowEverything": "Each backup holds all your notes, checklists, reminders, folders and voice recordings, archived and trashed notes too.",
+  "bkHowEverything": "Each backup holds all your notes, checklists, reminders, folders, voice recordings and attached images and files, archived and trashed notes too.",
   "@bkHowEverything": {
-    "description": "Explanation bullet listing what a backup contains."
+    "description": "Bullet on the Google Drive backup screen explaining what a backup contains: every note type, folders, voice recordings and attachments (images and files added to notes), including archived and trashed notes."
   },
   "bkHowMerge": "Restoring adds what's missing and updates notes that are older on this phone. Nothing on the phone is deleted.",
   "@bkHowMerge": {

@@ -21,13 +21,18 @@
 -keepattributes InnerClasses
 -keepattributes EnclosingMethod
 
+# Library-wide keeps (`-keep class com.google.firebase.** { *; }` and the like)
+# used to sit here and left half the DEX unoptimized (r8.json: ~50% not
+# optimized, obfuscated or shrunk), which Play flags under "R8 optimization".
+# Firebase, Play Billing, GSON and androidx.window ship their own consumer
+# rules inside their AARs; manifest components are kept by AAPT; plugin
+# classes are referenced directly by GeneratedPluginRegistrant. Only what is
+# reached purely by name is listed below.
+
 # ---- Google Play Billing, via flutter_inapp_purchase (OpenIAP) ----------
-# The billing client and the OpenIAP modules are reached reflectively from the
-# Play Services side.
+# OpenIAP maps purchase objects reflectively (JSON into its own models).
 -keep class dev.hyo.** { *; }
 -keep class io.github.hyochan.** { *; }
--keep class com.android.vending.billing.**
--keep class com.android.billingclient.** { *; }
 -dontwarn dev.hyo.**
 -dontwarn io.github.hyochan.**
 
@@ -35,12 +40,11 @@
 # THE classic R8 breakage in a Flutter app. Scheduled notifications are
 # persisted as GSON JSON and rehydrated after a reboot by reflecting over the
 # plugin's model classes; obfuscate their field names and every already-
-# scheduled reminder silently fails to come back.
--keep class com.dexterous.** { *; }
+# scheduled reminder silently fails to come back. The models are all it needs.
 -keep class com.dexterous.flutterlocalnotifications.models.** { *; }
 
-# GSON itself, for the same reason.
--keep class com.google.gson.** { *; }
+# GSON's generic type capture (TypeToken subclasses) and adapters.
+-keep class * extends com.google.gson.reflect.TypeToken
 -keep class * extends com.google.gson.TypeAdapter
 -keep class * implements com.google.gson.TypeAdapterFactory
 -keep class * implements com.google.gson.JsonSerializer
@@ -58,8 +62,7 @@
 -dontwarn com.google.android.play.core.**
 
 # ---- Firebase ------------------------------------------------------------
-# Messaging instantiates the service named in the manifest by reflection.
--keep class com.google.firebase.** { *; }
+# Kept by Firebase's own consumer rules and by the manifest entries AAPT keeps.
 -dontwarn com.google.firebase.**
 
 # ---- Kotlin --------------------------------------------------------------
@@ -70,12 +73,9 @@
 -keep class kotlin.Metadata { *; }
 
 # ---- Plugins reached over the platform channel --------------------------
-# A Flutter plugin's registrant resolves its class by name, so the entry points
-# must survive. The Flutter Gradle plugin already keeps io.flutter.**; these are
-# the third-party registrants it does not know about.
--keep class * implements io.flutter.plugin.common.PluginRegistry$Registrar { *; }
--keep class * implements io.flutter.embedding.engine.plugins.FlutterPlugin { *; }
--keep class io.flutter.plugins.** { *; }
+# GeneratedPluginRegistrant constructs every plugin directly, so R8 sees them;
+# only the registrant itself is looked up by name.
+-keep class io.flutter.plugins.GeneratedPluginRegistrant { *; }
 
 # ---- Native / JNI --------------------------------------------------------
 # sqlite3mc is loaded through FFI. R8 does not touch the .so, but the loader
@@ -84,8 +84,7 @@
 -dontwarn org.sqlite.**
 
 # ---- androidx.window -----------------------------------------------------
-# Declared as a direct dependency for foldable/window-size reporting.
--keep class androidx.window.** { *; }
+# Ships its own consumer rules (its sidecar/extension shims).
 -dontwarn androidx.window.**
 
 # ---- Enums ---------------------------------------------------------------

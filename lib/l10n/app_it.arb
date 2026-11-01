@@ -1075,7 +1075,7 @@
   "bkHowTitle": "Come funzionano i backup",
   "bkHowEncrypted": "Ogni backup viene crittografato su questo telefono con la chiave del tuo account Pinpoint prima di uscire. Google non può leggere le tue note.",
   "bkHowAccountOnly": "Solo questo account Pinpoint può ripristinarli. Per recuperare le tue note, accedi come {email}. Se accedi con un altro account, o perdi l'accesso a questo, questi backup non potranno essere aperti.",
-  "bkHowEverything": "Ogni backup contiene tutte le tue note, liste, promemoria, cartelle e registrazioni vocali, anche quelle archiviate e nel cestino.",
+  "bkHowEverything": "Ogni backup contiene tutte le note, le liste, i promemoria, le cartelle, le registrazioni vocali e le immagini e i file allegati, anche le note archiviate e nel cestino.",
   "bkHowMerge": "Il ripristino aggiunge ciò che manca e aggiorna le note più vecchie su questo telefono. Nulla sul telefono viene eliminato.",
   "bkHowWhere": "I backup sono conservati in una cartella \"Pinpoint Backups\" nel tuo Drive. Pinpoint vede solo i file che ha creato.",
   "bkAutoTitle": "Backup automatici",

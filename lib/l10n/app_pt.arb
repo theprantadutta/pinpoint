@@ -1075,7 +1075,7 @@
   "bkHowTitle": "Como os backups funcionam",
   "bkHowEncrypted": "Cada backup é criptografado neste celular com a chave da sua conta Pinpoint antes de sair. O Google não consegue ler suas notas.",
   "bkHowAccountOnly": "Só esta conta Pinpoint pode restaurá-los. Para recuperar suas notas, entre como {email}. Se você entrar com outra conta, ou perder o acesso a esta, esses backups não poderão ser abertos.",
-  "bkHowEverything": "Cada backup guarda todas as suas notas, listas, lembretes, pastas e gravações de voz, inclusive as arquivadas e as da lixeira.",
+  "bkHowEverything": "Cada backup guarda todas as suas notas, listas, lembretes, pastas, gravações de voz e imagens e arquivos anexados, incluindo notas arquivadas e na lixeira.",
   "bkHowMerge": "Restaurar adiciona o que falta e atualiza as notas mais antigas neste celular. Nada no celular é apagado.",
   "bkHowWhere": "Os backups ficam numa pasta \"Pinpoint Backups\" no seu Drive. O Pinpoint só vê os arquivos que criou.",
   "bkAutoTitle": "Backups automáticos",

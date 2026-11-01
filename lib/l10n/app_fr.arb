@@ -1075,7 +1075,7 @@
   "bkHowTitle": "Fonctionnement des sauvegardes",
   "bkHowEncrypted": "Chaque sauvegarde est chiffrée sur ce téléphone avec la clé de votre compte Pinpoint avant d'en sortir. Google ne peut pas lire vos notes.",
   "bkHowAccountOnly": "Seul ce compte Pinpoint peut les restaurer. Pour récupérer vos notes, connectez-vous en tant que {email}. Si vous vous connectez avec un autre compte, ou perdez l'accès à celui-ci, ces sauvegardes ne pourront pas être ouvertes.",
-  "bkHowEverything": "Chaque sauvegarde contient toutes vos notes, listes, rappels, dossiers et enregistrements vocaux, y compris les notes archivées et dans la corbeille.",
+  "bkHowEverything": "Chaque sauvegarde contient toutes vos notes, listes, rappels, dossiers, enregistrements vocaux et images et fichiers joints, y compris les notes archivées et dans la corbeille.",
   "bkHowMerge": "La restauration ajoute ce qui manque et met à jour les notes plus anciennes sur ce téléphone. Rien n'est supprimé du téléphone.",
   "bkHowWhere": "Les sauvegardes sont rangées dans un dossier « Pinpoint Backups » de votre Drive. Pinpoint ne voit que les fichiers qu'il a créés.",
   "bkAutoTitle": "Sauvegardes automatiques",

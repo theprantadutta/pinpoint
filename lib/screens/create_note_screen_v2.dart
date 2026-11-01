@@ -2116,10 +2116,16 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
       // line break (which later crashed the editor from the keyboard path),
       // and all existing formatting was destroyed. Replacing the controller
       // without setState also left the editor bound to the old one.
+      //
+      // Through the controller, not document.insert: the controller is what
+      // notifies listeners, so the "Start writing" hint now hides and
+      // autosave sees the change (inserting into the document directly left
+      // the hint drawn over the extracted text).
       final document = _fleatherController.document;
       final hasExistingText = document.toPlainText().trim().isNotEmpty;
-      document.insert(
+      _fleatherController.replaceText(
         document.length - 1, // Before the document's trailing line break.
+        0,
         hasExistingText ? '\n\n$recognizedText' : recognizedText,
       );
       _scheduleAutoSave();
