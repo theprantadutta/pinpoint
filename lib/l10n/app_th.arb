@@ -1112,5 +1112,19 @@
   "bkDisconnected": "ยกเลิกการเชื่อมต่อ Google Drive แล้ว ข้อมูลสำรองยังอยู่ใน Drive ของคุณ",
   "syncConflictCopyTitle": "{title} (สำเนาที่ขัดแย้ง)",
   "syncConflictCopyUntitled": "สำเนาที่ขัดแย้ง",
-  "edStartAs": "หรือเริ่มเป็น"
+  "edStartAs": "หรือเริ่มเป็น",
+  "attMenuAdd": "เพิ่มรูปภาพหรือไฟล์",
+  "attSheetTitle": "เพิ่มลงในโน้ต",
+  "attFromGallery": "รูปภาพจากแกลเลอรี",
+  "attTakePhoto": "ถ่ายรูป",
+  "attAnyFile": "ไฟล์ใดก็ได้",
+  "attTooLarge": "{name} ใหญ่เกินไป",
+  "attTooLargeBody": "แต่ละไฟล์มีขนาดได้สูงสุด 50 MB",
+  "attWaitingDownload": "จะดาวน์โหลดเมื่อคุณออนไลน์",
+  "attRemove": "นำไฟล์แนบออก",
+  "remStatusExact": "จะดังบนโทรศัพท์เครื่องนี้ตามเวลา แม้ออฟไลน์",
+  "remStatusInexact": "จะดังบนโทรศัพท์เครื่องนี้ อาจช้าไปไม่กี่นาที",
+  "remStatusBlocked": "การแจ้งเตือนปิดอยู่ การเตือนนี้จึงดังบนโทรศัพท์เครื่องนี้ไม่ได้",
+  "remStatusTurnOn": "เปิด",
+  "remStatusAllowExact": "อนุญาตเวลาที่แน่นอน"
 }

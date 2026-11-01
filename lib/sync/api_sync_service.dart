@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../services/api_service.dart';
 import '../services/audio_upload_queue.dart';
+import '../services/note_attachments/attachment_sync.dart';
 import '../services/premium_service.dart';
 import '../services/encryption_service.dart';
 import 'sync_service.dart';
@@ -826,6 +827,11 @@ class ApiSyncService extends SyncService {
         throw Exception('Unknown note type: ${noteWrapper.type}');
     }
 
+    // Attachments travel inside the encrypted payload, by FileRunner id.
+    if (noteWrapper.type == 'text' || noteWrapper.type == 'todo') {
+      noteData[AttachmentSync.payloadKey] = await AttachmentSync.payloadFor(noteWrapper.uuid);
+    }
+
     // Add folder UUIDs for all note types
     await _addFolderUuidsToNoteData(noteData, noteWrapper);
     return noteData;
@@ -1266,6 +1272,7 @@ class ApiSyncService extends SyncService {
 
         // Restore folder relations
         await _restoreFolderRelationsV2(uuid, noteData, 'text');
+        await AttachmentSync.applyFromPayload(uuid, 'text', noteData[AttachmentSync.payloadKey]);
         break;
 
       case 'voice':
@@ -1349,6 +1356,7 @@ class ApiSyncService extends SyncService {
 
         // Restore folder relations
         await _restoreFolderRelationsV2(uuid, noteData, 'todo');
+        await AttachmentSync.applyFromPayload(uuid, 'todo', noteData[AttachmentSync.payloadKey]);
         break;
 
       case 'reminder':
@@ -1416,6 +1424,7 @@ class ApiSyncService extends SyncService {
 
           // Restore folder relations
           await _restoreFolderRelationsV2(clientNoteUuid, noteData, 'text');
+        await AttachmentSync.applyFromPayload(clientNoteUuid, 'text', noteData[AttachmentSync.payloadKey]);
           break;
 
         case 'audio':
@@ -1490,6 +1499,7 @@ class ApiSyncService extends SyncService {
 
           // Restore folder relations
           await _restoreFolderRelationsV2(clientNoteUuid, noteData, 'todo');
+        await AttachmentSync.applyFromPayload(clientNoteUuid, 'todo', noteData[AttachmentSync.payloadKey]);
           break;
 
         case 'reminder':

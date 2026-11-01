@@ -1112,5 +1112,19 @@
   "bkDisconnected": "اتصال Google Drive قطع شد. پشتیبان‌ها در Drive شما می‌مانند.",
   "syncConflictCopyTitle": "{title} (نسخه متعارض)",
   "syncConflictCopyUntitled": "نسخه متعارض",
-  "edStartAs": "یا شروع کنید با"
+  "edStartAs": "یا شروع کنید با",
+  "attMenuAdd": "افزودن تصویر یا فایل",
+  "attSheetTitle": "افزودن به یادداشت",
+  "attFromGallery": "عکس از گالری",
+  "attTakePhoto": "گرفتن عکس",
+  "attAnyFile": "هر فایلی",
+  "attTooLarge": "{name} خیلی بزرگ است",
+  "attTooLargeBody": "هر فایل حداکثر ۵۰ مگابایت می‌تواند باشد.",
+  "attWaitingDownload": "وقتی آنلاین شوید دانلود می‌شود",
+  "attRemove": "حذف پیوست",
+  "remStatusExact": "در همان زمان روی این گوشی زنگ می‌زند، حتی آفلاین.",
+  "remStatusInexact": "روی این گوشی زنگ می‌زند، شاید چند دقیقه دیرتر.",
+  "remStatusBlocked": "اعلان‌ها خاموش است، پس این یادآور روی این گوشی زنگ نمی‌زند.",
+  "remStatusTurnOn": "روشن کردن",
+  "remStatusAllowExact": "اجازه زمان دقیق"
 }

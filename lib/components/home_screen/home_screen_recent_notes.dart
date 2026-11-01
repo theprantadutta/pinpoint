@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
@@ -6,10 +8,13 @@ import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen_v2.dart';
 import 'package:provider/provider.dart';
 
+import '../../database/database.dart';
 import '../../design_system/design_system.dart';
 import '../../models/note_with_details.dart';
 import '../../navigation/new_note.dart';
+import '../../service_locators/init_service_locators.dart';
 import '../../services/drift_note_service.dart';
+import '../../services/note_attachments/note_attachment_service.dart';
 import '../../services/filter_service.dart';
 import '../../util/localized_dates.dart';
 import '../../util/note_query.dart';
@@ -230,10 +235,35 @@ class NoteListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final n = note.note;
+    final typeKey = NoteQuery.typeKey(n.noteType);
+    // Only text and checklist notes take attachments. Widget tests render
+    // cards with no database behind them.
+    if ((typeKey != 'text' && typeKey != 'todo') || !getIt.isRegistered<AppDatabase>()) {
+      return _card(context, null);
+    }
+    return StreamBuilder<String?>(
+      stream: NoteAttachmentService.watchCoverImage(n.uuid),
+      builder: (context, snap) => _card(
+        context,
+        snap.data == null
+            ? null
+            : Image.file(
+                File(snap.data!),
+                // Decode at card size: full-size decodes caused OOM crashes.
+                cacheWidth: (240 * MediaQuery.devicePixelRatioOf(context)).round(),
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+      ),
+    );
+  }
+
+  Widget _card(BuildContext context, Widget? thumbnail) {
+    final n = note.note;
     final hasTitle = n.noteTitle != null && n.noteTitle!.trim().isNotEmpty;
     final isVoice = NoteQuery.typeKey(n.noteType) == 'voice';
 
     return NoteCard(
+      thumbnail: thumbnail,
       title: getNoteTitleOrPreview(n.noteTitle, note.textContent),
       // Voice previews are a generated "Voice recording 1m 2s" line; the card
       // shows a waveform and the duration instead.

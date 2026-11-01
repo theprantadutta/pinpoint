@@ -8,6 +8,7 @@ import '../../../services/notification_service.dart';
 import '../../../util/show_a_toast.dart';
 import 'package:pinpoint/util/localized_dates.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import 'reminder_delivery_status.dart';
 
 class ReminderTypeContent extends StatefulWidget {
   final TextEditingController notificationTitleController;
@@ -334,6 +335,7 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
                       style: t.bodySmall.copyWith(color: s.muted)),
               ],
             ),
+            if (when != null && when.isAfter(DateTime.now())) const ReminderDeliveryStatus(),
 
             // Notification title
             label(l10n.edRemTitleLabel),

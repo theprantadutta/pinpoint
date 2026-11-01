@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 4.1.0+38
+version: 4.2.0+39
 
 environment:
   sdk: ^3.6.0
@@ -48,6 +48,7 @@ dependencies:
   share_plus: ^13.1.0
   printing: ^5.11.1
   file_picker: ^13.1.0
+  mime: ^2.0.0
   painter: ^2.0.0
   pdf: ^3.10.8
   flutter_secure_storage: ^11.0.0

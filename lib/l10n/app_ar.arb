@@ -1112,5 +1112,19 @@
   "bkDisconnected": "تم فصل Google Drive. تبقى نسخك الاحتياطية في Drive.",
   "syncConflictCopyTitle": "{title} (نسخة متعارضة)",
   "syncConflictCopyUntitled": "نسخة متعارضة",
-  "edStartAs": "أو ابدأ"
+  "edStartAs": "أو ابدأ",
+  "attMenuAdd": "إضافة صورة أو ملف",
+  "attSheetTitle": "إضافة إلى الملاحظة",
+  "attFromGallery": "صور من المعرض",
+  "attTakePhoto": "التقاط صورة",
+  "attAnyFile": "أي ملف",
+  "attTooLarge": "{name} كبير جدًا",
+  "attTooLargeBody": "يمكن أن يصل حجم كل ملف إلى 50 ميغابايت.",
+  "attWaitingDownload": "يُنزَّل عند اتصالك بالإنترنت",
+  "attRemove": "إزالة المرفق",
+  "remStatusExact": "سيرنّ على هذا الهاتف في ذلك الوقت، حتى دون اتصال.",
+  "remStatusInexact": "سيرنّ على هذا الهاتف، وقد يتأخر بضع دقائق.",
+  "remStatusBlocked": "الإشعارات متوقفة، لذا لا يمكن لهذا التذكير أن يرنّ على هذا الهاتف.",
+  "remStatusTurnOn": "تشغيل",
+  "remStatusAllowExact": "السماح بالتوقيت الدقيق"
 }

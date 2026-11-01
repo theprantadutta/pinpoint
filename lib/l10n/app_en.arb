@@ -5266,5 +5266,67 @@
   "edStartAs": "Or start a",
   "@edStartAs": {
     "description": "Muted label before three chips (Checklist, Voice, Reminder) shown under a brand-new, still empty text note; tapping a chip turns the note into that type."
+  },
+  "attMenuAdd": "Add image or file",
+  "@attMenuAdd": {
+    "description": "Note editor overflow menu item that opens the choice of adding a photo, taking a photo or attaching any file to the note."
+  },
+  "attSheetTitle": "Add to note",
+  "@attSheetTitle": {
+    "description": "Title of the bottom sheet in the note editor listing ways to add something to the note: photo from gallery, camera, any file, scan text."
+  },
+  "attFromGallery": "Photos from gallery",
+  "@attFromGallery": {
+    "description": "Option in the 'Add to note' sheet: pick one or more photos from the phone's gallery to attach to the note."
+  },
+  "attTakePhoto": "Take a photo",
+  "@attTakePhoto": {
+    "description": "Option in the 'Add to note' sheet: open the camera and attach the photo to the note."
+  },
+  "attAnyFile": "Any file",
+  "@attAnyFile": {
+    "description": "Option in the 'Add to note' sheet: pick any file (PDF, document, audio, etc.) from the phone to attach to the note."
+  },
+  "attTooLarge": "{name} is too large",
+  "@attTooLarge": {
+    "description": "Warning toast title when a file picked for attaching is over the size limit. {name} is the file's name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "video.mp4"
+      }
+    }
+  },
+  "attTooLargeBody": "Files can be up to 50 MB each.",
+  "@attTooLargeBody": {
+    "description": "Warning toast body under the 'file is too large' title: the per-file size limit for note attachments."
+  },
+  "attWaitingDownload": "Downloads when you're online",
+  "@attWaitingDownload": {
+    "description": "Shown on an attachment added on another device that has not been downloaded to this phone yet; it downloads at the next sync with a connection."
+  },
+  "attRemove": "Remove attachment",
+  "@attRemove": {
+    "description": "Accessibility label and tooltip of the × button that removes an image or file from the note."
+  },
+  "remStatusExact": "Rings on this phone at that time, even offline.",
+  "@remStatusExact": {
+    "description": "Reminder editor, under the chosen date: the reminder is scheduled on this phone and will ring on time even without a connection."
+  },
+  "remStatusInexact": "Rings on this phone, possibly a few minutes late.",
+  "@remStatusInexact": {
+    "description": "Reminder editor, under the chosen date: exact alarms are not allowed for the app, so the reminder may ring a few minutes late. Followed by a button to allow exact timing."
+  },
+  "remStatusBlocked": "Notifications are off, so this reminder can't ring on this phone.",
+  "@remStatusBlocked": {
+    "description": "Reminder editor, under the chosen date: the user has turned off notifications for the app, so the reminder cannot ring. Followed by a 'Turn on' button."
+  },
+  "remStatusTurnOn": "Turn on",
+  "@remStatusTurnOn": {
+    "description": "Button next to the 'notifications are off' reminder status: asks for notification permission or opens the app's system settings."
+  },
+  "remStatusAllowExact": "Allow exact timing",
+  "@remStatusAllowExact": {
+    "description": "Button next to the 'may ring a few minutes late' reminder status: opens the system setting that lets the app ring reminders at the exact minute."
   }
 }

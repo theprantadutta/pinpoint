@@ -22,6 +22,7 @@ import '../entities/text_note_folder_relations_entity.dart';
 import '../entities/voice_note_folder_relations_entity.dart';
 import '../entities/todo_list_note_folder_relations_entity.dart';
 import '../entities/reminder_note_folder_relations_entity.dart';
+import '../entities/note_attachment_entity.dart';
 
 part '../generated/database/database.g.dart';
 
@@ -46,6 +47,7 @@ part '../generated/database/database.g.dart';
   VoiceNoteFolderRelationsV2,
   TodoListNoteFolderRelationsV2,
   ReminderNoteFolderRelationsV2,
+  NoteAttachmentsV2,
 ])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
@@ -61,7 +63,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration {
@@ -183,6 +185,14 @@ class AppDatabase extends _$AppDatabase {
           }
           debugPrint('✅ [Database] Migration to v12 completed');
         }
+
+        if (from < 13 && to >= 13) {
+          // V12 → V13: note attachments (images and any other file).
+          if (!await _hasTable('note_attachments_v2')) {
+            await m.createTable(noteAttachmentsV2);
+          }
+          debugPrint('✅ [Database] Migration to v13 completed');
+        }
       },
       // Enforcement itself. SQLite defaults foreign keys to OFF on every new
       // connection, which is why years of `onDelete: KeyAction.cascade`
@@ -191,6 +201,13 @@ class AppDatabase extends _$AppDatabase {
         await customStatement('PRAGMA foreign_keys = ON');
       },
     );
+  }
+
+  Future<bool> _hasTable(String table) async {
+    final rows = await customSelect(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+        variables: [Variable.withString(table)]).get();
+    return rows.isNotEmpty;
   }
 
   Future<bool> _hasColumn(String table, String column) async {

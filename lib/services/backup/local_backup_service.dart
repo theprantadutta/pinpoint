@@ -8,6 +8,7 @@ import '../../database/database.dart';
 import '../../sync/api_sync_service.dart';
 import '../api_service.dart';
 import '../audio_upload_queue.dart';
+import '../note_attachments/note_attachment_service.dart';
 import '../encryption_service.dart';
 import '../voice_recording_files.dart';
 import 'backup_archive.dart';
@@ -77,6 +78,23 @@ class LocalBackupService {
           BackupRecording(noteUuid: v.uuid, file: File(v.audioFilePath)),
     ];
 
+    final attachments = [
+      for (final a in await _db.select(_db.noteAttachmentsV2).get())
+        BackupAttachment(
+          record: {
+            'uuid': a.uuid,
+            'noteUuid': a.noteUuid,
+            'noteType': a.noteType,
+            'name': a.fileName,
+            'mime': a.mimeType,
+            'size': a.sizeBytes,
+            'order': a.sortOrder,
+            'remoteId': a.remoteId,
+          },
+          file: a.localPath == null ? null : File(a.localPath!),
+        ),
+    ];
+
     final out = File('${(await getTemporaryDirectory()).path}/'
         'pinpoint-backup-${DateTime.now().millisecondsSinceEpoch}.${BackupArchive.fileExtension}');
     final manifest = await BackupArchive.write(
@@ -86,6 +104,7 @@ class LocalBackupService {
       folders: folders,
       notes: notes,
       recordings: recordings,
+      attachments: attachments,
       appVersion: appVersion,
       device: device,
     );
@@ -130,6 +149,7 @@ class LocalBackupService {
           recordings++;
         }
       }
+      await _restoreAttachments(reader, contents.attachments, key);
       return RestoreSummary(
         notesAdded: added,
         notesSkipped: skipped,
@@ -176,6 +196,50 @@ class LocalBackupService {
       added++;
     }
     return added;
+  }
+
+  /// Put back attachments this device lacks, or whose file is missing. One
+  /// with no server copy is uploaded at the next sync like a new one.
+  Future<void> _restoreAttachments(
+      BackupReader reader, List<Map<String, dynamic>> records, BackupCipher key) async {
+    if (records.isEmpty) return;
+    final dir = await NoteAttachmentService.directory();
+    for (final r in records) {
+      final uuid = r['uuid'] as String?;
+      final noteUuid = r['noteUuid'] as String?;
+      if (uuid == null || noteUuid == null) continue;
+      final existing = await (_db.select(_db.noteAttachmentsV2)..where((t) => t.uuid.equals(uuid)))
+          .getSingleOrNull();
+      if (existing?.localPath != null && await File(existing!.localPath!).exists()) continue;
+
+      final bytes = reader.attachment(uuid, key);
+      String? path;
+      if (bytes != null) {
+        path = '${dir.path}/$uuid${NoteAttachmentService.extensionOf('${r['name'] ?? ''}')}';
+        await File(path).writeAsBytes(bytes, flush: true);
+      }
+      if (existing != null) {
+        if (path != null) {
+          await (_db.update(_db.noteAttachmentsV2)..where((t) => t.id.equals(existing.id)))
+              .write(NoteAttachmentsV2Companion(localPath: Value(path)));
+        }
+        continue;
+      }
+      if (path == null && r['remoteId'] == null) continue;
+      await _db.into(_db.noteAttachmentsV2).insert(NoteAttachmentsV2Companion.insert(
+            uuid: uuid,
+            noteUuid: noteUuid,
+            noteType: '${r['noteType'] ?? 'text'}',
+            fileName: '${r['name'] ?? 'file'}',
+            mimeType: '${r['mime'] ?? 'application/octet-stream'}',
+            sizeBytes: (r['size'] as num?)?.toInt() ?? 0,
+            localPath: Value(path),
+            remoteId: Value(r['remoteId'] as String?),
+            sortOrder: Value((r['order'] as num?)?.toInt() ?? 0),
+            createdAt: DateTime.now(),
+          ));
+      await NoteAttachmentService.markNoteChanged('${r['noteType'] ?? 'text'}', noteUuid);
+    }
   }
 
   Future<bool> _recordingMissing(String uuid) async {

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'note_attachments/note_attachment_service.dart';
 
 import '../database/database.dart';
 import '../dtos/note_folder_dto.dart';
@@ -183,6 +184,12 @@ class TextNoteService {
   static Future<void> permanentlyDeleteTextNote(int noteId) async {
     try {
       final database = getIt<AppDatabase>();
+
+      // Its files go too: here, and from the server at the next sync.
+      final note = await (database.select(database.textNotesV2)
+            ..where((t) => t.id.equals(noteId)))
+          .getSingleOrNull();
+      if (note != null) await NoteAttachmentService.removeAllForNote(note.uuid);
 
       // Delete folder relations (cascade)
       await (database.delete(database.textNoteFolderRelationsV2)

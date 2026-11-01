@@ -2,6 +2,7 @@ import 'package:pinpoint/services/api_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/encryption_service.dart';
 import 'package:pinpoint/services/audio_upload_queue.dart';
+import '../services/note_attachments/attachment_sync.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -127,11 +128,30 @@ class SyncManager with ChangeNotifier {
           await AudioUploadQueue.process();
         } catch (e) {
           debugPrint('⚠️ [SyncManager] Audio uploads deferred: $e');
+          try {
+          await AttachmentSync.pushPending();
+        } catch (e) {
+          debugPrint('⚠️ [SyncManager] Attachment uploads deferred: $e');
+        }
+      }
+        try {
+          await AttachmentSync.pushPending();
+        } catch (e) {
+          debugPrint('⚠️ [SyncManager] Attachment uploads deferred: $e');
         }
       }
 
       // Perform the actual sync
       final result = await _syncService!.sync(direction: direction);
+
+      // Files other devices attached: fetched after their notes arrive.
+      if (direction != SyncDirection.upload) {
+        try {
+          await AttachmentSync.pullMissing();
+        } catch (e) {
+          debugPrint('⚠️ [SyncManager] Attachment downloads deferred: $e');
+        }
+      }
 
       // After successful sync, update usage stats from backend
       if (result.success) {

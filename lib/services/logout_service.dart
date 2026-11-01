@@ -13,6 +13,7 @@ import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/backend_auth_service.dart';
 import '../services/google_sign_in_service.dart';
+import 'note_attachments/note_attachment_service.dart';
 
 /// Result of logout validation
 class LogoutValidationResult {
@@ -279,6 +280,14 @@ class LogoutService {
     try {
       // 1. Delete audio files from filesystem
       await _deleteAudioFiles();
+
+      // 1b. Attached images and files (the table goes with wipeAllData).
+      try {
+        final dir = await NoteAttachmentService.directory();
+        if (await dir.exists()) await dir.delete(recursive: true);
+      } catch (e) {
+        debugPrint('⚠️ [LogoutService] Attachment files not deleted: $e');
+      }
 
       // 2. Clear database tables
       await _clearDatabase();

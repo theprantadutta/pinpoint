@@ -1112,5 +1112,19 @@
   "bkDisconnected": "Google Drive scollegato. I tuoi backup restano nel tuo Drive.",
   "syncConflictCopyTitle": "{title} (copia in conflitto)",
   "syncConflictCopyUntitled": "Copia in conflitto",
-  "edStartAs": "Oppure inizia un"
+  "edStartAs": "Oppure inizia un",
+  "attMenuAdd": "Aggiungi immagine o file",
+  "attSheetTitle": "Aggiungi alla nota",
+  "attFromGallery": "Foto dalla galleria",
+  "attTakePhoto": "Scatta una foto",
+  "attAnyFile": "Qualsiasi file",
+  "attTooLarge": "{name} è troppo grande",
+  "attTooLargeBody": "Ogni file può arrivare a 50 MB.",
+  "attWaitingDownload": "Si scarica quando sei online",
+  "attRemove": "Rimuovi allegato",
+  "remStatusExact": "Suonerà su questo telefono a quell'ora, anche offline.",
+  "remStatusInexact": "Suonerà su questo telefono, forse con qualche minuto di ritardo.",
+  "remStatusBlocked": "Le notifiche sono disattivate, quindi questo promemoria non può suonare su questo telefono.",
+  "remStatusTurnOn": "Attiva",
+  "remStatusAllowExact": "Consenti orario esatto"
 }

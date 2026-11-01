@@ -8,12 +8,14 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:fleather/fleather.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../service_locators/init_service_locators.dart';
 import '../services/audio_upload_queue.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../components/create_note_screen/editor_chrome.dart';
 import '../components/create_note_screen/editor_overflow_menu.dart';
+import '../components/create_note_screen/note_attachments_section.dart';
 import '../components/create_note_screen/note_export_actions.dart';
 import '../components/create_note_screen/record_audio_type/voice_fab.dart';
 import '../components/create_note_screen/record_audio_type/voice_note_body.dart';
@@ -39,6 +41,7 @@ import '../services/todo_list_note_service.dart';
 import '../services/reminder_note_service.dart';
 import '../services/premium_service.dart';
 import '../services/ocr_service.dart';
+import '../services/note_attachments/note_attachment_service.dart';
 import '../util/folder_palette.dart';
 import '../util/show_a_toast.dart';
 import '../widgets/markdown_editor.dart';
@@ -94,6 +97,10 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
   // Text note fields
   late FleatherController _fleatherController;
   late FocusNode _textContentFocusNode;
+
+  /// The uuid of the text or checklist note attachments hang off; null
+  /// until the note exists.
+  String? _attachmentNoteUuid;
 
   // OCR: the picked image waiting for "Extract text" (never stored).
   String? _ocrImagePath;
@@ -356,6 +363,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
         selectedNoteType = 'Title Content';
         // Load raw content from database (not the plain text version)
         final textNote = await TextNoteService.getTextNote(note.id);
+        _attachmentNoteUuid = textNote?.uuid;
         if (textNote != null && textNote.content.isNotEmpty) {
           _fleatherController.removeListener(_scheduleAutoSave);
           _fleatherController =
@@ -379,6 +387,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
         final todoNote = await TodoListNoteService.getTodoListNote(note.id);
         if (todoNote != null) {
           _todoListNoteUuid = todoNote.uuid;
+          _attachmentNoteUuid = todoNote.uuid;
           // Load todo items
           final items = await TodoListNoteService.watchTodoItems(note.id).first;
           _todoItems = items;
@@ -834,7 +843,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
                     focusNode: _textContentFocusNode,
                     noteColor: noteColor,
                     onColorPressed: _pickColor,
-                    onImagePressed: () => _handleOcrScan(context),
+                    onImagePressed: () => _showAddAttachmentSheet(context),
                   ),
                 ),
               ),
@@ -979,6 +988,12 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
                   onDiscard: () => setState(() => _ocrImagePath = null),
                 ),
               ],
+              if (_attachmentNoteUuid != null)
+                NoteAttachmentsSection(
+                  noteUuid: _attachmentNoteUuid!,
+                  onOpen: _openAttachment,
+                  onRemove: _removeAttachment,
+                ),
             ],
           ),
         ),
@@ -1100,6 +1115,17 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
           onReorder: _reorderTodoItems,
           onEdit: _editTodoItem,
         ),
+        if (_attachmentNoteUuid != null)
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: SketchSpace.editorX),
+            sliver: SliverToBoxAdapter(
+              child: NoteAttachmentsSection(
+                noteUuid: _attachmentNoteUuid!,
+                onOpen: _openAttachment,
+                onRemove: _removeAttachment,
+              ),
+            ),
+          ),
         SliverToBoxAdapter(
           child: SizedBox(
               height: SketchSpace.dockClearance +
@@ -1412,6 +1438,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
       ),
       EditorMenuEntry(
           value: 'color', icon: Icons.palette_outlined, label: l10n.edColor),
+      if (_isText || _isTodo)
+        EditorMenuEntry(
+            value: 'attach', icon: Icons.attach_file_rounded, label: l10n.attMenuAdd),
       if (_isText) ...[
         EditorMenuEntry(
           value: 'export_pdf',
@@ -1500,6 +1529,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
         break;
       case 'ocr_scan':
         _handleOcrScan(context);
+        break;
+      case 'attach':
+        _showAddAttachmentSheet(context);
         break;
       case 'usage':
         _showUsageStats(context);
@@ -1863,6 +1895,147 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
 
     getIt<AnalyticsFacade>().trackNoteShared();
     PinpointHaptics.success();
+  }
+
+  // ============================================
+  // Attachments (images and any other file)
+  // ============================================
+
+  /// Photo, camera, any file, or (text notes) the text scanner.
+  Future<void> _showAddAttachmentSheet(BuildContext context) async {
+    final l10n = AppL10n.of(context);
+    final choice = await showSketchSheet<String>(
+      context: context,
+      builder: (ctx) => SketchSheet(
+        title: l10n.attSheetTitle,
+        child: SketchGroup(
+          margin: EdgeInsets.zero,
+          children: [
+            SketchRow(
+                icon: Icons.photo_library_outlined,
+                label: l10n.attFromGallery,
+                onTap: () => Navigator.pop(ctx, 'gallery')),
+            SketchRow(
+                icon: Icons.photo_camera_outlined,
+                label: l10n.attTakePhoto,
+                onTap: () => Navigator.pop(ctx, 'camera')),
+            SketchRow(
+                icon: Icons.attach_file_rounded,
+                label: l10n.attAnyFile,
+                onTap: () => Navigator.pop(ctx, 'file')),
+            if (_isText)
+              SketchRow(
+                  icon: Icons.document_scanner_outlined,
+                  label: l10n.edScanText,
+                  onTap: () => Navigator.pop(ctx, 'ocr')),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !context.mounted) return;
+    if (choice == 'ocr') return _handleOcrScan(context);
+    await _addAttachments(context, choice);
+  }
+
+  Future<void> _addAttachments(BuildContext context, String source) async {
+    final noteUuid = await _ensureAttachmentNoteUuid();
+    if (noteUuid == null || !context.mounted) return;
+
+    final isPremium = PremiumService().isPremium;
+    final limit = NoteAttachmentService.limitFor(isPremium: isPremium);
+    final existing = await NoteAttachmentService.count(noteUuid);
+    if (limit != null && existing >= limit) {
+      if (context.mounted) await PremiumGateDialog.showFileAttachmentLimit(context, existing, limit);
+      return;
+    }
+
+    final picked = <({String path, String name})>[];
+    try {
+      final picker = ImagePicker();
+      switch (source) {
+        case 'gallery':
+          // Downscaled at pick time: full-size photos were an OOM source.
+          for (final x in await picker.pickMultiImage(maxWidth: 2048, maxHeight: 2048, imageQuality: 85)) {
+            picked.add((path: x.path, name: x.name));
+          }
+        case 'camera':
+          final x = await picker.pickImage(
+              source: ImageSource.camera, maxWidth: 2048, maxHeight: 2048, imageQuality: 85);
+          if (x != null) picked.add((path: x.path, name: x.name));
+        case 'file':
+          // file_picker 13: pickFiles() returns the list and allows several.
+          for (final f in await FilePicker.pickFiles()) {
+            if (f.path != null) picked.add((path: f.path!, name: f.name));
+          }
+      }
+    } catch (e) {
+      debugPrint('⚠️ [CreateNoteV2] Attachment pick failed: $e');
+      return;
+    }
+    if (picked.isEmpty || !context.mounted) return;
+
+    final l10n = AppL10n.of(context);
+    var count = existing;
+    var skippedForLimit = false;
+    for (final p in picked) {
+      if (limit != null && count >= limit) {
+        skippedForLimit = true;
+        break;
+      }
+      if (await File(p.path).length() > NoteAttachmentService.maxBytes) {
+        if (context.mounted) {
+          showWarningToast(
+              context: context, title: l10n.attTooLarge(p.name), description: l10n.attTooLargeBody);
+        }
+        continue;
+      }
+      await NoteAttachmentService.add(
+        noteUuid: noteUuid,
+        noteType: _isTodo ? 'todo' : 'text',
+        sourcePath: p.path,
+        fileName: p.name,
+      );
+      count++;
+    }
+    PinpointHaptics.success();
+    if (skippedForLimit && context.mounted && limit != null) {
+      await PremiumGateDialog.showFileAttachmentLimit(context, count, limit);
+    }
+  }
+
+  /// The uuid attachments hang off. A brand-new note is saved first.
+  Future<String?> _ensureAttachmentNoteUuid() async {
+    if (_attachmentNoteUuid != null) return _attachmentNoteUuid;
+    if (_currentNoteId == null) await _saveNote();
+    if (_currentNoteId == null) return null;
+    String? uuid;
+    if (_isTodo) {
+      uuid = _todoListNoteUuid;
+    } else {
+      uuid = (await TextNoteService.getTextNote(_currentNoteId!))?.uuid;
+    }
+    if (mounted) setState(() => _attachmentNoteUuid = uuid);
+    return uuid;
+  }
+
+  Future<void> _openAttachment(NoteAttachmentEntity attachment) async {
+    final path = attachment.localPath;
+    if (path == null || !await File(path).exists() || !mounted) return;
+    if (NoteAttachmentService.isImage(attachment.mimeType)) {
+      await Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => AttachmentImageViewer(path: path, title: attachment.fileName),
+      ));
+      return;
+    }
+    // Any other file opens through the system sheet (viewers, other apps).
+    await SharePlus.instance.share(ShareParams(
+      files: [XFile(path, mimeType: attachment.mimeType, name: attachment.fileName)],
+    ));
+  }
+
+  Future<void> _removeAttachment(NoteAttachmentEntity attachment) async {
+    await NoteAttachmentService.remove(attachment);
+    PinpointHaptics.light();
   }
 
   /// OCR, step 1: check the quota, then pick an image into the scan card.
