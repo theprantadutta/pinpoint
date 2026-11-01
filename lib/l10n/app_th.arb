@@ -1109,5 +1109,7 @@
   "bkSignedOutTitle": "ลงชื่อเข้าใช้เพื่อสำรองข้อมูล",
   "bkSignedOutBody": "ข้อมูลสำรองเข้ารหัสด้วยกุญแจของบัญชี Pinpoint จึงต้องมีบัญชี และมีเพียงบัญชีนั้นที่กู้คืนได้ ทั้งบัญชีฟรีและ Premium สำรองข้อมูลได้",
   "bkDisconnect": "ยกเลิกการเชื่อมต่อ Google Drive",
-  "bkDisconnected": "ยกเลิกการเชื่อมต่อ Google Drive แล้ว ข้อมูลสำรองยังอยู่ใน Drive ของคุณ"
+  "bkDisconnected": "ยกเลิกการเชื่อมต่อ Google Drive แล้ว ข้อมูลสำรองยังอยู่ใน Drive ของคุณ",
+  "syncConflictCopyTitle": "{title} (สำเนาที่ขัดแย้ง)",
+  "syncConflictCopyUntitled": "สำเนาที่ขัดแย้ง"
 }

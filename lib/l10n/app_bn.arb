@@ -1109,5 +1109,7 @@
   "bkSignedOutTitle": "ব্যাকআপ নিতে সাইন ইন করুন",
   "bkSignedOutBody": "ব্যাকআপ আপনার Pinpoint অ্যাকাউন্টের কী দিয়ে এনক্রিপ্ট হয়, তাই একটি অ্যাকাউন্ট লাগে, এবং শুধু সেই অ্যাকাউন্টই পুনরুদ্ধার করতে পারে। ফ্রি ও Premium দুই ধরনের অ্যাকাউন্টই ব্যাকআপ নিতে পারে।",
   "bkDisconnect": "Google Drive সংযোগ বিচ্ছিন্ন করুন",
-  "bkDisconnected": "Google Drive সংযোগ বিচ্ছিন্ন হয়েছে। আপনার ব্যাকআপগুলো Drive-এই থাকবে।"
+  "bkDisconnected": "Google Drive সংযোগ বিচ্ছিন্ন হয়েছে। আপনার ব্যাকআপগুলো Drive-এই থাকবে।",
+  "syncConflictCopyTitle": "{title} (দ্বন্দ্বপূর্ণ কপি)",
+  "syncConflictCopyUntitled": "দ্বন্দ্বপূর্ণ কপি"
 }

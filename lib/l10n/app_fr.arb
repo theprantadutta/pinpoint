@@ -1109,5 +1109,7 @@
   "bkSignedOutTitle": "Connectez-vous pour sauvegarder",
   "bkSignedOutBody": "Les sauvegardes sont chiffrées avec la clé de votre compte Pinpoint : elles nécessitent un compte, et seul ce compte peut les restaurer. Les comptes gratuits et Premium peuvent sauvegarder.",
   "bkDisconnect": "Déconnecter Google Drive",
-  "bkDisconnected": "Google Drive déconnecté. Vos sauvegardes restent dans votre Drive."
+  "bkDisconnected": "Google Drive déconnecté. Vos sauvegardes restent dans votre Drive.",
+  "syncConflictCopyTitle": "{title} (copie en conflit)",
+  "syncConflictCopyUntitled": "Copie en conflit"
 }

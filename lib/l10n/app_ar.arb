@@ -1109,5 +1109,7 @@
   "bkSignedOutTitle": "سجّل الدخول للنسخ الاحتياطي",
   "bkSignedOutBody": "تُشفَّر النسخ بمفتاح حسابك في Pinpoint، لذا تحتاج إلى حساب، ولا يستعيدها إلا ذلك الحساب. يمكن للحسابات المجانية وحسابات Premium النسخ الاحتياطي.",
   "bkDisconnect": "فصل Google Drive",
-  "bkDisconnected": "تم فصل Google Drive. تبقى نسخك الاحتياطية في Drive."
+  "bkDisconnected": "تم فصل Google Drive. تبقى نسخك الاحتياطية في Drive.",
+  "syncConflictCopyTitle": "{title} (نسخة متعارضة)",
+  "syncConflictCopyUntitled": "نسخة متعارضة"
 }
