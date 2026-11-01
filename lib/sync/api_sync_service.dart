@@ -1,3 +1,9 @@
+import 'dart:ui' show PlatformDispatcher, Locale;
+import 'package:uuid/uuid.dart';
+import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import '../constants/shared_preference_keys.dart';
+import '../services/voice_recording_files.dart';
+import 'note_revisions.dart';
 import '../util/server_time.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -32,6 +38,11 @@ DateTime editedAt(Map<String, dynamic> noteData, String? serverUpdatedAt) {
   if (inside != null) return inside;
   return DateTime.tryParse(serverUpdatedAt ?? '') ?? DateTime.now();
 }
+
+/// The title of a conflict copy: the note's own title marked as such, so the
+/// user can compare the two and keep what they want.
+String conflictCopyTitle(String title, AppL10n l10n) =>
+    title.trim().isEmpty ? l10n.syncConflictCopyUntitled : l10n.syncConflictCopyTitle(title.trim());
 
 /// Where the next download resumes. In the server's clock when the server
 /// says (server_updated_ms), less a margin so a write stamped just before the
@@ -307,6 +318,7 @@ class ApiSyncService extends SyncService {
       // Convert notes to encrypted format
       final encryptedNotes = <Map<String, dynamic>>[];
       final sentByUuid = <String, _V2NoteWrapper>{};
+      final revisions = await NoteRevisions.all();
       int failedCount = 0;
 
       for (final noteWrapper in notesToSync) {
@@ -323,6 +335,10 @@ class ApiSyncService extends SyncService {
           debugPrint(
               '🔼 [ApiSync] Encrypting note $noteId (${noteWrapper.type}): "$noteTitle"');
           final encryptedNote = await _serializeAndEncryptNoteV2(noteWrapper);
+          // The copy this edit was made on; the server refuses the upload if
+          // another device has replaced it since (review 2026-11-01, F1).
+          final base = revisions[noteWrapper.uuid];
+          if (base != null) encryptedNote['base_server_ms'] = base;
           encryptedNotes.add(encryptedNote);
           final uuid = encryptedNote['client_note_uuid'];
           if (uuid is String) sentByUuid[uuid] = noteWrapper;
@@ -379,6 +395,17 @@ class ApiSyncService extends SyncService {
 
       // The server's counts after this sync, so the plan card is current.
       await PremiumService().applyUsageFromSync(response['usage']);
+
+      await NoteRevisions.record(NoteRevisions.from(response['updated_notes'] as List? ?? const []));
+      final conflicts = response['conflict_notes'] as List? ?? const [];
+      for (final serverNote in conflicts) {
+        if (serverNote is! Map<String, dynamic>) continue;
+        try {
+          await resolveConflict(serverNote);
+        } catch (e) {
+          debugPrint('⚠️ [ApiSync] Could not resolve a sync conflict: $e');
+        }
+      }
       debugPrint('🔼 [ApiSync] ========== UPLOAD COMPLETE ==========\n');
 
       return SyncResult(
@@ -561,6 +588,7 @@ class ApiSyncService extends SyncService {
             // Update or create the note
             await _applyNoteToDatabase(clientNoteUuid, noteData, serverUpdatedAt);
             successCount++;
+            if (serverMs != null) await NoteRevisions.record({clientNoteUuid: serverMs});
 
             // Lazy migration (F1): if the server copy was a legacy v1
             // (unauthenticated AES-CBC) envelope, flag the note for re-upload
@@ -662,6 +690,51 @@ class ApiSyncService extends SyncService {
     await _applyNoteToDatabase(uuid, noteData, backupEditedAt);
     await _markNoteForReupload(uuid);
     return true;
+  }
+
+  /// Another device replaced this note after the copy [local] was edited on.
+  /// The server kept the newer copy: take it, and keep this device's edit as
+  /// a separate conflict copy (a new note, synced like any other) so neither
+  /// is lost. A local deletion that lost simply gives way: the note returns.
+  @visibleForTesting
+  Future<void> resolveConflict(Map<String, dynamic> serverNote) async {
+    final uuid = serverNote['client_note_uuid'] as String;
+    final local = await _getNoteByUuidV2(uuid);
+    debugPrint('⚔️ [ApiSync] Sync conflict on $uuid: keeping both copies');
+
+    if (local != null && !local.isDeleted) {
+      final copy = Map<String, dynamic>.from(await _noteDataV2(local));
+      final copyUuid = const Uuid().v4();
+      final now = DateTime.now().toUtc().toIso8601String();
+      copy['uuid'] = copyUuid;
+      copy['noteTitle'] = conflictCopyTitle(copy['noteTitle'] as String? ?? '', await _l10n());
+      copy['updatedAt'] = now;
+      final audio = local.type == 'voice' ? (local.note as VoiceNoteEntity).audioFilePath : '';
+      if (audio.isNotEmpty) copy['audioFilePath'] = '';
+      await _createNoteFromData(copyUuid, copy);
+      if (audio.isNotEmpty && await File(audio).exists()) {
+        final dir = await VoiceRecordingFiles.audioDirectory();
+        final dot = audio.lastIndexOf('.');
+        final path = '${dir.path}/$copyUuid${dot < 0 ? '.m4a' : audio.substring(dot)}';
+        await File(audio).copy(path);
+        await (_database.update(_database.voiceNotesV2)..where((t) => t.uuid.equals(copyUuid)))
+            .write(VoiceNotesV2Companion(audioFilePath: Value(path)));
+        await AudioUploadQueue.enqueue(copyUuid, path);
+      }
+      await _markNoteForReupload(copyUuid);
+    }
+
+    final serverData = await _decryptAndDeserializeNote(serverNote['encrypted_data'] as String);
+    await _applyNoteToDatabase(uuid, serverData, editedAt(serverData, serverNote['updated_at'] as String?));
+    final serverMs = (serverNote['server_updated_ms'] as num?)?.toInt();
+    if (serverMs != null) await NoteRevisions.record({uuid: serverMs});
+  }
+
+  static Future<AppL10n> _l10n() async {
+    final stored = (await SharedPreferences.getInstance()).getString(kLocaleKey);
+    final code = (stored ?? PlatformDispatcher.instance.locale.languageCode).split('_').first;
+    final supported = AppL10n.supportedLocales.map((l) => l.languageCode).toSet();
+    return lookupAppL10n(Locale(supported.contains(code) ? code : 'en'));
   }
 
   Future<List<_V2NoteWrapper>> _getNotesToUpload() => _getNotesV2(onlyUnsynced: true);

@@ -1109,5 +1109,7 @@
   "bkSignedOutTitle": "Inicia sesión para hacer copias",
   "bkSignedOutBody": "Las copias se cifran con la clave de tu cuenta de Pinpoint, así que necesitan una cuenta, y solo esa cuenta puede restaurarlas. Las cuentas gratuitas y Premium pueden hacer copias.",
   "bkDisconnect": "Desconectar Google Drive",
-  "bkDisconnected": "Google Drive desconectado. Tus copias siguen en tu Drive."
+  "bkDisconnected": "Google Drive desconectado. Tus copias siguen en tu Drive.",
+  "syncConflictCopyTitle": "{title} (copia en conflicto)",
+  "syncConflictCopyUntitled": "Copia en conflicto"
 }

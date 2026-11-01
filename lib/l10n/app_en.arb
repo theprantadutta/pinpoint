@@ -5248,5 +5248,19 @@
   "bkDisconnected": "Google Drive disconnected. Your backups stay in your Drive.",
   "@bkDisconnected": {
     "description": "Toast after disconnecting Google Drive."
+  },
+  "syncConflictCopyTitle": "{title} (conflict copy)",
+  "@syncConflictCopyTitle": {
+    "description": "Title given to a note created when the same note was edited on two devices at once: this device's version is kept as a separate copy next to the newer one. {title} is the note's own title.",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Groceries"
+      }
+    }
+  },
+  "syncConflictCopyUntitled": "Conflict copy",
+  "@syncConflictCopyUntitled": {
+    "description": "Title of a conflict copy (see syncConflictCopyTitle) when the note had no title."
   }
 }

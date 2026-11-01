@@ -1109,5 +1109,7 @@
   "bkSignedOutTitle": "Accedi per fare il backup",
   "bkSignedOutBody": "I backup sono crittografati con la chiave del tuo account Pinpoint, quindi serve un account, e solo quell'account può ripristinarli. Possono farli sia gli account gratuiti sia Premium.",
   "bkDisconnect": "Scollega Google Drive",
-  "bkDisconnected": "Google Drive scollegato. I tuoi backup restano nel tuo Drive."
+  "bkDisconnected": "Google Drive scollegato. I tuoi backup restano nel tuo Drive.",
+  "syncConflictCopyTitle": "{title} (copia in conflitto)",
+  "syncConflictCopyUntitled": "Copia in conflitto"
 }

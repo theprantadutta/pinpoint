@@ -1109,5 +1109,7 @@
   "bkSignedOutTitle": "Entre para fazer backup",
   "bkSignedOutBody": "Os backups são criptografados com a chave da sua conta Pinpoint, então precisam de uma conta, e só essa conta pode restaurá-los. Contas gratuitas e Premium podem fazer backup.",
   "bkDisconnect": "Desconectar Google Drive",
-  "bkDisconnected": "Google Drive desconectado. Seus backups continuam no seu Drive."
+  "bkDisconnected": "Google Drive desconectado. Seus backups continuam no seu Drive.",
+  "syncConflictCopyTitle": "{title} (cópia em conflito)",
+  "syncConflictCopyUntitled": "Cópia em conflito"
 }

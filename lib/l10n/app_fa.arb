@@ -1109,5 +1109,7 @@
   "bkSignedOutTitle": "برای پشتیبان‌گیری وارد شوید",
   "bkSignedOutBody": "پشتیبان‌ها با کلید حساب Pinpoint شما رمزگذاری می‌شوند، پس به حساب نیاز دارند و فقط همان حساب می‌تواند آن‌ها را بازیابی کند. حساب‌های رایگان و Premium هر دو می‌توانند پشتیبان بگیرند.",
   "bkDisconnect": "قطع اتصال Google Drive",
-  "bkDisconnected": "اتصال Google Drive قطع شد. پشتیبان‌ها در Drive شما می‌مانند."
+  "bkDisconnected": "اتصال Google Drive قطع شد. پشتیبان‌ها در Drive شما می‌مانند.",
+  "syncConflictCopyTitle": "{title} (نسخه متعارض)",
+  "syncConflictCopyUntitled": "نسخه متعارض"
 }
