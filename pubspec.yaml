@@ -127,6 +127,11 @@ flutter_plugins:
       windows:
 
 flutter:
+  # iOS is Swift Package Manager only (CocoaPods was removed). Set per project
+  # so a machine-wide `flutter config` cannot fall back to a generated Podfile.
+  config:
+    enable-swift-package-manager: true
+
   uses-material-design: true
 
   # Generate AppL10n from the .arb files in lib/l10n (see l10n.yaml).

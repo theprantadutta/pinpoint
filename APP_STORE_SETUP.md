@@ -65,11 +65,18 @@ Answers derived from `ios/Runner/PrivacyInfo.xcprivacy`. Declare data collected,
 |---|---|---|---|
 | Email address | App Functionality | Yes | No |
 | Name | App Functionality | Yes | No |
-| User content (notes/images/audio) | App Functionality | Yes | No |
+| Photos or videos (note attachments) | App Functionality | Yes | No |
+| Audio data (voice memos) | App Functionality | Yes | No |
+| Other user content (notes, files) | App Functionality | Yes | No |
+| User ID (account ID, also set on Firebase) | App Functionality, Analytics | Yes | No |
 | Device ID | App Functionality | Yes | No |
 | Purchase history | App Functionality | Yes | No |
-| Crash data | App Functionality | No | No |
-| Product interaction / usage | Analytics | No | No |
+| Crash data | App Functionality | Yes | No |
+| Product interaction / usage | Analytics | Yes | No |
+
+Crash data and usage are linked because the account ID is set on Crashlytics and
+Analytics. Notes count as collected even though they sync encrypted: in standard
+mode the server holds a recovery key, so they are not end-to-end encrypted.
 
 - ⬜ Answer "Do you or your partners use data for tracking?" → **No** (matches
   `NSPrivacyTracking = false`).
