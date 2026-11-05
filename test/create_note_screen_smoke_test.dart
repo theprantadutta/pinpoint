@@ -59,7 +59,8 @@ void main() {
     await database.close();
   });
 
-  Widget app(String type, Brightness brightness) => MaterialApp(
+  Widget app(String type, Brightness brightness, {String? initialText}) =>
+      MaterialApp(
         theme: PinpointTheme.light(),
         darkTheme: PinpointTheme.dark(),
         themeMode:
@@ -74,7 +75,8 @@ void main() {
           ...material_ui.GlobalMaterialLocalizations.delegates,
         ],
         home: CreateNoteScreenV2(
-          arguments: CreateNoteScreenArguments(noticeType: type),
+          arguments: CreateNoteScreenArguments(
+              noticeType: type, initialText: initialText),
         ),
       );
 
@@ -151,6 +153,23 @@ void main() {
 
     expect(tester.getBottomLeft(find.byType(CustomScrollView)).dy,
         lessThanOrEqualTo(tester.getTopLeft(find.byType(MarkdownToolbar)).dy));
+    await close(tester);
+  });
+
+  testWidgets('text from the share sheet starts the note', (tester) async {
+    tester.view.physicalSize = const Size(390, 844) * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await tester
+        .runAsync(() => DriftNoteFolderService.insertNoteFolder('Random'));
+    await tester.pumpWidget(app('Title Content', Brightness.light,
+        initialText: 'https://example.com/shared'));
+    await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.textContaining('https://example.com/shared', findRichText: true),
+        findsOneWidget);
     await close(tester);
   });
 

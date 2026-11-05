@@ -32,6 +32,9 @@ abstract class AnalyticsClient {
   // Notes
   Future<void> trackNoteCreated({required String noteType});
   Future<void> trackFirstNoteCreated({required String noteType});
+
+  /// [source] is `share` or `shortcut`.
+  Future<void> trackCaptureOpened({required String source});
   Future<void> trackNoteUpdated({required String noteType});
   Future<void> trackNoteDeleted({required String noteType});
   Future<void> trackNoteArchived({required String noteType});

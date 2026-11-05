@@ -166,6 +166,10 @@ class RecordingAnalyticsFacade extends AnalyticsFacade {
       _rec('first_note_created', {'note_type': noteType});
 
   @override
+  Future<void> trackCaptureOpened({required String source}) async =>
+      _rec('capture_opened', {'source': source});
+
+  @override
   Future<void> trackSyncStarted() async => _rec('sync_started');
 
   @override

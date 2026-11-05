@@ -17,6 +17,7 @@ import '../../walkthrough/walkthrough_keys.dart';
 import '../app_shell_scope.dart';
 import '../keep_drawer.dart';
 import '../new_note.dart';
+import '../../services/capture/capture_inbox.dart';
 import '../../services/analytics/first_note_event.dart';
 import '../../services/drift_note_service.dart';
 
@@ -40,11 +41,32 @@ class BottomNavigationLayout extends StatefulWidget {
 
 class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _introsFinished = false;
 
   @override
   void initState() {
     super.initState();
+    CaptureInbox.pending.addListener(_openCapture);
     WidgetsBinding.instance.addPostFrameCallback((_) => _runIntros());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    CaptureInbox.setShortcuts(AppL10n.of(context));
+  }
+
+  @override
+  void dispose() {
+    CaptureInbox.pending.removeListener(_openCapture);
+    super.dispose();
+  }
+
+  /// Waits for the intros, so no sheet opens on top of the note.
+  void _openCapture() {
+    if (!_introsFinished || !mounted) return;
+    final capture = CaptureInbox.take();
+    if (capture != null) NewNote.openCapture(context, capture);
   }
 
   /// First-frame intros, strictly one after the other so they never stack:
@@ -70,8 +92,9 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
     if (!mounted) return;
     await WhatsNewSheet.showIfNeeded(context);
     if (!mounted) return;
-    if (await FirstNoteEvent.takeBlankNote(
-        hasNotes: DriftNoteService.hasAnyNote)) {
+    if (CaptureInbox.pending.value == null &&
+        await FirstNoteEvent.takeBlankNote(
+            hasNotes: DriftNoteService.hasAnyNote)) {
       if (!mounted) return;
       await NewNote.open(context);
     }
@@ -79,6 +102,8 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
     await NotificationPrompt.showIfNeeded(context);
     if (!mounted) return;
     await WalkthroughService().showWalkthroughIfNeeded(context);
+    _introsFinished = true;
+    _openCapture();
   }
 
   void _goBranch(int index) {
