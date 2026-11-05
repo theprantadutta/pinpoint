@@ -54,7 +54,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Home');
     // Initialize authenticated services only once per app session
     if (!_servicesInitialized) {
       _initializeAuthenticatedServices();

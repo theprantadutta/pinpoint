@@ -1,3 +1,6 @@
+import 'package:pinpoint/service_locators/init_service_locators.dart';
+import 'package:pinpoint/services/analytics/analytics_client.dart';
+import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/services/api_service.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
 import 'package:pinpoint/services/encryption_service.dart';
@@ -108,14 +111,15 @@ class SyncManager with ChangeNotifier {
     // the one in use. Notes encrypted with any other key could never be read
     // on another device, and downloads would fail to decrypt.
     if (!await _accountKeyReady()) {
-      return SyncResult(
-        success: false,
-        message: 'Your encryption key is not available yet. Check your connection and try again.',
-      );
+      const message =
+          'Your encryption key is not available yet. Check your connection and try again.';
+      _analytics?.trackSyncFailed(reason: syncFailureReason(message));
+      return SyncResult(success: false, message: message);
     }
 
     try {
       _isSyncing = true;
+      _analytics?.trackSyncStarted();
       notifyListeners();
 
       // No client-side gate on the free 50-note cap: the server admits new
@@ -128,12 +132,7 @@ class SyncManager with ChangeNotifier {
           await AudioUploadQueue.process();
         } catch (e) {
           debugPrint('⚠️ [SyncManager] Audio uploads deferred: $e');
-          try {
-          await AttachmentSync.pushPending();
-        } catch (e) {
-          debugPrint('⚠️ [SyncManager] Attachment uploads deferred: $e');
         }
-      }
         try {
           await AttachmentSync.pushPending();
         } catch (e) {
@@ -157,9 +156,15 @@ class SyncManager with ChangeNotifier {
       if (result.success) {
         _hasCompletedInitialSync = true;
         await _syncUsageStatsWithBackend();
+        _analytics?.trackSyncCompleted();
+      } else {
+        _analytics?.trackSyncFailed(reason: syncFailureReason(result.message));
       }
 
       return result;
+    } catch (e) {
+      _analytics?.trackSyncFailed(reason: syncFailureReason(e));
+      rethrow;
     } finally {
       _isSyncing = false;
       notifyListeners();
@@ -215,6 +220,10 @@ class SyncManager with ChangeNotifier {
     _syncService?.dispose();
     super.dispose();
   }
+
+  // Absent in tests and before start-up has finished.
+  AnalyticsFacade? get _analytics =>
+      getIt.isRegistered<AnalyticsFacade>() ? getIt<AnalyticsFacade>() : null;
 
   Future<bool> _accountKeyReady() async {
     try {

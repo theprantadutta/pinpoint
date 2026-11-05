@@ -41,7 +41,6 @@ class _TrashScreenState extends State<TrashScreen> {
   @override
   void initState() {
     super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Trash');
     _searchController.addListener(_onSearchInputChanged);
   }
 

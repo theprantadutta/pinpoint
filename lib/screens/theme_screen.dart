@@ -19,12 +19,6 @@ class ThemeScreen extends StatefulWidget {
 }
 
 class _ThemeScreenState extends State<ThemeScreen> {
-  @override
-  void initState() {
-    super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Theme');
-  }
-
   void _selectFont(String family) {
     PinpointHaptics.medium();
     // ThemeController persists the choice (kSelectedFontKey) and re-themes.

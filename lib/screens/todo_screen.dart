@@ -43,12 +43,6 @@ class _TodoScreenState extends State<TodoScreen>
   @override
   bool get wantKeepAlive => true;
 
-  @override
-  void initState() {
-    super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Todo');
-  }
-
   void _setFilter(String filter) {
     if (filter == _filter) return;
     PinpointHaptics.selection();

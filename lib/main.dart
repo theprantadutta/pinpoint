@@ -604,6 +604,7 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
     // Watch for resume so the display preference can be re-asserted; Android
     // discards the window's preferred mode whenever the app is backgrounded.
     WidgetsBinding.instance.addObserver(this);
+    AppNavigation.screenViews.start();
     initializeSharedPreferences();
 
     // Register session expiry handler for automatic token refresh failures

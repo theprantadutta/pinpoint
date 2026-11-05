@@ -12,8 +12,6 @@ import '../components/shared/note_grid.dart';
 import '../design_system/design_system.dart';
 import '../models/folder_summary.dart';
 import '../navigation/new_note.dart';
-import '../service_locators/init_service_locators.dart';
-import '../services/analytics/analytics_facade.dart';
 import '../services/crash_breadcrumbs.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/filter_service.dart';
@@ -55,7 +53,6 @@ class _FolderScreenState extends State<FolderScreen> {
   @override
   void initState() {
     super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Folder');
     _searchController.addListener(_onSearchInputChanged);
   }
 

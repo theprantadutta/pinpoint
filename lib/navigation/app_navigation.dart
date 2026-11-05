@@ -1,10 +1,11 @@
 import '../screens/backup_screen.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'safe_back_button_dispatcher.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
-import '../services/analytics/analytics_route_observer.dart';
+import '../services/analytics/screen_view_tracker.dart';
 import 'package:pinpoint/screens/archive_screen.dart';
 import 'package:pinpoint/screens/folder_screen.dart';
 import 'package:pinpoint/screens/sync_screen.dart';
@@ -51,14 +52,15 @@ class AppNavigation {
   static final _shellNavigatorTodo =
       GlobalKey<NavigatorState>(debugLabel: 'shellTodo');
 
+  /// Started once by the app, after the service locator is ready.
+  static final screenViews =
+      ScreenViewTracker(router, getIt<AnalyticsFacade>());
+
   // GoRouter configuration
   static final GoRouter router = GoRouter(
     initialLocation: initial,
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: kDebugMode,
     navigatorKey: rootNavigatorKey,
-    observers: [
-      AnalyticsRouteObserver(getIt<AnalyticsFacade>()),
-    ],
     routes: [
       /// Splash Screen
       GoRoute(

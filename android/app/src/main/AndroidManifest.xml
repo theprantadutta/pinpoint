@@ -66,6 +66,11 @@
         <!-- Scheduled notification receiver -->
         <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         
+        <!-- ScreenViewTracker reports screens. Left on, Firebase also logs every
+             view as MainActivity, the one activity all of Flutter runs in. -->
+        <meta-data
+            android:name="google_analytics_automatic_screen_reporting_enabled"
+            android:value="false" />
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

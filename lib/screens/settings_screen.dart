@@ -10,8 +10,6 @@ import '../components/settings/settings_usage_section.dart';
 import '../design_system/design_system.dart';
 import '../generated/l10n/app_localizations.dart';
 import '../navigation/app_navigation.dart';
-import '../service_locators/init_service_locators.dart';
-import '../services/analytics/analytics_facade.dart';
 import '../services/backend_auth_service.dart';
 
 /// Settings, in the Sketchbook grouped-card style.
@@ -27,12 +25,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  @override
-  void initState() {
-    super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Settings');
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);

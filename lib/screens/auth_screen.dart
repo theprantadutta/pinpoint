@@ -90,12 +90,6 @@ class _AuthScreenState extends State<AuthScreen> {
   final AppleSignInService _appleSignInService = AppleSignInService();
 
   @override
-  void initState() {
-    super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Auth');
-  }
-
-  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();

@@ -54,7 +54,6 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen> {
   @override
   void initState() {
     super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Terms');
     _loadLegalDocuments();
   }
 
