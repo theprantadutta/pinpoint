@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_new_note">Nuova nota</string>
+    <string name="widget_checklist">Lista di controllo</string>
+    <string name="widget_voice">Voce</string>
+</resources>

@@ -5,4 +5,8 @@
     <string name="default_notification_channel_id">pinpoint_default_channel</string>
     <string name="default_notification_channel_name">Pinpoint Notifications</string>
     <string name="default_notification_channel_desc">Reminders and updates from Pinpoint</string>
+    <!-- Quick capture widget. Translated from the ARB keys of the same words. -->
+    <string name="widget_new_note">New note</string>
+    <string name="widget_checklist">Checklist</string>
+    <string name="widget_voice">Voice</string>
 </resources>

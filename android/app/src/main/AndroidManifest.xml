@@ -63,6 +63,19 @@
             </intent-filter>
         </activity>
         
+        <!-- Quick capture home screen widget. -->
+        <receiver
+            android:name=".QuickCaptureWidget"
+            android:exported="false"
+            android:label="@string/widget_new_note">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_capture_widget_info"/>
+        </receiver>
+
         <!-- Boot receiver for rescheduling notifications -->
         <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
             android:exported="true">
