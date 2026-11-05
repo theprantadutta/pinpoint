@@ -1,3 +1,4 @@
+import 'package:pinpoint/services/guest_mode.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -150,8 +151,11 @@ class _SplashScreenState extends State<SplashScreen> {
         await SecureEncryptionService.initialize();
       }
 
+      await GuestMode.load();
       if (!mounted) return;
-      context.go(AuthScreen.kRouteName);
+      context.go(GuestMode.isGuest
+          ? HomeScreen.kRouteName
+          : AuthScreen.kRouteName);
     }
   }
 

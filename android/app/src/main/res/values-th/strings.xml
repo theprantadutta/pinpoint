@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_new_note">โน้ตใหม่</string>
+    <string name="widget_checklist">รายการตรวจสอบ</string>
+    <string name="widget_voice">เสียง</string>
+</resources>

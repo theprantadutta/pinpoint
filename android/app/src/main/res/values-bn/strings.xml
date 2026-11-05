@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_new_note">নতুন নোট</string>
+    <string name="widget_checklist">চেকলিস্ট</string>
+    <string name="widget_voice">ভয়েস</string>
+</resources>

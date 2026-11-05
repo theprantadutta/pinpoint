@@ -112,6 +112,12 @@ class AnalyticsFacade implements AnalyticsClient {
   }
 
   @override
+  Future<void> trackGuestStarted() async {
+    unawaited(_logger?.trackGuestStarted());
+    _trackFirebase((c) => c.trackGuestStarted());
+  }
+
+  @override
   Future<void> trackCaptureOpened({required String source}) async {
     unawaited(_logger?.trackCaptureOpened(source: source));
     _trackFirebase((c) => c.trackCaptureOpened(source: source));

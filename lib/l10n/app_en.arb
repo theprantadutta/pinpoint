@@ -5362,5 +5362,25 @@
   "localOnlyDismiss": "Dismiss",
   "@localOnlyDismiss": {
     "description": "Spoken label of the × button that hides the 'notes are only on this phone' banner on the home screen."
+  },
+  "notifPromptNudge": "Nudge me once in a couple of days",
+  "@notifPromptNudge": {
+    "description": "Optional switch on the one-time notifications sheet. Off by default. When on, the app sends a single notification about two days later to bring the person back."
+  },
+  "nudgeTitle": "Anything to add?",
+  "@nudgeTitle": {
+    "description": "Title of the one-time notification sent about two days after the person opted in. Friendly, never mentions the content of a note."
+  },
+  "nudgeBody": "Your notes are waiting in Pinpoint.",
+  "@nudgeBody": {
+    "description": "Body of that one-time notification. Pinpoint is the brand name and must not be translated."
+  },
+  "authContinueWithoutAccount": "Continue without an account",
+  "@authContinueWithoutAccount": {
+    "description": "Button on the sign-in screen that starts using the app with no account."
+  },
+  "authGuestHint": "Your notes stay on this phone until you sign in.",
+  "@authGuestHint": {
+    "description": "Line under that button. Says notes are kept only on this phone until the person signs in."
   }
 }

@@ -1133,5 +1133,10 @@
   "localOnlyGoPro": "Passer à Pro",
   "localOnlyBannerTitle": "{count, plural, =1{1 note est uniquement sur ce téléphone} other{{count} notes sont uniquement sur ce téléphone}}",
   "localOnlyBannerBody": "Le forfait gratuit sauvegarde 50 notes. Au-delà, elles restent en sécurité sur ce téléphone et sont sauvegardées dès qu'il y a de la place.",
-  "localOnlyDismiss": "Ignorer"
+  "localOnlyDismiss": "Ignorer",
+  "notifPromptNudge": "Me le rappeler une fois dans quelques jours",
+  "nudgeTitle": "Quelque chose à ajouter ?",
+  "nudgeBody": "Vos notes vous attendent dans Pinpoint.",
+  "authContinueWithoutAccount": "Continuer sans compte",
+  "authGuestHint": "Vos notes restent sur ce téléphone jusqu’à votre connexion."
 }

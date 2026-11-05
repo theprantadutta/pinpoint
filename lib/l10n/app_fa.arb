@@ -1133,5 +1133,10 @@
   "localOnlyGoPro": "ارتقا به Pro",
   "localOnlyBannerTitle": "{count, plural, =1{۱ یادداشت فقط روی این گوشی است} other{{count} یادداشت فقط روی این گوشی است}}",
   "localOnlyBannerBody": "طرح رایگان ۵۰ یادداشت را پشتیبان می‌گیرد. بیشتر از آن روی این گوشی امن می‌ماند و وقتی جا باز شود پشتیبان می‌گیرد.",
-  "localOnlyDismiss": "بستن"
+  "localOnlyDismiss": "بستن",
+  "notifPromptNudge": "یک بار چند روز دیگر یادآوری کن",
+  "nudgeTitle": "چیزی برای افزودن دارید؟",
+  "nudgeBody": "یادداشت‌هایتان در Pinpoint منتظر شماست.",
+  "authContinueWithoutAccount": "ادامه بدون حساب",
+  "authGuestHint": "یادداشت‌هایتان تا زمان ورود روی همین گوشی می‌مانند."
 }

@@ -20,10 +20,21 @@ import java.io.File
 class MainActivity: FlutterFragmentActivity() {
     private companion object {
         const val OCR_CHANNEL = "com.pranta.pinpoint/ocr"
+        const val CAPTURE_CHANNEL = "com.pranta.pinpoint/capture"
+
+        // The extra the quick_actions plugin reads the shortcut type from.
+        const val SHORTCUT_EXTRA = "some unique action key"
     }
+
+    private var captureReady = false
+    private var heldIntent: Intent? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
+        // Saved state means Android is rebuilding a killed app, and this is the
+        // intent of the old launch: acting on it would repeat that share or
+        // shortcut.
+        if (savedInstanceState != null) intent?.let(::forgetCapture)
         intent?.let(::dropUnreadableShares)
         super.onCreate(savedInstanceState)
         createNotificationChannel()
@@ -31,7 +42,21 @@ class MainActivity: FlutterFragmentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         dropUnreadableShares(intent)
+        // On a rebuild this lands before Dart is listening, and the plugins
+        // would drop it. It is passed on once Dart says it is ready.
+        if (!captureReady) {
+            heldIntent = intent
+            return
+        }
         super.onNewIntent(intent)
+    }
+
+    private fun forgetCapture(intent: Intent) {
+        intent.action = Intent.ACTION_MAIN
+        intent.type = null
+        intent.removeExtra(Intent.EXTRA_STREAM)
+        intent.removeExtra(Intent.EXTRA_TEXT)
+        intent.removeExtra(SHORTCUT_EXTRA)
     }
 
     /**
@@ -67,6 +92,15 @@ class MainActivity: FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CAPTURE_CHANNEL)
+            .setMethodCallHandler { _, result ->
+                captureReady = true
+                heldIntent?.let { held ->
+                    heldIntent = null
+                    onNewIntent(held)
+                }
+                result.success(null)
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, OCR_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {

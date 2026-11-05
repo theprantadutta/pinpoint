@@ -1133,5 +1133,10 @@
   "localOnlyGoPro": "الترقية إلى Pro",
   "localOnlyBannerTitle": "{count, plural, =0{لا توجد ملاحظات على هذا الهاتف فقط} =1{ملاحظة واحدة على هذا الهاتف فقط} =2{ملاحظتان على هذا الهاتف فقط} few{{count} ملاحظات على هذا الهاتف فقط} many{{count} ملاحظة على هذا الهاتف فقط} other{{count} ملاحظة على هذا الهاتف فقط}}",
   "localOnlyBannerBody": "تحفظ الخطة المجانية 50 ملاحظة. ما يزيد على ذلك يبقى آمنًا على هذا الهاتف ويُحفظ عند توفر مساحة.",
-  "localOnlyDismiss": "إغلاق"
+  "localOnlyDismiss": "إغلاق",
+  "notifPromptNudge": "ذكّرني مرة واحدة بعد يومين",
+  "nudgeTitle": "هل لديك ما تضيفه؟",
+  "nudgeBody": "ملاحظاتك بانتظارك في Pinpoint.",
+  "authContinueWithoutAccount": "المتابعة بدون حساب",
+  "authGuestHint": "تبقى ملاحظاتك على هذا الهاتف حتى تسجّل الدخول."
 }

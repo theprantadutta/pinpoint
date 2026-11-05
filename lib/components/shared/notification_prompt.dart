@@ -1,3 +1,4 @@
+import '../../services/come_back_nudge.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -30,17 +31,25 @@ class NotificationPrompt {
       if (prefs.getBool(_askedKey) ?? false) return;
       if (!context.mounted) return;
 
+      final l10n = AppL10n.of(context);
+      var nudge = false;
       final enable = await showSketchSheet<bool>(
         context: context,
         isDismissible: false,
         enableDrag: false,
-        builder: (ctx) => const NotificationPromptSheet(),
+        builder: (ctx) =>
+            NotificationPromptSheet(onNudgeChanged: (value) => nudge = value),
       );
 
       // Asked, whatever the answer.
       await prefs.setBool(_askedKey, true);
       if (enable == true) {
-        await NotificationService.requestBasicNotificationPermission();
+        final granted =
+            await NotificationService.requestBasicNotificationPermission();
+        if (granted && nudge) {
+          await ComeBackNudge.schedule(
+              title: l10n.nudgeTitle, body: l10n.nudgeBody);
+        }
       }
       getIt<AnalyticsFacade>()
           .trackNotificationPermissionResult(granted: enable == true);
@@ -51,8 +60,19 @@ class NotificationPrompt {
 }
 
 /// The sheet body. Public for widget tests; pops `true` to enable.
-class NotificationPromptSheet extends StatelessWidget {
-  const NotificationPromptSheet({super.key});
+class NotificationPromptSheet extends StatefulWidget {
+  const NotificationPromptSheet({super.key, this.onNudgeChanged});
+
+  /// Reports the opt-in for the one-time nudge, which starts off.
+  final ValueChanged<bool>? onNudgeChanged;
+
+  @override
+  State<NotificationPromptSheet> createState() =>
+      _NotificationPromptSheetState();
+}
+
+class _NotificationPromptSheetState extends State<NotificationPromptSheet> {
+  bool _nudge = false;
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +104,26 @@ class NotificationPromptSheet extends StatelessWidget {
           _Point(text: l10n.notifPromptPointOnly),
           const SizedBox(height: 10),
           _Point(text: l10n.notifPromptPointSettings),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.notifPromptNudge,
+                  style: t.bodyRegular.copyWith(fontSize: 14, color: s.ink),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SketchToggle(
+                value: _nudge,
+                semanticLabel: l10n.notifPromptNudge,
+                onChanged: (value) {
+                  setState(() => _nudge = value);
+                  widget.onNudgeChanged?.call(value);
+                },
+              ),
+            ],
+          ),
         ],
       ),
       child: Column(

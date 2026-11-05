@@ -1,3 +1,4 @@
+import 'package:pinpoint/services/guest_mode.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_client.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
@@ -96,6 +97,12 @@ class SyncManager with ChangeNotifier {
         success: false,
         message: 'Sync service not initialized',
       );
+    }
+
+    // Without an account there is nowhere to sync to. The notes wait here and
+    // go up with the first sync after sign-in.
+    if (GuestMode.isGuest) {
+      return SyncResult(success: true, message: 'Not signed in');
     }
 
     // Skip if already syncing to prevent database lock conflicts

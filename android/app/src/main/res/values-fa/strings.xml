@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_new_note">یادداشت جدید</string>
+    <string name="widget_checklist">چک‌لیست</string>
+    <string name="widget_voice">صدا</string>
+</resources>

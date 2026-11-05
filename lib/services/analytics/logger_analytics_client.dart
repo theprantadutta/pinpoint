@@ -47,6 +47,9 @@ class LoggerAnalyticsClient implements AnalyticsClient {
       _log('first_note_created', {'note_type': noteType});
 
   @override
+  Future<void> trackGuestStarted() async => _log('guest_started');
+
+  @override
   Future<void> trackCaptureOpened({required String source}) async =>
       _log('capture_opened', {'source': source});
 

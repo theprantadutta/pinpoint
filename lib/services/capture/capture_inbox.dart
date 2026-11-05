@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:quick_actions/quick_actions.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
@@ -38,6 +39,8 @@ class CaptureInbox {
   static const String _noteShortcut = 'new_note';
 
   static const QuickActions _quickActions = QuickActions();
+  static const MethodChannel _readyChannel =
+      MethodChannel('com.pranta.pinpoint/capture');
   static bool _started = false;
 
   static Capture? take() {
@@ -59,6 +62,15 @@ class CaptureInbox {
       _onShared(await sharing.getInitialMedia());
     } catch (e) {
       debugPrint('⚠️ [CaptureInbox] Could not start: $e');
+    } finally {
+      // Releases anything the activity held back until Dart was listening.
+      if (Platform.isAndroid) {
+        try {
+          await _readyChannel.invokeMethod<void>('ready');
+        } catch (e) {
+          debugPrint('⚠️ [CaptureInbox] Could not report ready: $e');
+        }
+      }
     }
   }
 
