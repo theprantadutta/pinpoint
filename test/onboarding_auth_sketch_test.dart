@@ -139,6 +139,23 @@ void main() {
     });
     tearDown(() => getIt.unregister<AnalyticsFacade>());
 
+    // Crashlytics, Nov 2026: with animations off the page change has no
+    // duration, and animating over zero ticks before the scroll activity has
+    // finished constructing (LateInitializationError on _controller).
+    testWidgets('Next works with animations turned off', (tester) async {
+      _phone(tester);
+      await tester
+          .pumpWidget(_app(const OnboardingScreen(), disableAnimations: true));
+      await tester.pump();
+
+      await tester.tap(find.text('Next'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(tester.widget<PageView>(find.byType(PageView)).controller!.page, 1);
+    });
+
     testWidgets('three pages: Skip/Next, then Log in/Get started',
         (tester) async {
       _phone(tester);

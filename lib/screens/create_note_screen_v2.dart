@@ -98,6 +98,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
   // Text note fields
   late FleatherController _fleatherController;
   late FocusNode _textContentFocusNode;
+  final ScrollController _pageScrollController = ScrollController();
 
   /// The uuid of the text or checklist note attachments hang off; null
   /// until the note exists.
@@ -206,7 +207,6 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'CreateNote');
 
     // Set initial note type from arguments if provided
     if (widget.arguments?.noticeType != null) {
@@ -297,6 +297,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _pageScrollController.dispose();
     _autoSaveTimer?.cancel();
     _savingOffTimer?.cancel();
     _saving.dispose();
@@ -804,6 +805,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
                     _buildTopBar(),
                     Expanded(
                       child: CustomScrollView(
+                        controller: _pageScrollController,
                         keyboardDismissBehavior:
                             ScrollViewKeyboardDismissBehavior.onDrag,
                         slivers: [
@@ -975,6 +977,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
               MarkdownEditor(
                 controller: _fleatherController,
                 focusNode: _textContentFocusNode,
+                scrollController: _pageScrollController,
                 hintText: l10n.edBodyHint,
               ),
               if (widget.arguments?.existingNote == null && _currentNoteId == null)

@@ -61,7 +61,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   void initState() {
     super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Subscription');
     _notices = SubscriptionService().notices.listen(_onNotice);
   }
 

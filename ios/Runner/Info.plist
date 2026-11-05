@@ -2,6 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+		<!-- ScreenViewTracker reports screens; see AndroidManifest.xml. -->
+		<key>FirebaseAutomaticScreenReportingEnabled</key>
+		<false/>
 		<key>CFBundleLocalizations</key>
 		<!-- Languages this bundle ships. Without this the App Store lists the app
 	     as English-only and iOS will not pick up the *.lproj/InfoPlist.strings

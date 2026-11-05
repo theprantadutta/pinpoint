@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:drift/native.dart';
+import 'package:fleather/fleather.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -133,6 +134,22 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 3));
   }
+
+  // Crashlytics, Nov 2026 (157 of 165 events): pasting from the toolbar calls
+  // bringIntoView a frame later, which reads the editor's scroll controller.
+  // A non-scrollable editor must be given one that is attached to something,
+  // or ScrollController.position throws "Bad state: No element".
+  testWidgets('revealing the caret after a paste does not throw',
+      (tester) async {
+    await open(tester, 'Title Content');
+
+    final editor = tester.state(find.byType(RawEditor)) as TextSelectionDelegate;
+    editor.bringIntoView(const TextPosition(offset: 0));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    await close(tester);
+  });
 
   testWidgets('a blank new text note offers checklist, voice and reminder',
       (tester) async {

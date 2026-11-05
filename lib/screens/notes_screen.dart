@@ -70,7 +70,6 @@ class _NotesScreenState extends State<NotesScreen>
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchInputChanged);
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Notes');
     _folderSub = DriftNoteFolderService.watchFolderSummaries().listen((v) {
       if (mounted) setState(() => _folders = v);
     });

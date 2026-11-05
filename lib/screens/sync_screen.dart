@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
 import 'package:pinpoint/sync/sync_service.dart';
-import 'package:pinpoint/services/analytics/analytics_client.dart';
-import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/util/show_a_toast.dart';
 import 'package:pinpoint/widgets/premium_gate_dialog.dart';
 import '../components/settings/settings_format.dart';
@@ -32,7 +30,6 @@ class _SyncScreenState extends State<SyncScreen> {
   @override
   void initState() {
     super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Sync');
     _syncManager = getIt<SyncManager>();
     _syncManager.addListener(_onSyncStatusChanged);
   }
@@ -59,15 +56,11 @@ class _SyncScreenState extends State<SyncScreen> {
       _isSyncing = true;
     });
 
-    final analytics = getIt<AnalyticsFacade>();
-    analytics.trackSyncStarted();
-
     try {
       final result = await _syncManager.sync();
 
       if (mounted) {
         if (result.success) {
-          analytics.trackSyncCompleted();
           PinpointHaptics.success();
           if (result.limitReached) {
             // Everything else synced; some new notes are over the free cap.
@@ -80,7 +73,6 @@ class _SyncScreenState extends State<SyncScreen> {
             );
           }
         } else {
-          analytics.trackSyncFailed(reason: syncFailureReason(result.message));
           PinpointHaptics.error();
 
           // Check if error is due to premium limit
@@ -98,7 +90,6 @@ class _SyncScreenState extends State<SyncScreen> {
         }
       }
     } catch (e) {
-      analytics.trackSyncFailed(reason: syncFailureReason(e));
       if (mounted) {
         PinpointHaptics.error();
         showErrorToast(

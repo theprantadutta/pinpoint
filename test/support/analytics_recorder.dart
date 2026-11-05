@@ -160,6 +160,16 @@ class RecordingAnalyticsFacade extends AnalyticsFacade {
   @override
   Future<void> trackScreenView({required String screenName}) async =>
       _rec('screen_view', {'screen_name': screenName});
+
+  @override
+  Future<void> trackSyncStarted() async => _rec('sync_started');
+
+  @override
+  Future<void> trackSyncCompleted() async => _rec('sync_completed');
+
+  @override
+  Future<void> trackSyncFailed({required String reason}) async =>
+      _rec('sync_failed', {'reason': reason});
 }
 
 /// Intercepts `debugPrint` and parses `[Analytics] <name> {k: v, ...}` lines.

@@ -37,7 +37,9 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
 
   @override
   Future<void> trackScreenView({required String screenName}) =>
-      _analytics.logScreenView(screenName: screenName);
+      // Without a class Firebase files every view under the Android activity
+      // or iOS view controller, and all of Flutter is one of those.
+      _analytics.logScreenView(screenName: screenName, screenClass: screenName);
 
   @override
   Future<void> trackNoteCreated({required String noteType}) =>

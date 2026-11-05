@@ -17,6 +17,12 @@ import '../design_system/design_system.dart';
 class MarkdownEditor extends StatefulWidget {
   final FleatherController controller;
   final FocusNode? focusNode;
+
+  /// The controller of the scroll view hosting this editor. Fleather reads it
+  /// whenever it reveals the caret, as it does after a paste, and without one
+  /// it would use a controller of its own that nothing is attached to and
+  /// throw. Any host that lets the user edit must pass it.
+  final ScrollController? scrollController;
   final String? hintText;
   final ValueChanged<String>? onChanged;
 
@@ -24,6 +30,7 @@ class MarkdownEditor extends StatefulWidget {
     super.key,
     required this.controller,
     this.focusNode,
+    this.scrollController,
     this.hintText,
     this.onChanged,
   });
@@ -309,6 +316,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
             child: FleatherEditor(
               controller: widget.controller,
               focusNode: widget.focusNode,
+              scrollController: widget.scrollController,
               scrollable: false,
               padding: EdgeInsets.zero,
               autofocus: false,

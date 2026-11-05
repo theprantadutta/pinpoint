@@ -10,8 +10,6 @@ import '../constants/premium_limits.dart';
 import '../design_system/design_system.dart';
 import '../models/folder_summary.dart';
 import '../navigation/keep_drawer.dart';
-import '../service_locators/init_service_locators.dart';
-import '../services/analytics/analytics_facade.dart';
 import '../services/crash_breadcrumbs.dart';
 import '../services/drift_note_folder_service.dart';
 import '../services/logger_service.dart';
@@ -48,12 +46,6 @@ class _MyFoldersScreenState extends State<MyFoldersScreen>
   List<int>? _order;
 
   bool get _reordering => _order != null;
-
-  @override
-  void initState() {
-    super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'MyFolders');
-  }
 
   @override
   void dispose() {

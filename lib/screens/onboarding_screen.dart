@@ -40,12 +40,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _heroKeys = List.generate(_pageCount, (_) => GlobalKey());
   double? _bandTop;
 
-  @override
-  void initState() {
-    super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Onboarding');
-  }
-
   // Built per-call rather than stored in a field: the copy needs
   // Localizations, which a field initializer cannot reach.
   List<OnboardingPageView> _buildPages(BuildContext context) {
@@ -125,10 +119,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _nextPage() {
     if (_currentPage < _pageCount - 1) {
-      _pageController.nextPage(
-        duration: SketchMotion.of(context, SketchMotion.slow),
-        curve: SketchMotion.enter,
-      );
+      final duration = SketchMotion.of(context, SketchMotion.slow);
+      // Animations off means a zero duration, which animateTo cannot take.
+      if (duration == Duration.zero) {
+        _pageController.jumpToPage(_currentPage + 1);
+      } else {
+        _pageController.nextPage(
+          duration: duration,
+          curve: SketchMotion.enter,
+        );
+      }
     } else {
       _completeOnboarding(signUp: true);
     }

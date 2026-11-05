@@ -21,12 +21,6 @@ class _DrawingScreenState extends State<DrawingScreen> {
   bool _configured = false;
 
   @override
-  void initState() {
-    super.initState();
-    getIt<AnalyticsFacade>().trackScreenView(screenName: 'Drawing');
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_configured) return;
