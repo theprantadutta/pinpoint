@@ -17,6 +17,8 @@ import '../../walkthrough/walkthrough_keys.dart';
 import '../app_shell_scope.dart';
 import '../keep_drawer.dart';
 import '../new_note.dart';
+import '../../services/analytics/first_note_event.dart';
+import '../../services/drift_note_service.dart';
 
 /// The app shell around the Home / Notes / Todos branches.
 ///
@@ -47,9 +49,11 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
 
   /// First-frame intros, strictly one after the other so they never stack:
   /// the one-time What's-new sheet (people upgrading from an older
-  /// onboarding), the one-time notification ask, and then the walkthrough (whose service persists its own
+  /// onboarding), a blank note for someone new, the one-time notification
+  /// ask, and then the walkthrough (whose service persists its own
   /// completion). A brand-new install records the current onboarding
-  /// version as it finishes onboarding, so it only ever gets the walkthrough.
+  /// version as it finishes onboarding, so it skips the What's-new sheet, and
+  /// meets the ask and the walkthrough only after leaving that first note.
   Future<void> _runIntros() async {
     if (!mounted) return;
     // Android: Play's in-app update, flexible by default. It never blocks
@@ -65,6 +69,12 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
     await showAppUpdatePrompt(context, prompt);
     if (!mounted) return;
     await WhatsNewSheet.showIfNeeded(context);
+    if (!mounted) return;
+    if (await FirstNoteEvent.takeBlankNote(
+        hasNotes: DriftNoteService.hasAnyNote)) {
+      if (!mounted) return;
+      await NewNote.open(context);
+    }
     if (!mounted) return;
     await NotificationPrompt.showIfNeeded(context);
     if (!mounted) return;
