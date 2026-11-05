@@ -375,6 +375,31 @@ class NotificationService {
   }
 
   // Schedule recurring notification (daily at specific time)
+  /// A quiet one-off: general channel, inexact, so it needs no exact alarm.
+  static Future<void> scheduleNudgeNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime when,
+  }) async {
+    await _flutterLocalNotificationsPlugin.zonedSchedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(when, tz.local),
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          NotificationChannels.generalId,
+          NotificationChannels.text.defaultName,
+          channelDescription: NotificationChannels.text.defaultDescription,
+        ),
+        iOS: const DarwinNotificationDetails(),
+        macOS: const DarwinNotificationDetails(),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    );
+  }
+
   static Future<void> scheduleRecurringNotification({
     required int id,
     required String title,

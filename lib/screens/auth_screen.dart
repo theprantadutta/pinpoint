@@ -1,3 +1,4 @@
+import 'package:pinpoint/services/guest_mode.dart';
 import 'dart:io' show Platform;
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -396,6 +397,12 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _continueAsGuest() async {
+    await GuestMode.start();
+    getIt<AnalyticsFacade>().trackGuestStarted();
+    if (mounted) context.go(HomeScreen.kRouteName);
   }
 
   Future<void> _handleGoogleSignIn() async {
@@ -803,6 +810,15 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 14),
                     SketchErrorPill(message: _errorMessage!),
                   ],
+
+                  const SizedBox(height: 12),
+                  PillButton.secondary(
+                    label: _l10n.authContinueWithoutAccount,
+                    onPressed: _isBusy ? null : _continueAsGuest,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(_l10n.authGuestHint,
+                      textAlign: TextAlign.center, style: muted),
 
                   const SizedBox(height: 26),
                   _OrDivider(label: _l10n.authEmailDivider),

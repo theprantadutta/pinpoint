@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pinpoint/components/shared/notification_prompt.dart';
+import 'package:pinpoint/design_system/design_system.dart';
 
 import 'support/sketch_harness.dart';
 
@@ -65,5 +66,23 @@ void main() {
     await tester.tap(find.text('Turn on notifications'));
     await tester.pumpAndSettle();
     expect(result, isTrue);
+  });
+
+  testWidgets('the nudge is off until someone turns it on', (tester) async {
+    tester.view.physicalSize = const Size(390, 844) * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    bool? nudge;
+    await tester.pumpWidget(sketchApp(Align(
+      alignment: Alignment.bottomCenter,
+      child: NotificationPromptSheet(onNudgeChanged: (v) => nudge = v),
+    )));
+    await tester.pump();
+
+    expect(tester.widget<SketchToggle>(find.byType(SketchToggle)).value, isFalse);
+    await tester.tap(find.byType(SketchToggle));
+    await tester.pump();
+
+    expect(nudge, isTrue);
   });
 }

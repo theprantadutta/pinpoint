@@ -1133,5 +1133,10 @@
   "localOnlyGoPro": "Passa a Pro",
   "localOnlyBannerTitle": "{count, plural, =1{1 nota è solo su questo telefono} other{{count} note sono solo su questo telefono}}",
   "localOnlyBannerBody": "Il piano gratuito salva 50 note. Ciò che va oltre resta al sicuro su questo telefono e viene salvato quando c'è spazio.",
-  "localOnlyDismiss": "Ignora"
+  "localOnlyDismiss": "Ignora",
+  "notifPromptNudge": "Ricordamelo una volta tra un paio di giorni",
+  "nudgeTitle": "Qualcosa da aggiungere?",
+  "nudgeBody": "Le tue note ti aspettano su Pinpoint.",
+  "authContinueWithoutAccount": "Continua senza account",
+  "authGuestHint": "Le tue note restano su questo telefono finché non accedi."
 }

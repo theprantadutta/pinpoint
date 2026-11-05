@@ -1133,5 +1133,10 @@
   "localOnlyGoPro": "อัปเกรดเป็น Pro",
   "localOnlyBannerTitle": "{count, plural, other{มี {count} โน้ตที่อยู่บนโทรศัพท์นี้เท่านั้น}}",
   "localOnlyBannerBody": "แพ็กเกจฟรีสำรองโน้ตได้ 50 รายการ ส่วนที่เกินยังปลอดภัยอยู่บนโทรศัพท์นี้ และจะสำรองเมื่อมีที่ว่าง",
-  "localOnlyDismiss": "ปิด"
+  "localOnlyDismiss": "ปิด",
+  "notifPromptNudge": "เตือนฉันหนึ่งครั้งในอีกสองสามวัน",
+  "nudgeTitle": "มีอะไรจะเพิ่มไหม",
+  "nudgeBody": "โน้ตของคุณรออยู่ใน Pinpoint",
+  "authContinueWithoutAccount": "ดำเนินการต่อโดยไม่มีบัญชี",
+  "authGuestHint": "โน้ตของคุณจะอยู่ในโทรศัพท์เครื่องนี้จนกว่าคุณจะลงชื่อเข้าใช้"
 }

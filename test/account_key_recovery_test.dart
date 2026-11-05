@@ -101,6 +101,29 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
     expect(await localKey(), realKey, reason: 'one key for the account, on every device');
   });
 
+  test('signing in as a guest: the account key replaces the guest key', () async {
+    final guestKey = enc.Key.fromSecureRandom(32).base64;
+    FlutterSecureStorage.setMockInitialValues({'encryption_key': guestKey});
+    final server = _Server()..stored = realKey;
+
+    expect(await SecureEncryptionService.syncKeyFromCloud(server), isTrue);
+
+    expect(await localKey(), realKey);
+    expect(server.stored, realKey);
+    expect(server.writes, isEmpty);
+  });
+
+  test('a guest creating an account keeps the key they already have', () async {
+    final guestKey = enc.Key.fromSecureRandom(32).base64;
+    FlutterSecureStorage.setMockInitialValues({'encryption_key': guestKey});
+    final server = _Server();
+
+    expect(await SecureEncryptionService.syncKeyFromCloud(server), isTrue);
+
+    expect(await localKey(), guestKey);
+    expect(server.stored, guestKey);
+  });
+
   test('a zero-knowledge account is never asked for, or given, a raw key', () async {
     FlutterSecureStorage.setMockInitialValues({'zk_mode': 'zero_knowledge', 'encryption_key': realKey});
     SecureEncryptionService.debugInitializeWithKey(enc.Key.fromBase64(realKey));

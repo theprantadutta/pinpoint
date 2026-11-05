@@ -17,6 +17,7 @@ import '../../walkthrough/walkthrough_keys.dart';
 import '../app_shell_scope.dart';
 import '../keep_drawer.dart';
 import '../new_note.dart';
+import '../../services/come_back_nudge.dart';
 import '../../services/capture/capture_inbox.dart';
 import '../../services/analytics/first_note_event.dart';
 import '../../services/drift_note_service.dart';
@@ -47,6 +48,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
   void initState() {
     super.initState();
     CaptureInbox.pending.addListener(_openCapture);
+    unawaited(ComeBackNudge.cancelIfReturned());
     WidgetsBinding.instance.addPostFrameCallback((_) => _runIntros());
   }
 

@@ -1,3 +1,7 @@
+import 'package:go_router/go_router.dart';
+import 'auth_screen.dart';
+import '../components/settings/settings_account_card.dart';
+import '../services/guest_mode.dart';
 import '../services/backup/drive_backup_service.dart';
 import 'package:flutter/material.dart';
 import '../database/database.dart';
@@ -295,6 +299,21 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             if (_searchQuery.isEmpty)
               const SliverToBoxAdapter(child: LocalOnlyBanner()),
+            if (_searchQuery.isEmpty)
+              SliverToBoxAdapter(
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: GuestMode.active,
+                  builder: (context, _, __) => GuestMode.isGuest
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(SketchSpace.screenX,
+                              14, SketchSpace.screenX, 0),
+                          child: SettingsSignInCard(
+                            onSignIn: () => context.push(AuthScreen.kRouteName),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ),
             if (_searchQuery.isEmpty)
               const SliverToBoxAdapter(child: HomeFoldersSection()),
             const SliverToBoxAdapter(child: RecentNotesHeader()),

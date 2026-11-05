@@ -1133,5 +1133,10 @@
   "localOnlyGoPro": "Seja Pro",
   "localOnlyBannerTitle": "{count, plural, =1{1 nota está só neste celular} other{{count} notas estão só neste celular}}",
   "localOnlyBannerBody": "O plano gratuito salva 50 notas. O que passar disso fica seguro neste celular e é salvo quando houver espaço.",
-  "localOnlyDismiss": "Dispensar"
+  "localOnlyDismiss": "Dispensar",
+  "notifPromptNudge": "Me lembre uma vez daqui a alguns dias",
+  "nudgeTitle": "Algo a acrescentar?",
+  "nudgeBody": "Suas notas estão esperando no Pinpoint.",
+  "authContinueWithoutAccount": "Continuar sem conta",
+  "authGuestHint": "Suas notas ficam neste celular até você entrar."
 }

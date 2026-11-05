@@ -1,3 +1,4 @@
+import 'services/guest_mode.dart';
 import 'services/capture/capture_inbox.dart';
 import 'dart:async';
 import 'dart:isolate';
@@ -693,6 +694,8 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
   /// Register callback for when user session expires (refresh token also expired)
   void _registerSessionExpiryHandler() {
     ApiService().onSessionExpired = () {
+      // A guest has no session: a request that slips out is simply refused.
+      if (GuestMode.isGuest) return;
       debugPrint('⚠️ [PinPointApp] Session expired - redirecting to login');
 
       // Navigate to auth screen using GoRouter

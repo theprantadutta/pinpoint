@@ -1133,5 +1133,10 @@
   "localOnlyGoPro": "Hazte Pro",
   "localOnlyBannerTitle": "{count, plural, =1{1 nota está solo en este teléfono} other{{count} notas están solo en este teléfono}}",
   "localOnlyBannerBody": "El plan gratuito guarda 50 notas. Lo que pase de ahí sigue a salvo en este teléfono y se guarda cuando haya espacio.",
-  "localOnlyDismiss": "Descartar"
+  "localOnlyDismiss": "Descartar",
+  "notifPromptNudge": "Recuérdamelo una vez en un par de días",
+  "nudgeTitle": "¿Algo que añadir?",
+  "nudgeBody": "Tus notas te esperan en Pinpoint.",
+  "authContinueWithoutAccount": "Continuar sin cuenta",
+  "authGuestHint": "Tus notas se quedan en este teléfono hasta que inicies sesión."
 }

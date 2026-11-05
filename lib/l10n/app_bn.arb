@@ -1133,5 +1133,10 @@
   "localOnlyGoPro": "Pro নিন",
   "localOnlyBannerTitle": "{count, plural, =1{১টি নোট শুধু এই ফোনে আছে} other{{count}টি নোট শুধু এই ফোনে আছে}}",
   "localOnlyBannerBody": "ফ্রি প্ল্যানে ৫০টি নোট ব্যাকআপ হয়। এর বেশি যা আছে তা এই ফোনে নিরাপদে থাকে, জায়গা হলে ব্যাকআপ হয়।",
-  "localOnlyDismiss": "বন্ধ করুন"
+  "localOnlyDismiss": "বন্ধ করুন",
+  "notifPromptNudge": "কয়েক দিন পরে একবার মনে করিয়ে দিন",
+  "nudgeTitle": "কিছু যোগ করবেন?",
+  "nudgeBody": "আপনার নোটগুলো Pinpoint-এ অপেক্ষা করছে।",
+  "authContinueWithoutAccount": "অ্যাকাউন্ট ছাড়াই চালিয়ে যান",
+  "authGuestHint": "সাইন ইন না করা পর্যন্ত আপনার নোট এই ফোনেই থাকবে।"
 }
