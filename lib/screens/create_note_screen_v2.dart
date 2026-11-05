@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:pinpoint/services/analytics/first_note_event.dart';
 import 'package:go_router/go_router.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -547,6 +548,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
       await DriftNoteService.setNoteArchived(noteId, noteTypeKey, _isArchived);
       if (isNew) {
         analytics.trackNoteCreated(noteType: noteTypeKey);
+        unawaited(
+            FirstNoteEvent.reportIfPending(analytics, noteType: noteTypeKey));
       } else if (isExplicit) {
         analytics.trackNoteUpdated(noteType: noteTypeKey);
       }
@@ -814,6 +817,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
                         ],
                       ),
                     ),
+                    // Keeps the line being typed clear of the floating toolbar.
+                    if (_isText && keyboardOpen)
+                      const SizedBox(height: EditorToolbar.height + 8),
                     if (_isReminder)
                       SketchBottomCta(
                         button: PillButton(

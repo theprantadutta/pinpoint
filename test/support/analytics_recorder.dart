@@ -162,6 +162,10 @@ class RecordingAnalyticsFacade extends AnalyticsFacade {
       _rec('screen_view', {'screen_name': screenName});
 
   @override
+  Future<void> trackFirstNoteCreated({required String noteType}) async =>
+      _rec('first_note_created', {'note_type': noteType});
+
+  @override
   Future<void> trackSyncStarted() async => _rec('sync_started');
 
   @override

@@ -42,6 +42,11 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
       _analytics.logScreenView(screenName: screenName, screenClass: screenName);
 
   @override
+  Future<void> trackFirstNoteCreated({required String noteType}) =>
+      _analytics.logEvent(
+          name: 'first_note_created', parameters: {'note_type': noteType});
+
+  @override
   Future<void> trackNoteCreated({required String noteType}) =>
       _analytics.logEvent(name: 'note_created', parameters: {'note_type': noteType});
 
