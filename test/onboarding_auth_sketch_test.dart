@@ -139,50 +139,23 @@ void main() {
     });
     tearDown(() => getIt.unregister<AnalyticsFacade>());
 
-    // Crashlytics, Nov 2026: with animations off the page change has no
-    // duration, and animating over zero ticks before the scroll activity has
-    // finished constructing (LateInitializationError on _controller).
-    testWidgets('Next works with animations turned off', (tester) async {
-      _phone(tester);
-      await tester
-          .pumpWidget(_app(const OnboardingScreen(), disableAnimations: true));
-      await tester.pump();
-
-      await tester.tap(find.text('Next'));
-      await tester.pump();
-      await tester.pump();
-
-      expect(tester.takeException(), isNull);
-      expect(tester.widget<PageView>(find.byType(PageView)).controller!.page, 1);
-    });
-
-    testWidgets('three pages: Skip/Next, then Log in/Get started',
+    testWidgets('one page: what it does, what it protects, and on to sign-in',
         (tester) async {
       _phone(tester);
       await tester.pumpWidget(_app(const OnboardingScreen()));
       await tester.pumpAndSettle();
 
       expect(find.bySemanticsLabel('Write it down. Your way.'), findsOneWidget);
-      expect(find.text('Skip'), findsOneWidget);
-      expect(find.text('Next'), findsOneWidget);
-      expect(find.bySemanticsLabel('Page 1 of 3'), findsOneWidget);
-
-      await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
-      expect(find.bySemanticsLabel('Organized, without the effort.'),
-          findsOneWidget);
-
-      await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
-      expect(find.bySemanticsLabel('Private by default.'), findsOneWidget);
-      // The privacy page states the limits of end-to-end encryption.
+      expect(find.textContaining('Encrypted on your device'), findsOneWidget);
+      // The screen states the limits of end-to-end encryption.
       expect(
           find.text("Reminder text isn't end-to-end encrypted, and neither "
               'are voice recordings synced before June 2026.'),
           findsOneWidget);
       expect(find.text('Log in'), findsOneWidget);
       expect(find.text('Get started'), findsOneWidget);
-      expect(find.bySemanticsLabel('Page 3 of 3'), findsOneWidget);
+      expect(find.text('Next'), findsNothing);
+      expect(find.byType(PageView), findsNothing);
     });
   });
 

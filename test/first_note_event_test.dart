@@ -21,6 +21,28 @@ void main() {
     expect(analytics.one('first_note_created').params, {'note_type': 'text'});
   });
 
+  test('a new person gets a blank note, once', () async {
+    await FirstNoteEvent.arm(await SharedPreferences.getInstance());
+    Future<bool> none() async => false;
+
+    expect(await FirstNoteEvent.takeBlankNote(hasNotes: none), isTrue);
+    expect(await FirstNoteEvent.takeBlankNote(hasNotes: none), isFalse);
+  });
+
+  test('someone whose notes came back gets no blank note, ever', () async {
+    await FirstNoteEvent.arm(await SharedPreferences.getInstance());
+
+    expect(await FirstNoteEvent.takeBlankNote(hasNotes: () async => true),
+        isFalse);
+    expect(await FirstNoteEvent.takeBlankNote(hasNotes: () async => false),
+        isFalse);
+  });
+
+  test('someone already using the app gets no blank note', () async {
+    expect(await FirstNoteEvent.takeBlankNote(hasNotes: () async => false),
+        isFalse);
+  });
+
   test('someone who never went through onboarding reports nothing', () async {
     await FirstNoteEvent.reportIfPending(analytics, noteType: 'text');
 

@@ -19,8 +19,9 @@ class NewNote {
   static const String voice = 'Record Audio';
   static const String reminder = 'Reminder';
 
-  static void open(BuildContext context, [String noticeType = text]) {
-    context.push(
+  /// Completes when the editor closes.
+  static Future<void> open(BuildContext context, [String noticeType = text]) {
+    return context.push<void>(
       CreateNoteScreenV2.kRouteName,
       extra: CreateNoteScreenArguments(noticeType: noticeType),
     );

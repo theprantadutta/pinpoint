@@ -1603,6 +1603,11 @@ class DriftNoteService {
     yield* database.tableUpdates().map((_) {});
   }
 
+  static Future<bool> hasAnyNote() async {
+    final notes = await watchNotesWithDetailsV2(includeArchived: true).first;
+    return notes.isNotEmpty;
+  }
+
   static Stream<List<NoteWithDetails>> watchNotesWithDetailsV2({
     String searchQuery = '',
     String sortType = 'updatedAt',
