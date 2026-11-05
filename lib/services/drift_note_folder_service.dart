@@ -1,3 +1,4 @@
+import 'package:pinpoint/util/note_utils.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -479,7 +480,7 @@ class DriftNoteFolderService {
         list.add(FolderNotePreview(
           noteId: row.noteId,
           type: row.type,
-          title: row.title.split('\n').first.trim(),
+          title: storedContentPreview(row.title),
           color: FolderPalette.forNote(colorName: row.color, type: row.type),
         ));
       }
