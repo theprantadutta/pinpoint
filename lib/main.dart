@@ -1,3 +1,4 @@
+import 'services/capture/capture_inbox.dart';
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
@@ -605,6 +606,7 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
     // discards the window's preferred mode whenever the app is backgrounded.
     WidgetsBinding.instance.addObserver(this);
     AppNavigation.screenViews.start();
+    CaptureInbox.start();
     initializeSharedPreferences();
 
     // Register session expiry handler for automatic token refresh failures

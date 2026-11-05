@@ -229,6 +229,16 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
     _reminderNotificationContentController.addListener(_scheduleAutoSave);
     _reminderDescriptionController.addListener(_scheduleAutoSave);
 
+    final sharedText = widget.arguments?.initialText;
+    if (sharedText != null) {
+      _fleatherController.replaceText(0, 0, sharedText);
+    }
+    if (widget.arguments?.initialFiles.isNotEmpty ?? false) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _addAttachments(context, 'shared');
+      });
+    }
+
     // Add audio player listeners for playback tracking
     _audioPlayer.onPositionChanged.listen((position) {
       if (mounted) {
@@ -1982,6 +1992,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
           for (final f in await FilePicker.pickFiles()) {
             if (f.path != null) picked.add((path: f.path!, name: f.name));
           }
+        case 'shared':
+          picked.addAll(widget.arguments!.initialFiles);
       }
     } catch (e) {
       debugPrint('⚠️ [CreateNoteV2] Attachment pick failed: $e');

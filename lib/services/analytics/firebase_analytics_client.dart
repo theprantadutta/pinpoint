@@ -47,6 +47,11 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
           name: 'first_note_created', parameters: {'note_type': noteType});
 
   @override
+  Future<void> trackCaptureOpened({required String source}) =>
+      _analytics.logEvent(
+          name: 'capture_opened', parameters: {'source': source});
+
+  @override
   Future<void> trackNoteCreated({required String noteType}) =>
       _analytics.logEvent(name: 'note_created', parameters: {'note_type': noteType});
 

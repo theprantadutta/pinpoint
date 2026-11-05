@@ -3,10 +3,12 @@ package com.pranta.pinpoint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
+import androidx.core.content.IntentCompat
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -22,8 +24,45 @@ class MainActivity: FlutterFragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
+        intent?.let(::dropUnreadableShares)
         super.onCreate(savedInstanceState)
         createNotificationChannel()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        dropUnreadableShares(intent)
+        super.onNewIntent(intent)
+    }
+
+    /**
+     * The sharing plugin copies shared files on the main thread and does not
+     * catch a refused read, so a sender that shares a file without granting
+     * access would crash the app. Those files are removed first.
+     */
+    private fun dropUnreadableShares(intent: Intent) {
+        when (intent.action) {
+            Intent.ACTION_SEND -> {
+                val uri = IntentCompat.getParcelableExtra(
+                    intent, Intent.EXTRA_STREAM, Uri::class.java
+                )
+                if (uri != null && !canRead(uri)) intent.removeExtra(Intent.EXTRA_STREAM)
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                val uris = IntentCompat.getParcelableArrayListExtra(
+                    intent, Intent.EXTRA_STREAM, Uri::class.java
+                ) ?: return
+                intent.putParcelableArrayListExtra(
+                    Intent.EXTRA_STREAM, ArrayList(uris.filter(::canRead))
+                )
+            }
+        }
+    }
+
+    private fun canRead(uri: Uri): Boolean = try {
+        contentResolver.openInputStream(uri)?.close()
+        true
+    } catch (e: Exception) {
+        false
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

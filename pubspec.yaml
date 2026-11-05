@@ -98,6 +98,8 @@ dependencies:
   sqlite3: ^3.3.2
   path: ^1.9.1
   pointycastle: ^3.9.1
+  quick_actions: ^1.1.1
+  receive_sharing_intent: ^1.9.0
 
 dev_dependencies:
   flutter_test:

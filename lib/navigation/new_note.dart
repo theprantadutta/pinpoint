@@ -1,3 +1,6 @@
+import '../service_locators/init_service_locators.dart';
+import '../services/analytics/analytics_facade.dart';
+import '../services/capture/capture_inbox.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
@@ -24,6 +27,19 @@ class NewNote {
     return context.push<void>(
       CreateNoteScreenV2.kRouteName,
       extra: CreateNoteScreenArguments(noticeType: noticeType),
+    );
+  }
+
+  /// Opens what the share sheet or a home screen shortcut sent.
+  static Future<void> openCapture(BuildContext context, Capture capture) {
+    getIt<AnalyticsFacade>().trackCaptureOpened(source: capture.source);
+    return context.push<void>(
+      CreateNoteScreenV2.kRouteName,
+      extra: CreateNoteScreenArguments(
+        noticeType: capture.noteType,
+        initialText: capture.text,
+        initialFiles: capture.files,
+      ),
     );
   }
 
