@@ -106,6 +106,12 @@ class AnalyticsFacade implements AnalyticsClient {
   }
 
   @override
+  Future<void> trackFirstNoteCreated({required String noteType}) async {
+    unawaited(_logger?.trackFirstNoteCreated(noteType: noteType));
+    _trackFirebase((c) => c.trackFirstNoteCreated(noteType: noteType));
+  }
+
+  @override
   Future<void> trackNoteUpdated({required String noteType}) async {
     unawaited(_logger?.trackNoteUpdated(noteType: noteType));
     _trackFirebase((c) => c.trackNoteUpdated(noteType: noteType));

@@ -31,6 +31,7 @@ abstract class AnalyticsClient {
 
   // Notes
   Future<void> trackNoteCreated({required String noteType});
+  Future<void> trackFirstNoteCreated({required String noteType});
   Future<void> trackNoteUpdated({required String noteType});
   Future<void> trackNoteDeleted({required String noteType});
   Future<void> trackNoteArchived({required String noteType});

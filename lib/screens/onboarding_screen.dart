@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pinpoint/services/analytics/first_note_event.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../components/onboarding/onboarding_heroes.dart';
@@ -108,6 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // A new user has now seen this generation's onboarding, so the
     // What's-new sheet (meant for upgraders) never shows for them.
     await OnboardingVersion.markSeen(preferences);
+    await FirstNoteEvent.arm(preferences);
 
     getIt<AnalyticsFacade>().trackOnboardingComplete();
 
