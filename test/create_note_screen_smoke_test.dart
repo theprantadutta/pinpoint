@@ -16,6 +16,7 @@ import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
 import 'package:pinpoint/services/drift_note_folder_service.dart';
 import 'package:pinpoint/services/locale_controller.dart';
+import 'package:pinpoint/widgets/markdown_toolbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/analytics_recorder.dart';
@@ -139,6 +140,20 @@ void main() {
   // bringIntoView a frame later, which reads the editor's scroll controller.
   // A non-scrollable editor must be given one that is attached to something,
   // or ScrollController.position throws "Bad state: No element".
+  // The toolbar floats over the page. With the keyboard open the page must end
+  // above it, or the line being typed is revealed behind the toolbar.
+  testWidgets('the page ends above the floating toolbar while typing',
+      (tester) async {
+    await open(tester, 'Title Content');
+    tester.view.viewInsets = const FakeViewPadding(bottom: 600);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pump();
+
+    expect(tester.getBottomLeft(find.byType(CustomScrollView)).dy,
+        lessThanOrEqualTo(tester.getTopLeft(find.byType(MarkdownToolbar)).dy));
+    await close(tester);
+  });
+
   testWidgets('revealing the caret after a paste does not throw',
       (tester) async {
     await open(tester, 'Title Content');

@@ -817,6 +817,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
                         ],
                       ),
                     ),
+                    // Keeps the line being typed clear of the floating toolbar.
+                    if (_isText && keyboardOpen)
+                      const SizedBox(height: EditorToolbar.height + 8),
                     if (_isReminder)
                       SketchBottomCta(
                         button: PillButton(
