@@ -247,6 +247,7 @@ PurchaseAndroid fakePurchase({
       isAutoRenewing: false,
       quantity: 1,
       store: IapStore.Google,
+      storeId: 'google',
       transactionDate: 1750000000000,
       transactionId: purchaseId ?? 'gpa-$productId',
     );
@@ -267,6 +268,7 @@ PurchaseIOS fakeIosPurchase({
       isAutoRenewing: false,
       quantity: 1,
       store: IapStore.Apple,
+      storeId: 'apple',
       transactionDate: 1750000000000,
       transactionId: transactionId,
     );
