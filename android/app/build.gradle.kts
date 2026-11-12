@@ -31,6 +31,13 @@ android {
     // ndkVersion = flutter.ndkVersion
     ndkVersion = "29.0.13113456"
 
+    // Flutter 3.50 builds drop dot-file assets by default (AGP's ignore
+    // pattern includes ".*"), so .env vanished from release APKs and startup
+    // hung waiting for dotenv.load. Same list as AGP's default, minus ".*".
+    androidResources {
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~"
+    }
+
     compileOptions {
         // Flag to enable support for the new language APIs
         isCoreLibraryDesugaringEnabled = true
