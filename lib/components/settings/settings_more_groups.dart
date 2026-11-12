@@ -241,18 +241,10 @@ class _SettingsHelpGroupState extends State<SettingsHelpGroup> {
 
   Future<void> _replayTutorial() async {
     PinpointHaptics.medium();
-    // Reset walkthrough so it will show again
-    await WalkthroughService().resetWalkthrough();
-    if (!mounted) return;
-
-    // Return to the home screen first (settings is a pushed route)
+    // Return to the home screen first (settings is a pushed route); the
+    // service shows the tour from home, as this context is about to go.
     Navigator.of(context).pop();
-
-    // Delay then show walkthrough
-    final ctx = context;
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (ctx.mounted) WalkthroughService().showWalkthrough(ctx);
-    });
+    await WalkthroughService().replay();
   }
 
   @override

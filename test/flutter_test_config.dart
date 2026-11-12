@@ -17,13 +17,15 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
   GoogleFonts.config.allowRuntimeFetching = false;
 
-  for (final family in const ['Plus Jakarta Sans', 'Caveat', 'JetBrains Mono']) {
+  for (final family in const ['Plus Jakarta Sans', 'JetBrains Mono']) {
     for (final weight in FontWeight.values) {
       for (final style in FontStyle.values) {
         GoogleFonts.getFont(family, fontWeight: weight, fontStyle: style);
       }
     }
   }
+  // Only SemiBold is bundled; asking for other weights logs load errors.
+  GoogleFonts.getFont('Caveat', fontWeight: FontWeight.w600);
   try {
     await GoogleFonts.pendingFonts();
   } catch (_) {

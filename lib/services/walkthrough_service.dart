@@ -5,6 +5,7 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../constants/shared_preference_keys.dart';
 import '../design_system/design_system.dart';
 import '../walkthrough/walkthrough_config.dart';
+import '../walkthrough/walkthrough_keys.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 /// Service responsible for managing the app walkthrough/tutorial.
@@ -35,6 +36,32 @@ class WalkthroughService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(kHasCompletedWalkthroughKey, false);
     debugPrint('[Walkthrough] Reset - will show on next trigger');
+  }
+
+  /// Replays the tour from Settings → Replay tutorial, once the caller has
+  /// popped back to home.
+  ///
+  /// The tour is shown from a home-screen target, not the caller's context:
+  /// Settings is a pushed route, so its context is unmounted by the time home
+  /// is back on screen (replay used to do nothing for that reason). The
+  /// completed flag is left alone, so the tour does not also reappear on the
+  /// next launch.
+  Future<void> replay({
+    Duration settle = const Duration(milliseconds: 500),
+  }) async {
+    // Lets the pop transition finish so target positions are final.
+    await Future.delayed(settle);
+    final context = [
+      WalkthroughKeys.searchKey,
+      WalkthroughKeys.fabKey,
+      WalkthroughKeys.navSettingsKey,
+      WalkthroughKeys.addFolderKey,
+    ].map((k) => k.currentContext).nonNulls.firstOrNull;
+    if (context == null || !context.mounted) {
+      debugPrint('[Walkthrough] Replay: no home target mounted');
+      return;
+    }
+    showWalkthrough(context);
   }
 
   /// Show walkthrough if not completed and all keys are mounted.
