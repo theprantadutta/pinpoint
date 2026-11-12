@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:pinpoint/components/onboarding/whats_new_sheet.dart';
 import 'package:pinpoint/constants/shared_preference_keys.dart';
 import 'package:pinpoint/design_system/design_system.dart';
@@ -313,10 +311,7 @@ Widget _app(
     supportedLocales: LocaleController.supportedLocales,
     localizationsDelegates: const [
       AppL10n.delegate,
-      GlobalMaterialLocalizations.delegate,
-      GlobalCupertinoLocalizations.delegate,
-      GlobalWidgetsLocalizations.delegate,
-      ...material_ui.GlobalMaterialLocalizations.delegates,
+      ...GlobalMaterialLocalizations.delegates,
     ],
     builder: disableAnimations
         ? (context, child) => MediaQuery(

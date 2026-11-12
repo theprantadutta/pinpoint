@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pinpoint/components/settings/signing_out_overlay.dart';
 import 'package:pinpoint/services/logout_service.dart';

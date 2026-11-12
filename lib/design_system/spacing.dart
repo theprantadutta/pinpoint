@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Pinpoint Design System - Spacing
 /// Consistent spacing scale based on 4px/8px grid for brutalist/bold aesthetic

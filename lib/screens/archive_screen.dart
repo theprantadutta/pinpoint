@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/services/drift_note_service.dart';

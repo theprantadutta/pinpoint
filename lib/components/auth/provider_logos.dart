@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The Google "G", painted so it needs no image asset (there is none in the
 /// bundle — the old `google_logo.png` reference always fell back to an icon).

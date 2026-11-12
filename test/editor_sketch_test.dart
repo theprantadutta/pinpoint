@@ -1,8 +1,6 @@
 import 'package:fleather/fleather.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:pinpoint/components/create_note_screen/editor_chrome.dart';
 import 'package:pinpoint/components/create_note_screen/record_audio_type/voice_fab.dart';
 import 'package:pinpoint/components/create_note_screen/todo_list_type/checklist_add_bar.dart';
@@ -36,10 +34,7 @@ void main() {
       supportedLocales: LocaleController.supportedLocales,
       localizationsDelegates: const [
         AppL10n.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        ...material_ui.GlobalMaterialLocalizations.delegates,
+        ...GlobalMaterialLocalizations.delegates,
       ],
       home: child,
     );

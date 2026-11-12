@@ -5,10 +5,8 @@ import 'dart:isolate';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:pinpoint/sync/held_back_notes.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -363,18 +361,12 @@ class AuthenticationFailedApp extends StatelessWidget {
       // Localizations — without this AppL10n.of() below has nothing to read.
       localizationsDelegates: const [
         AppL10n.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        // Flutter has split Material into package:material_ui, which declares
-        // its own MaterialLocalizations type. Packages that have migrated
-        // (fleather 1.28, go_router 18) look up *that* type, which the
-        // flutter_localizations delegates above cannot satisfy — without these
-        // the editor's selection toolbar asserts "No MaterialLocalizations
-        // found" the moment you long-press text. Both sets are registered
-        // because the app itself still speaks package:flutter/material.dart;
-        // the two types are distinct, so they coexist rather than clash.
-        ...material_ui.GlobalMaterialLocalizations.delegates,
+        // The app is written against package:material_ui (Flutter 3.50), whose
+        // MaterialLocalizations is its own type: flutter_localizations'
+        // delegates cannot satisfy it, and mixing both is an ambiguous import.
+        // Packages still on package:flutter/material.dart get theirs from
+        // MaterialUiCompatibilityBridge in the main app's builder.
+        ...GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: LocaleController.supportedLocales,
       // Follows the device's light/dark setting: no ThemeController exists
@@ -428,12 +420,8 @@ class InitializationErrorApp extends StatelessWidget {
       // Localizations — without this AppL10n.of() below has nothing to read.
       localizationsDelegates: const [
         AppL10n.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        // See the note on the first delegate list — material_ui's own
-        // MaterialLocalizations type, for packages that have migrated.
-        ...material_ui.GlobalMaterialLocalizations.delegates,
+        // See the note on the first delegate list.
+        ...GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: LocaleController.supportedLocales,
       // Follows the device's light/dark setting: no ThemeController exists
@@ -743,11 +731,8 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
           return MaterialApp.router(
             localizationsDelegates: const [
               AppL10n.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
               // See the note on the first delegate list.
-              ...material_ui.GlobalMaterialLocalizations.delegates,
+              ...GlobalMaterialLocalizations.delegates,
             ],
             supportedLocales: LocaleController.supportedLocales,
             // Null means "follow the device", which is Flutter's own default
@@ -771,11 +756,20 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
             // any app bar painted above it. Brightness is read from the
             // resolved theme, so it follows light/dark/system without this
             // needing to know how the mode resolves.
+            //
+            // MaterialUiCompatibilityBridge gives packages still on
+            // package:flutter/material.dart (toastification, tutorial_coach_mark,
+            // flutter_markdown_plus, printing, ...) a legacy Theme mapped from
+            // ours and the legacy MaterialLocalizations. Remove it once they
+            // have all migrated to material_ui.
             builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
               value: PinpointTheme.systemOverlayStyle(
                   Theme.of(context).brightness),
-              child: _LocalizedNotificationChannels(
-                  child: child ?? const SizedBox.shrink()),
+              // ignore: deprecated_member_use
+              child: MaterialUiCompatibilityBridge(
+                child: _LocalizedNotificationChannels(
+                    child: child ?? const SizedBox.shrink()),
+              ),
             ),
             themeMode: themeController.mode,
             theme: PinpointTheme.light(

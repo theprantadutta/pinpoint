@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart' as material_ui;
 
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 import 'package:pinpoint/services/locale_controller.dart';
@@ -17,10 +15,7 @@ import 'package:pinpoint/services/locale_controller.dart';
 void main() {
   const delegates = <LocalizationsDelegate<dynamic>>[
     AppL10n.delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-    ...material_ui.GlobalMaterialLocalizations.delegates,
+    ...GlobalMaterialLocalizations.delegates,
   ];
 
   Future<AppL10n> l10nFor(WidgetTester tester, Locale locale) async {

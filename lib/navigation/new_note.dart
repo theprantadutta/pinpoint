@@ -1,7 +1,7 @@
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/capture/capture_inbox.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
