@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:pinpoint/services/analytics/first_note_event.dart';
 import 'package:go_router/go_router.dart';
 import 'package:record/record.dart';

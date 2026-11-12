@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:pinpoint/services/google_sign_in_service.dart';
 import 'package:pinpoint/services/apple_sign_in_service.dart';

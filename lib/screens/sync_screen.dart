@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/sync/sync_manager.dart';
 import 'package:pinpoint/sync/sync_service.dart';

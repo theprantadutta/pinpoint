@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinpoint/components/home_screen/note_types/note_attachments.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';

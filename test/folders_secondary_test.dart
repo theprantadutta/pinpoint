@@ -1,8 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/semantics.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:pinpoint/components/shared/note_grid.dart';
 import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/design_system/design_system.dart';
@@ -37,10 +35,7 @@ void main() {
         supportedLocales: LocaleController.supportedLocales,
         localizationsDelegates: const [
           AppL10n.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          ...material_ui.GlobalMaterialLocalizations.delegates,
+          ...GlobalMaterialLocalizations.delegates,
         ],
         home: child,
       );

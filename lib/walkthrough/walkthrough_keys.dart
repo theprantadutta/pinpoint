@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Centralized registry for walkthrough target GlobalKeys.
 /// Widgets register their keys here, and the walkthrough service reads them.

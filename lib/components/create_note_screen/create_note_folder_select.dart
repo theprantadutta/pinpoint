@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../dtos/note_folder_dto.dart';
 import '../../services/drift_note_folder_service.dart';

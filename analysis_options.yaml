@@ -16,6 +16,10 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    # gen-l10n still writes flutter_localizations' delegates into its own
+    # localizationsDelegates list. Nothing uses that list: main.dart installs
+    # material_ui's (see test/material_ui_localizations_test.dart).
+    - lib/generated/l10n/**
 include: package:flutter_lints/flutter.yaml
 
 linter:

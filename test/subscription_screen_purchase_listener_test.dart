@@ -1,9 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:material_ui/material_ui.dart' as material_ui;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -91,10 +89,7 @@ GOOGLE_WEB_CLIENT_ID=test-client-id
   // flutter_localizations cannot satisfy. See material_ui_localizations_test.
   const delegates = <LocalizationsDelegate<dynamic>>[
     AppL10n.delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-    ...material_ui.GlobalMaterialLocalizations.delegates,
+    ...GlobalMaterialLocalizations.delegates,
   ];
 
   Widget harness(GlobalKey<NavigatorState> navKey) {

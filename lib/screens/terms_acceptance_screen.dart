@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+// flutter_markdown_plus still takes package:flutter/material.dart's ThemeData;
+// MaterialUiCompatibilityBridge (main.dart) provides one mapped from ours.
+// ignore: deprecated_member_use
+import 'package:flutter/material.dart' as legacy show Theme;
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:go_router/go_router.dart';
@@ -284,7 +288,7 @@ class _LegalCard extends StatelessWidget {
       child: Markdown(
         data: content,
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
-        styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+        styleSheet: MarkdownStyleSheet.fromTheme(legacy.Theme.of(context)).copyWith(
           h1: t.emptyTitle,
           h2: t.sectionTitle,
           h3: t.cardTitle,
