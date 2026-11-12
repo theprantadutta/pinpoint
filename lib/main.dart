@@ -39,6 +39,7 @@ import 'services/refresh_rate_controller.dart';
 import 'services/notification_channels.dart';
 import 'screens/auth_screen.dart';
 import 'package:pinpoint/services/subscription_service.dart';
+import 'package:pinpoint/services/reinstall_guard.dart';
 import 'package:flutter/services.dart';
 
 // void main() async {
@@ -97,6 +98,10 @@ void main() async {
   // Play Console flags the absence of this as "Edge-to-edge may not display
   // for all users"; it is the Flutter counterpart of enableEdgeToEdge().
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  // Before anything reads the keychain: an iOS reinstall keeps the previous
+  // install's sign-in there. See ReinstallGuard.
+  await ReinstallGuard.run();
 
   try {
     // Initialize core services first
@@ -283,6 +288,7 @@ Future<void> _initializeCoreServices() async {
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
     debugPrint('✅ [main.dart] Firebase core initialized');
+    await ReinstallGuard.signOutLeftoverFirebaseUser();
 
     // Open the analytics pipe here, against the only thing it actually needs:
     // an initialised Firebase app.
