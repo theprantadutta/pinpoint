@@ -23,6 +23,16 @@ import 'package:pinpoint/services/reminder_note_service.dart';
 class DriftNoteService {
   DriftNoteService._();
 
+  /// Whether any item of checklist [todoListNoteId] contains [query]
+  /// (lower-cased), so search finds "Buy Milk" for "milk", not just titles.
+  static Future<bool> _todoItemsMatch(
+      AppDatabase database, int todoListNoteId, String query) async {
+    final items = await (database.select(database.todoItemsV2)
+          ..where((t) => t.todoListNoteId.equals(todoListNoteId)))
+        .get();
+    return items.any((item) => item.content.toLowerCase().contains(query));
+  }
+
   /// Extracts plain text from content that might be in JSON Delta format
   /// Supports both JSON Delta (new) and plain text (old) for backward compatibility
   static String _extractPlainTextFromContent(String? content) {
@@ -1642,7 +1652,10 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = textNote.title?.toLowerCase().contains(query) ?? false;
-          final matchesContent = textNote.content.toLowerCase().contains(query);
+          // The words, not the stored rich-text JSON ("insert" matched every note).
+          final matchesContent = _extractPlainTextFromContent(textNote.content)
+              .toLowerCase()
+              .contains(query);
           if (!matchesTitle && !matchesContent) continue;
         }
 
@@ -1698,7 +1711,9 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = voiceNote.title?.toLowerCase().contains(query) ?? false;
-          if (!matchesTitle) continue;
+          final matchesTranscript =
+              voiceNote.transcription?.toLowerCase().contains(query) ?? false;
+          if (!matchesTitle && !matchesTranscript) continue;
         }
 
         // Get folders
@@ -1768,7 +1783,10 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = todoNote.title?.toLowerCase().contains(query) ?? false;
-          if (!matchesTitle) continue;
+          if (!matchesTitle &&
+              !await _todoItemsMatch(database, todoNote.id, query)) {
+            continue;
+          }
         }
 
         // Get folders
@@ -1947,7 +1965,10 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = textNote.title?.toLowerCase().contains(query) ?? false;
-          final matchesContent = textNote.content.toLowerCase().contains(query);
+          // The words, not the stored rich-text JSON ("insert" matched every note).
+          final matchesContent = _extractPlainTextFromContent(textNote.content)
+              .toLowerCase()
+              .contains(query);
           if (!matchesTitle && !matchesContent) continue;
         }
 
@@ -2003,7 +2024,9 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = voiceNote.title?.toLowerCase().contains(query) ?? false;
-          if (!matchesTitle) continue;
+          final matchesTranscript =
+              voiceNote.transcription?.toLowerCase().contains(query) ?? false;
+          if (!matchesTitle && !matchesTranscript) continue;
         }
 
         // Get folders
@@ -2073,7 +2096,10 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = todoNote.title?.toLowerCase().contains(query) ?? false;
-          if (!matchesTitle) continue;
+          if (!matchesTitle &&
+              !await _todoItemsMatch(database, todoNote.id, query)) {
+            continue;
+          }
         }
 
         // Get folders
@@ -2252,7 +2278,10 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = textNote.title?.toLowerCase().contains(query) ?? false;
-          final matchesContent = textNote.content.toLowerCase().contains(query);
+          // The words, not the stored rich-text JSON ("insert" matched every note).
+          final matchesContent = _extractPlainTextFromContent(textNote.content)
+              .toLowerCase()
+              .contains(query);
           if (!matchesTitle && !matchesContent) continue;
         }
 
@@ -2308,7 +2337,9 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = voiceNote.title?.toLowerCase().contains(query) ?? false;
-          if (!matchesTitle) continue;
+          final matchesTranscript =
+              voiceNote.transcription?.toLowerCase().contains(query) ?? false;
+          if (!matchesTitle && !matchesTranscript) continue;
         }
 
         // Get folders
@@ -2378,7 +2409,10 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = todoNote.title?.toLowerCase().contains(query) ?? false;
-          if (!matchesTitle) continue;
+          if (!matchesTitle &&
+              !await _todoItemsMatch(database, todoNote.id, query)) {
+            continue;
+          }
         }
 
         // Get folders
@@ -2566,7 +2600,10 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = textNote.title?.toLowerCase().contains(query) ?? false;
-          final matchesContent = textNote.content.toLowerCase().contains(query);
+          // The words, not the stored rich-text JSON ("insert" matched every note).
+          final matchesContent = _extractPlainTextFromContent(textNote.content)
+              .toLowerCase()
+              .contains(query);
           if (!matchesTitle && !matchesContent) continue;
         }
 
@@ -2625,7 +2662,9 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = voiceNote.title?.toLowerCase().contains(query) ?? false;
-          if (!matchesTitle) continue;
+          final matchesTranscript =
+              voiceNote.transcription?.toLowerCase().contains(query) ?? false;
+          if (!matchesTitle && !matchesTranscript) continue;
         }
 
         final folders = <NoteFolderDto>[];
@@ -2698,7 +2737,10 @@ class DriftNoteService {
         if (searchQuery.isNotEmpty) {
           final query = searchQuery.toLowerCase();
           final matchesTitle = todoNote.title?.toLowerCase().contains(query) ?? false;
-          if (!matchesTitle) continue;
+          if (!matchesTitle &&
+              !await _todoItemsMatch(database, todoNote.id, query)) {
+            continue;
+          }
         }
 
         final folders = <NoteFolderDto>[];
