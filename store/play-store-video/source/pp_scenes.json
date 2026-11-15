@@ -1,0 +1,11 @@
+{"segments": [
+  {"src": "rec1.mp4",  "a": 0.0, "b": 6.5,  "chip": "YOUR NOTES", "color": "yellow",   "title": "Everything in one place", "sub": "Notes, lists and ideas on one calm, colourful board."},
+  {"src": "rec3.mp4",  "a": 2.6, "b": 12.6, "chip": "WRITE",      "color": "lavender", "title": "Just write it down", "sub": "Rich text that saves itself as you type."},
+  {"src": "rec5.mp4",  "a": 0.0, "b": 4.6,  "chip": "COLOUR",     "color": "sky",      "title": "Make it yours", "sub": "Five soft colours to tell notes apart."},
+  {"src": "rec2.mp4",  "a": 2.4, "b": 8.1,  "chip": "CHECKLISTS", "color": "mint",     "title": "Tick it off", "sub": "Checklists that track your progress."},
+  {"src": "rec6.mp4",  "a": 2.95, "b": 6.6,  "chip": "VOICE",      "color": "mint",     "title": "Say it instead", "sub": "Voice notes live right next to your text."},
+  {"src": "rec11.mp4", "a": 0.0, "b": 4.2,  "chip": "REMINDERS",  "color": "lavender", "title": "Right on time", "sub": "Set a reminder and get a nudge when it matters."},
+  {"src": "rec8.mp4",  "a": 0.6, "b": 8.4,  "chip": "FOLDERS",    "color": "pink",     "title": "Sorted in a tap", "sub": "Filter by folder: Random, HomeWork, Workout..."},
+  {"src": "rec9.mp4",  "a": 1.6, "b": 10.4, "chip": "SEARCH",     "color": "yellow",   "title": "Find it fast", "sub": "Search every note as you type."},
+  {"src": "rec10.mp4", "a": 1.4, "b": 9.4,  "chip": "PRIVATE",    "color": "sky",      "title": "Encrypted on your device", "sub": "AES-256 before a note leaves your phone. Optional zero-knowledge mode."}
+]}

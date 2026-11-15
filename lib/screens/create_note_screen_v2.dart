@@ -121,6 +121,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
   // True once a source has been loaded into _audioPlayer. Seeking before a
   // source is set throws "Bad state: No element" inside audioplayers.
   bool _hasAudioSource = false;
+
+  /// True while an opened note's content is still loading from the database.
+  /// An existing voice note shows its player meanwhile, not the "tap the mic"
+  /// empty state, which used to flash for a moment on every open.
+  late bool _loadingExisting = widget.arguments?.existingNote != null;
   Timer? _recordingTimer;
   Duration _recordedDuration = Duration.zero;
   Duration _playbackPosition = Duration.zero;
@@ -436,6 +441,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
     } catch (e, st) {
       debugPrint('❌ [CreateNoteV2] Failed to load existing note: $e');
       debugPrint('Stack trace: $st');
+    } finally {
+      if (_loadingExisting) {
+        _loadingExisting = false;
+        if (mounted) setState(() {});
+      }
     }
   }
 
@@ -1083,12 +1093,15 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
             child: VoiceNoteBody(
               recording: _isRecording,
               recorded: _recordedDuration,
-              hasAudio: _audioFilePath != null,
+              hasAudio: _audioFilePath != null || _loadingExisting,
               playing: _isPlaying,
               position: _playbackPosition,
               total: _playbackDuration.inMilliseconds > 0
                   ? _playbackDuration
-                  : Duration(seconds: _audioDurationSeconds ?? 0),
+                  : Duration(
+                      seconds: _audioDurationSeconds ??
+                          widget.arguments?.existingNote?.voiceDurationSeconds ??
+                          0),
               seed: _audioFilePath?.hashCode ?? 0,
               freeCapSeconds: cap > 0 ? cap : null,
               tooLargeToSyncMegabytes: _audioTooLargeForCloud

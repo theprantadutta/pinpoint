@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pinpoint/database/database.dart';
 import 'package:pinpoint/design_system/design_system.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
+import 'package:pinpoint/models/note_with_details.dart';
 import 'package:pinpoint/screen_arguments/create_note_screen_arguments.dart';
 import 'package:pinpoint/screens/create_note_screen_v2.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
@@ -200,6 +201,60 @@ void main() {
   testWidgets('other note types do not show the start-as row', (tester) async {
     await open(tester, 'Todo List');
     expect(find.text('Or start a'), findsNothing);
+    await close(tester);
+  });
+
+  // Opening a voice note used to flash the "Tap the mic to record" empty state
+  // until the recording's row had loaded from the database.
+  testWidgets('an opened voice note shows its player while it loads',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844) * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final onError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      if (details.exception is MissingPluginException) return;
+      onError?.call(details);
+    };
+    addTearDown(() => FlutterError.onError = onError);
+    final now = DateTime.utc(2026, 10, 6);
+    final existing = NoteWithDetails(
+      note: Note(
+        id: 7,
+        uuid: 'voice-7',
+        noteType: 'voice',
+        noteTitle: 'Leg day',
+        isPinned: false,
+        isArchived: false,
+        isDeleted: false,
+        isSynced: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      folders: const [],
+      attachments: const [],
+      todoItems: const [],
+      voiceDurationSeconds: 42,
+    );
+
+    await tester.pumpWidget(MaterialApp(
+      theme: PinpointTheme.light(),
+      locale: const Locale('en'),
+      supportedLocales: LocaleController.supportedLocales,
+      localizationsDelegates: const [
+        AppL10n.delegate,
+        ...GlobalMaterialLocalizations.delegates,
+      ],
+      home: CreateNoteScreenV2(
+        arguments: CreateNoteScreenArguments(
+            noticeType: 'Record Audio', existingNote: existing),
+      ),
+    ));
+
+    // The first frame, before the database has answered.
+    expect(find.text('Tap the mic to record'), findsNothing);
+    expect(find.textContaining('0:42'), findsOneWidget);
+
     await close(tester);
   });
 
