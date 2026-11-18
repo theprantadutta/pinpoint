@@ -4,6 +4,7 @@ import 'package:fleather/fleather.dart';
 import 'package:material_ui/material_ui.dart' as material_ui;
 
 import '../design_system/design_system.dart';
+import '../util/utf16.dart';
 
 /// The note body editor: a Fleather rich-text editor styled as Sketchbook
 /// paper (paragraph 16/1.65, H1 22/800, H2 18/700, H3 16/700, ink links,
@@ -145,11 +146,52 @@ class MarkdownEditor extends StatefulWidget {
   ///
   /// Every delta must pass through here before it reaches Parchment.
   static Delta _asDocumentDelta(Delta delta) {
+    delta = _withoutLoneSurrogates(delta);
     if (delta.isEmpty) return Delta()..insert('\n');
     final data = delta.last.data;
     if (data is String && data.endsWith('\n')) return delta;
     // Un-terminated text, or a trailing embed, both need a closing line break.
     return Delta.from(delta)..insert('\n');
+  }
+
+  /// [delta] with half-emoji code units dropped from its text: Flutter throws
+  /// "string is not well-formed UTF-16" laying such text out, every time, so a
+  /// note holding one could not be opened (Crashlytics, 4.3.2).
+  static Delta _withoutLoneSurrogates(Delta delta) {
+    final ops = delta.toList();
+    final dirty = ops.any((op) =>
+        op.isInsert &&
+        op.data is String &&
+        indexOfLoneSurrogate(op.data as String) >= 0);
+    if (!dirty) return delta;
+    final out = Delta();
+    for (final op in ops) {
+      if (op.isInsert && op.data is String) {
+        final text = withoutLoneSurrogates(op.data as String);
+        if (text.isNotEmpty) out.insert(text, op.attributes);
+      } else {
+        out.push(op);
+      }
+    }
+    return out;
+  }
+
+  /// Keeps half an emoji out of [controller]'s document while editing.
+  ///
+  /// Some keyboards delete or insert a single UTF-16 code unit, leaving one
+  /// surrogate of a pair behind, and the next layout of that line throws. This
+  /// runs straight after each change, before the frame is laid out, and
+  /// removes the stray half: deleting half an emoji deletes all of it.
+  static void guardAgainstLoneSurrogates(FleatherController controller) {
+    void repair() {
+      final i = indexOfLoneSurrogate(controller.document.toPlainText());
+      if (i < 0) return;
+      // Notifies again, so any further stray halves are removed in turn.
+      controller.replaceText(i, 1, '',
+          selection: TextSelection.collapsed(offset: i));
+    }
+
+    controller.addListener(repair);
   }
 
   /// Decodes stored note content into a valid document delta.

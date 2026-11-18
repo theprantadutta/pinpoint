@@ -46,6 +46,7 @@ import '../services/note_attachments/note_attachment_service.dart';
 import '../sync/held_back_notes.dart';
 import '../util/folder_palette.dart';
 import '../util/show_a_toast.dart';
+import '../util/utf16.dart';
 import '../widgets/markdown_editor.dart';
 import '../widgets/markdown_toolbar.dart';
 import '../widgets/premium_gate_dialog.dart';
@@ -230,13 +231,14 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
     // Add auto-save listeners
     _titleController.addListener(_scheduleAutoSave);
     _fleatherController.addListener(_scheduleAutoSave);
+    MarkdownEditor.guardAgainstLoneSurrogates(_fleatherController);
     _reminderNotificationTitleController.addListener(_scheduleAutoSave);
     _reminderNotificationContentController.addListener(_scheduleAutoSave);
     _reminderDescriptionController.addListener(_scheduleAutoSave);
 
     final sharedText = widget.arguments?.initialText;
     if (sharedText != null) {
-      _fleatherController.replaceText(0, 0, sharedText);
+      _fleatherController.replaceText(0, 0, withoutLoneSurrogates(sharedText));
     }
     if (widget.arguments?.initialFiles.isNotEmpty ?? false) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -387,6 +389,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
           _fleatherController =
               MarkdownEditor.createControllerFromMarkdown(textNote.content);
           _fleatherController.addListener(_scheduleAutoSave);
+          MarkdownEditor.guardAgainstLoneSurrogates(_fleatherController);
         }
       } else if (note.noteType == 'voice') {
         // Voice note
