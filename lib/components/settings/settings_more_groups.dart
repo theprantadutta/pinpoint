@@ -2,6 +2,7 @@ import '../../screens/backup_screen.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
@@ -116,16 +117,31 @@ class _SettingsGeneralGroupState extends State<SettingsGeneralGroup>
 class SettingsNotesGroup extends StatelessWidget {
   const SettingsNotesGroup({super.key});
 
+  /// True while the import picker is open; see [_importNote].
+  static bool _picking = false;
+
   Future<void> _importNote(BuildContext context) async {
     PinpointHaptics.medium();
     final l10n = AppL10n.of(context);
     // file_picker 12 returns a list from pickFiles() and defaults
     // allowMultiple to true; pickFile() is the single-selection API, which is
     // what importing one note actually wants.
-    final picked = await FilePicker.pickFile(
-      type: FileType.custom,
-      allowedExtensions: ['pinpoint-note'],
-    );
+    // A second tap while the system picker is still opening threw
+    // PlatformException(already_active) uncaught (Crashlytics, 3.2.2-4.3.2).
+    if (_picking) return;
+    _picking = true;
+    PlatformFile? picked;
+    try {
+      picked = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['pinpoint-note'],
+      );
+    } on PlatformException catch (e) {
+      debugPrint('⚠️ [Settings] Import picker failed: ${e.code}');
+      return;
+    } finally {
+      _picking = false;
+    }
     if (picked == null) return;
     final path = picked.path;
     if (path == null) return;

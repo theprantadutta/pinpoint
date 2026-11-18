@@ -83,8 +83,10 @@ class _AuthScreenState extends State<AuthScreen> {
     return e.toString().replaceAll('Exception: ', '');
   }
 
-  /// Shorthand for the localized strings. Safe in the async sync/auth helpers
-  /// below as well as in build, since they all run against the State's context.
+  /// Shorthand for the localized strings, from this State's context. Only use
+  /// it while the screen is mounted: a sheet builder must read AppL10n.of(ctx),
+  /// because sign-in can leave this screen while the sheet still rebuilds (a
+  /// null check in AppL10n.of, Crashlytics 3.0.0-4.3.0).
   AppL10n get _l10n => AppL10n.of(context);
 
   final GoogleSignInService _googleSignInService = GoogleSignInService();
@@ -150,6 +152,8 @@ class _AuthScreenState extends State<AuthScreen> {
         // Forward live progress events from the sync service to the dialog.
         apiSyncService.onProgressUpdate = (p) => progressNotifier.value = p;
 
+        // Read now: the timeout below can fire after this screen is gone.
+        final takingAWhile = _l10n.authSyncTakingAWhile;
         result = await showDialog<SyncResult>(
           context: context,
           barrierDismissible: false,
@@ -164,7 +168,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       const Duration(seconds: 25),
                       onTimeout: () => SyncResult(
                         success: false,
-                        message: _l10n.authSyncTakingAWhile,
+                        message: takingAWhile,
                       ),
                     );
                 if (dialogContext.mounted) {
@@ -280,12 +284,12 @@ class _AuthScreenState extends State<AuthScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PillButton.secondary(
-                label: _l10n.authContinueAnyway,
+                label: AppL10n.of(ctx).authContinueAnyway,
                 onPressed: () => Navigator.of(ctx).pop(false),
               ),
               const SizedBox(height: 10),
               PillButton(
-                label: _l10n.commonRetry,
+                label: AppL10n.of(ctx).commonRetry,
                 onPressed: () => Navigator.of(ctx).pop(true),
               ),
             ],
@@ -311,16 +315,16 @@ class _AuthScreenState extends State<AuthScreen> {
         final rows = <Widget>[
           if (result.notesSynced > 0)
             _buildSyncStat(
-                _l10n.authStatNotes, result.notesSynced, Icons.notes_rounded),
+                AppL10n.of(ctx).authStatNotes, result.notesSynced, Icons.notes_rounded),
           if (result.foldersSynced > 0)
-            _buildSyncStat(_l10n.authStatFolders, result.foldersSynced,
+            _buildSyncStat(AppL10n.of(ctx).authStatFolders, result.foldersSynced,
                 Icons.folder_outlined),
           if (result.remindersSynced > 0)
-            _buildSyncStat(_l10n.authStatReminders, result.remindersSynced,
+            _buildSyncStat(AppL10n.of(ctx).authStatReminders, result.remindersSynced,
                 Icons.alarm_rounded),
           if (result.notesFailed > 0)
             _buildSyncStat(
-              _l10n.authStatFailedToRestore,
+              AppL10n.of(ctx).authStatFailedToRestore,
               result.notesFailed,
               Icons.error_outline_rounded,
               isError: true,
@@ -344,8 +348,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   header: true,
                   child: Text(
                     hasErrors
-                        ? _l10n.authSyncCompletedWithErrors
-                        : _l10n.authSyncSuccessful,
+                        ? AppL10n.of(ctx).authSyncCompletedWithErrors
+                        : AppL10n.of(ctx).authSyncSuccessful,
                     style: t.emptyTitle,
                   ),
                 ),
@@ -353,7 +357,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ],
           ),
           footer: PillButton(
-            label: _l10n.commonOk,
+            label: AppL10n.of(ctx).commonOk,
             onPressed: () => Navigator.of(ctx).pop(),
           ),
           child: Column(
@@ -364,7 +368,7 @@ class _AuthScreenState extends State<AuthScreen> {
               if (result.decryptionErrors > 0) ...[
                 const SizedBox(height: 14),
                 Text(
-                  _l10n.authDecryptionErrors,
+                  AppL10n.of(ctx).authDecryptionErrors,
                   style: t.chip.copyWith(
                       fontWeight: FontWeight.w700,
                       color: SketchFunctional.error),
@@ -372,7 +376,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 const SizedBox(height: 6),
                 SketchErrorPill(
                   message:
-                      _l10n.auDecryptionErrorsBody(result.decryptionErrors),
+                      AppL10n.of(ctx).auDecryptionErrorsBody(result.decryptionErrors),
                 ),
               ],
             ],
