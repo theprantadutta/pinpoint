@@ -310,7 +310,7 @@ the A24 (ask the other sessions if it is free), then merge and push. Offline mus
 
 ## ACTIVE WORK: the 1 November 2026 review (delete this section when every item is done)
 
-Full report: `PinPoint-review-2026-11-01.md` in the parent folder (`G:PersonalMyProjectspinpoint`) (evidence in
+Full report: `PinPoint-review-2026-11-01.md` in the parent folder (`G:\Personal\MyProjects\pinpoint\`) (evidence in
 `D:\Desktop\CodeReviews\PinPoint\evidence`). Its P0s were verified against the code on 1 Nov:
 F1, F2, F3, F7 and the 404 legal links are real. **Work in this order**; one branch per phase, tests
 first, device-check on the A24 (`RR8W901JDRL`), then merge and push. Tick items here as they land.
