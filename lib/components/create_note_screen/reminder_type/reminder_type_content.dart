@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../design_system/design_system.dart';
 import '../../../services/notification_service.dart';
+import '../../shared/notification_prompt.dart';
 import '../../../util/show_a_toast.dart';
 import 'package:pinpoint/util/localized_dates.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
@@ -251,6 +252,12 @@ class _ReminderTypeContentState extends State<ReminderTypeContent> {
 
         // Validate it's in the future
         if (selectedDateTime.isAfter(DateTime.now())) {
+          // The reminder is real now, so this is the moment to make sure it
+          // can ring: the notification sheet waits for a second note and
+          // may never have been shown. Before the status line below appears,
+          // so it reads the answer.
+          await NotificationPrompt.requestForReminder();
+          if (!mounted) return;
           widget.onReminderDateTimeChanged(selectedDateTime);
         } else if (mounted) {
           showSketchToast(

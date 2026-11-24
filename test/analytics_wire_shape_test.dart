@@ -46,6 +46,15 @@ void main() {
     'guest_started': (c) => c.trackGuestStarted(source: 'onboarding'),
     'guest_converted': (c) =>
         c.trackGuestConverted(method: 'google', entry: 'home_banner'),
+    'notification_prompt_shown': (c) =>
+        c.trackNotificationPromptShown(attempt: 'first', trigger: 'note_saved'),
+    'notification_permission_result': (c) =>
+        c.trackNotificationPermissionResult(granted: true, outcome: 'enabled'),
+    'reminder_permission_requested': (c) =>
+        c.trackReminderPermissionRequested(granted: false),
+    'review_prompt_requested': (c) =>
+        c.trackReviewPromptRequested(notesBucket: '5-9'),
+    'nudge_scheduled': (c) => c.trackNudgeScheduled(),
   };
 
   test('the recording fake emits exactly what LoggerAnalyticsClient emits',
@@ -96,6 +105,11 @@ void main() {
       'method',
       'entry',
       'first_run_flow',
+      'attempt',
+      'trigger',
+      'granted',
+      'outcome',
+      'notes_bucket',
     ]) {
       expect(source, contains("'$key'"));
       expect(logger, contains("'$key'"));

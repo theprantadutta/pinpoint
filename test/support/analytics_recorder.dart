@@ -155,6 +155,30 @@ class RecordingAnalyticsFacade extends AnalyticsFacade {
   Future<void> trackRestorePurchaseInitiated() async =>
       _rec('restore_purchase_initiated');
 
+  // --- Notifications and rating -------------------------------------------
+
+  @override
+  Future<void> trackNotificationPromptShown(
+          {required String attempt, required String trigger}) async =>
+      _rec('notification_prompt_shown', {'attempt': attempt, 'trigger': trigger});
+
+  @override
+  Future<void> trackNotificationPermissionResult(
+          {required bool granted, required String outcome}) async =>
+      _rec('notification_permission_result',
+          {'granted': '$granted', 'outcome': outcome});
+
+  @override
+  Future<void> trackReminderPermissionRequested({required bool granted}) async =>
+      _rec('reminder_permission_requested', {'granted': '$granted'});
+
+  @override
+  Future<void> trackReviewPromptRequested({required String notesBucket}) async =>
+      _rec('review_prompt_requested', {'notes_bucket': notesBucket});
+
+  @override
+  Future<void> trackNudgeScheduled() async => _rec('nudge_scheduled');
+
   // --- Everything else the screens happen to call -------------------------
 
   @override

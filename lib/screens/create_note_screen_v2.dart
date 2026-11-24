@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:pinpoint/services/analytics/first_note_event.dart';
+import 'package:pinpoint/services/note_saved_moment.dart';
 import 'package:go_router/go_router.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -573,6 +574,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
         analytics.trackNoteCreated(noteType: noteTypeKey);
         unawaited(
             FirstNoteEvent.reportIfPending(analytics, noteType: noteTypeKey));
+        // The detail pane on wide screens never leaves the shell, so there is
+        // no "back home" moment to wait for; only the full-screen editor.
+        if (!widget.embedded) NoteSavedMoment.noteCreated();
       } else if (isExplicit) {
         analytics.trackNoteUpdated(noteType: noteTypeKey);
       }
