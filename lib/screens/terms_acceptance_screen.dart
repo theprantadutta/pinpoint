@@ -6,51 +6,41 @@ import 'package:flutter/material.dart' as legacy show Theme;
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../constants/shared_preference_keys.dart';
 import '../design_system/design_system.dart';
-import '../service_locators/init_service_locators.dart';
-import '../services/analytics/analytics_facade.dart';
-import '../util/show_a_toast.dart';
-import 'auth_screen.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 enum _LegalDoc { terms, privacy }
 
-/// Terms and Privacy acceptance screen
-/// Shows terms of service and privacy policy with acceptance requirement
+/// The bundled Terms of Service and Privacy Policy, read-only (Settings →
+/// Terms & Privacy, the paywall, and the links in the onboarding's consent
+/// line).
 ///
-/// Sketchbook: a sheet-style panel holding a Terms / Privacy switch, the
-/// scrollable legal card and — unless [isViewOnly] — the agreement checkbox
-/// and an inverse "I agree" pill.
+/// Sketchbook: a sheet-style panel holding a Terms / Privacy switch and the
+/// scrollable legal card.
+///
+/// It used to double as a checkbox screen people had to pass before signing
+/// in; agreeing is now the onboarding's "By continuing…" line
+/// (`FirstRun.acceptTerms`), so the route keeps its old name only.
 class TermsAcceptanceScreen extends StatefulWidget {
-  const TermsAcceptanceScreen({
-    super.key,
-    this.isViewOnly = false,
-    this.startInSignUp = false,
-  });
+  const TermsAcceptanceScreen({super.key, this.openPrivacy = false});
 
   static const String kRouteName = '/terms-acceptance';
 
-  /// The query flag the onboarding's "Get started" passes through to the
-  /// sign-in screen, so it opens in sign-up mode.
-  static const String signUpQuery = 'mode';
-  static const String signUpValue = 'signup';
-  static const String signUpLocation = '$kRouteName?$signUpQuery=$signUpValue';
+  /// The query that opens the Privacy Policy tab instead of the Terms.
+  static const String docQuery = 'doc';
+  static const String privacyValue = 'privacy';
+  static const String privacyLocation = '$kRouteName?$docQuery=$privacyValue';
 
-  /// If true, shows in view-only mode (no acceptance required, for settings)
-  final bool isViewOnly;
-
-  /// Open the sign-in screen in sign-up mode after accepting.
-  final bool startInSignUp;
+  /// Open on the Privacy Policy rather than the Terms of Service.
+  final bool openPrivacy;
 
   @override
   State<TermsAcceptanceScreen> createState() => _TermsAcceptanceScreenState();
 }
 
 class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen> {
-  _LegalDoc _doc = _LegalDoc.terms;
-  bool _hasAccepted = false;
+  late _LegalDoc _doc =
+      widget.openPrivacy ? _LegalDoc.privacy : _LegalDoc.terms;
   String _termsContent = '';
   String _privacyContent = '';
   bool _isLoading = true;
@@ -84,84 +74,31 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen> {
     }
   }
 
-  Future<void> _acceptTerms() async {
-    if (!_hasAccepted) return;
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(kHasAcceptedTermsKey, true);
-      await prefs.setString(
-        kTermsAcceptedDateKey,
-        DateTime.now().toIso8601String(),
-      );
-
-      getIt<AnalyticsFacade>().trackTermsAccepted();
-
-      if (!mounted) return;
-
-      // Navigate to auth screen
-      context.go(widget.startInSignUp
-          ? AuthScreen.signUpLocation
-          : AuthScreen.kRouteName);
-    } catch (e) {
-      debugPrint('Error saving terms acceptance: $e');
-      if (!mounted) return;
-
-      showSketchToast(
-        context: context,
-        message: AppL10n.of(context).termsSaveFailed,
-        tone: ToastTone.error,
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final s = context.sketch;
     final t = context.type;
     final l10n = AppL10n.of(context);
 
-    final header = widget.isViewOnly
-        ? Padding(
-            padding: const EdgeInsets.fromLTRB(SketchSpace.screenX - 1,
-                SketchSpace.headerTop, SketchSpace.screenX, 0),
-            child: Row(
-              children: [
-                CircleIconButton.back(context, onPressed: () => context.pop()),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Semantics(
-                    header: true,
-                    child: Text(l10n.setTermsPrivacy,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: t.sheetTitle),
-                  ),
-                ),
-              ],
+    final header = Padding(
+      padding: const EdgeInsets.fromLTRB(SketchSpace.screenX - 1,
+          SketchSpace.headerTop, SketchSpace.screenX, 0),
+      child: Row(
+        children: [
+          CircleIconButton.back(context, onPressed: () => context.pop()),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(l10n.setTermsPrivacy,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.sheetTitle),
             ),
-          )
-        : Padding(
-            padding: const EdgeInsets.fromLTRB(
-                SketchSpace.screenX, 16, SketchSpace.screenX, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const BrandSticker(size: 44),
-                const SizedBox(height: 16),
-                Semantics(
-                  header: true,
-                  child: HighlightedText(l10n.auTermsTitle, style: t.pageTitle),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  l10n.auTermsBody,
-                  style: t.bodyRegular
-                      .copyWith(fontSize: 14, height: 1.5, color: s.muted),
-                ),
-              ],
-            ),
-          );
+          ),
+        ],
+      ),
+    );
 
     return Scaffold(
       backgroundColor: s.bg,
@@ -245,19 +182,6 @@ class _TermsAcceptanceScreenState extends State<TermsAcceptanceScreen> {
                           : _privacyContent,
                     ),
             ),
-            if (!widget.isViewOnly && !_isLoading) ...[
-              const SizedBox(height: 14),
-              _AgreeRow(
-                checked: _hasAccepted,
-                label: l10n.termsAgreeCheckbox,
-                onChanged: (v) => setState(() => _hasAccepted = v),
-              ),
-              const SizedBox(height: 12),
-              PillButton(
-                label: l10n.auTermsAgree,
-                onPressed: _hasAccepted ? _acceptTerms : null,
-              ),
-            ],
           ],
         ),
       ),
@@ -314,48 +238,6 @@ class _LegalCard extends StatelessWidget {
           ),
           h1Padding: const EdgeInsets.only(bottom: 4),
           h2Padding: const EdgeInsets.only(top: 12, bottom: 2),
-        ),
-      ),
-    );
-  }
-}
-
-/// "I have read and agree…" — the whole row toggles the checkbox.
-class _AgreeRow extends StatelessWidget {
-  const _AgreeRow({
-    required this.checked,
-    required this.label,
-    required this.onChanged,
-  });
-
-  final bool checked;
-  final String label;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      checked: checked,
-      child: SketchPressable(
-        onTap: () => onChanged(!checked),
-        scale: 0.99,
-        semanticLabel: label,
-        child: ExcludeSemantics(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: SketchSpace.minTap),
-            child: Row(
-              children: [
-                SketchCheckbox(checked: checked),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: context.type.bodyRegular.copyWith(fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

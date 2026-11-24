@@ -591,11 +591,9 @@
   "unlockAction": "ปลดล็อก",
   "unlockUsePassphrase": "ใช้วลีรหัสผ่านแทน",
   "unlockForgot": "ลืมวลีรหัสผ่าน ใช้รหัสกู้คืน",
-  "termsSaveFailed": "ไม่สามารถบันทึกการยอมรับของคุณได้ กรุณาลองอีกครั้ง",
   "termsReviewAccept": "ตรวจสอบและยอมรับ",
   "termsTabTerms": "ข้อกำหนดในการให้บริการ",
   "termsTabPrivacy": "นโยบายความเป็นส่วนตัว",
-  "termsAgreeCheckbox": "ฉันได้อ่านและยอมรับข้อกำหนดในการให้บริการและนโยบายความเป็นส่วนตัว",
   "termsAcceptContinue": "ยอมรับและดำเนินการต่อ",
   "folderSearchHint": "ค้นหาในโฟลเดอร์...",
   "folderEmptyTitle": "ไม่มีโน้ตในโฟลเดอร์นี้",
@@ -817,9 +815,6 @@
   "obWhatsNewFoldersTitle": "โฟลเดอร์มีสีสัน",
   "obWhatsNewFoldersBody": "ทุกโฟลเดอร์มีสีพาสเทลของตัวเอง ช่วยให้มองหาเจอได้ในพริบตา",
   "obWhatsNewCta": "เข้าใจแล้ว",
-  "auTermsTitle": "ก่อน[[เริ่มต้น]]",
-  "auTermsBody": "โปรดอ่านวิธีที่ Pinpoint จัดการโน้ตและข้อมูลของคุณ",
-  "auTermsAgree": "ฉันยอมรับ",
   "auReadyTitle": "สมุดของคุณ[[พร้อมแล้ว]]",
   "auReadyBody": "ลงชื่อเข้าใช้เพื่อสำรองโน้ตและซิงค์ข้ามอุปกรณ์ของคุณ",
   "auDecryptionErrorsBody": "{count, plural, other{ถอดรหัสโน้ตไม่ได้ {count} รายการ ซึ่งมักหมายความว่าคีย์เข้ารหัสไม่ถูกต้องหรือเสียหาย}}",
@@ -1138,5 +1133,8 @@
   "nudgeTitle": "มีอะไรจะเพิ่มไหม",
   "nudgeBody": "โน้ตของคุณรออยู่ใน Pinpoint",
   "authContinueWithoutAccount": "ดำเนินการต่อโดยไม่มีบัญชี",
-  "authGuestHint": "โน้ตของคุณจะอยู่ในโทรศัพท์เครื่องนี้จนกว่าคุณจะลงชื่อเข้าใช้"
+  "authGuestHint": "โน้ตของคุณจะอยู่ในโทรศัพท์เครื่องนี้จนกว่าคุณจะลงชื่อเข้าใช้",
+  "obConsentLine": "เมื่อดำเนินการต่อ แสดงว่าคุณยอมรับ{terms}และ{privacy}",
+  "obConsentTerms": "ข้อกำหนด",
+  "obConsentPrivacy": "นโยบายความเป็นส่วนตัว"
 }

@@ -39,6 +39,13 @@ void main() {
     'verification_failed': (c) => c.trackVerificationFailed(
         productId: 'p', reason: 'verification_rejected'),
     'restore_purchase_initiated': (c) => c.trackRestorePurchaseInitiated(),
+    // First run
+    'onboarding_complete': (c) => c.trackOnboardingComplete(),
+    'onboarding_choice': (c) => c.trackOnboardingChoice(choice: 'get_started'),
+    'terms_accepted': (c) => c.trackTermsAccepted(method: 'inline'),
+    'guest_started': (c) => c.trackGuestStarted(source: 'onboarding'),
+    'guest_converted': (c) =>
+        c.trackGuestConverted(method: 'google', entry: 'home_banner'),
   };
 
   test('the recording fake emits exactly what LoggerAnalyticsClient emits',
@@ -85,6 +92,10 @@ void main() {
       'reason',
       'source',
       'platform',
+      'choice',
+      'method',
+      'entry',
+      'first_run_flow',
     ]) {
       expect(source, contains("'$key'"));
       expect(logger, contains("'$key'"));

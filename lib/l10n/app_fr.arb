@@ -591,11 +591,9 @@
   "unlockAction": "Déverrouiller",
   "unlockUsePassphrase": "Utiliser la phrase secrète",
   "unlockForgot": "Phrase secrète oubliée ? Utilisez le code de récupération",
-  "termsSaveFailed": "Impossible d’enregistrer votre acceptation. Veuillez réessayer.",
   "termsReviewAccept": "Lire et accepter",
   "termsTabTerms": "Conditions d’utilisation",
   "termsTabPrivacy": "Politique de confidentialité",
-  "termsAgreeCheckbox": "J’ai lu et j’accepte les Conditions d’utilisation et la Politique de confidentialité",
   "termsAcceptContinue": "Accepter et continuer",
   "folderSearchHint": "Rechercher dans le dossier...",
   "folderEmptyTitle": "Aucune note dans ce dossier",
@@ -817,9 +815,6 @@
   "obWhatsNewFoldersTitle": "Des dossiers en couleur",
   "obWhatsNewFoldersBody": "Chaque dossier a sa propre couleur pastel pour le repérer d’un coup d’œil.",
   "obWhatsNewCta": "Compris",
-  "auTermsTitle": "Avant de [[commencer]]",
-  "auTermsBody": "Découvrez comment Pinpoint traite vos notes et vos données.",
-  "auTermsAgree": "J’accepte",
   "auReadyTitle": "Votre carnet est [[prêt]]",
   "auReadyBody": "Connectez-vous pour sauvegarder vos notes et les synchroniser sur tous vos appareils.",
   "auDecryptionErrorsBody": "{count, plural, =1{Impossible de déchiffrer 1 note. Cela signifie généralement que la clé de chiffrement est incorrecte ou corrompue.} other{Impossible de déchiffrer {count} notes. Cela signifie généralement que la clé de chiffrement est incorrecte ou corrompue.}}",
@@ -1138,5 +1133,8 @@
   "nudgeTitle": "Quelque chose à ajouter ?",
   "nudgeBody": "Vos notes vous attendent dans Pinpoint.",
   "authContinueWithoutAccount": "Continuer sans compte",
-  "authGuestHint": "Vos notes restent sur ce téléphone jusqu’à votre connexion."
+  "authGuestHint": "Vos notes restent sur ce téléphone jusqu’à votre connexion.",
+  "obConsentLine": "En continuant, vous acceptez les {terms} et la {privacy}",
+  "obConsentTerms": "Conditions",
+  "obConsentPrivacy": "Politique de confidentialité"
 }

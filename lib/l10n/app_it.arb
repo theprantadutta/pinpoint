@@ -591,11 +591,9 @@
   "unlockAction": "Sblocca",
   "unlockUsePassphrase": "Usa invece la passphrase",
   "unlockForgot": "Hai dimenticato la passphrase? Usa il codice di ripristino",
-  "termsSaveFailed": "Impossibile salvare la tua accettazione. Riprova.",
   "termsReviewAccept": "Leggi e accetta",
   "termsTabTerms": "Termini di servizio",
   "termsTabPrivacy": "Informativa sulla privacy",
-  "termsAgreeCheckbox": "Ho letto e accetto i Termini di servizio e l’Informativa sulla privacy",
   "termsAcceptContinue": "Accetta e continua",
   "folderSearchHint": "Cerca nella cartella...",
   "folderEmptyTitle": "Nessuna nota in questa cartella",
@@ -817,9 +815,6 @@
   "obWhatsNewFoldersTitle": "Cartelle a colori",
   "obWhatsNewFoldersBody": "Ogni cartella ha il suo colore pastello, così la trovi a colpo d’occhio.",
   "obWhatsNewCta": "Ho capito",
-  "auTermsTitle": "Prima di [[iniziare]]",
-  "auTermsBody": "Leggi come Pinpoint gestisce le tue note e i tuoi dati.",
-  "auTermsAgree": "Accetto",
   "auReadyTitle": "Il tuo taccuino è [[pronto]]",
   "auReadyBody": "Accedi per eseguire il backup delle note e sincronizzarle tra i tuoi dispositivi.",
   "auDecryptionErrorsBody": "{count, plural, =1{Impossibile decifrare 1 nota. Di solito significa che la chiave di crittografia è errata o danneggiata.} other{Impossibile decifrare {count} note. Di solito significa che la chiave di crittografia è errata o danneggiata.}}",
@@ -1138,5 +1133,8 @@
   "nudgeTitle": "Qualcosa da aggiungere?",
   "nudgeBody": "Le tue note ti aspettano su Pinpoint.",
   "authContinueWithoutAccount": "Continua senza account",
-  "authGuestHint": "Le tue note restano su questo telefono finché non accedi."
+  "authGuestHint": "Le tue note restano su questo telefono finché non accedi.",
+  "obConsentLine": "Continuando accetti i {terms} e l’{privacy}",
+  "obConsentTerms": "Termini",
+  "obConsentPrivacy": "Informativa sulla privacy"
 }

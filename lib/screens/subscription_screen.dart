@@ -7,6 +7,7 @@ import 'package:pinpoint/components/paywall/paywall_widgets.dart';
 import 'package:pinpoint/design_system/design_system.dart';
 import 'package:pinpoint/service_locators/init_service_locators.dart';
 import 'package:pinpoint/services/analytics/analytics_facade.dart';
+import 'package:pinpoint/services/analytics/analytics_client.dart';
 import 'package:pinpoint/screens/auth_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
 import 'package:pinpoint/services/backend_auth_service.dart';
@@ -94,7 +95,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       cancelLabel: l10n.commonCancel,
       destructive: false,
     );
-    if (signIn && mounted) context.push(AuthScreen.kRouteName);
+    if (signIn && mounted) {
+      context.push(AuthScreen.locationFrom(AuthEntry.paywall));
+    }
   }
 
   /// The restored purchase is someone else's — the account that bought it.
@@ -404,7 +407,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   /// Opens the bundled Terms of Service & Privacy Policy in read-only mode.
   void _openLegal() {
-    context.push(TermsAcceptanceScreen.kRouteName, extra: true);
+    context.push(TermsAcceptanceScreen.kRouteName);
   }
 
   /// Auto-renewable subscription disclosure + Terms/Privacy links.

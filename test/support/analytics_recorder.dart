@@ -166,7 +166,32 @@ class RecordingAnalyticsFacade extends AnalyticsFacade {
       _rec('first_note_created', {'note_type': noteType});
 
   @override
-  Future<void> trackGuestStarted() async => _rec('guest_started');
+  Future<void> trackGuestStarted({required String source}) async =>
+      _rec('guest_started', {'source': source});
+
+  // --- First run ----------------------------------------------------------
+
+  @override
+  Future<void> trackOnboardingComplete() async => _rec('onboarding_complete');
+
+  @override
+  Future<void> trackTermsAccepted({required String method}) async =>
+      _rec('terms_accepted', {'method': method});
+
+  @override
+  Future<void> trackOnboardingChoice({required String choice}) async =>
+      _rec('onboarding_choice', {'choice': choice});
+
+  @override
+  Future<void> trackGuestConverted({
+    required String method,
+    required String entry,
+  }) async =>
+      _rec('guest_converted', {'method': method, 'entry': entry});
+
+  @override
+  Future<void> setFirstRunFlow(String flow) async =>
+      _rec('user_property', {'first_run_flow': flow});
 
   @override
   Future<void> trackCaptureOpened({required String source}) async =>

@@ -10,6 +10,31 @@ String searchLengthBucket(int queryLength) {
   return '26+';
 }
 
+/// Where someone opened the sign-in screen from: the `entry` parameter of
+/// `guest_converted`, carried on the route as `?from=`. A closed set, so a
+/// route parameter can never widen into a free-text channel; anything else
+/// reads as [other].
+abstract final class AuthEntry {
+  static const String homeBanner = 'home_banner';
+  static const String paywall = 'paywall';
+  static const String settings = 'settings';
+  static const String backupScreen = 'backup_screen';
+  static const String onboardingLogIn = 'onboarding_log_in';
+  static const String other = 'other';
+
+  static const Set<String> values = {
+    homeBanner,
+    paywall,
+    settings,
+    backupScreen,
+    onboardingLogIn,
+    other,
+  };
+
+  /// [raw] if it is one of [values], otherwise [other].
+  static String parse(String? raw) => values.contains(raw) ? raw! : other;
+}
+
 /// Abstract interface for analytics tracking.
 /// Each method corresponds to a typed event with specific parameters.
 abstract class AnalyticsClient {
@@ -22,9 +47,25 @@ abstract class AnalyticsClient {
   // User properties
   Future<void> setUserId(String? userId);
 
-  // Onboarding
+  // Onboarding and first run (docs/analytics-events.md, "First run")
   Future<void> trackOnboardingComplete();
-  Future<void> trackTermsAccepted();
+
+  /// [method] is `inline`: the onboarding's "By continuing you agree…" line.
+  Future<void> trackTermsAccepted({required String method});
+
+  /// An onboarding button was tapped. [choice] is `get_started` or `log_in`.
+  Future<void> trackOnboardingChoice({required String choice});
+
+  /// A guest finished signing in or signing up. [method] is `google`, `apple`
+  /// or `email`; [entry] is one of [AuthEntry]'s values.
+  Future<void> trackGuestConverted({
+    required String method,
+    required String entry,
+  });
+
+  /// Sets the `first_run_flow` user property, so cohorts that went through a
+  /// given first run can be compared. [flow] is `write_first`.
+  Future<void> setFirstRunFlow(String flow);
 
   // Screen views
   Future<void> trackScreenView({required String screenName});
@@ -33,7 +74,8 @@ abstract class AnalyticsClient {
   Future<void> trackNoteCreated({required String noteType});
   Future<void> trackFirstNoteCreated({required String noteType});
 
-  Future<void> trackGuestStarted();
+  /// [source] is `onboarding` or `auth_screen`.
+  Future<void> trackGuestStarted({required String source});
 
   /// [source] is `share` or `shortcut`.
   Future<void> trackCaptureOpened({required String source});

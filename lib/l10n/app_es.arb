@@ -591,11 +591,9 @@
   "unlockAction": "Desbloquear",
   "unlockUsePassphrase": "Usar la contraseña",
   "unlockForgot": "¿Olvidaste la contraseña? Usa el código de recuperación",
-  "termsSaveFailed": "No se pudo guardar tu aceptación. Inténtalo de nuevo.",
   "termsReviewAccept": "Revisar y aceptar",
   "termsTabTerms": "Términos del servicio",
   "termsTabPrivacy": "Política de privacidad",
-  "termsAgreeCheckbox": "He leído y acepto los Términos del servicio y la Política de privacidad",
   "termsAcceptContinue": "Aceptar y continuar",
   "folderSearchHint": "Buscar en la carpeta...",
   "folderEmptyTitle": "No hay notas en esta carpeta",
@@ -817,9 +815,6 @@
   "obWhatsNewFoldersTitle": "Carpetas con color",
   "obWhatsNewFoldersBody": "Cada carpeta tiene su propio tono pastel para que la encuentres de un vistazo.",
   "obWhatsNewCta": "Entendido",
-  "auTermsTitle": "Antes de [[empezar]]",
-  "auTermsBody": "Lee cómo trata Pinpoint tus notas y tus datos.",
-  "auTermsAgree": "Acepto",
   "auReadyTitle": "Tu cuaderno está [[listo]]",
   "auReadyBody": "Inicia sesión para hacer una copia de seguridad de tus notas y sincronizarlas entre tus dispositivos.",
   "auDecryptionErrorsBody": "{count, plural, =1{No se pudo descifrar 1 nota. Esto suele significar que la clave de cifrado es incorrecta o está dañada.} other{No se pudieron descifrar {count} notas. Esto suele significar que la clave de cifrado es incorrecta o está dañada.}}",
@@ -1138,5 +1133,8 @@
   "nudgeTitle": "¿Algo que añadir?",
   "nudgeBody": "Tus notas te esperan en Pinpoint.",
   "authContinueWithoutAccount": "Continuar sin cuenta",
-  "authGuestHint": "Tus notas se quedan en este teléfono hasta que inicies sesión."
+  "authGuestHint": "Tus notas se quedan en este teléfono hasta que inicies sesión.",
+  "obConsentLine": "Al continuar, aceptas los {terms} y la {privacy}",
+  "obConsentTerms": "Términos",
+  "obConsentPrivacy": "Política de privacidad"
 }

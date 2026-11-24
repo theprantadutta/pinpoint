@@ -32,8 +32,27 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
       _analytics.logEvent(name: 'onboarding_complete');
 
   @override
-  Future<void> trackTermsAccepted() =>
-      _analytics.logEvent(name: 'terms_accepted');
+  Future<void> trackTermsAccepted({required String method}) =>
+      _analytics.logEvent(
+          name: 'terms_accepted', parameters: {'method': method});
+
+  @override
+  Future<void> trackOnboardingChoice({required String choice}) =>
+      _analytics.logEvent(
+          name: 'onboarding_choice', parameters: {'choice': choice});
+
+  @override
+  Future<void> trackGuestConverted({
+    required String method,
+    required String entry,
+  }) =>
+      _analytics.logEvent(
+          name: 'guest_converted',
+          parameters: {'method': method, 'entry': entry});
+
+  @override
+  Future<void> setFirstRunFlow(String flow) =>
+      _analytics.setUserProperty(name: 'first_run_flow', value: flow);
 
   @override
   Future<void> trackScreenView({required String screenName}) =>
@@ -47,8 +66,9 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
           name: 'first_note_created', parameters: {'note_type': noteType});
 
   @override
-  Future<void> trackGuestStarted() =>
-      _analytics.logEvent(name: 'guest_started');
+  Future<void> trackGuestStarted({required String source}) =>
+      _analytics.logEvent(
+          name: 'guest_started', parameters: {'source': source});
 
   @override
   Future<void> trackCaptureOpened({required String source}) =>

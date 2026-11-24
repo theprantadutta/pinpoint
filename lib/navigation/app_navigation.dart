@@ -20,6 +20,7 @@ import 'package:pinpoint/screens/my_folders_screen.dart';
 import 'package:pinpoint/screens/auth_screen.dart';
 import 'package:pinpoint/screens/account_linking_screen.dart';
 import 'package:pinpoint/screens/terms_acceptance_screen.dart';
+import 'package:pinpoint/services/analytics/analytics_client.dart';
 import 'package:pinpoint/screens/sync_debug_screen.dart';
 import 'package:pinpoint/screens/unlock_screen.dart';
 import 'package:pinpoint/screens/encryption_settings_screen.dart';
@@ -78,23 +79,20 @@ class AppNavigation {
         builder: (context, state) => const OnboardingScreen(),
       ),
 
-      /// Terms Acceptance Screen
+      /// Terms & Privacy reader (view only). `?doc=privacy` opens the
+      /// Privacy Policy tab.
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: TermsAcceptanceScreen.kRouteName,
         name: "Terms Acceptance",
-        pageBuilder: (context, state) {
-          final isViewOnly = state.extra as bool? ?? false;
-          return NoTransitionPage(
-            key: state.pageKey,
-            child: TermsAcceptanceScreen(
-              isViewOnly: isViewOnly,
-              startInSignUp: state
-                      .uri.queryParameters[TermsAcceptanceScreen.signUpQuery] ==
-                  TermsAcceptanceScreen.signUpValue,
-            ),
-          );
-        },
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: TermsAcceptanceScreen(
+            openPrivacy: state.uri.queryParameters[
+                    TermsAcceptanceScreen.docQuery] ==
+                TermsAcceptanceScreen.privacyValue,
+          ),
+        ),
       ),
 
       /// Authentication Screen
@@ -106,8 +104,10 @@ class AppNavigation {
           key: state.pageKey,
           child: AuthScreen(
             startInSignUp:
-                state.uri.queryParameters[TermsAcceptanceScreen.signUpQuery] ==
-                    TermsAcceptanceScreen.signUpValue,
+                state.uri.queryParameters[AuthScreen.signUpQuery] ==
+                    AuthScreen.signUpValue,
+            entry: AuthEntry.parse(
+                state.uri.queryParameters[AuthScreen.entryQuery]),
           ),
         ),
       ),

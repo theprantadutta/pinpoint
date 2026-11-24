@@ -2639,10 +2639,6 @@
   "@unlockForgot": {
     "description": "Link switching to recovery code entry."
   },
-  "termsSaveFailed": "Failed to save your acceptance. Please try again.",
-  "@termsSaveFailed": {
-    "description": "Error when recording terms acceptance fails."
-  },
   "termsReviewAccept": "Review & Accept",
   "@termsReviewAccept": {
     "description": "Screen title when the user must accept the terms."
@@ -2654,10 +2650,6 @@
   "termsTabPrivacy": "Privacy Policy",
   "@termsTabPrivacy": {
     "description": "Tab showing the privacy policy."
-  },
-  "termsAgreeCheckbox": "I have read and agree to the Terms of Service and Privacy Policy",
-  "@termsAgreeCheckbox": {
-    "description": "Checkbox the user must tick to continue."
   },
   "termsAcceptContinue": "Accept and Continue",
   "@termsAcceptContinue": {
@@ -3715,18 +3707,6 @@
   "obWhatsNewCta": "Got it",
   "@obWhatsNewCta": {
     "description": "Button that closes the one-time 'What's new' sheet."
-  },
-  "auTermsTitle": "Before you [[start]]",
-  "@auTermsTitle": {
-    "description": "Headline of the terms-and-privacy acceptance screen shown once before sign-in. The word inside [[ ]] gets a yellow marker highlight; keep the brackets around the emphasised word."
-  },
-  "auTermsBody": "Please read how Pinpoint handles your notes and your data.",
-  "@auTermsBody": {
-    "description": "Line under the headline of the terms-and-privacy acceptance screen. 'Pinpoint' is the app name, do not translate."
-  },
-  "auTermsAgree": "I agree",
-  "@auTermsAgree": {
-    "description": "Primary button on the terms-and-privacy acceptance screen. Enabled once the agreement checkbox is ticked; accepts the terms and continues to sign-in."
   },
   "auReadyTitle": "Your notebook is [[ready]]",
   "@auReadyTitle": {
@@ -5382,5 +5362,21 @@
   "authGuestHint": "Your notes stay on this phone until you sign in.",
   "@authGuestHint": {
     "description": "Line under that button. Says notes are kept only on this phone until the person signs in."
+  },
+  "obConsentLine": "By continuing you agree to the {terms} and {privacy}",
+  "@obConsentLine": {
+    "description": "One line under the two onboarding buttons (Log in / Get started) on the first screen of the app: tapping either button means agreeing. {terms} and {privacy} are replaced by the tappable link labels obConsentTerms and obConsentPrivacy, which open the Terms of Service and the Privacy Policy. Keep both placeholders, in whatever order reads naturally.",
+    "placeholders": {
+      "terms": { "type": "String", "example": "Terms" },
+      "privacy": { "type": "String", "example": "Privacy Policy" }
+    }
+  },
+  "obConsentTerms": "Terms",
+  "@obConsentTerms": {
+    "description": "Link label inside obConsentLine on the first onboarding screen; tapping it opens the Terms of Service. Short form of 'Terms of Service', written to fit the sentence."
+  },
+  "obConsentPrivacy": "Privacy Policy",
+  "@obConsentPrivacy": {
+    "description": "Link label inside obConsentLine on the first onboarding screen; tapping it opens the Privacy Policy. Written to fit the sentence."
   }
 }

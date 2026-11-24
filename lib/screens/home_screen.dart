@@ -22,6 +22,7 @@ import '../navigation/app_shell_scope.dart';
 import '../navigation/new_note.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
+import '../services/analytics/analytics_client.dart';
 import '../services/api_service.dart';
 import '../services/encryption_service.dart';
 import '../services/subscription_service.dart';
@@ -308,7 +309,8 @@ class _HomeScreenState extends State<HomeScreen>
                           padding: const EdgeInsets.fromLTRB(SketchSpace.screenX,
                               14, SketchSpace.screenX, 0),
                           child: SettingsSignInCard(
-                            onSignIn: () => context.push(AuthScreen.kRouteName),
+                            onSignIn: () => context.push(
+                                AuthScreen.locationFrom(AuthEntry.homeBanner)),
                           ),
                         )
                       : const SizedBox.shrink(),
