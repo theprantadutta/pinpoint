@@ -28,7 +28,6 @@ import '../services/subscription_service.dart';
 import '../services/premium_service.dart';
 import '../services/firebase_notification_service.dart';
 import '../services/reminder_sync_service.dart';
-import '../services/app_review_service.dart';
 import '../sync/sync_manager.dart';
 import '../sync/api_sync_service.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
@@ -99,9 +98,8 @@ class _HomeScreenState extends State<HomeScreen>
     // it does not compete with the first sync for the connection.
     DriveBackupService().scheduleAutomaticRun();
 
-    // Maybe ask for an in-app review (self-gated: only after enough returning
-    // launches and past the cooldown; the OS decides if the prompt shows).
-    AppReviewService().maybeRequestReview();
+    // The in-app review is no longer asked for here, on a cold start: the
+    // shell asks after a new note is saved (BottomNavigationLayout).
   }
 
   /// Initialize Subscription and Premium services

@@ -39,6 +39,15 @@ void main() {
     'verification_failed': (c) => c.trackVerificationFailed(
         productId: 'p', reason: 'verification_rejected'),
     'restore_purchase_initiated': (c) => c.trackRestorePurchaseInitiated(),
+    'notification_prompt_shown': (c) =>
+        c.trackNotificationPromptShown(attempt: 'first', trigger: 'note_saved'),
+    'notification_permission_result': (c) =>
+        c.trackNotificationPermissionResult(granted: true, outcome: 'enabled'),
+    'reminder_permission_requested': (c) =>
+        c.trackReminderPermissionRequested(granted: false),
+    'review_prompt_requested': (c) =>
+        c.trackReviewPromptRequested(notesBucket: '5-9'),
+    'nudge_scheduled': (c) => c.trackNudgeScheduled(),
   };
 
   test('the recording fake emits exactly what LoggerAnalyticsClient emits',
@@ -85,6 +94,11 @@ void main() {
       'reason',
       'source',
       'platform',
+      'attempt',
+      'trigger',
+      'granted',
+      'outcome',
+      'notes_bucket',
     ]) {
       expect(source, contains("'$key'"));
       expect(logger, contains("'$key'"));

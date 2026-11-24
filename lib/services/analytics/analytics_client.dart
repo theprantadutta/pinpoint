@@ -162,8 +162,25 @@ abstract class AnalyticsClient {
   // Premium
   Future<void> trackPremiumGateShown({required String feature});
 
-  // Notifications
-  Future<void> trackNotificationPermissionResult({required bool granted});
+  // Notifications and rating. Closed-set values only, never content.
+  /// [attempt]: 'first' | 'reask'. [trigger]: 'note_saved'.
+  Future<void> trackNotificationPromptShown(
+      {required String attempt, required String trigger});
+
+  /// [outcome]: 'enabled' | 'not_now' | 'dismissed'. [granted]: what the
+  /// system permission dialog answered (false when it was never shown).
+  Future<void> trackNotificationPermissionResult(
+      {required bool granted, required String outcome});
+
+  /// The reminder editor asked the system for notification permission.
+  Future<void> trackReminderPermissionRequested({required bool granted});
+
+  /// The review gate passed and `requestReview()` was called.
+  /// [notesBucket]: '5-9' | '10-24' | '25+'.
+  Future<void> trackReviewPromptRequested({required String notesBucket});
+
+  /// The opt-in come-back nudge was scheduled.
+  Future<void> trackNudgeScheduled();
 
   // Subscription
   Future<void> trackRestorePurchaseInitiated();

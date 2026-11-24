@@ -229,8 +229,26 @@ class LoggerAnalyticsClient implements AnalyticsClient {
       _log('premium_gate_shown', {'feature': feature});
 
   @override
-  Future<void> trackNotificationPermissionResult({required bool granted}) async =>
-      _log('notification_permission_result', {'granted': granted});
+  Future<void> trackNotificationPromptShown(
+          {required String attempt, required String trigger}) async =>
+      _log('notification_prompt_shown', {'attempt': attempt, 'trigger': trigger});
+
+  @override
+  Future<void> trackNotificationPermissionResult(
+          {required bool granted, required String outcome}) async =>
+      _log('notification_permission_result',
+          {'granted': '$granted', 'outcome': outcome});
+
+  @override
+  Future<void> trackReminderPermissionRequested({required bool granted}) async =>
+      _log('reminder_permission_requested', {'granted': '$granted'});
+
+  @override
+  Future<void> trackReviewPromptRequested({required String notesBucket}) async =>
+      _log('review_prompt_requested', {'notes_bucket': notesBucket});
+
+  @override
+  Future<void> trackNudgeScheduled() async => _log('nudge_scheduled');
 
   @override
   Future<void> trackRestorePurchaseInitiated() async =>

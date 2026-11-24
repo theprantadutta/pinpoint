@@ -1613,6 +1613,29 @@ class DriftNoteService {
     yield* database.tableUpdates().map((_) {});
   }
 
+  /// Notes of every type that are not in the trash (archived ones count).
+  /// One COUNT per table, for the "has this person succeeded yet" gates of
+  /// the notification ask and the review prompt.
+  static Future<int> countNotes() async {
+    final db = getIt<AppDatabase>();
+    Future<int> count(TableInfo table, GeneratedColumn<bool> isDeleted) async {
+      final n = countAll();
+      final row = await (db.selectOnly(table)
+            ..addColumns([n])
+            ..where(isDeleted.equals(false)))
+          .getSingle();
+      return row.read(n) ?? 0;
+    }
+
+    final counts = await Future.wait([
+      count(db.textNotesV2, db.textNotesV2.isDeleted),
+      count(db.voiceNotesV2, db.voiceNotesV2.isDeleted),
+      count(db.todoListNotesV2, db.todoListNotesV2.isDeleted),
+      count(db.reminderNotesV2, db.reminderNotesV2.isDeleted),
+    ]);
+    return counts.fold<int>(0, (a, b) => a + b);
+  }
+
   static Future<bool> hasAnyNote() async {
     final notes = await watchNotesWithDetailsV2(includeArchived: true).first;
     return notes.isNotEmpty;
