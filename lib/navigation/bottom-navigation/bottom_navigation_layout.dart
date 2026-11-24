@@ -58,6 +58,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
         .then((prefs) => AppReviewService.recordFirstUse(prefs))
         .catchError((Object _) => DateTime.now()));
     NoteSavedMoment.pending.addListener(_maybeFollowUp);
+    NoteSavedMoment.editorClosed.addListener(_maybeFollowUp);
     WidgetsBinding.instance.addPostFrameCallback((_) => _runIntros());
   }
 
@@ -77,6 +78,7 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
   void dispose() {
     CaptureInbox.pending.removeListener(_openCapture);
     NoteSavedMoment.pending.removeListener(_maybeFollowUp);
+    NoteSavedMoment.editorClosed.removeListener(_maybeFollowUp);
     _routerDelegate?.removeListener(_maybeFollowUp);
     super.dispose();
   }

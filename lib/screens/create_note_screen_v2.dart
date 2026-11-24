@@ -315,6 +315,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
 
   @override
   void dispose() {
+    if (!widget.embedded) NoteSavedMoment.editorWasClosed();
     WidgetsBinding.instance.removeObserver(this);
     _pageScrollController.dispose();
     _autoSaveTimer?.cancel();
