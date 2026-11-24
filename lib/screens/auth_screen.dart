@@ -1,4 +1,6 @@
 import 'package:pinpoint/services/guest_mode.dart';
+import 'package:pinpoint/services/analytics/analytics_client.dart';
+import 'package:pinpoint/services/first_run.dart';
 import 'dart:io' show Platform;
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -38,15 +40,30 @@ const int kMinPasswordLength = 6;
 class AuthScreen extends StatefulWidget {
   static const String kRouteName = '/auth';
 
-  /// The query that opens this screen in sign-up mode (see
-  /// [TermsAcceptanceScreen.signUpLocation]).
-  static const String signUpLocation = '$kRouteName?mode=signup';
+  /// The query that opens this screen in sign-up mode.
+  static const String signUpQuery = 'mode';
+  static const String signUpValue = 'signup';
+  static const String signUpLocation = '$kRouteName?$signUpQuery=$signUpValue';
 
-  const AuthScreen({super.key, this.startInSignUp = false});
+  /// The query naming where the screen was opened from (an [AuthEntry]
+  /// value), reported with `guest_converted`.
+  static const String entryQuery = 'from';
 
-  /// Open with the email form in sign-up mode — the onboarding's
-  /// "Get started" path. Social sign-in is the same either way.
+  /// This screen's location, opened from [entry] (an [AuthEntry] value).
+  static String locationFrom(String entry) => '$kRouteName?$entryQuery=$entry';
+
+  const AuthScreen({
+    super.key,
+    this.startInSignUp = false,
+    this.entry = AuthEntry.other,
+  });
+
+  /// Open with the email form in sign-up mode. Social sign-in is the same
+  /// either way.
   final bool startInSignUp;
+
+  /// Where the screen was opened from: one of [AuthEntry]'s values.
+  final String entry;
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -58,6 +75,15 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
 
   late bool _isLogin = !widget.startInSignUp;
+
+  /// Read when the screen opens, not lazily: signing in ends guest mode.
+  late final GuestConversion _guestConversion;
+
+  @override
+  void initState() {
+    super.initState();
+    _guestConversion = GuestConversion.now(entry: widget.entry);
+  }
   bool _isGoogleLoading = false;
   bool _isAppleLoading = false;
   bool _isEmailLoading = false;
@@ -404,8 +430,14 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _continueAsGuest() async {
-    await GuestMode.start();
-    getIt<AnalyticsFacade>().trackGuestStarted();
+    // A guest who opened sign-in from the banner and changed their mind is
+    // already a guest: no second guest_started.
+    if (GuestMode.isGuest) {
+      if (mounted) context.go(HomeScreen.kRouteName);
+      return;
+    }
+    await FirstRun.startAsGuest(getIt<AnalyticsFacade>(),
+        source: FirstRun.guestFromAuthScreen);
     if (mounted) context.go(HomeScreen.kRouteName);
   }
 
@@ -496,6 +528,7 @@ class _AuthScreenState extends State<AuthScreen> {
         await backendAuthService.authenticateWithGoogle(firebaseToken);
       }
       debugPrint('✅ [$tag] Backend authentication successful');
+      _guestConversion.signedIn(getIt<AnalyticsFacade>(), method: method);
 
       // Register FCM token now that the user is authenticated.
       debugPrint('🔵 [$tag] Registering FCM token...');
@@ -647,6 +680,7 @@ class _AuthScreenState extends State<AuthScreen> {
           _passwordController.text,
         );
       }
+      _guestConversion.signedIn(getIt<AnalyticsFacade>(), method: 'email');
 
       // Register FCM token with backend now that user is authenticated
       try {

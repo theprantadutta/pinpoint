@@ -5,6 +5,10 @@ import 'notification_service.dart';
 /// One local notification, two days out at 10:00, for someone who asked for
 /// it on the notification sheet. It says nothing about their notes, is never
 /// repeated, and is dropped once they come back by themselves.
+///
+/// The sheet now appears only once someone has saved a second note, so the
+/// nudge always goes to a person who writes, two days after they asked for it
+/// (day 3 at the earliest for someone who wrote both notes on day one).
 class ComeBackNudge {
   ComeBackNudge._();
 

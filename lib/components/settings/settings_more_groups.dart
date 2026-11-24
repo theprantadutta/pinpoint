@@ -283,10 +283,7 @@ class _SettingsHelpGroupState extends State<SettingsHelpGroup> {
           label: l10n.stTermsPrivacy,
           onTap: () {
             PinpointHaptics.medium();
-            AppNavigation.router.push(
-              TermsAcceptanceScreen.kRouteName,
-              extra: true, // isViewOnly = true
-            );
+            AppNavigation.router.push(TermsAcceptanceScreen.kRouteName);
           },
         ),
         SketchRow(

@@ -430,6 +430,10 @@ class LogoutService {
         // database cleared below. Kept, they stopped the default folders being
         // recreated for the next account, and every note save then failed.)
         'notification_permission_requested',
+        // The rest of this device's prompt history, so signing out does not
+        // reset a "not now" or the review cooldown.
+        'notification_prompt_deferred_at_ms',
+        'review_first_use_ms', 'review_last_prompt_ms',
         // This install's identity and its store purchases. A purchase made
         // on this phone belongs to the phone's store account, not to the
         // Pinpoint account that just signed out.

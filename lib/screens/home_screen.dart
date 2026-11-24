@@ -22,13 +22,13 @@ import '../navigation/app_shell_scope.dart';
 import '../navigation/new_note.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
+import '../services/analytics/analytics_client.dart';
 import '../services/api_service.dart';
 import '../services/encryption_service.dart';
 import '../services/subscription_service.dart';
 import '../services/premium_service.dart';
 import '../services/firebase_notification_service.dart';
 import '../services/reminder_sync_service.dart';
-import '../services/app_review_service.dart';
 import '../sync/sync_manager.dart';
 import '../sync/api_sync_service.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
@@ -99,9 +99,8 @@ class _HomeScreenState extends State<HomeScreen>
     // it does not compete with the first sync for the connection.
     DriveBackupService().scheduleAutomaticRun();
 
-    // Maybe ask for an in-app review (self-gated: only after enough returning
-    // launches and past the cooldown; the OS decides if the prompt shows).
-    AppReviewService().maybeRequestReview();
+    // The in-app review is no longer asked for here, on a cold start: the
+    // shell asks after a new note is saved (BottomNavigationLayout).
   }
 
   /// Initialize Subscription and Premium services
@@ -308,7 +307,8 @@ class _HomeScreenState extends State<HomeScreen>
                           padding: const EdgeInsets.fromLTRB(SketchSpace.screenX,
                               14, SketchSpace.screenX, 0),
                           child: SettingsSignInCard(
-                            onSignIn: () => context.push(AuthScreen.kRouteName),
+                            onSignIn: () => context.push(
+                                AuthScreen.locationFrom(AuthEntry.homeBanner)),
                           ),
                         )
                       : const SizedBox.shrink(),

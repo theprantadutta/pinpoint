@@ -591,11 +591,9 @@
   "unlockAction": "আনলক",
   "unlockUsePassphrase": "পরিবর্তে পাসফ্রেজ ব্যবহার করুন",
   "unlockForgot": "পাসফ্রেজ ভুলে গেছেন? পুনরুদ্ধার কোড ব্যবহার করুন",
-  "termsSaveFailed": "আপনার সম্মতি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।",
   "termsReviewAccept": "পড়ুন ও সম্মত হন",
   "termsTabTerms": "পরিষেবার শর্তাবলি",
   "termsTabPrivacy": "গোপনীয়তা নীতি",
-  "termsAgreeCheckbox": "আমি পরিষেবার শর্তাবলি ও গোপনীয়তা নীতি পড়েছি এবং সম্মত আছি",
   "termsAcceptContinue": "সম্মত হয়ে এগিয়ে যান",
   "folderSearchHint": "ফোল্ডারে খুঁজুন...",
   "folderEmptyTitle": "এই ফোল্ডারে কোনো নোট নেই",
@@ -817,9 +815,6 @@
   "obWhatsNewFoldersTitle": "রঙিন ফোল্ডার",
   "obWhatsNewFoldersBody": "প্রতিটি ফোল্ডার পায় নিজস্ব প্যাস্টেল রং, এক নজরেই চিনে নিতে পারবেন।",
   "obWhatsNewCta": "বুঝেছি",
-  "auTermsTitle": "[[শুরু]] করার আগে",
-  "auTermsBody": "Pinpoint কীভাবে আপনার নোট ও ডেটা সামলায় তা পড়ে নিন।",
-  "auTermsAgree": "আমি সম্মত",
   "auReadyTitle": "আপনার নোটবুক [[তৈরি]]",
   "auReadyBody": "নোটের ব্যাকআপ রাখতে ও সব ডিভাইসে সিঙ্ক করতে সাইন ইন করুন।",
   "auDecryptionErrorsBody": "{count, plural, one{{count}টি নোট ডিক্রিপ্ট করা যায়নি। সাধারণত এর মানে এনক্রিপশন কী ভুল বা নষ্ট হয়ে গেছে।} other{{count}টি নোট ডিক্রিপ্ট করা যায়নি। সাধারণত এর মানে এনক্রিপশন কী ভুল বা নষ্ট হয়ে গেছে।}}",
@@ -1138,5 +1133,8 @@
   "nudgeTitle": "কিছু যোগ করবেন?",
   "nudgeBody": "আপনার নোটগুলো Pinpoint-এ অপেক্ষা করছে।",
   "authContinueWithoutAccount": "অ্যাকাউন্ট ছাড়াই চালিয়ে যান",
-  "authGuestHint": "সাইন ইন না করা পর্যন্ত আপনার নোট এই ফোনেই থাকবে।"
+  "authGuestHint": "সাইন ইন না করা পর্যন্ত আপনার নোট এই ফোনেই থাকবে।",
+  "obConsentLine": "চালিয়ে গেলে আপনি {terms} ও {privacy} মেনে নিচ্ছেন",
+  "obConsentTerms": "শর্তাবলি",
+  "obConsentPrivacy": "গোপনীয়তা নীতি"
 }

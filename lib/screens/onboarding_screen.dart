@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/gestures.dart';
 import 'package:pinpoint/services/analytics/first_note_event.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,12 +9,19 @@ import '../design_system/design_system.dart';
 import '../service_locators/init_service_locators.dart';
 import '../services/analytics/analytics_facade.dart';
 import '../services/onboarding_version.dart';
+import '../services/analytics/analytics_client.dart';
+import '../services/backend_auth_service.dart';
+import '../services/first_run.dart';
+import 'auth_screen.dart';
+import 'home_screen.dart';
+import 'splash_screen.dart';
 import 'terms_acceptance_screen.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
-/// First-run onboarding: one Sketchbook page, then on to the terms and the
-/// sign-in screen (which is the "Get started" step). Kept to one page because
-/// every screen before the first note loses people.
+/// First-run onboarding: one Sketchbook page. "Get started" opens a blank
+/// note as a guest; "Log in" opens the sign-in screen. The consent line under
+/// both buttons replaces the old terms checkbox screen. Kept to one page
+/// because every screen before the first note loses people (see [FirstRun]).
 ///
 /// Shown once per [OnboardingVersion]; people who finished an older
 /// onboarding get the one-time What's-new sheet on the home screen instead.
@@ -62,23 +70,69 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  /// [signUp] picks the mode the sign-in screen opens in: "Get started" is
-  /// for new people, "Log in" for returning ones.
-  Future<void> _completeOnboarding({bool signUp = false}) async {
+  /// Either button is the agreement to the Terms and Privacy Policy (the
+  /// consent line sits under both). "Get started" goes straight to a blank
+  /// note as a guest; "Log in" goes to the sign-in screen.
+  Future<void> _finish({required bool logIn}) async {
     if (_finishing) return;
     _finishing = true;
+    try {
+      await _completeFirstRun(logIn: logIn);
+    } catch (e) {
+      // Never leave both buttons dead: let the person tap again.
+      debugPrint('❌ [Onboarding] Finishing failed: $e');
+      if (mounted) _finishing = false;
+    }
+  }
+
+  Future<void> _completeFirstRun({required bool logIn}) async {
+    final analytics = getIt<AnalyticsFacade>();
+    analytics.trackOnboardingChoice(
+        choice: logIn ? FirstRun.choiceLogIn : FirstRun.choiceGetStarted);
+
     final preferences = await SharedPreferences.getInstance();
+    // Someone sent back here because they never agreed to the terms has
+    // already finished onboarding once; do not count them twice, and do not
+    // put them in the new flow's cohort.
+    final firstTime =
+        !(preferences.getBool(kHasCompletedOnboardingKey) ?? false);
     await preferences.setBool(kHasCompletedOnboardingKey, true);
     // A new user has now seen this generation's onboarding, so the
     // What's-new sheet (meant for upgraders) never shows for them.
     await OnboardingVersion.markSeen(preferences);
     await FirstNoteEvent.arm(preferences);
+    if (firstTime) {
+      analytics.trackOnboardingComplete();
+      analytics.setFirstRunFlow(FirstRun.flowWriteFirst);
+    }
+    await FirstRun.acceptTerms(preferences, analytics);
 
-    getIt<AnalyticsFacade>().trackOnboardingComplete();
-
+    // Already signed in (an older install that stopped at the terms screen
+    // after signing in): the splash knows the way from here, whichever
+    // button was tapped.
+    final auth = BackendAuthService();
+    await auth.initialize();
     if (!mounted) return;
-    context.go(signUp
-        ? TermsAcceptanceScreen.signUpLocation
+    if (auth.isAuthenticated) {
+      context.go(SplashScreen.kRouteName);
+      return;
+    }
+
+    if (logIn) {
+      context.go(AuthScreen.locationFrom(AuthEntry.onboardingLogIn));
+      return;
+    }
+
+    await FirstRun.startAsGuest(analytics,
+        source: FirstRun.guestFromOnboarding);
+    if (!mounted) return;
+    // The shell opens the blank note armed above.
+    context.go(HomeScreen.kRouteName);
+  }
+
+  void _openLegal({required bool privacy}) {
+    context.push(privacy
+        ? TermsAcceptanceScreen.privacyLocation
         : TermsAcceptanceScreen.kRouteName);
   }
 
@@ -132,24 +186,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        SketchSpace.screenX, 20, SketchSpace.screenX, 16),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                        SketchSpace.screenX, 20, SketchSpace.screenX, 4),
                     child: Row(
                       children: [
                         Expanded(
                           child: PillButton.secondary(
                             label: l10n.obLogIn,
-                            onPressed: _completeOnboarding,
+                            onPressed: () => _finish(logIn: true),
                           ),
                         ),
                         const SizedBox(width: SketchSpace.grid),
                         Expanded(
                           child: PillButton(
                             label: l10n.obGetStarted,
-                            onPressed: () => _completeOnboarding(signUp: true),
+                            onPressed: () => _finish(logIn: false),
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  // Under both buttons, so it reads as covering either.
+                  Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                        SketchSpace.screenX, 4, SketchSpace.screenX, 12),
+                    child: ConsentLine(
+                      onTerms: () => _openLegal(privacy: false),
+                      onPrivacy: () => _openLegal(privacy: true),
                     ),
                   ),
                 ],
@@ -158,6 +221,80 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "By continuing you agree to the Terms and Privacy Policy", with both
+/// names tappable. The sentence is one translated string with the two link
+/// labels as placeholders, so each language (RTL included) orders it
+/// naturally; the links are found again by splitting on private markers.
+class ConsentLine extends StatefulWidget {
+  const ConsentLine({
+    super.key,
+    required this.onTerms,
+    required this.onPrivacy,
+  });
+
+  final VoidCallback onTerms;
+  final VoidCallback onPrivacy;
+
+  @override
+  State<ConsentLine> createState() => _ConsentLineState();
+}
+
+class _ConsentLineState extends State<ConsentLine> {
+  // Unicode private-use characters: never in a translation.
+  static const String _termsMark = '\uE000';
+  static const String _privacyMark = '\uE001';
+
+  late final TapGestureRecognizer _terms = TapGestureRecognizer()
+    ..onTap = () => widget.onTerms();
+  late final TapGestureRecognizer _privacy = TapGestureRecognizer()
+    ..onTap = () => widget.onPrivacy();
+
+  @override
+  void dispose() {
+    _terms.dispose();
+    _privacy.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.sketch;
+    final l10n = AppL10n.of(context);
+    final base = context.type.caption.copyWith(color: s.muted, height: 1.4);
+    final link = base.copyWith(
+      color: s.ink,
+      fontWeight: FontWeight.w700,
+      decoration: TextDecoration.underline,
+      decorationColor: s.ink,
+    );
+
+    final sentence = l10n.obConsentLine(_termsMark, _privacyMark);
+    final spans = <InlineSpan>[];
+    var start = 0;
+    for (var i = 0; i < sentence.length; i++) {
+      final ch = sentence[i];
+      if (ch != _termsMark && ch != _privacyMark) continue;
+      if (i > start) spans.add(TextSpan(text: sentence.substring(start, i)));
+      spans.add(ch == _termsMark
+          ? TextSpan(
+              text: l10n.obConsentTerms, style: link, recognizer: _terms)
+          : TextSpan(
+              text: l10n.obConsentPrivacy,
+              style: link,
+              recognizer: _privacy));
+      start = i + 1;
+    }
+    if (start < sentence.length) {
+      spans.add(TextSpan(text: sentence.substring(start)));
+    }
+
+    return Text.rich(
+      TextSpan(style: base, children: spans),
+      textAlign: TextAlign.center,
     );
   }
 }

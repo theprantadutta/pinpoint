@@ -21,6 +21,9 @@ import '../../services/come_back_nudge.dart';
 import '../../services/capture/capture_inbox.dart';
 import '../../services/analytics/first_note_event.dart';
 import '../../services/drift_note_service.dart';
+import '../../services/app_review_service.dart';
+import '../../services/note_saved_moment.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// The app shell around the Home / Notes / Todos branches.
 ///
@@ -43,12 +46,19 @@ class BottomNavigationLayout extends StatefulWidget {
 class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _introsFinished = false;
+  bool _followingUp = false;
+  GoRouterDelegate? _routerDelegate;
 
   @override
   void initState() {
     super.initState();
     CaptureInbox.pending.addListener(_openCapture);
     unawaited(ComeBackNudge.cancelIfReturned());
+    unawaited(SharedPreferences.getInstance()
+        .then((prefs) => AppReviewService.recordFirstUse(prefs))
+        .catchError((Object _) => DateTime.now()));
+    NoteSavedMoment.pending.addListener(_maybeFollowUp);
+    NoteSavedMoment.editorClosed.addListener(_maybeFollowUp);
     WidgetsBinding.instance.addPostFrameCallback((_) => _runIntros());
   }
 
@@ -56,11 +66,20 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     CaptureInbox.setShortcuts(AppL10n.of(context));
+    // Popping the editor notifies the router; that is when we are home again.
+    final delegate = GoRouter.maybeOf(context)?.routerDelegate;
+    if (delegate != _routerDelegate) {
+      _routerDelegate?.removeListener(_maybeFollowUp);
+      _routerDelegate = delegate?..addListener(_maybeFollowUp);
+    }
   }
 
   @override
   void dispose() {
     CaptureInbox.pending.removeListener(_openCapture);
+    NoteSavedMoment.pending.removeListener(_maybeFollowUp);
+    NoteSavedMoment.editorClosed.removeListener(_maybeFollowUp);
+    _routerDelegate?.removeListener(_maybeFollowUp);
     super.dispose();
   }
 
@@ -71,13 +90,45 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
     if (capture != null) NewNote.openCapture(context, capture);
   }
 
+  /// After a success: a new note saved in the full-screen editor, and the
+  /// shell is the current route again. Runs once per moment, never during
+  /// the intros, and at most one prompt per moment: the notification ask if
+  /// it is due (see [NotificationPrompt] for the rule), otherwise the review
+  /// prompt if that is due (see [AppReviewService]).
+  void _maybeFollowUp() {
+    if (!_introsFinished || _followingUp || !mounted) return;
+    if (!NoteSavedMoment.pending.value) return;
+    if (!(ModalRoute.isCurrentOf(context) ?? false)) return;
+    unawaited(_followUp());
+  }
+
+  Future<void> _followUp() async {
+    _followingUp = true;
+    NoteSavedMoment.take();
+    try {
+      // Let the editor's exit transition finish first.
+      await Future<void>.delayed(const Duration(milliseconds: 450));
+      if (!mounted) return;
+      if (!(ModalRoute.isCurrentOf(context) ?? false)) {
+        // Somewhere else already (another note, settings): keep the moment.
+        NoteSavedMoment.noteCreated();
+        return;
+      }
+      final asked = await NotificationPrompt.showIfNeeded(context);
+      if (!asked && mounted) await AppReviewService().maybeRequestReview();
+    } finally {
+      _followingUp = false;
+    }
+  }
+
   /// First-frame intros, strictly one after the other so they never stack:
   /// the one-time What's-new sheet (people upgrading from an older
-  /// onboarding), a blank note for someone new, the one-time notification
-  /// ask, and then the walkthrough (whose service persists its own
-  /// completion). A brand-new install records the current onboarding
-  /// version as it finishes onboarding, so it skips the What's-new sheet, and
-  /// meets the ask and the walkthrough only after leaving that first note.
+  /// onboarding), a blank note for someone new, and then the walkthrough
+  /// (whose service persists its own completion). A brand-new install
+  /// records the current onboarding version as it finishes onboarding, so it
+  /// skips the What's-new sheet, and meets the walkthrough only after leaving
+  /// that first note. The notification ask is not an intro: it waits for a
+  /// later note (see [_maybeFollowUp]).
   Future<void> _runIntros() async {
     if (!mounted) return;
     // Android: Play's in-app update, flexible by default. It never blocks
@@ -101,11 +152,10 @@ class _BottomNavigationLayoutState extends State<BottomNavigationLayout> {
       await NewNote.open(context);
     }
     if (!mounted) return;
-    await NotificationPrompt.showIfNeeded(context);
-    if (!mounted) return;
     await WalkthroughService().showWalkthroughIfNeeded(context);
     _introsFinished = true;
     _openCapture();
+    _maybeFollowUp();
   }
 
   void _goBranch(int index) {

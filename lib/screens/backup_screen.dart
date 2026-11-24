@@ -14,6 +14,7 @@ import '../services/backup/drive_backup_service.dart';
 import '../util/localized_dates.dart';
 import '../util/show_a_toast.dart';
 import 'auth_screen.dart';
+import '../services/analytics/analytics_client.dart';
 
 /// Google Drive backups: connect Drive, back up now or on a schedule, and
 /// restore (merge) or delete the backups already there. Free and Premium.
@@ -336,7 +337,8 @@ class _BackupScreenState extends State<BackupScreen> {
         PillButton(
           label: l10n.stSignInAction,
           icon: Icons.login_rounded,
-          onPressed: () => AppNavigation.router.push(AuthScreen.kRouteName),
+          onPressed: () => AppNavigation.router
+              .push(AuthScreen.locationFrom(AuthEntry.backupScreen)),
         ),
       ]),
     );

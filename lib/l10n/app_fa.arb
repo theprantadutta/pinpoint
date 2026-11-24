@@ -591,11 +591,9 @@
   "unlockAction": "باز کردن",
   "unlockUsePassphrase": "به‌جای آن از عبارت عبور استفاده کنید",
   "unlockForgot": "عبارت عبور را فراموش کرده‌اید؟ از کد بازیابی استفاده کنید",
-  "termsSaveFailed": "ذخیره پذیرش شما ممکن نشد. لطفاً دوباره تلاش کنید.",
   "termsReviewAccept": "بررسی و پذیرش",
   "termsTabTerms": "شرایط خدمات",
   "termsTabPrivacy": "سیاست حریم خصوصی",
-  "termsAgreeCheckbox": "شرایط خدمات و سیاست حریم خصوصی را خوانده‌ام و می‌پذیرم",
   "termsAcceptContinue": "پذیرش و ادامه",
   "folderSearchHint": "جستجو در پوشه...",
   "folderEmptyTitle": "یادداشتی در این پوشه نیست",
@@ -817,9 +815,6 @@
   "obWhatsNewFoldersTitle": "پوشه‌های رنگی",
   "obWhatsNewFoldersBody": "هر پوشه رنگ پاستلی خودش را دارد تا با یک نگاه پیدایش کنید.",
   "obWhatsNewCta": "متوجه شدم",
-  "auTermsTitle": "پیش از [[شروع]]",
-  "auTermsBody": "لطفاً بخوانید Pinpoint چگونه با یادداشت‌ها و داده‌های شما رفتار می‌کند.",
-  "auTermsAgree": "موافقم",
   "auReadyTitle": "دفترچه‌تان [[آماده است]]",
   "auReadyBody": "وارد شوید تا از یادداشت‌هایتان پشتیبان بگیرید و آن‌ها را بین دستگاه‌هایتان همگام کنید.",
   "auDecryptionErrorsBody": "{count, plural, one{{count} یادداشت رمزگشایی نشد. معمولاً یعنی کلید رمزگذاری نادرست یا خراب است.} other{{count} یادداشت رمزگشایی نشد. معمولاً یعنی کلید رمزگذاری نادرست یا خراب است.}}",
@@ -1138,5 +1133,8 @@
   "nudgeTitle": "چیزی برای افزودن دارید؟",
   "nudgeBody": "یادداشت‌هایتان در Pinpoint منتظر شماست.",
   "authContinueWithoutAccount": "ادامه بدون حساب",
-  "authGuestHint": "یادداشت‌هایتان تا زمان ورود روی همین گوشی می‌مانند."
+  "authGuestHint": "یادداشت‌هایتان تا زمان ورود روی همین گوشی می‌مانند.",
+  "obConsentLine": "با ادامه دادن، {terms} و {privacy} را می‌پذیرید",
+  "obConsentTerms": "شرایط",
+  "obConsentPrivacy": "سیاست حریم خصوصی"
 }

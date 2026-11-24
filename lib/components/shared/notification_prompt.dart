@@ -8,14 +8,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../design_system/design_system.dart';
 import '../../service_locators/init_service_locators.dart';
 import '../../services/analytics/analytics_facade.dart';
+import '../../services/drift_note_service.dart';
 import '../../services/notification_service.dart';
 import '../../util/localized_dates.dart';
 
-/// The one-time "Enable notifications" ask, as a Sketchbook sheet.
+/// The "Enable notifications" ask, as a Sketchbook sheet.
 ///
-/// Runs in the shell's startup sequence (What's new → this → walkthrough) so
-/// no two first-run prompts ever stack. Asked once per install, whatever the
-/// answer.
+/// **When.** Not on arrival. It used to open on the first visit home, before
+/// the person had written anything, and nearly everyone who installed saw it
+/// there; every gate before the first action costs day-one retention. It now
+/// waits for success: right after a *new* note is saved and the person is back
+/// on the home shell, once they have at least [minNotes] notes. Two notes,
+/// rather than one, because the first note is the blank one opened for every
+/// newcomer; a second one is the person choosing to come back to Pinpoint to
+/// write, which is when "we'll remind you" means something. Counting notes in
+/// the local database (not a counter) also covers people whose notes came back
+/// with their account.
+///
+/// **How often.** "Not now" (the button, a drag or a tap outside) asks once
+/// more, no sooner than [reaskAfter] later, and never again after that.
+/// "Turn on" ends it whatever the system answers. Anyone already asked by the
+/// old version has [askedKey] set and is never asked again.
+///
+/// **Reminders** do not wait for this: the reminder editor asks the system
+/// itself ([requestForReminder]), which also counts as having asked.
 ///
 /// It shows what the user would actually get — a reminder arriving — rather
 /// than asking in the abstract, and says plainly that reminders are the only
@@ -23,38 +39,162 @@ import '../../util/localized_dates.dart';
 class NotificationPrompt {
   NotificationPrompt._();
 
-  static const String _askedKey = 'notification_permission_requested';
+  /// Set once asking is over. Same key as before, so nobody the old version
+  /// asked is asked again.
+  static const String askedKey = 'notification_permission_requested';
 
-  static Future<void> showIfNeeded(BuildContext context) async {
+  /// When "not now" was first answered; present means one ask is left.
+  @visibleForTesting
+  static const String deferredAtKey = 'notification_prompt_deferred_at_ms';
+
+  static const int minNotes = 2;
+  static const Duration reaskAfter = Duration(days: 7);
+
+  /// Pure: whether the sheet is due. [deferredAt] is when "not now" was first
+  /// answered, or null if it never was.
+  static bool shouldAsk({
+    required bool asked,
+    required DateTime? deferredAt,
+    required int noteCount,
+    required DateTime now,
+  }) {
+    if (asked) return false;
+    if (noteCount < minNotes) return false;
+    if (deferredAt != null && now.difference(deferredAt) < reaskAfter) {
+      return false;
+    }
+    return true;
+  }
+
+  /// Reads the stored state and asks [shouldAsk]. Counts notes only when
+  /// the answer could be yes.
+  @visibleForTesting
+  static Future<bool> isDue(
+    SharedPreferences prefs, {
+    required Future<int> Function() countNotes,
+    required DateTime now,
+  }) async {
+    final asked = prefs.getBool(askedKey) ?? false;
+    final deferredAt = _deferredAt(prefs);
+    // Everything but the count first, so the database is not touched for
+    // someone who will not be asked anyway.
+    if (!shouldAsk(
+        asked: asked, deferredAt: deferredAt, noteCount: minNotes, now: now)) {
+      return false;
+    }
+    return shouldAsk(
+      asked: asked,
+      deferredAt: deferredAt,
+      noteCount: await countNotes(),
+      now: now,
+    );
+  }
+
+  static DateTime? _deferredAt(SharedPreferences prefs) {
+    final ms = prefs.getInt(deferredAtKey);
+    return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  /// Stores an answer: "Turn on" ends the asking; the first "not now" leaves
+  /// one more ask, the second ends it.
+  @visibleForTesting
+  static Future<void> recordAnswer(
+    SharedPreferences prefs, {
+    required bool enabled,
+    required DateTime now,
+  }) async {
+    if (enabled || prefs.containsKey(deferredAtKey)) {
+      await prefs.setBool(askedKey, true);
+      await prefs.remove(deferredAtKey);
+    } else {
+      await prefs.setInt(deferredAtKey, now.millisecondsSinceEpoch);
+    }
+  }
+
+  /// Shows the sheet if [isDue]. Returns whether it was shown, so the caller
+  /// does not stack another prompt on the same moment.
+  static Future<bool> showIfNeeded(
+    BuildContext context, {
+    Future<int> Function()? countNotes,
+    AnalyticsFacade? analytics,
+    Future<bool> Function()? requestPermission,
+    Future<void> Function(String title, String body)? scheduleNudge,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (prefs.getBool(_askedKey) ?? false) return;
-      if (!context.mounted) return;
+      final now = DateTime.now();
+      final due = await isDue(prefs,
+          countNotes: countNotes ?? DriftNoteService.countNotes, now: now);
+      if (!due || !context.mounted) return false;
+      // The checks above awaited; if another screen opened meanwhile (a tap
+      // on the new-note button), the sheet must not land on top of it.
+      if (!(ModalRoute.isCurrentOf(context) ?? true)) return false;
+
+      analytics ??= getIt<AnalyticsFacade>();
+      final reask = prefs.containsKey(deferredAtKey);
+      analytics.trackNotificationPromptShown(
+          attempt: reask ? 'reask' : 'first', trigger: 'note_saved');
 
       final l10n = AppL10n.of(context);
       var nudge = false;
+      // Dismissible: a drag or a tap outside is "not now" (null).
       final enable = await showSketchSheet<bool>(
         context: context,
-        isDismissible: false,
-        enableDrag: false,
         builder: (ctx) =>
             NotificationPromptSheet(onNudgeChanged: (value) => nudge = value),
       );
 
-      // Asked, whatever the answer.
-      await prefs.setBool(_askedKey, true);
+      await recordAnswer(prefs, enabled: enable == true, now: now);
+      var granted = false;
       if (enable == true) {
-        final granted =
-            await NotificationService.requestBasicNotificationPermission();
+        granted = await (requestPermission ??
+            NotificationService.requestBasicNotificationPermission)();
         if (granted && nudge) {
-          await ComeBackNudge.schedule(
-              title: l10n.nudgeTitle, body: l10n.nudgeBody);
+          await (scheduleNudge ??
+              (t, b) => ComeBackNudge.schedule(title: t, body: b))(
+              l10n.nudgeTitle, l10n.nudgeBody);
+          analytics.trackNudgeScheduled();
         }
       }
-      getIt<AnalyticsFacade>()
-          .trackNotificationPermissionResult(granted: enable == true);
+      analytics.trackNotificationPermissionResult(
+        granted: granted,
+        outcome: switch (enable) {
+          true => 'enabled',
+          false => 'not_now',
+          null => 'dismissed',
+        },
+      );
+      return true;
     } catch (e) {
       debugPrint('❌ Error requesting notification permission: $e');
+      return false;
+    }
+  }
+
+  /// Setting a reminder: if notifications are off, ask the system right
+  /// away, in context, whether or not the sheet was ever shown. Counts as
+  /// the ask, so the sheet will not repeat the question later. Returns
+  /// whether notifications are on afterwards.
+  static Future<bool> requestForReminder({
+    Future<bool> Function()? areEnabled,
+    Future<bool> Function()? request,
+    AnalyticsFacade? analytics,
+  }) async {
+    try {
+      if (await (areEnabled ?? NotificationService.areNotificationsEnabled)()) {
+        return true;
+      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(askedKey, true);
+      await prefs.remove(deferredAtKey);
+      final granted =
+          await (request ?? NotificationService.requestBasicNotificationPermission)();
+      (analytics ?? getIt<AnalyticsFacade>())
+          .trackReminderPermissionRequested(granted: granted);
+      return granted;
+    } catch (e) {
+      debugPrint('❌ Error requesting notification permission for a reminder: $e');
+      return false;
     }
   }
 }

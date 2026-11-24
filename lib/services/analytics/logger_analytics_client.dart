@@ -32,7 +32,23 @@ class LoggerAnalyticsClient implements AnalyticsClient {
   Future<void> trackOnboardingComplete() async => _log('onboarding_complete');
 
   @override
-  Future<void> trackTermsAccepted() async => _log('terms_accepted');
+  Future<void> trackTermsAccepted({required String method}) async =>
+      _log('terms_accepted', {'method': method});
+
+  @override
+  Future<void> trackOnboardingChoice({required String choice}) async =>
+      _log('onboarding_choice', {'choice': choice});
+
+  @override
+  Future<void> trackGuestConverted({
+    required String method,
+    required String entry,
+  }) async =>
+      _log('guest_converted', {'method': method, 'entry': entry});
+
+  @override
+  Future<void> setFirstRunFlow(String flow) async =>
+      _log('user_property', {'first_run_flow': flow});
 
   @override
   Future<void> trackScreenView({required String screenName}) async =>
@@ -47,7 +63,8 @@ class LoggerAnalyticsClient implements AnalyticsClient {
       _log('first_note_created', {'note_type': noteType});
 
   @override
-  Future<void> trackGuestStarted() async => _log('guest_started');
+  Future<void> trackGuestStarted({required String source}) async =>
+      _log('guest_started', {'source': source});
 
   @override
   Future<void> trackCaptureOpened({required String source}) async =>
@@ -229,8 +246,26 @@ class LoggerAnalyticsClient implements AnalyticsClient {
       _log('premium_gate_shown', {'feature': feature});
 
   @override
-  Future<void> trackNotificationPermissionResult({required bool granted}) async =>
-      _log('notification_permission_result', {'granted': granted});
+  Future<void> trackNotificationPromptShown(
+          {required String attempt, required String trigger}) async =>
+      _log('notification_prompt_shown', {'attempt': attempt, 'trigger': trigger});
+
+  @override
+  Future<void> trackNotificationPermissionResult(
+          {required bool granted, required String outcome}) async =>
+      _log('notification_permission_result',
+          {'granted': '$granted', 'outcome': outcome});
+
+  @override
+  Future<void> trackReminderPermissionRequested({required bool granted}) async =>
+      _log('reminder_permission_requested', {'granted': '$granted'});
+
+  @override
+  Future<void> trackReviewPromptRequested({required String notesBucket}) async =>
+      _log('review_prompt_requested', {'notes_bucket': notesBucket});
+
+  @override
+  Future<void> trackNudgeScheduled() async => _log('nudge_scheduled');
 
   @override
   Future<void> trackRestorePurchaseInitiated() async =>

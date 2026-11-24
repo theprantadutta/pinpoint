@@ -254,6 +254,11 @@ class ApiService {
     // Several concurrent requests can all observe the same failed refresh;
     // only clear tokens and notify once.
     if (_sessionExpiredNotified) return;
+    // Nobody signed in (a fresh install, a guest, someone signed out): a
+    // refused request is just refused, there is no session to end. Notifying
+    // here sent a brand-new install to the sign-in screen on its first tap,
+    // whatever it tapped (Nov 2026).
+    if (!await hadSession()) return;
     _sessionExpiredNotified = true;
     await deleteToken();
     await deleteRefreshToken();
@@ -277,6 +282,15 @@ class ApiService {
 
   Future<void> deleteToken() async {
     await _storage.delete(key: _accessTokenKey);
+  }
+
+  /// Whether this install holds an access or refresh token, i.e. someone is
+  /// (or was until now) signed in.
+  Future<bool> hadSession() async {
+    final access = await getToken();
+    final refresh = await getRefreshToken();
+    return (access != null && access.isNotEmpty) ||
+        (refresh != null && refresh.isNotEmpty);
   }
 
   Future<bool> hasToken() async {

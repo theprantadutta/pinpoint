@@ -86,9 +86,31 @@ class AnalyticsFacade implements AnalyticsClient {
   }
 
   @override
-  Future<void> trackTermsAccepted() async {
-    unawaited(_logger?.trackTermsAccepted());
-    _trackFirebase((c) => c.trackTermsAccepted());
+  Future<void> trackTermsAccepted({required String method}) async {
+    unawaited(_logger?.trackTermsAccepted(method: method));
+    _trackFirebase((c) => c.trackTermsAccepted(method: method));
+  }
+
+  @override
+  Future<void> trackOnboardingChoice({required String choice}) async {
+    unawaited(_logger?.trackOnboardingChoice(choice: choice));
+    _trackFirebase((c) => c.trackOnboardingChoice(choice: choice));
+  }
+
+  @override
+  Future<void> trackGuestConverted({
+    required String method,
+    required String entry,
+  }) async {
+    unawaited(_logger?.trackGuestConverted(method: method, entry: entry));
+    _trackFirebase(
+        (c) => c.trackGuestConverted(method: method, entry: entry));
+  }
+
+  @override
+  Future<void> setFirstRunFlow(String flow) async {
+    unawaited(_logger?.setFirstRunFlow(flow));
+    _trackFirebase((c) => c.setFirstRunFlow(flow));
   }
 
   // Screen views
@@ -112,9 +134,9 @@ class AnalyticsFacade implements AnalyticsClient {
   }
 
   @override
-  Future<void> trackGuestStarted() async {
-    unawaited(_logger?.trackGuestStarted());
-    _trackFirebase((c) => c.trackGuestStarted());
+  Future<void> trackGuestStarted({required String source}) async {
+    unawaited(_logger?.trackGuestStarted(source: source));
+    _trackFirebase((c) => c.trackGuestStarted(source: source));
   }
 
   @override
@@ -390,11 +412,42 @@ class AnalyticsFacade implements AnalyticsClient {
     _trackFirebase((c) => c.trackPremiumGateShown(feature: feature));
   }
 
-  // Notifications
+  // Notifications and rating
   @override
-  Future<void> trackNotificationPermissionResult({required bool granted}) async {
-    unawaited(_logger?.trackNotificationPermissionResult(granted: granted));
-    _trackFirebase((c) => c.trackNotificationPermissionResult(granted: granted));
+  Future<void> trackNotificationPromptShown(
+      {required String attempt, required String trigger}) async {
+    unawaited(_logger?.trackNotificationPromptShown(
+        attempt: attempt, trigger: trigger));
+    _trackFirebase((c) =>
+        c.trackNotificationPromptShown(attempt: attempt, trigger: trigger));
+  }
+
+  @override
+  Future<void> trackNotificationPermissionResult(
+      {required bool granted, required String outcome}) async {
+    unawaited(_logger?.trackNotificationPermissionResult(
+        granted: granted, outcome: outcome));
+    _trackFirebase((c) =>
+        c.trackNotificationPermissionResult(granted: granted, outcome: outcome));
+  }
+
+  @override
+  Future<void> trackReminderPermissionRequested({required bool granted}) async {
+    unawaited(_logger?.trackReminderPermissionRequested(granted: granted));
+    _trackFirebase((c) => c.trackReminderPermissionRequested(granted: granted));
+  }
+
+  @override
+  Future<void> trackReviewPromptRequested({required String notesBucket}) async {
+    unawaited(_logger?.trackReviewPromptRequested(notesBucket: notesBucket));
+    _trackFirebase(
+        (c) => c.trackReviewPromptRequested(notesBucket: notesBucket));
+  }
+
+  @override
+  Future<void> trackNudgeScheduled() async {
+    unawaited(_logger?.trackNudgeScheduled());
+    _trackFirebase((c) => c.trackNudgeScheduled());
   }
 
   // Subscription

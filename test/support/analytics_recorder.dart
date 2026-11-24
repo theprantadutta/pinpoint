@@ -155,6 +155,30 @@ class RecordingAnalyticsFacade extends AnalyticsFacade {
   Future<void> trackRestorePurchaseInitiated() async =>
       _rec('restore_purchase_initiated');
 
+  // --- Notifications and rating -------------------------------------------
+
+  @override
+  Future<void> trackNotificationPromptShown(
+          {required String attempt, required String trigger}) async =>
+      _rec('notification_prompt_shown', {'attempt': attempt, 'trigger': trigger});
+
+  @override
+  Future<void> trackNotificationPermissionResult(
+          {required bool granted, required String outcome}) async =>
+      _rec('notification_permission_result',
+          {'granted': '$granted', 'outcome': outcome});
+
+  @override
+  Future<void> trackReminderPermissionRequested({required bool granted}) async =>
+      _rec('reminder_permission_requested', {'granted': '$granted'});
+
+  @override
+  Future<void> trackReviewPromptRequested({required String notesBucket}) async =>
+      _rec('review_prompt_requested', {'notes_bucket': notesBucket});
+
+  @override
+  Future<void> trackNudgeScheduled() async => _rec('nudge_scheduled');
+
   // --- Everything else the screens happen to call -------------------------
 
   @override
@@ -166,7 +190,32 @@ class RecordingAnalyticsFacade extends AnalyticsFacade {
       _rec('first_note_created', {'note_type': noteType});
 
   @override
-  Future<void> trackGuestStarted() async => _rec('guest_started');
+  Future<void> trackGuestStarted({required String source}) async =>
+      _rec('guest_started', {'source': source});
+
+  // --- First run ----------------------------------------------------------
+
+  @override
+  Future<void> trackOnboardingComplete() async => _rec('onboarding_complete');
+
+  @override
+  Future<void> trackTermsAccepted({required String method}) async =>
+      _rec('terms_accepted', {'method': method});
+
+  @override
+  Future<void> trackOnboardingChoice({required String choice}) async =>
+      _rec('onboarding_choice', {'choice': choice});
+
+  @override
+  Future<void> trackGuestConverted({
+    required String method,
+    required String entry,
+  }) async =>
+      _rec('guest_converted', {'method': method, 'entry': entry});
+
+  @override
+  Future<void> setFirstRunFlow(String flow) async =>
+      _rec('user_property', {'first_run_flow': flow});
 
   @override
   Future<void> trackCaptureOpened({required String source}) async =>

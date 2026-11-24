@@ -32,8 +32,27 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
       _analytics.logEvent(name: 'onboarding_complete');
 
   @override
-  Future<void> trackTermsAccepted() =>
-      _analytics.logEvent(name: 'terms_accepted');
+  Future<void> trackTermsAccepted({required String method}) =>
+      _analytics.logEvent(
+          name: 'terms_accepted', parameters: {'method': method});
+
+  @override
+  Future<void> trackOnboardingChoice({required String choice}) =>
+      _analytics.logEvent(
+          name: 'onboarding_choice', parameters: {'choice': choice});
+
+  @override
+  Future<void> trackGuestConverted({
+    required String method,
+    required String entry,
+  }) =>
+      _analytics.logEvent(
+          name: 'guest_converted',
+          parameters: {'method': method, 'entry': entry});
+
+  @override
+  Future<void> setFirstRunFlow(String flow) =>
+      _analytics.setUserProperty(name: 'first_run_flow', value: flow);
 
   @override
   Future<void> trackScreenView({required String screenName}) =>
@@ -47,8 +66,9 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
           name: 'first_note_created', parameters: {'note_type': noteType});
 
   @override
-  Future<void> trackGuestStarted() =>
-      _analytics.logEvent(name: 'guest_started');
+  Future<void> trackGuestStarted({required String source}) =>
+      _analytics.logEvent(
+          name: 'guest_started', parameters: {'source': source});
 
   @override
   Future<void> trackCaptureOpened({required String source}) =>
@@ -259,8 +279,35 @@ class FirebaseAnalyticsClient implements AnalyticsClient {
       _analytics.logEvent(name: 'premium_gate_shown', parameters: {'feature': feature});
 
   @override
-  Future<void> trackNotificationPermissionResult({required bool granted}) =>
-      _analytics.logEvent(name: 'notification_permission_result', parameters: {'granted': granted});
+  Future<void> trackNotificationPromptShown(
+          {required String attempt, required String trigger}) =>
+      _analytics.logEvent(
+          name: 'notification_prompt_shown',
+          parameters: {'attempt': attempt, 'trigger': trigger});
+
+  // Booleans go as 'true'/'false': Firebase parameters must be String or num.
+  @override
+  Future<void> trackNotificationPermissionResult(
+          {required bool granted, required String outcome}) =>
+      _analytics.logEvent(
+          name: 'notification_permission_result',
+          parameters: {'granted': '$granted', 'outcome': outcome});
+
+  @override
+  Future<void> trackReminderPermissionRequested({required bool granted}) =>
+      _analytics.logEvent(
+          name: 'reminder_permission_requested',
+          parameters: {'granted': '$granted'});
+
+  @override
+  Future<void> trackReviewPromptRequested({required String notesBucket}) =>
+      _analytics.logEvent(
+          name: 'review_prompt_requested',
+          parameters: {'notes_bucket': notesBucket});
+
+  @override
+  Future<void> trackNudgeScheduled() =>
+      _analytics.logEvent(name: 'nudge_scheduled');
 
   @override
   Future<void> trackRestorePurchaseInitiated() =>

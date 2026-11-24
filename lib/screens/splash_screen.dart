@@ -7,16 +7,15 @@ import 'package:flutter/physics.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../constants/shared_preference_keys.dart';
 import '../design_system/design_system.dart';
 import '../services/backend_auth_service.dart';
 import '../services/encryption_service.dart';
+import '../services/first_run.dart';
 import '../services/zero_knowledge_service.dart';
 import 'auth_screen.dart';
 import 'home_screen.dart';
 import 'unlock_screen.dart';
 import 'onboarding_screen.dart';
-import 'terms_acceptance_screen.dart';
 import 'package:pinpoint/generated/l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -57,31 +56,16 @@ class _SplashScreenState extends State<SplashScreen> {
     debugPrint('🚀 [Splash] Starting fast navigation...');
     final stopwatch = Stopwatch()..start();
 
-    // Check if user has completed onboarding
+    // Onboarding, if this install has not finished it or never agreed to
+    // the terms. The onboarding page carries the consent line, so an
+    // install that finished an older onboarding but stopped at the old
+    // terms checkbox screen goes back there too.
     final preferences = await SharedPreferences.getInstance();
-    final hasCompletedOnboarding =
-        preferences.getBool(kHasCompletedOnboardingKey) ?? false;
-
     if (!mounted) return;
-
-    // Navigate to onboarding if not completed
-    if (!hasCompletedOnboarding) {
+    if (FirstRun.needsOnboarding(preferences)) {
       debugPrint(
           '🔵 [Splash] Navigating to onboarding (${stopwatch.elapsedMilliseconds}ms)');
       context.go(OnboardingScreen.kRouteName);
-      return;
-    }
-
-    // Check if user has accepted terms
-    final hasAcceptedTerms = preferences.getBool(kHasAcceptedTermsKey) ?? false;
-
-    if (!mounted) return;
-
-    // Navigate to terms acceptance if not accepted
-    if (!hasAcceptedTerms) {
-      debugPrint(
-          '🔵 [Splash] Navigating to terms (${stopwatch.elapsedMilliseconds}ms)');
-      context.go(TermsAcceptanceScreen.kRouteName);
       return;
     }
 

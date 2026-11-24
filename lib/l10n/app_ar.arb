@@ -591,11 +591,9 @@
   "unlockAction": "فتح",
   "unlockUsePassphrase": "استخدم عبارة المرور بدلًا من ذلك",
   "unlockForgot": "نسيت عبارة المرور؟ استخدم رمز الاسترداد",
-  "termsSaveFailed": "تعذّر حفظ موافقتك. يرجى المحاولة مرة أخرى.",
   "termsReviewAccept": "مراجعة وقبول",
   "termsTabTerms": "شروط الخدمة",
   "termsTabPrivacy": "سياسة الخصوصية",
-  "termsAgreeCheckbox": "لقد قرأت شروط الخدمة وسياسة الخصوصية وأوافق عليهما",
   "termsAcceptContinue": "قبول ومتابعة",
   "folderSearchHint": "ابحث في المجلد...",
   "folderEmptyTitle": "لا توجد ملاحظات في هذا المجلد",
@@ -817,9 +815,6 @@
   "obWhatsNewFoldersTitle": "مجلدات ملوَّنة",
   "obWhatsNewFoldersBody": "لكل مجلد لون باستيل خاص به لتجده بنظرة واحدة.",
   "obWhatsNewCta": "حسنًا",
-  "auTermsTitle": "قبل أن [[تبدأ]]",
-  "auTermsBody": "يُرجى قراءة كيفية تعامل Pinpoint مع ملاحظاتك وبياناتك.",
-  "auTermsAgree": "أوافق",
   "auReadyTitle": "دفترك [[جاهز]]",
   "auReadyBody": "سجِّل الدخول لنسخ ملاحظاتك احتياطيًا ومزامنتها بين أجهزتك.",
   "auDecryptionErrorsBody": "{count, plural, =1{تعذَّر فك تشفير ملاحظة واحدة. يعني هذا عادةً أن مفتاح التشفير غير صحيح أو تالف.} =2{تعذَّر فك تشفير ملاحظتين. يعني هذا عادةً أن مفتاح التشفير غير صحيح أو تالف.} few{تعذَّر فك تشفير {count} ملاحظات. يعني هذا عادةً أن مفتاح التشفير غير صحيح أو تالف.} many{تعذَّر فك تشفير {count} ملاحظة. يعني هذا عادةً أن مفتاح التشفير غير صحيح أو تالف.} other{تعذَّر فك تشفير {count} ملاحظة. يعني هذا عادةً أن مفتاح التشفير غير صحيح أو تالف.}}",
@@ -1138,5 +1133,8 @@
   "nudgeTitle": "هل لديك ما تضيفه؟",
   "nudgeBody": "ملاحظاتك بانتظارك في Pinpoint.",
   "authContinueWithoutAccount": "المتابعة بدون حساب",
-  "authGuestHint": "تبقى ملاحظاتك على هذا الهاتف حتى تسجّل الدخول."
+  "authGuestHint": "تبقى ملاحظاتك على هذا الهاتف حتى تسجّل الدخول.",
+  "obConsentLine": "بالمتابعة، فإنك توافق على {terms} و{privacy}",
+  "obConsentTerms": "الشروط",
+  "obConsentPrivacy": "سياسة الخصوصية"
 }

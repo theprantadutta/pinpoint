@@ -10,7 +10,9 @@ import '../components/settings/settings_usage_section.dart';
 import '../design_system/design_system.dart';
 import '../generated/l10n/app_localizations.dart';
 import '../navigation/app_navigation.dart';
+import '../services/analytics/analytics_client.dart';
 import '../services/backend_auth_service.dart';
+import 'auth_screen.dart';
 
 /// Settings, in the Sketchbook grouped-card style.
 ///
@@ -46,7 +48,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : SettingsSignInCard(
                     onSignIn: () {
                       PinpointHaptics.medium();
-                      AppNavigation.router.push('/auth');
+                      AppNavigation.router
+                          .push(AuthScreen.locationFrom(AuthEntry.settings));
                     },
                   ),
           ),
