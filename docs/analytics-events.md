@@ -60,3 +60,25 @@ after a saved note.
 Useful funnels: `first_note_created` → `notification_prompt_shown` →
 `notification_permission_result{outcome=enabled, granted=true}` →
 `nudge_scheduled`. Compare D1 and D7 retention before and after this release.
+
+## GA4 custom dimensions
+
+Registered on 24 Nov 2026 in GA4 property `p512318286` (Admin → Custom definitions), so these
+parameters can be used in reports and explorations. Data exists only from that date on.
+
+| Dimension | Scope | Parameter / property |
+| --- | --- | --- |
+| Onboarding choice | Event | `choice` |
+| Source | Event | `source` |
+| Sign in method | Event | `method` |
+| Auth entry | Event | `entry` |
+| Prompt attempt | Event | `attempt` |
+| Prompt trigger | Event | `trigger` |
+| Prompt outcome | Event | `outcome` |
+| Permission granted | Event | `granted` |
+| Notes bucket | Event | `notes_bucket` |
+| Reason | Event | `reason` |
+| Note type | Event | `note_type` |
+| First run flow | User | `first_run_flow` |
+
+A new parameter needs its own dimension here before it shows up in reports.
