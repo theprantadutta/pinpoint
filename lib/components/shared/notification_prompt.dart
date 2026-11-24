@@ -126,6 +126,9 @@ class NotificationPrompt {
       final due = await isDue(prefs,
           countNotes: countNotes ?? DriftNoteService.countNotes, now: now);
       if (!due || !context.mounted) return false;
+      // The checks above awaited; if another screen opened meanwhile (a tap
+      // on the new-note button), the sheet must not land on top of it.
+      if (!(ModalRoute.isCurrentOf(context) ?? true)) return false;
 
       analytics ??= getIt<AnalyticsFacade>();
       final reask = prefs.containsKey(deferredAtKey);

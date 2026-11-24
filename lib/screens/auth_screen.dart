@@ -1,3 +1,4 @@
+import 'package:pinpoint/services/guest_mode.dart';
 import 'package:pinpoint/services/analytics/analytics_client.dart';
 import 'package:pinpoint/services/first_run.dart';
 import 'dart:io' show Platform;
@@ -429,6 +430,12 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _continueAsGuest() async {
+    // A guest who opened sign-in from the banner and changed their mind is
+    // already a guest: no second guest_started.
+    if (GuestMode.isGuest) {
+      if (mounted) context.go(HomeScreen.kRouteName);
+      return;
+    }
     await FirstRun.startAsGuest(getIt<AnalyticsFacade>(),
         source: FirstRun.guestFromAuthScreen);
     if (mounted) context.go(HomeScreen.kRouteName);

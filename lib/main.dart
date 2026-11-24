@@ -19,6 +19,7 @@ import 'generated/l10n/app_localizations.dart';
 import 'constants/shared_preference_keys.dart';
 import 'design_system/design_system.dart';
 import 'navigation/app_navigation.dart';
+import 'navigation/session_expiry.dart';
 import 'service_locators/init_service_locators.dart';
 import 'services/analytics/analytics_facade.dart';
 import 'services/notification_service.dart';
@@ -694,8 +695,13 @@ class _PinPointAppState extends State<PinPointApp> with WidgetsBindingObserver {
 
       // Navigate to auth screen using GoRouter
       // We need to do this after the current frame to avoid navigation during build
+      // A post-frame callback can wait a long time on a still screen (it runs
+      // on the next frame, e.g. the next tap), so check again when it runs.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // Get the root navigator context and navigate to auth
+        if (GuestMode.isGuest) return;
+        final path = AppNavigation
+            .router.routerDelegate.currentConfiguration.uri.path;
+        if (!sessionExpiryShouldRedirect(path)) return;
         AppNavigation.router.go(AuthScreen.kRouteName);
       });
     };

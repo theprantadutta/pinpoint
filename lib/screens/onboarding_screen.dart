@@ -76,13 +76,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _finish({required bool logIn}) async {
     if (_finishing) return;
     _finishing = true;
+    try {
+      await _completeFirstRun(logIn: logIn);
+    } catch (e) {
+      // Never leave both buttons dead: let the person tap again.
+      debugPrint('❌ [Onboarding] Finishing failed: $e');
+      if (mounted) _finishing = false;
+    }
+  }
+
+  Future<void> _completeFirstRun({required bool logIn}) async {
     final analytics = getIt<AnalyticsFacade>();
     analytics.trackOnboardingChoice(
         choice: logIn ? FirstRun.choiceLogIn : FirstRun.choiceGetStarted);
 
     final preferences = await SharedPreferences.getInstance();
     // Someone sent back here because they never agreed to the terms has
-    // already finished onboarding once; do not count them twice.
+    // already finished onboarding once; do not count them twice, and do not
+    // put them in the new flow's cohort.
     final firstTime =
         !(preferences.getBool(kHasCompletedOnboardingKey) ?? false);
     await preferences.setBool(kHasCompletedOnboardingKey, true);
@@ -90,23 +101,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // What's-new sheet (meant for upgraders) never shows for them.
     await OnboardingVersion.markSeen(preferences);
     await FirstNoteEvent.arm(preferences);
-    if (firstTime) analytics.trackOnboardingComplete();
-    analytics.setFirstRunFlow(FirstRun.flowWriteFirst);
+    if (firstTime) {
+      analytics.trackOnboardingComplete();
+      analytics.setFirstRunFlow(FirstRun.flowWriteFirst);
+    }
     await FirstRun.acceptTerms(preferences, analytics);
 
-    if (!mounted) return;
-    if (logIn) {
-      context.go(AuthScreen.locationFrom(AuthEntry.onboardingLogIn));
-      return;
-    }
-
     // Already signed in (an older install that stopped at the terms screen
-    // after signing in): the splash knows the way from here.
+    // after signing in): the splash knows the way from here, whichever
+    // button was tapped.
     final auth = BackendAuthService();
     await auth.initialize();
     if (!mounted) return;
     if (auth.isAuthenticated) {
       context.go(SplashScreen.kRouteName);
+      return;
+    }
+
+    if (logIn) {
+      context.go(AuthScreen.locationFrom(AuthEntry.onboardingLogIn));
       return;
     }
 
