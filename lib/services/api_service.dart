@@ -1432,6 +1432,20 @@ class ApiService {
       }
     }
 
+    // A connection dropped mid-request, or a TLS handshake cut short by a
+    // captive portal or a flaky network, arrives as an unknown DioException
+    // with no response. It is a network failure, not a mystery.
+    final cause = error.error;
+    if (error.response == null &&
+        (cause is SocketException || cause is HttpException || cause is HandshakeException)) {
+      throw ApiError(
+        userMessage: 'Unable to connect to server.',
+        suggestion: 'Please check your internet connection.',
+        type: ApiErrorType.network,
+        technicalDetails: error.message,
+      );
+    }
+
     // Fallback for unknown errors
     throw ApiError(
       userMessage: 'An unexpected error occurred.',

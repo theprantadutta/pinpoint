@@ -165,7 +165,8 @@ class SyncManager with ChangeNotifier {
         await _syncUsageStatsWithBackend();
         _analytics?.trackSyncCompleted();
       } else {
-        _analytics?.trackSyncFailed(reason: syncFailureReason(result.message));
+        _analytics?.trackSyncFailed(
+            reason: syncFailureReason(result.error ?? result.message));
       }
 
       return result;

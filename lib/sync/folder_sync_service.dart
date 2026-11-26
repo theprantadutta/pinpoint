@@ -54,6 +54,7 @@ class FolderSyncService {
       return SyncResult(
         success: false,
         message: 'Folder sync failed: ${e.toString()}',
+        error: e,
       );
     }
   }
@@ -128,6 +129,7 @@ class FolderSyncService {
       return SyncResult(
         success: false,
         message: 'Folder upload failed: ${e.toString()}',
+        error: e,
       );
     }
   }
@@ -240,6 +242,7 @@ class FolderSyncService {
       return SyncResult(
         success: false,
         message: 'Folder download failed: ${e.toString()}',
+        error: e,
       );
     }
   }
