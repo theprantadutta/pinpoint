@@ -1,3 +1,6 @@
+// The closed `reason` codes of `sync_failed` live with the sync code.
+export '../../sync/sync_failure_reason.dart' show syncFailureReason, syncFailureReasons;
+
 /// Coarse bucket for a search query's length.
 ///
 /// Search analytics deliberately carry a bucket, never the query itself — see
@@ -229,23 +232,4 @@ abstract class AnalyticsClient {
 
   // Folders
   Future<void> trackFolderRenamed();
-}
-
-/// A sync failure as a closed code for analytics: offline, unauthorized,
-/// limit, encryption_key, server_error or unknown. Error text can carry note
-/// titles, paths or server messages, so it is never sent (review 2026-11-01,
-/// F8). Pure, for testing.
-String syncFailureReason(Object? error) {
-  final text = '$error'.toLowerCase();
-  if (text.contains('socket') || text.contains('connection') || text.contains('offline') ||
-      text.contains('timed out') || text.contains('timeout') || text.contains('network')) {
-    return 'offline';
-  }
-  if (text.contains('401') || text.contains('unauthor') || text.contains('session')) return 'unauthorized';
-  if (text.contains('limit') || text.contains('premium')) return 'limit';
-  if (text.contains('encryption key')) return 'encryption_key';
-  if (text.contains('500') || text.contains('502') || text.contains('503') || text.contains('server')) {
-    return 'server_error';
-  }
-  return 'unknown';
 }

@@ -209,6 +209,7 @@ class ApiSyncService extends SyncService {
         return SyncResult(
           success: false,
           message: 'Folder sync failed: ${folderResult.message}',
+          error: folderResult.error,
         );
       }
 
@@ -288,6 +289,7 @@ class ApiSyncService extends SyncService {
         notesOverLimit: noteResult.notesOverLimit,
         errors: noteResult.errors,
         decryptionErrors: noteResult.decryptionErrors,
+        error: noteResult.error,
       );
     } catch (e, st) {
       debugPrint('❌ [ApiSync] Sync failed: $e');
@@ -296,6 +298,7 @@ class ApiSyncService extends SyncService {
       return SyncResult(
         success: false,
         message: 'Sync failed: ${e.toString()}',
+        error: e,
       );
     }
   }
@@ -425,6 +428,7 @@ class ApiSyncService extends SyncService {
       return SyncResult(
         success: false,
         message: 'Upload failed: ${e.toString()}',
+        error: e,
       );
     }
   }
@@ -664,6 +668,7 @@ class ApiSyncService extends SyncService {
       return SyncResult(
         success: false,
         message: 'Download failed: ${e.toString()}',
+        error: e,
       );
     }
   }

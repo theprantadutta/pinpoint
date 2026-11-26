@@ -110,6 +110,11 @@ class SyncResult {
   /// account upgrades). Everything else in the sync still went through.
   final int notesOverLimit;
 
+  /// What made a failed sync fail (an [ApiError], a socket error, ...), so
+  /// analytics can classify it by type rather than by reading [message]. Kept
+  /// in memory only: it is never logged, shown or sent anywhere.
+  final Object? error;
+
   bool get limitReached => notesOverLimit > 0;
 
   SyncResult({
@@ -123,6 +128,7 @@ class SyncResult {
     this.errors = const [],
     this.decryptionErrors = 0,
     this.notesOverLimit = 0,
+    this.error,
   });
 
   /// Get a user-friendly summary of the sync result
@@ -196,12 +202,12 @@ abstract class SyncService {
         case SyncDirection.both:
           final uploadResult = await uploadChanges();
           if (!uploadResult.success) {
-            throw Exception('Upload failed: ${uploadResult.message}');
+            throw _StepFailed('Upload failed: ${uploadResult.message}', uploadResult.error);
           }
 
           final downloadResult = await downloadChanges();
           if (!downloadResult.success) {
-            throw Exception('Download failed: ${downloadResult.message}');
+            throw _StepFailed('Download failed: ${downloadResult.message}', downloadResult.error);
           }
 
           result = SyncResult(
@@ -230,6 +236,7 @@ abstract class SyncService {
       return SyncResult(
         success: false,
         message: e.toString(),
+        error: e is _StepFailed ? (e.cause ?? e) : e,
       );
     }
   }
@@ -268,4 +275,16 @@ abstract class SyncService {
   void dispose() {
     // This can be overridden by subclasses that need to clean up resources
   }
+}
+
+/// One half of a two-way sync failed. Reads exactly like the plain Exception
+/// it replaces (the message is unchanged), and carries the underlying error
+/// so the failure can be classified by type.
+class _StepFailed implements Exception {
+  _StepFailed(this.message, this.cause);
+  final String message;
+  final Object? cause;
+
+  @override
+  String toString() => 'Exception: $message';
 }

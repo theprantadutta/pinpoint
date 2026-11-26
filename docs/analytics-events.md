@@ -61,6 +61,33 @@ Useful funnels: `first_note_created` → `notification_prompt_shown` →
 `notification_permission_result{outcome=enabled, granted=true}` →
 `nudge_scheduled`. Compare D1 and D7 retention before and after this release.
 
+## Sync
+
+| Event | Parameters | When |
+| --- | --- | --- |
+| `sync_started` | none | `SyncManager` began a sync (note save, reconnect, sign-in, sync screen). |
+| `sync_completed` | none | The sync succeeded. |
+| `sync_failed` | `reason`: see below | The sync failed, or the account key was not ready. |
+
+`reason` comes from `syncFailureReasons` in `lib/sync/sync_failure_reason.dart`, classified from
+the error's type and HTTP status, never from its text when an error object exists:
+
+- `offline`: no route to the server (no network, DNS failure, connection refused or dropped)
+- `timeout`: connecting, sending or waiting for the answer took too long
+- `unauthorized`: 401
+- `limit`: a plan limit stopped the sync
+- `rate_limited`: 429
+- `encryption_key`: the account's key is not on this device yet
+- `rejected`: any other 4xx
+- `server_error`: a 5xx from the API, or from Cloudflare in front of it (52x)
+- `unknown`: anything else, such as a local database or decryption error
+
+**Changed 26 Nov 2026 (after 4.4.0):** the reason used to be read from the error text, and
+ApiService's no-network message "Unable to connect to server." contained "server". Up to and
+including 4.4.0, `server_error` therefore means mostly *offline* (or a slow answer), and real 500s
+were reported as `unknown`; `timeout`, `rate_limited` and `rejected` did not exist. Production
+logs for 28 Oct to 26 Nov showed no 5xx on any sync endpoint.
+
 ## GA4 custom dimensions
 
 Registered on 24 Nov 2026 in GA4 property `p512318286` (Admin → Custom definitions), so these
