@@ -165,6 +165,18 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
   Timer? _autoSaveTimer; // Auto-save timer
   DateTime? _editedAt; // "Edited {date}"
 
+  /// Set once a back press has started saving and leaving, so a second
+  /// press while that save runs neither saves again nor pops the screen
+  /// underneath.
+  bool _leaving = false;
+
+  /// True from [dispose] on. A save started on the way out still finishes
+  /// in the database, but must not touch the disposed notifiers.
+  bool _disposed = false;
+
+  /// Set when the note is deleted from the ⋯ menu.
+  bool _deleted = false;
+
   /// [_contentSignature] as last loaded or saved. The editor notifies on
   /// every cursor move, and leaving the editor used to save unconditionally,
   /// so merely opening a note re-dated it and jumped it up "Last edited".
@@ -321,8 +333,19 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
   void dispose() {
     if (!widget.embedded) NoteSavedMoment.editorWasClosed();
     WidgetsBinding.instance.removeObserver(this);
-    _pageScrollController.dispose();
     _autoSaveTimer?.cancel();
+    // The last line of defence: whatever removed this editor (a pop that
+    // skipped the back handler, the tablet pane switching notes, a redirect),
+    // unsaved text is written now. [_saveNote] reads the controllers before
+    // its first await, so disposing them below cannot lose it. Reminders are
+    // saved only by their button, as before.
+    if (!_isReminder && _shouldSave()) {
+      unawaited(_saveNote().catchError((Object e) {
+        debugPrint('⚠️ [CreateNoteV2] Saving on close failed: $e');
+      }));
+    }
+    _disposed = true;
+    _pageScrollController.dispose();
     _savingOffTimer?.cancel();
     _saving.dispose();
     _titleController.dispose();
@@ -480,6 +503,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
   }
 
   void _setSaving(bool saving) {
+    if (_disposed) return;
     if (saving) {
       _savingOffTimer?.cancel();
       _savingSince = DateTime.now();
@@ -491,7 +515,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
     _savingOffTimer?.cancel();
     if (remaining > Duration.zero) {
       _savingOffTimer = Timer(remaining, () {
-        if (mounted) _saving.value = false;
+        if (mounted && !_disposed) _saving.value = false;
       });
     } else if (mounted) {
       _saving.value = false;
@@ -513,6 +537,14 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
   /// Save note based on current type.
   /// [isExplicit] distinguishes user-initiated saves from auto-saves for analytics.
   Future<void> _saveNote({bool isExplicit = false}) async {
+    // Read what was typed now, before any await: a save started as the
+    // editor closes outlives its controllers. Taken before the writes, so an
+    // edit made while they run still counts as unsaved afterwards.
+    final signature = _contentSignature();
+    final title = _titleController.text.trim();
+    final textContent =
+        MarkdownEditor.controllerToMarkdown(_fleatherController);
+
     // Serialize saves: if a save (e.g. the 2-second auto-save) is already
     // running, wait for it to finish instead of bailing out. Bailing out is
     // what made a quick "paste then back" sometimes drop the latest title or
@@ -523,12 +555,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
     }
     _isSaving = true;
     _setSaving(true);
-    // Taken before the writes, so an edit made while they run still counts
-    // as unsaved afterwards.
-    final signature = _contentSignature();
 
     try {
-      final title = _titleController.text.trim();
+      // After the wait: a save that ran meanwhile may have created the note.
       final isNew = _currentNoteId == null;
 
       // Ensure folders are selected
@@ -545,7 +574,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
 
       switch (selectedNoteType) {
         case 'Title Content':
-          noteId = await _saveTextNote(title);
+          noteId = await _saveTextNote(title, textContent);
           break;
 
         case 'Record Audio':
@@ -615,8 +644,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
     }
   }
 
-  Future<int> _saveTextNote(String title) async {
-    final content = MarkdownEditor.controllerToMarkdown(_fleatherController);
+  Future<int> _saveTextNote(String title, String content) async {
     final int noteId;
 
     if (_currentNoteId != null) {
@@ -759,8 +787,9 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
 
   /// Auto-save note based on content
   Future<void> _autoSaveNote() async {
-    if (_isSaving) return;
-
+    // No early return while another save runs: [_saveNote] waits its turn,
+    // and returning here dropped edits made during that save when the app
+    // was backgrounded.
     // Skip auto-save for reminders - they require explicit save due to backend API calls
     // and must have a valid future time
     if (selectedNoteType == 'Reminder') {
@@ -769,28 +798,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
       return;
     }
 
-    final title = _titleController.text.trim();
-
-    // Check if there's any content to save based on note type
-    bool hasContent = false;
-
-    switch (selectedNoteType) {
-      case 'Title Content':
-        final content =
-            MarkdownEditor.controllerToMarkdown(_fleatherController).trim();
-        hasContent = title.isNotEmpty || content.isNotEmpty;
-        break;
-
-      case 'Record Audio':
-        hasContent = _audioFilePath != null;
-        break;
-
-      case 'Todo List':
-        hasContent = title.isNotEmpty || _todoItems.isNotEmpty;
-        break;
-    }
-
-    if (!hasContent || !_hasUnsavedChanges) {
+    if (!_shouldSave()) {
       debugPrint('⏭️ [CreateNoteV2] Auto-save skipped: Nothing to save');
       return;
     }
@@ -813,6 +821,22 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
 
   @override
   Widget build(BuildContext context) {
+    // System back (keyboard open or not), the predictive back gesture and
+    // Navigator.maybePop all land here instead of popping the route outright,
+    // and save first, like the app-bar arrow. Popping straight away disposed
+    // the editor inside the 2-second autosave debounce and dropped what was
+    // just typed (4.4.0, A24: type, then BACK twice — keyboard, then editor).
+    // The embedded tablet pane is not a route; its dispose saves instead.
+    return PopScope(
+      canPop: widget.embedded,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBack(context);
+      },
+      child: _buildEditor(context),
+    );
+  }
+
+  Widget _buildEditor(BuildContext context) {
     final s = context.sketch;
     // Read above the Scaffold: inside its resizing body the keyboard inset
     // has already been consumed.
@@ -1401,6 +1425,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
   // ============================================
 
   Future<void> _handleBack(BuildContext context) async {
+    if (_leaving) return;
+    _leaving = true;
     PinpointHaptics.light();
 
     // Cancel auto-save timer to prevent conflicts
@@ -1420,6 +1446,8 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
 
     if (context.mounted) {
       _exitEditor(context);
+    } else {
+      _leaving = false;
     }
   }
 
@@ -1628,7 +1656,22 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
   }
 
   /// Check if note should be saved
+  ///
+  /// A new note is created only once it has something in it, so opening the
+  /// editor and tapping around never leaves an empty note behind. (Autosave
+  /// used to test the body's Delta JSON, which is never empty — an empty
+  /// document is `[{"insert":"\n"}]` — and created an empty note two seconds
+  /// after the first tap, which then showed "Edited" and a date.) A note that
+  /// already exists saves any change, including being emptied; otherwise the
+  /// old text would quietly come back.
   bool _shouldSave() {
+    if (_deleted || !_hasUnsavedChanges) return false;
+    // An opened note whose content has not loaded (or failed to) holds empty
+    // fields; writing them would wipe the real note.
+    if (widget.arguments?.existingNote != null && _savedSignature == null) {
+      return false;
+    }
+    if (_currentNoteId != null) return true;
     final hasTitle = _titleController.text.trim().isNotEmpty;
     // Check plain text content, not JSON - empty Fleather editor is just "\n"
     final plainText = MarkdownEditor.getPlainText(_fleatherController).trim();
@@ -1637,8 +1680,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
     final hasReminder = _reminderTime != null;
     final hasAudio = _audioFilePath != null;
 
-    return (hasTitle || hasContent || hasTodos || hasReminder || hasAudio) &&
-        _hasUnsavedChanges;
+    return hasTitle || hasContent || hasTodos || hasReminder || hasAudio;
   }
 
   // Voice Note Recording Methods
@@ -1857,6 +1899,11 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
       cancelLabel: l10n.commonCancel,
     );
     if (!confirmed || _currentNoteId == null) return;
+
+    // Nothing may write the note back once it is gone: not the autosave
+    // timer, not the save on close.
+    _deleted = true;
+    _autoSaveTimer?.cancel();
 
     // Delete based on note type
     switch (selectedNoteType) {
