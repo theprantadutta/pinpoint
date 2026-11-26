@@ -84,6 +84,7 @@
   "errAudioNotFound": "Enregistrement audio introuvable",
   "errAudioUploadFailed": "Impossible d'envoyer l'enregistrement. Veuillez réessayer.",
   "errAudioDownloadFailed": "Impossible de télécharger l'enregistrement. Veuillez réessayer.",
+  "errAudioPlayFailed": "Impossible de lire cet enregistrement.",
   "errAudioDeleteFailed": "Impossible de supprimer l'enregistrement. Veuillez réessayer.",
   "errReminderNotFound": "Rappel introuvable",
   "errReminderOperationFailed": "Impossible de mettre à jour vos rappels. Veuillez réessayer.",

@@ -84,6 +84,7 @@
   "errAudioNotFound": "ไม่พบไฟล์บันทึกเสียง",
   "errAudioUploadFailed": "ไม่สามารถอัปโหลดไฟล์บันทึกเสียงได้ กรุณาลองอีกครั้ง",
   "errAudioDownloadFailed": "ไม่สามารถดาวน์โหลดไฟล์บันทึกเสียงได้ กรุณาลองอีกครั้ง",
+  "errAudioPlayFailed": "เล่นการบันทึกนี้ไม่ได้",
   "errAudioDeleteFailed": "ไม่สามารถลบไฟล์บันทึกเสียงได้ กรุณาลองอีกครั้ง",
   "errReminderNotFound": "ไม่พบการเตือน",
   "errReminderOperationFailed": "ไม่สามารถอัปเดตการเตือนของคุณได้ กรุณาลองอีกครั้ง",

@@ -84,6 +84,7 @@
   "errAudioNotFound": "Registrazione audio non trovata",
   "errAudioUploadFailed": "Impossibile caricare la registrazione. Riprova.",
   "errAudioDownloadFailed": "Impossibile scaricare la registrazione. Riprova.",
+  "errAudioPlayFailed": "Impossibile riprodurre questa registrazione.",
   "errAudioDeleteFailed": "Impossibile eliminare la registrazione. Riprova.",
   "errReminderNotFound": "Promemoria non trovato",
   "errReminderOperationFailed": "Impossibile aggiornare i tuoi promemoria. Riprova.",

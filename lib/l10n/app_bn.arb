@@ -84,6 +84,7 @@
   "errAudioNotFound": "অডিও রেকর্ডিং পাওয়া যায়নি",
   "errAudioUploadFailed": "রেকর্ডিং আপলোড করা যায়নি। আবার চেষ্টা করুন।",
   "errAudioDownloadFailed": "রেকর্ডিং ডাউনলোড করা যায়নি। আবার চেষ্টা করুন।",
+  "errAudioPlayFailed": "এই রেকর্ডিংটি চালানো যায়নি।",
   "errAudioDeleteFailed": "রেকর্ডিং মুছে ফেলা যায়নি। আবার চেষ্টা করুন।",
   "errReminderNotFound": "অনুস্মারক পাওয়া যায়নি",
   "errReminderOperationFailed": "আপনার অনুস্মারক আপডেট করা যায়নি। আবার চেষ্টা করুন।",

@@ -248,13 +248,17 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
     }
 
     // Add audio player listeners for playback tracking
+    // audioplayers reports a native failure (a file Android cannot open,
+    // MEDIA_ERROR_UNKNOWN) as an error on every one of these streams. A
+    // listener without onError turns each into an uncaught error, which
+    // Crashlytics recorded as a fatal crash (4.4.0, Pixel 7 Pro, Android 17).
     _audioPlayer.onPositionChanged.listen((position) {
       if (mounted) {
         setState(() {
           _playbackPosition = position;
         });
       }
-    });
+    }, onError: _onPlayerError);
 
     _audioPlayer.onDurationChanged.listen((duration) {
       if (mounted) {
@@ -262,7 +266,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
           _playbackDuration = duration;
         });
       }
-    });
+    }, onError: _onPlayerError);
 
     _audioPlayer.onPlayerComplete.listen((_) {
       if (mounted) {
@@ -271,7 +275,7 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
           _playbackPosition = Duration.zero;
         });
       }
-    });
+    }, onError: _onPlayerError);
 
     // Initialize folders
     _initializeFolders();
@@ -1736,24 +1740,40 @@ class _CreateNoteScreenV2State extends State<CreateNoteScreenV2> with WidgetsBin
 
     try {
       await _audioPlayer.play(DeviceFileSource(_audioFilePath!));
+      if (!mounted) return;
       setState(() {
         _isPlaying = true;
         _hasAudioSource = true;
       });
-
-      // Listen for playback completion
-      _audioPlayer.onPlayerComplete.listen((_) {
-        if (mounted) {
-          setState(() {
-            _isPlaying = false;
-          });
-        }
-      });
-
+      // Completion is handled by the listener set up in initState.
       debugPrint('▶️ [VoiceNote] Started playback');
     } catch (e) {
-      debugPrint('❌ [VoiceNote] Failed to start playback: $e');
+      _onPlayerError(e);
     }
+  }
+
+  /// A recording that cannot be played: stop showing it as playing, say so
+  /// once, and never let it escape as an uncaught error.
+  DateTime? _lastPlayerErrorToast;
+  void _onPlayerError(Object error) {
+    debugPrint('❌ [VoiceNote] Playback failed: $error');
+    if (!mounted) return;
+    setState(() {
+      _isPlaying = false;
+      _hasAudioSource = false;
+    });
+    // The same failure arrives on several streams at once: one toast.
+    final now = DateTime.now();
+    if (_lastPlayerErrorToast != null &&
+        now.difference(_lastPlayerErrorToast!) < const Duration(seconds: 2)) {
+      return;
+    }
+    _lastPlayerErrorToast = now;
+    showSketchToast(
+      context: context,
+      message: AppL10n.of(context).errAudioPlayFailed,
+      tone: ToastTone.error,
+    );
   }
 
   Future<void> _pausePlayback() async {

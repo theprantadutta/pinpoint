@@ -84,6 +84,7 @@
   "errAudioNotFound": "Grabación de audio no encontrada",
   "errAudioUploadFailed": "No se pudo subir la grabación. Inténtalo de nuevo.",
   "errAudioDownloadFailed": "No se pudo descargar la grabación. Inténtalo de nuevo.",
+  "errAudioPlayFailed": "No se pudo reproducir esta grabación.",
   "errAudioDeleteFailed": "No se pudo eliminar la grabación. Inténtalo de nuevo.",
   "errReminderNotFound": "Recordatorio no encontrado",
   "errReminderOperationFailed": "No se pudieron actualizar tus recordatorios. Inténtalo de nuevo.",

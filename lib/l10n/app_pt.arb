@@ -84,6 +84,7 @@
   "errAudioNotFound": "Gravação de áudio não encontrada",
   "errAudioUploadFailed": "Não foi possível enviar a gravação. Tente novamente.",
   "errAudioDownloadFailed": "Não foi possível baixar a gravação. Tente novamente.",
+  "errAudioPlayFailed": "Não foi possível reproduzir esta gravação.",
   "errAudioDeleteFailed": "Não foi possível excluir a gravação. Tente novamente.",
   "errReminderNotFound": "Lembrete não encontrado",
   "errReminderOperationFailed": "Não foi possível atualizar seus lembretes. Tente novamente.",

@@ -426,6 +426,10 @@
   "@errAudioDownloadFailed": {
     "description": "Audio download failed server-side."
   },
+  "errAudioPlayFailed": "Couldn't play this recording.",
+  "@errAudioPlayFailed": {
+    "description": "Toast in the note editor when a voice note's recording cannot be played on this phone (the file is missing or Android cannot open it)."
+  },
   "errAudioDeleteFailed": "Couldn't delete the recording. Please try again.",
   "@errAudioDeleteFailed": {
     "description": "Audio deletion failed server-side."

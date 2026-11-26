@@ -84,6 +84,7 @@
   "errAudioNotFound": "لم يتم العثور على التسجيل الصوتي",
   "errAudioUploadFailed": "تعذّر رفع التسجيل. يرجى المحاولة مرة أخرى.",
   "errAudioDownloadFailed": "تعذّر تنزيل التسجيل. يرجى المحاولة مرة أخرى.",
+  "errAudioPlayFailed": "تعذّر تشغيل هذا التسجيل.",
   "errAudioDeleteFailed": "تعذّر حذف التسجيل. يرجى المحاولة مرة أخرى.",
   "errReminderNotFound": "لم يتم العثور على التذكير",
   "errReminderOperationFailed": "تعذّر تحديث تذكيراتك. يرجى المحاولة مرة أخرى.",

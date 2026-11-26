@@ -84,6 +84,7 @@
   "errAudioNotFound": "ضبط صوتی پیدا نشد",
   "errAudioUploadFailed": "بارگذاری ضبط ممکن نشد. لطفاً دوباره تلاش کنید.",
   "errAudioDownloadFailed": "دانلود ضبط ممکن نشد. لطفاً دوباره تلاش کنید.",
+  "errAudioPlayFailed": "پخش این ضبط ممکن نشد.",
   "errAudioDeleteFailed": "حذف ضبط ممکن نشد. لطفاً دوباره تلاش کنید.",
   "errReminderNotFound": "یادآوری پیدا نشد",
   "errReminderOperationFailed": "به‌روزرسانی یادآوری‌های شما ممکن نشد. لطفاً دوباره تلاش کنید.",
