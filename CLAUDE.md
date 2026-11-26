@@ -234,6 +234,13 @@ strings. See `lib/services/analytics/analytics_client.dart` for the rules.
   existed, and the redirect (`lib/navigation/session_expiry.dart`) skips splash, onboarding, the
   legal reader and sign-in. Without this, a refused startup request on a fresh install sent the
   first tap on onboarding to the sign-in screen.
+- **The editor saves on every way out (4.4.1):** `CreateNoteScreenV2` wraps itself in a `PopScope`
+  so system back, predictive back and `maybePop` go through the same save-then-leave path as the
+  app-bar arrow, and `dispose` flushes a pending autosave. Before this, text typed less than 2 s
+  before a system BACK was lost (seen on the A24). A new note is only created once it has real text
+  (plain-text check, not the Delta JSON). Guards: `test/editor_leave_saves_test.dart`.
+- **Sync failure reasons** come from the error type and HTTP status (`lib/sync/sync_failure_reason.dart`),
+  not the message text: up to 4.4.0, offline phones were reported as `server_error`.
 - **Analytics:** every event and parameter is listed in `pinpoint/docs/analytics-events.md`, with
   the GA4 custom dimensions registered for them (property `p512318286`). A new parameter needs a
   dimension there before it shows in reports.
@@ -304,6 +311,9 @@ the A24 (ask the other sessions if it is free), then merge and push. Offline mus
       never sent for review (24 Nov 2026); the live page still shows the old copy
 - [x] 8. Write-first first run, notification and review prompts after a success, analytics events
       and GA4 custom dimensions: 4.4.0+47, sent to Play review 24 Nov 2026
+- [x] 10. 4.4.1+48 sent to Play review 26 Nov 2026: editor saves on system BACK, no empty notes,
+      voice playback errors handled, correct sync failure reasons. Backend: account deletion no
+      longer fails for users with folders (deployed by the owner, 26 Nov)
 - [ ] 9. Around 8 Dec 2026: compare the 4.4.0 funnel with 4.3.x (first note, D1/D7, guest_converted,
       notification opt-in) before building more. Baseline, 28 days to 23 Nov: 435 first opens →
       314 onboarding → 254 terms → 116 first notes; 317 uninstalls
